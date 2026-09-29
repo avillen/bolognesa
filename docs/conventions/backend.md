@@ -1,6 +1,6 @@
-# Bolognesa: arquitectura del backend
+# Backend: arquitectura y convenciones
 
-Estado: propuesta consolidada para revisión. Recoge las decisiones acordadas; no es todavía un plan de implementación.
+Este documento es la referencia de arquitectura y convenciones del backend de Bolognesa. Recoge las decisiones acordadas y debe mantenerse actualizado cuando cambien. Las decisiones expresamente pendientes se concretarán al diseñar la funcionalidad correspondiente; este documento no es un plan de implementación.
 
 ## Objetivo y entorno
 
