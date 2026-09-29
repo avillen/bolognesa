@@ -17,6 +17,8 @@ Before modifying an area, read the relevant conventions below. If a change spans
 | --- | --- |
 | Backend: domain, contexts, use cases, persistence, integrations, background jobs, authentication or authorization | [Backend architecture and conventions](docs/conventions/backend.md) |
 | Frontend: LiveViews, reducers, view state, forms, templates, components, hooks or browser interaction | [Frontend architecture and conventions](docs/conventions/frontend.md) |
+| Functional changes, bug fixes, tests or test refactoring | [Testing conventions](docs/conventions/testing.md) |
+| Logs, error reporting, background work or operational diagnostics | [Observability conventions](docs/conventions/observability.md) |
 
 Keep lasting architecture decisions and conventions in `docs/conventions/`. When conventions are agreed for another area (such as frontend/LiveView, testing or observability), add its document and a row to this table. Only link documents that exist. Keep implementation plans separate from conventions, and update the relevant convention document whenever an agreed architectural change supersedes it.
 

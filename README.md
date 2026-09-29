@@ -9,6 +9,7 @@ Empieza por [AGENTS.md](AGENTS.md) y el [estado actual](docs/status.md).
 - [Producto](docs/product.md): propósito y alcance.
 - [Roadmap](docs/roadmap.md): hitos y criterios de aceptación.
 - Convenciones de [backend](docs/conventions/backend.md) y [frontend](docs/conventions/frontend.md).
+- Convenciones de [testing](docs/conventions/testing.md) y [observabilidad](docs/conventions/observability.md).
 - [Decisiones](docs/decisions/README.md): motivos de las elecciones arquitectónicas.
 - [Primer hito funcional](docs/plans/first-milestone.md): encargo para diseñar la cuenta inicial.
 

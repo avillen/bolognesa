@@ -152,7 +152,31 @@ Los fallos transitorios se reintentan de forma acotada. Los errores permanentes 
 
 La selección del motor de trabajos, proveedores de metadatos y herramientas multimedia requiere una decisión técnica durante los planes respectivos. Este documento fija los contratos y garantías, no dependencias aún no evaluadas.
 
+### Publicación y consumo de eventos
+
+El dominio determina transiciones válidas sin depender de Phoenix.PubSub. El caso de uso guarda el cambio y registra el evento mediante puertos en la misma transacción. Después del commit, un despachador entrega el evento a sus consumidores duraderos; un consumidor de notificaciones utiliza un adaptador de infraestructura para ejecutar `Phoenix.PubSub.broadcast/3`.
+
+```text
+Caso de uso → transacción (cambio + outbox)
+                         ↓ después del commit
+                    Despachador
+                     ↙       ↘
+          Trabajo duradero   Adaptador PubSub
+                                   ↓
+                         LiveView → reducer
+```
+
+Por ejemplo, al terminar un escaneo, el worker invoca el caso de uso que guarda el resultado y registra `LibraryScanCompleted`. El despachador procesa ese evento confirmado y el adaptador publica una notificación a las pantallas interesadas.
+
+No se ejecuta `broadcast` dentro de la transacción ni desde entidades del dominio. Tampoco se desencadena trabajo recuperable únicamente mediante una suscripción PubSub. Los consumidores duraderos toleran duplicados y registran o deduplican su procesamiento según sus efectos.
+
+PubSub informa de cambios, pero no es fuente de verdad ni ofrece recuperación a clientes desconectados. Las notificaciones contienen referencias y contexto mínimo, sin rutas privadas ni contenido sensible. Los topics no constituyen una autorización: el servidor autoriza suscripciones y los casos de uso autorizan consultas y acciones.
+
+Las consultas asíncronas de una pantalla utilizan el mecanismo propio de LiveView y devuelven resultados mediante `handle_async`; no necesitan eventos persistidos o PubSub. Los logs de workers, despachadores y adaptadores siguen las [convenciones de observabilidad](observability.md).
+
 ## Pruebas y criterios de aceptación
+
+Aplicar las [convenciones de testing](testing.md), incluyendo TDD centrado en comportamiento y revisión de las pruebas existentes antes de añadir escenarios.
 
 - Dominio: pruebas sin base de datos de invariantes, transiciones y errores.
 - Aplicación: pruebas con adaptadores de prueba de autorización, coordinación, reintentos e idempotencia.

@@ -108,6 +108,16 @@ Los reducers convierten los changesets con `to_form/2` y asignan el resultado al
 
 ## Templates, componentes y navegador
 
+### Notificaciones del backend
+
+La LiveView se suscribe a los topics autorizados cuando está conectada y recibe las notificaciones mediante `handle_info/2`. Delega su tratamiento a un reducer que obtiene el estado actualizado mediante la fachada del backend y modifica la presentación. El frontend no publica los eventos de dominio; solicita acciones mediante los casos de uso.
+
+Al conectar o reconectar se recupera el estado del backend, sin depender de mensajes recibidos anteriormente. Suscribir antes de cargar el estado actualizado evita dejar un intervalo sin observar cambios; el manejo posterior debe tolerar notificaciones duplicadas y recargas concurrentes. Al cambiar el recurso observado se ajustan las suscripciones.
+
+El topic no concede permisos. Tanto la suscripción como las consultas y acciones deben respetar el acceso del usuario. Los resultados de tareas propias de la pantalla se reciben por `handle_async`, separados de las notificaciones PubSub.
+
+### Componentes e interacción
+
 El template principal se mantiene junto a la LiveView. Los componentes reciben atributos y emiten eventos; no consultan el backend. Se prefieren componentes de función y se reserva LiveComponent para necesidades concretas de estado y ciclo de vida propios.
 
 Los componentes específicos viven dentro de la pantalla. Cuando se comparten entre pantallas de películas pueden situarse en `live/movie/components/`; si se reutilizan entre funcionalidades, en `lib/bolognesa_web/components/`. La extracción responde a reutilización o responsabilidades claras.
@@ -126,4 +136,4 @@ Las pruebas de interacción con LiveViewTest se organizan por pantalla, por ejem
 
 Se añaden pruebas directas de reducers para transiciones complejas que lo justifiquen, sin duplicar automáticamente las pruebas de interacción. Los modelos de presentación y formularios pueden probarse de forma aislada cuando contengan transformaciones o validaciones relevantes.
 
-Se verifican los estados de carga, error y vacío, las respuestas obsoletas, los formularios y la actualización de streams según las necesidades de cada pantalla. Las futuras convenciones transversales de testing ampliarán estas pautas. Al finalizar cambios se ejecuta `mix precommit`.
+Se verifican los estados de carga, error y vacío, las respuestas obsoletas, los formularios y la actualización de streams según las necesidades de cada pantalla. Se aplican las [convenciones de testing](testing.md), priorizando comportamiento sobre detalles internos. Al finalizar cambios se ejecuta `mix precommit`.
