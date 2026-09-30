@@ -13,7 +13,7 @@ H0 (base de trabajo) y P0 (prueba temprana de reproducción) están completos. L
 
 ## Después de la primera versión
 
-Priorizar según el uso real: series, música, cuentas adicionales, conversión de formatos, acceso remoto y aplicaciones específicas. No se fija todavía un calendario ni una secuencia detallada entre esas ampliaciones.
+Priorizar según el uso real: recuperación de acceso a la cuenta, series, música, cuentas adicionales, conversión de formatos, acceso remoto y aplicaciones específicas. H1 no incluye recuperación de contraseña; su mecanismo se decidirá cuando se aborde. No se fija todavía un calendario ni una secuencia detallada entre esas ampliaciones.
 
 ## Cómo trabajar los hitos
 
