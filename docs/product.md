@@ -4,8 +4,8 @@ Bolognesa es un mediacenter personal construido con Elixir y Phoenix. Su objetiv
 
 ## Entorno y usuarios
 
-- Servidor inicial: QNAP TS-233, dentro de la red local. Despliegue y capacidad práctica pendientes de verificar.
-- Clientes iniciales: navegador de ordenador durante el desarrollo, móvil y navegador de una televisión Hisense de aproximadamente seis años. Modelo exacto y compatibilidad desconocidos.
+- Servidor inicial: QNAP TS-233, dentro de la red local. La base Phoenix está desplegada; capacidad bajo uso real y reproducción pendientes de verificar.
+- Clientes iniciales: navegador de ordenador durante el desarrollo, móvil y navegador de una televisión Hisense de aproximadamente seis años. El propietario comprobó que la página base se ve bien en móvil y televisión; la compatibilidad de reproducción sigue pendiente.
 - Una cuenta administradora al principio, con identidad real y datos personales asociados a su usuario. Se prevén cuentas independientes posteriormente.
 - Acceso desde fuera de casa en una fase posterior.
 

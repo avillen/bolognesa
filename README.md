@@ -15,7 +15,7 @@ Empieza por [AGENTS.md](AGENTS.md) y el [estado actual](docs/status.md).
 
 ## Desarrollo local
 
-Necesitas Elixir/Erlang compatibles con `mix.exs` y las dependencias bloqueadas en `mix.lock`, además de PostgreSQL accesible con la configuración de `config/dev.exs` y `config/test.exs`. El método de despliegue en QNAP está pendiente de validar.
+Necesitas Elixir/Erlang compatibles con `mix.exs` y las dependencias bloqueadas en `mix.lock`, además de PostgreSQL accesible con la configuración de `config/dev.exs` y `config/test.exs`. La base Phoenix está desplegada en el QNAP; consulta el estado para conocer las comprobaciones pendientes.
 
 To start your Phoenix server:
 
@@ -25,6 +25,8 @@ To start your Phoenix server:
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 Run `mix precommit` to compile with warnings as errors, check unused dependencies, format and run the tests. Tests require PostgreSQL.
+
+Para el despliegue QNAP y los comandos para publicar nuevas versiones, ejecuta `make help` y consulta [las instrucciones QNAP](deploy/qnap/README.md).
 
 Ready to run in production? Please [check our deployment guides](https://phoenix.hexdocs.pm/deployment.html).
 
