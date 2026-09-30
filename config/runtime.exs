@@ -71,11 +71,16 @@ if config_env() == :prod do
       """
 
   host = System.get_env("PHX_HOST") || "example.com"
+  lan_http? = System.get_env("BOLOGNESA_LAN_HTTP") == "true"
+  public_scheme = if lan_http?, do: "http", else: "https"
+
+  public_port =
+    String.to_integer(System.get_env("PUBLIC_PORT") || if(lan_http?, do: "4000", else: "443"))
 
   config :bolognesa, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :bolognesa, BolognesaWeb.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    url: [host: host, port: public_port, scheme: public_scheme],
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.

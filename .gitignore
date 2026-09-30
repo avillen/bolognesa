@@ -34,3 +34,9 @@ bolognesa-*.tar
 # In case you use Node.js/npm, you want to ignore these.
 npm-debug.log
 /assets/node_modules/
+
+# Local deployment credentials and exported images.
+.env
+.env.*
+!.env.example
+/deploy/qnap/*.tar
