@@ -1,6 +1,6 @@
 # H1: cuenta administradora y acceso inicial
 
-Estado: diseño aprobado en conversación el 2026-09-30; pendiente de revisión del documento por el propietario. No es un plan de implementación.
+Estado: diseño escrito aprobado por el propietario el 2026-09-30. No es un plan de implementación.
 
 ## Propósito y alcance
 
