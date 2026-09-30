@@ -22,4 +22,4 @@ Priorizar según el uso real: series, música, cuentas adicionales, conversión 
 3. Implementar y comprobar resultados; registrar limitaciones reales.
 4. Actualizar estado y marcar el hito terminado únicamente si satisface sus criterios.
 
-Las pruebas exploratorias de hardware no deben convertirse en una implementación improvisada del reproductor completo. P0 comprueba una muestra pública y los controles del navegador; la compatibilidad de archivos representativos de la biblioteca y el recorrido autorizado se comprobarán al preparar H4. Esto no impide diseñar H1.
+Las pruebas exploratorias de hardware no deben convertirse en una implementación improvisada del reproductor completo. P0 comprueba una muestra pública y los controles del navegador en los tres dispositivos; una película MP4 de la biblioteca se vio completa en ordenador. El propietario considera suficiente esa evidencia para avanzar con la estrategia de entrega directa en los tres clientes previstos. La compatibilidad de otros formatos y el recorrido autorizado se comprobarán al preparar H4. Esto no impide diseñar H1.
