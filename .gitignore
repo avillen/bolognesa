@@ -40,3 +40,6 @@ npm-debug.log
 .env.*
 !.env.example
 /deploy/qnap/*.tar
+
+# Local design previews.
+/.superpowers/
