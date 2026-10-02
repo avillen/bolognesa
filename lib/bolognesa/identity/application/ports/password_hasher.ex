@@ -1,6 +1,12 @@
 defmodule Bolognesa.Identity.Application.Ports.PasswordHasher do
   @moduledoc "Password hashing boundary for identity use cases."
-  @callback hash(binary()) :: binary()
-  @callback verify(binary(), binary()) :: boolean()
-  @callback dummy_verify(binary()) :: :ok
+  alias Bolognesa.Identity.Domain.User
+
+  @typedoc "Module implementing the password hasher behaviour."
+  @type adapter :: atom()
+  @type hash :: String.t()
+
+  @callback hash(User.password()) :: hash()
+  @callback verify(User.password(), hash()) :: boolean()
+  @callback dummy_verify(User.password()) :: :ok
 end

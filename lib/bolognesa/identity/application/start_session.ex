@@ -1,9 +1,12 @@
 defmodule Bolognesa.Identity.Application.StartSession do
   @moduledoc "Authenticate credentials and create a durable session."
+  alias Bolognesa.Identity.Application.Ports.PasswordHasher
+  alias Bolognesa.Identity.Application.Ports.Repository
   alias Bolognesa.Identity.Domain.Session
+  alias Bolognesa.Identity.Domain.User
 
-  @spec call(term(), term(), module(), module()) ::
-          {:ok, binary()} | {:error, :invalid_credentials | :unavailable}
+  @spec call(User.email(), User.password(), Repository.adapter(), PasswordHasher.adapter()) ::
+          {:ok, Session.token()} | {:error, :invalid_credentials | :unavailable}
   def call(email, password, repository, hasher) when is_binary(email) and is_binary(password) do
     normalized_email = email |> String.trim() |> String.downcase()
 

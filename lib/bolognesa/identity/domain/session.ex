@@ -1,12 +1,23 @@
 defmodule Bolognesa.Identity.Domain.Session do
   @moduledoc "A fixed lifetime session without sliding renewal."
+  alias Bolognesa.Identity.Domain.User
+
   defstruct [:user_id, :token_hash, :expires_at]
 
-  @type t :: %__MODULE__{user_id: integer(), token_hash: binary(), expires_at: DateTime.t()}
+  @type token :: String.t()
+  @type token_hash :: binary()
+  @type issued_at :: DateTime.t()
+  @type expires_at :: DateTime.t()
+
+  @type t :: %__MODULE__{
+          user_id: User.id(),
+          token_hash: token_hash(),
+          expires_at: expires_at()
+        }
 
   @lifetime_seconds 30 * 24 * 60 * 60
 
-  @spec new(integer(), binary(), DateTime.t()) :: t()
+  @spec new(User.id(), token_hash(), issued_at()) :: t()
   def new(user_id, token_hash, now) do
     %__MODULE__{
       user_id: user_id,

@@ -2,6 +2,8 @@ defmodule Bolognesa.Identity do
   @moduledoc "Public identity and access facade."
   alias Bolognesa.Identity.Application.{EndSession, InstallAdmin, ResolveSession, StartSession}
   alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Session
+  alias Bolognesa.Identity.Domain.User
   alias Bolognesa.Identity.Infrastructure.BcryptHasher
   alias Bolognesa.Identity.Infrastructure.Persistence.EctoRepository
 
@@ -14,26 +16,28 @@ defmodule Bolognesa.Identity do
     end
   end
 
-  @spec install_admin(term()) ::
-          {:ok, Actor.t()} | {:error, {:invalid, map()} | :setup_closed | :unavailable}
+  @spec install_admin(User.admin_attrs()) ::
+          {:ok, Actor.t()}
+          | {:error, {:invalid, User.validation_errors()} | :setup_closed | :unavailable}
   def install_admin(attrs) do
     with {:ok, user} <- InstallAdmin.call(attrs, EctoRepository, BcryptHasher) do
       {:ok, Actor.from_user(user)}
     end
   end
 
-  @spec authorize(term(), :admin) :: :ok | {:error, :forbidden}
+  @spec authorize(Actor.t() | nil, :admin) :: :ok | {:error, :forbidden}
   def authorize(%Actor{role: :admin}, :admin), do: :ok
   def authorize(_, :admin), do: {:error, :forbidden}
 
-  @spec start_session(term(), term()) ::
-          {:ok, binary()} | {:error, :invalid_credentials | :unavailable}
+  @spec start_session(User.email(), User.password()) ::
+          {:ok, Session.token()} | {:error, :invalid_credentials | :unavailable}
   def start_session(email, password),
     do: StartSession.call(email, password, EctoRepository, BcryptHasher)
 
-  @spec fetch_actor(term()) :: {:ok, Actor.t()} | {:error, :unauthenticated | :unavailable}
+  @spec fetch_actor(Session.token() | nil) ::
+          {:ok, Actor.t()} | {:error, :unauthenticated | :unavailable}
   def fetch_actor(token), do: ResolveSession.call(token, EctoRepository)
 
-  @spec end_session(term()) :: :ok | {:error, :unavailable}
+  @spec end_session(Session.token() | nil) :: :ok | {:error, :unavailable}
   def end_session(token), do: EndSession.call(token, EctoRepository)
 end

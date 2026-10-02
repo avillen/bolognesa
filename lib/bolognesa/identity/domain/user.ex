@@ -2,11 +2,20 @@ defmodule Bolognesa.Identity.Domain.User do
   @moduledoc "Identity rules independent of the persistence representation."
   defstruct [:id, :name, :email, :role]
 
-  @type t :: %__MODULE__{id: integer() | nil, name: String.t(), email: String.t(), role: :admin}
+  @type id :: pos_integer()
+  @type name :: String.t()
+  @type email :: String.t()
+  @type password :: String.t()
+  @type admin_attrs :: %{
+          optional(:name | :email | :password | String.t()) => String.t()
+        }
+  @type validation_errors :: %{optional(:name | :email | :password) => String.t()}
+
+  @type t :: %__MODULE__{id: id() | nil, name: name(), email: email(), role: :admin}
 
   @email_pattern ~r/\A[a-z0-9.!#$%&'*+\/?^_`{|}~-]+@[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?)+\z/
 
-  @spec new_admin(term()) :: {:ok, t()} | {:error, {:invalid, map()}}
+  @spec new_admin(admin_attrs()) :: {:ok, t()} | {:error, {:invalid, validation_errors()}}
   def new_admin(attrs) when is_map(attrs) do
     name = value(attrs, :name)
     email = value(attrs, :email)
