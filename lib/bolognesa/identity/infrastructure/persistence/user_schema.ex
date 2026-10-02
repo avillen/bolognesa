@@ -11,6 +11,7 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.UserSchema do
     timestamps(type: :utc_datetime_usec)
   end
 
+  @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def changeset(user, attrs) do
     user
     |> cast(attrs, [:name, :email])

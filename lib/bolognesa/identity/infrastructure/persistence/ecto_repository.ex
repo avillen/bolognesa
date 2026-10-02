@@ -12,12 +12,14 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoRepository do
     UserSchema
   }
 
+  @impl true
   def admin_exists? do
     {:ok, Repo.exists?(from u in UserSchema, where: u.role == "admin")}
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
   end
 
+  @impl true
   def insert_initial_admin(user, hashed_password) do
     result =
       Repo.transaction(fn ->
@@ -39,6 +41,7 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoRepository do
     DBConnection.ConnectionError -> {:error, :unavailable}
   end
 
+  @impl true
   def find_user_by_email(email) do
     case Repo.get_by(UserSchema, email: email) do
       nil -> :not_found
@@ -48,6 +51,7 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoRepository do
     DBConnection.ConnectionError -> {:error, :unavailable}
   end
 
+  @impl true
   def insert_session(user_id, token_hash, expires_at) do
     inserted_at = DateTime.add(expires_at, -30 * 24 * 60 * 60, :second)
 
@@ -64,6 +68,7 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoRepository do
     DBConnection.ConnectionError -> {:error, :unavailable}
   end
 
+  @impl true
   def find_active_session(token_hash, now) do
     query =
       from s in SessionSchema,
@@ -78,6 +83,7 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoRepository do
     DBConnection.ConnectionError -> {:error, :unavailable}
   end
 
+  @impl true
   def delete_session(token_hash) do
     Repo.delete_all(from s in SessionSchema, where: s.token_hash == ^token_hash)
     :ok

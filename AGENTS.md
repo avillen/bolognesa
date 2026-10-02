@@ -15,6 +15,7 @@ Before modifying an area, read the relevant conventions below. If a change spans
 
 | When working on | Read |
 | --- | --- |
+| Elixir modules and public APIs | [Elixir conventions](docs/conventions/elixir.md) |
 | Backend: domain, contexts, use cases, persistence, integrations, background jobs, authentication or authorization | [Backend architecture and conventions](docs/conventions/backend.md) |
 | Frontend: LiveViews, reducers, view state, forms, templates, components, hooks or browser interaction | [Frontend architecture and conventions](docs/conventions/frontend.md) |
 | Functional changes, bug fixes, tests or test refactoring | [Testing conventions](docs/conventions/testing.md) |

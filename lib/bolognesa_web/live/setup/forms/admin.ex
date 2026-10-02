@@ -11,6 +11,7 @@ defmodule BolognesaWeb.Setup.Forms.Admin do
     field :password_confirmation, :string, virtual: true, redact: true
   end
 
+  @spec changeset(map()) :: Ecto.Changeset.t()
   def changeset(params \\ %{}) do
     %__MODULE__{}
     |> cast(params, [:name, :email, :password, :password_confirmation])

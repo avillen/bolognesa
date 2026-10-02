@@ -6,6 +6,7 @@ defmodule Bolognesa.Identity.Domain.User do
 
   @email_pattern ~r/\A[a-z0-9.!#$%&'*+\/?^_`{|}~-]+@[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?)+\z/
 
+  @spec new_admin(term()) :: {:ok, t()} | {:error, {:invalid, map()}}
   def new_admin(attrs) when is_map(attrs) do
     name = value(attrs, :name)
     email = value(attrs, :email)

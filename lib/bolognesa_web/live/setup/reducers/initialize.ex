@@ -6,6 +6,7 @@ defmodule BolognesaWeb.Setup.Reducers.Initialize do
   alias Bolognesa.Identity
   alias BolognesaWeb.Setup.Forms.Admin
 
+  @spec call(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def call(socket) do
     socket = assign(socket, :current_scope, nil)
 

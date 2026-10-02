@@ -3,6 +3,7 @@ defmodule BolognesaWeb.SessionController do
 
   alias Bolognesa.Identity
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"login" => %{"email" => email, "password" => password}}) do
     case Identity.start_session(email, password) do
       {:ok, token} ->
@@ -27,6 +28,7 @@ defmodule BolognesaWeb.SessionController do
     |> redirect(to: "/login")
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, _params) do
     case Identity.end_session(get_session(conn, :user_token)) do
       :ok ->

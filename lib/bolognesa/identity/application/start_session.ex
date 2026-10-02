@@ -2,6 +2,8 @@ defmodule Bolognesa.Identity.Application.StartSession do
   @moduledoc "Authenticate credentials and create a durable session."
   alias Bolognesa.Identity.Domain.Session
 
+  @spec call(term(), term(), module(), module()) ::
+          {:ok, binary()} | {:error, :invalid_credentials | :unavailable}
   def call(email, password, repository, hasher) when is_binary(email) and is_binary(password) do
     normalized_email = email |> String.trim() |> String.downcase()
 

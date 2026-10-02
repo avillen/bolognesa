@@ -4,7 +4,9 @@ defmodule BolognesaWeb.UserAuth do
   import Phoenix.Controller, only: [redirect: 2]
 
   alias Bolognesa.Identity
+  alias Bolognesa.Identity.Domain.Actor
 
+  @spec fetch_current_scope(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
   def fetch_current_scope(conn, _opts) do
     case get_session(conn, :user_token) do
       nil -> assign(conn, :current_scope, nil)
@@ -12,6 +14,10 @@ defmodule BolognesaWeb.UserAuth do
     end
   end
 
+  @spec assign_scope_result(
+          Plug.Conn.t(),
+          {:ok, Actor.t()} | {:error, :unauthenticated | :unavailable}
+        ) :: Plug.Conn.t()
   def assign_scope_result(conn, {:ok, actor}), do: assign(conn, :current_scope, %{actor: actor})
   def assign_scope_result(conn, {:error, :unauthenticated}), do: assign(conn, :current_scope, nil)
 
@@ -21,6 +27,7 @@ defmodule BolognesaWeb.UserAuth do
     |> halt()
   end
 
+  @spec require_authenticated_user(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
   def require_authenticated_user(conn, _opts) do
     if conn.assigns.current_scope do
       conn
@@ -33,6 +40,8 @@ defmodule BolognesaWeb.UserAuth do
     end
   end
 
+  @spec on_mount(:require_authenticated, map(), map(), Phoenix.LiveView.Socket.t()) ::
+          {:cont, Phoenix.LiveView.Socket.t()} | {:halt, Phoenix.LiveView.Socket.t()}
   def on_mount(:require_authenticated, _params, session, socket) do
     result =
       case session["user_token"] do

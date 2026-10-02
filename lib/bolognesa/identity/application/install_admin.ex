@@ -2,6 +2,8 @@ defmodule Bolognesa.Identity.Application.InstallAdmin do
   @moduledoc "Install the sole initial administrator."
   alias Bolognesa.Identity.Domain.User
 
+  @spec call(term(), module(), module()) ::
+          {:ok, User.t()} | {:error, {:invalid, map()} | :setup_closed | :unavailable}
   def call(attrs, repository, hasher) do
     with {:ok, user} <- User.new_admin(attrs) do
       password = Map.get(attrs, :password) || Map.get(attrs, "password")

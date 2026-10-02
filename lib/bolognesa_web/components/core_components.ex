@@ -50,6 +50,7 @@ defmodule BolognesaWeb.CoreComponents do
 
   slot :inner_block, doc: "the optional inner block that renders the flash message"
 
+  @spec flash(map()) :: Phoenix.LiveView.Rendered.t()
   def flash(assigns) do
     assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
 
@@ -100,6 +101,7 @@ defmodule BolognesaWeb.CoreComponents do
   attr :variant, :string, values: ~w(primary)
   slot :inner_block, required: true
 
+  @spec button(map()) :: Phoenix.LiveView.Rendered.t()
   def button(%{rest: rest} = assigns) do
     variants = %{
       "primary" => "bg-amber-300 text-stone-950 hover:bg-amber-200",
@@ -194,6 +196,7 @@ defmodule BolognesaWeb.CoreComponents do
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
 
+  @spec input(map()) :: Phoenix.LiveView.Rendered.t()
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
 
@@ -331,6 +334,7 @@ defmodule BolognesaWeb.CoreComponents do
   slot :subtitle
   slot :actions
 
+  @spec header(map()) :: Phoenix.LiveView.Rendered.t()
   def header(assigns) do
     ~H"""
     <header class={[@actions != [] && "flex items-center justify-between gap-6", "pb-4"]}>
@@ -372,6 +376,7 @@ defmodule BolognesaWeb.CoreComponents do
 
   slot :action, doc: "the slot for showing user actions in the last table column"
 
+  @spec table(map()) :: Phoenix.LiveView.Rendered.t()
   def table(assigns) do
     assigns =
       with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
@@ -424,6 +429,7 @@ defmodule BolognesaWeb.CoreComponents do
     attr :title, :string, required: true
   end
 
+  @spec list(map()) :: Phoenix.LiveView.Rendered.t()
   def list(assigns) do
     ~H"""
     <ul class="list">
@@ -458,6 +464,7 @@ defmodule BolognesaWeb.CoreComponents do
   attr :name, :string, required: true
   attr :class, :any, default: "size-4"
 
+  @spec icon(map()) :: Phoenix.LiveView.Rendered.t()
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
     <span class={[@name, @class]} />
@@ -466,6 +473,7 @@ defmodule BolognesaWeb.CoreComponents do
 
   ## JS Commands
 
+  @spec show(JS.t(), String.t()) :: JS.t()
   def show(js \\ %JS{}, selector) do
     JS.show(js,
       to: selector,
@@ -477,6 +485,7 @@ defmodule BolognesaWeb.CoreComponents do
     )
   end
 
+  @spec hide(JS.t(), String.t()) :: JS.t()
   def hide(js \\ %JS{}, selector) do
     JS.hide(js,
       to: selector,
@@ -490,6 +499,7 @@ defmodule BolognesaWeb.CoreComponents do
   @doc """
   Translates an error message using gettext.
   """
+  @spec translate_error({String.t(), keyword()}) :: String.t()
   def translate_error({msg, opts}) do
     # When using gettext, we typically pass the strings we want
     # to translate as a static argument:
@@ -511,6 +521,7 @@ defmodule BolognesaWeb.CoreComponents do
   @doc """
   Translates the errors for a field from a keyword list of errors.
   """
+  @spec translate_errors(keyword({String.t(), keyword()}), atom()) :: [String.t()]
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end

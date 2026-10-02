@@ -6,6 +6,7 @@ defmodule BolognesaWeb.Setup.Reducers.Save do
   alias Bolognesa.Identity
   alias BolognesaWeb.Setup.Forms.Admin
 
+  @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
   def call(socket, params) do
     case Identity.setup_status() do
       {:ok, :closed} ->

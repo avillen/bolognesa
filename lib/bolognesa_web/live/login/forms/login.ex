@@ -9,6 +9,7 @@ defmodule BolognesaWeb.Login.Forms.Login do
     field :password, :string, virtual: true, redact: true
   end
 
+  @spec changeset() :: Ecto.Changeset.t()
   def changeset do
     %__MODULE__{}
     |> change()

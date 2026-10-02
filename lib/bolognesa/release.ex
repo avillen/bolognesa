@@ -5,6 +5,7 @@ defmodule Bolognesa.Release do
   """
   @app :bolognesa
 
+  @spec migrate() :: [{:ok, [integer()], term()}]
   def migrate do
     load_app()
 
@@ -13,6 +14,7 @@ defmodule Bolognesa.Release do
     end
   end
 
+  @spec rollback(module(), integer()) :: {:ok, [integer()], term()}
   def rollback(repo, version) do
     load_app()
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
