@@ -1,5 +1,7 @@
 import Config
 
+config :bcrypt_elixir, :log_rounds, 4
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used

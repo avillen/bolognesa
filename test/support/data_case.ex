@@ -29,7 +29,6 @@ defmodule Bolognesa.DataCase do
 
   setup tags do
     Bolognesa.DataCase.setup_sandbox(tags)
-    :ok
   end
 
   @doc """
@@ -38,6 +37,7 @@ defmodule Bolognesa.DataCase do
   def setup_sandbox(tags) do
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Bolognesa.Repo, shared: not tags[:async])
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
+    %{sandbox_owner: pid}
   end
 
   @doc """
