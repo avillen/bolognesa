@@ -37,6 +37,13 @@ defmodule Bolognesa.Identity.SessionTest do
     assert Repo.aggregate(SessionSchema, :count) == 0
   end
 
+  test "a NUL suffix cannot authenticate as the password prefix" do
+    assert {:error, :invalid_credentials} =
+             Identity.start_session("ada@example.com", @password <> "\0suffix")
+
+    assert Repo.aggregate(SessionSchema, :count) == 0
+  end
+
   test "each device has a distinct token and logout revokes only that token" do
     assert {:ok, first} = Identity.start_session("ada@example.com", @password)
     assert {:ok, second} = Identity.start_session("ada@example.com", @password)

@@ -33,6 +33,25 @@ defmodule BolognesaWeb.Setup.LiveTest do
     assert {:ok, :open} = Identity.setup_status()
   end
 
+  test "setup rejects a password containing NUL before sending it to the backend", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/setup")
+    password = "a\0" <> String.duplicate("b", 11)
+
+    view
+    |> form("#setup-form",
+      admin: %{
+        name: "Ada",
+        email: "ada@example.com",
+        password: password,
+        password_confirmation: password
+      }
+    )
+    |> render_submit()
+
+    assert has_element?(view, "#setup-form")
+    assert {:ok, :open} = Identity.setup_status()
+  end
+
   test "valid setup creates the administrator and closes setup", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/setup")
     view |> form("#setup-form", admin: @valid) |> render_submit()

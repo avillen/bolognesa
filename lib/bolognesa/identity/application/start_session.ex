@@ -5,7 +5,7 @@ defmodule Bolognesa.Identity.Application.StartSession do
   def call(email, password, repository, hasher) when is_binary(email) and is_binary(password) do
     normalized_email = email |> String.trim() |> String.downcase()
 
-    if byte_size(password) in 1..72 do
+    if byte_size(password) in 1..72 and :binary.match(password, <<0>>) == :nomatch do
       authenticate(normalized_email, password, repository, hasher)
     else
       hasher.dummy_verify(password)

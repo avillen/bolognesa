@@ -35,8 +35,10 @@ defmodule Bolognesa.Identity.InstallAdminTest do
           %{name: "Ada", email: " ", password: @password},
           %{name: "Ada", email: "invalid", password: @password},
           %{name: "Ada", email: "àda@example.com", password: @password},
+          %{name: "Ada", email: "K@example.com", password: @password},
           %{name: "Ada", email: "ada@example.com", password: "too short"},
-          %{name: "Ada", email: "ada@example.com", password: String.duplicate("a", 73)}
+          %{name: "Ada", email: "ada@example.com", password: String.duplicate("a", 73)},
+          %{name: "Ada", email: "ada@example.com", password: "a\0" <> String.duplicate("b", 11)}
         ] do
       assert {:error, {:invalid, errors}} = Identity.install_admin(attrs)
       assert map_size(errors) > 0

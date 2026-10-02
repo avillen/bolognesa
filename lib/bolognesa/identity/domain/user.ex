@@ -14,7 +14,7 @@ defmodule Bolognesa.Identity.Domain.User do
     name = if is_binary(name) and String.valid?(name), do: String.trim(name), else: nil
 
     email =
-      if is_binary(email) and String.valid?(email),
+      if is_binary(email) and String.valid?(email) and ascii?(email),
         do: email |> String.trim() |> String.downcase(),
         else: nil
 
@@ -31,9 +31,10 @@ defmodule Bolognesa.Identity.Domain.User do
         else: Map.put(errors, :email, "invalid")
 
     errors =
-      if is_binary(password) and byte_size(password) in 12..72,
-        do: errors,
-        else: Map.put(errors, :password, "invalid")
+      if is_binary(password) and byte_size(password) in 12..72 and
+           :binary.match(password, <<0>>) == :nomatch,
+         do: errors,
+         else: Map.put(errors, :password, "invalid")
 
     if map_size(errors) == 0 do
       {:ok, %__MODULE__{name: name, email: email, role: :admin}}
@@ -46,4 +47,6 @@ defmodule Bolognesa.Identity.Domain.User do
     do: {:error, {:invalid, %{name: "invalid", email: "invalid", password: "invalid"}}}
 
   defp value(attrs, key), do: Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
+
+  defp ascii?(value), do: value |> :binary.bin_to_list() |> Enum.all?(&(&1 < 128))
 end

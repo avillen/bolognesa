@@ -9,7 +9,7 @@ Bolognesa necesita una identidad administradora real antes de configurar bibliot
 ## Decisión
 
 - `/setup` queda abierto hasta que se crea el primer administrador. PostgreSQL garantiza un único administrador mediante una restricción parcial, incluso ante solicitudes simultáneas.
-- El administrador se identifica mediante nombre y correo normalizado único. bcrypt guarda el hash de una contraseña de 12 a 72 bytes; no se incorpora ninguna credencial al repositorio o al despliegue.
+- El administrador se identifica mediante nombre y correo ASCII normalizado único. bcrypt guarda el hash de una contraseña de 12 a 72 bytes sin bytes nulos; no se incorpora ninguna credencial al repositorio o al despliegue.
 - Cada navegador recibe un token aleatorio distinto. PostgreSQL guarda únicamente su hash SHA-256; la sesión vence a los 30 días desde su creación sin renovación deslizante. Cerrar sesión revoca solo el token actual.
 - El servidor resuelve un actor verificado para rutas protegidas y LiveViews. Las operaciones futuras deberán comprobar su propia autorización en el backend.
 - El HTTP actual se limita a la LAN y exige HTTPS antes de habilitar acceso remoto. Mientras siga en HTTP, la cookie no se marca `Secure`.

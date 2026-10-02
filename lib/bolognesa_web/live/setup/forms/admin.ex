@@ -18,7 +18,9 @@ defmodule BolognesaWeb.Setup.Forms.Admin do
     |> validate_length(:name, max: 120)
     |> validate_format(:email, ~r/\A[^\s@]+@[^\s@]+\.[^\s@]+\z/)
     |> validate_change(:password, fn :password, password ->
-      if byte_size(password) in 12..72, do: [], else: [password: "debe tener entre 12 y 72 bytes"]
+      if byte_size(password) in 12..72 and :binary.match(password, <<0>>) == :nomatch,
+        do: [],
+        else: [password: "debe tener entre 12 y 72 bytes y no contener caracteres nulos"]
     end)
     |> validate_confirmation(:password, required: true)
   end
