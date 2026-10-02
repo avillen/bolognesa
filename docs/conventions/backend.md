@@ -24,6 +24,7 @@ Se aplicará DDD con dominio independiente de Ecto y arquitectura hexagonal dent
 
 - **Dominio:** structs, objetos de valor, agregados, invariantes y transiciones. No depende de Phoenix, Ecto, Req, ejecución de procesos externos ni del sistema de archivos.
 - **Aplicación:** casos de uso que coordinan autorización, dominio y puertos. Define qué cambios necesitan una transacción.
+- Un módulo de aplicación no llama a funciones de otro módulo de aplicación. La lógica pura compartida pertenece al dominio; los efectos compartidos se expresan mediante puertos y adaptadores. Así, cada caso de uso coordina sus propios pasos sin depender de otro caso de uso.
 - **Puertos:** behaviours con operaciones concretas que la aplicación necesita del exterior.
 - **Infraestructura:** adaptadores Ecto, consultas, mappers, sistema de archivos, proveedores HTTP y herramientas multimedia.
 - **Fachada:** operaciones públicas del contexto. Los consumidores no acceden a sus schemas ni repositorios internos.
