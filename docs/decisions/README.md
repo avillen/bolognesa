@@ -7,3 +7,4 @@ Crear un registro cuando se elija o cambie un límite arquitectónico, contrato 
 | Registro | Estado | Decisión |
 | --- | --- | --- |
 | [0001](0001-architecture-foundation.md) | Aceptada | Aplicación única con DDD independiente de Ecto y frontend LiveView por pantalla |
+| [0002](0002-initial-access.md) | Aceptada | Alta inicial única y sesiones revocables limitadas a la LAN HTTP |
