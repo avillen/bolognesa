@@ -9,3 +9,8 @@
 - Da a los tipos temporales un nombre acorde con su significado: el instante recibido al crear una sesión es `issued_at()`, mientras que `expires_at()` describe el valor calculado y almacenado.
 - Las funciones que implementan callbacks de un behaviour no necesitan un `@spec` propio: el contrato está en el `@callback` correspondiente. Marca esas implementaciones con `@impl true` cuando proceda.
 - No se exigen specs para funciones privadas (`defp`) ni para funciones generadas por macros o bibliotecas.
+
+## Flujo de control
+
+- No anides condicionales (`if`, `case`, `cond` o `with`) dentro de otros condicionales en una misma función. Extrae la decisión interior a una función privada con un nombre que explique su propósito.
+- Haz visible el flujo esperado de la función principal. Separa la validación, los casos de error y los efectos secundarios en pasos pequeños cuando una rama o una función anónima oculte ese recorrido. Conserva las mismas respuestas y efectos al refactorizar.

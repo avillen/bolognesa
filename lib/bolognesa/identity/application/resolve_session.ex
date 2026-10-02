@@ -7,12 +7,9 @@ defmodule Bolognesa.Identity.Application.ResolveSession do
   @spec call(Session.token() | nil, Repository.adapter()) ::
           {:ok, Actor.t()} | {:error, :unauthenticated | :unavailable}
   def call(token, repository) do
-    with {:ok, raw} <- decode(token) do
-      case repository.find_active_session(:crypto.hash(:sha256, raw), DateTime.utc_now()) do
-        {:ok, user} -> {:ok, Actor.from_user(user)}
-        :not_found -> {:error, :unauthenticated}
-        {:error, :unavailable} = error -> error
-      end
+    with {:ok, raw} <- decode(token),
+         {:ok, user} <- find_active_user(raw, repository) do
+      {:ok, Actor.from_user(user)}
     end
   end
 
@@ -25,4 +22,12 @@ defmodule Bolognesa.Identity.Application.ResolveSession do
   end
 
   def decode(_), do: {:error, :unauthenticated}
+
+  defp find_active_user(raw, repository) do
+    case repository.find_active_session(:crypto.hash(:sha256, raw), DateTime.utc_now()) do
+      {:ok, user} -> {:ok, user}
+      :not_found -> {:error, :unauthenticated}
+      {:error, :unavailable} = error -> error
+    end
+  end
 end

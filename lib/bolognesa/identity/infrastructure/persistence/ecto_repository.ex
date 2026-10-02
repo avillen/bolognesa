@@ -21,22 +21,10 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoRepository do
 
   @impl true
   def insert_initial_admin(user, hashed_password) do
-    result =
-      Repo.transaction(fn ->
-        if Repo.exists?(from u in UserSchema, where: u.role == "admin") do
-          Repo.rollback(:setup_closed)
-        end
-
-        attrs = %{name: user.name, email: user.email}
-        record = %UserSchema{role: "admin", hashed_password: hashed_password}
-
-        case record |> UserSchema.changeset(attrs) |> Repo.insert() do
-          {:ok, stored} -> UserMapper.to_user(stored)
-          {:error, changeset} -> Repo.rollback(map_insert_error(changeset))
-        end
-      end)
-
-    result
+    Repo.transaction(fn ->
+      ensure_setup_open!()
+      insert_admin!(user, hashed_password)
+    end)
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
   end
@@ -89,6 +77,22 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoRepository do
     :ok
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
+  end
+
+  defp ensure_setup_open! do
+    if Repo.exists?(from u in UserSchema, where: u.role == "admin") do
+      Repo.rollback(:setup_closed)
+    end
+  end
+
+  defp insert_admin!(user, hashed_password) do
+    attrs = %{name: user.name, email: user.email}
+    record = %UserSchema{role: "admin", hashed_password: hashed_password}
+
+    case record |> UserSchema.changeset(attrs) |> Repo.insert() do
+      {:ok, stored} -> UserMapper.to_user(stored)
+      {:error, changeset} -> Repo.rollback(map_insert_error(changeset))
+    end
   end
 
   defp map_insert_error(changeset) do

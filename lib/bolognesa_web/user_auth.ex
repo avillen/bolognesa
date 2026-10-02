@@ -32,11 +32,7 @@ defmodule BolognesaWeb.UserAuth do
     if conn.assigns.current_scope do
       conn
     else
-      case Identity.setup_status() do
-        {:ok, :open} -> redirect_and_halt(conn, "/setup")
-        {:ok, :closed} -> redirect_and_halt(conn, "/login")
-        {:error, :unavailable} -> assign_scope_result(conn, {:error, :unavailable})
-      end
+      redirect_unauthenticated(conn)
     end
   end
 
@@ -54,8 +50,7 @@ defmodule BolognesaWeb.UserAuth do
         {:cont, Phoenix.Component.assign(socket, :current_scope, %{actor: actor})}
 
       {:error, :unauthenticated} ->
-        path = if Identity.setup_status() == {:ok, :open}, do: "/setup", else: "/login"
-        {:halt, Phoenix.LiveView.redirect(socket, to: path)}
+        {:halt, Phoenix.LiveView.redirect(socket, to: unauthenticated_path())}
 
       {:error, :unavailable} ->
         socket =
@@ -63,6 +58,18 @@ defmodule BolognesaWeb.UserAuth do
 
         {:halt, Phoenix.LiveView.redirect(socket, to: "/login")}
     end
+  end
+
+  defp redirect_unauthenticated(conn) do
+    case Identity.setup_status() do
+      {:ok, :open} -> redirect_and_halt(conn, "/setup")
+      {:ok, :closed} -> redirect_and_halt(conn, "/login")
+      {:error, :unavailable} -> assign_scope_result(conn, {:error, :unavailable})
+    end
+  end
+
+  defp unauthenticated_path do
+    if Identity.setup_status() == {:ok, :open}, do: "/setup", else: "/login"
   end
 
   defp redirect_and_halt(conn, path) do

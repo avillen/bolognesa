@@ -23,18 +23,7 @@ defmodule Bolognesa.Identity.Application.StartSession do
   defp authenticate(email, password, repository, hasher) do
     case repository.find_user_by_email(email) do
       {:ok, user, hash} ->
-        if hasher.verify(password, hash) do
-          raw = :crypto.strong_rand_bytes(32)
-          token = Base.url_encode64(raw, padding: false)
-          session = Session.new(user.id, :crypto.hash(:sha256, raw), DateTime.utc_now())
-
-          case repository.insert_session(user.id, session.token_hash, session.expires_at) do
-            :ok -> {:ok, token}
-            {:error, :unavailable} = error -> error
-          end
-        else
-          {:error, :invalid_credentials}
-        end
+        verify_and_start_session(user, password, hash, repository, hasher)
 
       :not_found ->
         hasher.dummy_verify(password)
@@ -42,6 +31,25 @@ defmodule Bolognesa.Identity.Application.StartSession do
 
       {:error, :unavailable} = error ->
         error
+    end
+  end
+
+  defp verify_and_start_session(user, password, hash, repository, hasher) do
+    if hasher.verify(password, hash) do
+      create_session(user, repository)
+    else
+      {:error, :invalid_credentials}
+    end
+  end
+
+  defp create_session(user, repository) do
+    raw = :crypto.strong_rand_bytes(32)
+    token = Base.url_encode64(raw, padding: false)
+    session = Session.new(user.id, :crypto.hash(:sha256, raw), DateTime.utc_now())
+
+    case repository.insert_session(user.id, session.token_hash, session.expires_at) do
+      :ok -> {:ok, token}
+      {:error, :unavailable} = error -> error
     end
   end
 end
