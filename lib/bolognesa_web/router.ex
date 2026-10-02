@@ -24,6 +24,10 @@ defmodule BolognesaWeb.Router do
     pipe_through :browser
 
     post "/login", SessionController, :create
+
+    live_session :public_access do
+      live "/setup", Setup.Live, :new
+    end
   end
 
   scope "/", BolognesaWeb do

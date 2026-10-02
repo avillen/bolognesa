@@ -1,0 +1,25 @@
+defmodule BolognesaWeb.Setup.Reducers.Initialize do
+  @moduledoc false
+  import Phoenix.Component, only: [assign: 3, to_form: 1]
+  import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
+
+  alias Bolognesa.Identity
+  alias BolognesaWeb.Setup.Forms.Admin
+
+  def call(socket) do
+    socket = assign(socket, :current_scope, nil)
+
+    case Identity.setup_status() do
+      {:ok, :open} ->
+        assign(socket, :form, to_form(Admin.changeset()))
+
+      {:ok, :closed} ->
+        redirect(socket, to: "/login")
+
+      {:error, :unavailable} ->
+        socket
+        |> assign(:form, to_form(Admin.changeset()))
+        |> put_flash(:error, "Servicio temporalmente no disponible. Inténtalo de nuevo.")
+    end
+  end
+end
