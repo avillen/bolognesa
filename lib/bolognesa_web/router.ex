@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Router do
   use BolognesaWeb, :router
+  import BolognesaWeb.UserAuth
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -8,6 +9,11 @@ defmodule BolognesaWeb.Router do
     plug :put_root_layout, html: {BolognesaWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :fetch_current_scope
+  end
+
+  pipeline :authenticated do
+    plug :require_authenticated_user
   end
 
   pipeline :api do
@@ -17,7 +23,14 @@ defmodule BolognesaWeb.Router do
   scope "/", BolognesaWeb do
     pipe_through :browser
 
+    post "/login", SessionController, :create
+  end
+
+  scope "/", BolognesaWeb do
+    pipe_through [:browser, :authenticated]
+
     get "/", PageController, :home
+    delete "/logout", SessionController, :delete
   end
 
   # Other scopes may use custom stacks.

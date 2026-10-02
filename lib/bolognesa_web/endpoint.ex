@@ -8,7 +8,9 @@ defmodule BolognesaWeb.Endpoint do
     store: :cookie,
     key: "_bolognesa_key",
     signing_salt: "w19K4myk",
-    same_site: "Lax"
+    same_site: "Lax",
+    http_only: true,
+    max_age: 2_592_000
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
