@@ -1,9 +1,9 @@
 defmodule Bolognesa.Identity do
   @moduledoc "Public identity and access facade."
-  alias Bolognesa.Identity.Application.InstallAdmin
+  alias Bolognesa.Identity.Application.{EndSession, InstallAdmin, ResolveSession, StartSession}
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Identity.Infrastructure.BcryptHasher
-  alias Bolognesa.Identity.Infrastructure.Persistence.{EctoRepository, UserMapper}
+  alias Bolognesa.Identity.Infrastructure.Persistence.EctoRepository
 
   def setup_status do
     case EctoRepository.admin_exists?() do
@@ -15,10 +15,16 @@ defmodule Bolognesa.Identity do
 
   def install_admin(attrs) do
     with {:ok, user} <- InstallAdmin.call(attrs, EctoRepository, BcryptHasher) do
-      {:ok, UserMapper.to_actor(user)}
+      {:ok, Actor.from_user(user)}
     end
   end
 
   def authorize(%Actor{role: :admin}, :admin), do: :ok
   def authorize(_, :admin), do: {:error, :forbidden}
+
+  def start_session(email, password),
+    do: StartSession.call(email, password, EctoRepository, BcryptHasher)
+
+  def fetch_actor(token), do: ResolveSession.call(token, EctoRepository)
+  def end_session(token), do: EndSession.call(token, EctoRepository)
 end

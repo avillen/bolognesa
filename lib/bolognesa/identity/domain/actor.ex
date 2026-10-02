@@ -3,4 +3,10 @@ defmodule Bolognesa.Identity.Domain.Actor do
   defstruct [:id, :name, :email, :role]
 
   @type t :: %__MODULE__{id: integer(), name: String.t(), email: String.t(), role: atom()}
+
+  alias Bolognesa.Identity.Domain.User
+
+  def from_user(%User{} = user) do
+    %__MODULE__{id: user.id, name: user.name, email: user.email, role: user.role}
+  end
 end

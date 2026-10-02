@@ -4,5 +4,5 @@ defmodule Bolognesa.Identity.Infrastructure.BcryptHasher do
 
   def hash(password), do: Bcrypt.hash_pwd_salt(password)
   def verify(password, hash), do: Bcrypt.verify_pass(password, hash)
-  def dummy_verify(password), do: Bcrypt.no_user_verify(password)
+  def dummy_verify(_password), do: Bcrypt.no_user_verify()
 end

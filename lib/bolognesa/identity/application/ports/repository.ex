@@ -7,4 +7,8 @@ defmodule Bolognesa.Identity.Application.Ports.Repository do
               {:ok, User.t()} | {:error, :setup_closed | :unavailable}
   @callback find_user_by_email(binary()) ::
               {:ok, User.t(), binary()} | :not_found | {:error, :unavailable}
+  @callback insert_session(integer(), binary(), DateTime.t()) :: :ok | {:error, :unavailable}
+  @callback find_active_session(binary(), DateTime.t()) ::
+              {:ok, User.t()} | :not_found | {:error, :unavailable}
+  @callback delete_session(binary()) :: :ok | {:error, :unavailable}
 end
