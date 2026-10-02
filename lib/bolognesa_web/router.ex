@@ -27,14 +27,18 @@ defmodule BolognesaWeb.Router do
 
     live_session :public_access do
       live "/setup", Setup.Live, :new
+      live "/login", Login.Live, :new
     end
   end
 
   scope "/", BolognesaWeb do
     pipe_through [:browser, :authenticated]
 
-    get "/", PageController, :home
     delete "/logout", SessionController, :delete
+
+    live_session :authenticated, on_mount: [{BolognesaWeb.UserAuth, :require_authenticated}] do
+      live "/", Home.Live, :index
+    end
   end
 
   # Other scopes may use custom stacks.
