@@ -25,4 +25,4 @@ Logger.info("Library scan completed",
 
 Los logs no sustituyen los estados persistidos de trabajos, el outbox ni el feedback de la interfaz. Tampoco se convierten en requisitos de prueba para cada operación: comprobar su contenido solo cuando exista un contrato operativo o de confidencialidad relevante.
 
-Esta es una convención para la futura implementación. La configuración de logging generada por Phoenix no ha sido adaptada todavía a todos estos campos.
+El formatter muestra request_id, library_id, scan_id, job_id, attempt, files_discovered, duration_ms y reason. H2b registra resultados con contadores confirmados y duración medida; la frontera del worker sanitiza excepciones. Las consultas de inventario con rutas privadas usan `log: false`.

@@ -1,6 +1,6 @@
 # 0003. Escaneo persistido con generaciones por intento
 
-Estado: aceptada por el propietario al aprobar la especificación H2b el 2026-10-03. Implementación pendiente.
+Estado: aceptada por el propietario al aprobar la especificación H2b el 2026-10-03. Implementada localmente en `h2-library-scan`; publicación y validación QNAP pendientes.
 
 ## Contexto
 
@@ -15,6 +15,8 @@ Cada invocación adquiere una generación nueva. El guardado de lotes, la finali
 Identidad de archivo por biblioteca y ruta relativa, preservando los bytes originales. Tamaño y modificación determinan su revisión; no se reconoce un renombrado como el mismo archivo ni se deduplica por contenido. Un recorrido parcial conserva disponibilidad previa de entradas no encontradas.
 
 La recuperación del motor se complementa con reconciliación del resultado persistido de dominio. La interfaz consulta estado durable; H2b no tiene consecuencias independientes que justifiquen un outbox. H2c deberá introducir atomicidad para trabajos de inspección cuando se implemente, conforme a las convenciones existentes.
+
+El reconciliador respeta los diez minutos de presupuesto de la generación running antes de aplicar estados terminales/reintentables de Oban: una invocación duplicada antigua puede haber escrito ese resultado mientras otra generación sigue vigente. Los estados queued/retrying no requieren ese margen. Oban controla el máximo de intentos; la aplicación persiste fallos transitorios como retrying y el reconciliador convierte un descarte definitivo en failed, conservando un motivo seguro. Esto puede retrasar la visibilidad del fallo hasta la próxima pasada.
 
 ## Alternativas y costes
 
