@@ -217,12 +217,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
     assert Repo.get!(MediaFileSchema, file.id).revision == 1
   end
 
-  test "pending lifecycle callbacks explicitly report unavailable" do
-    generation = Ecto.UUID.generate()
-    assert {:error, :unavailable} = EctoScanRepository.begin_attempt(1, 1)
-    assert {:error, :unavailable} = EctoScanRepository.save_batch(1, generation, [])
-    assert {:error, :unavailable} = EctoScanRepository.complete(1, generation)
-    assert {:error, :unavailable} = EctoScanRepository.fail(1, generation, :timeout, :failed)
+  test "pending job reconciliation explicitly reports unavailable" do
     assert {:error, :unavailable} = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
   end
 
