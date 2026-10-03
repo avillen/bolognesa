@@ -1,0 +1,98 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <section id="libraries-screen" class="mx-auto max-w-5xl space-y-8">
+    <header class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">Biblioteca</p>
+        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-stone-50">
+          Fuentes de películas
+        </h1>
+        <p class="mt-3 max-w-2xl text-sm leading-6 text-stone-300">
+          Registra una carpeta que Bolognesa pueda leer. El escaneo se añadirá después.
+        </p>
+      </div>
+      <.link
+        navigate={~p"/"}
+        id="libraries-home-link"
+        class="min-h-11 rounded-xl border border-stone-600 px-5 py-3 text-sm font-medium text-stone-200 transition hover:border-amber-300 hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+      >Volver a Inicio</.link>
+    </header>
+
+    <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.85fr)]">
+      <div class="rounded-3xl border border-amber-200/10 bg-zinc-900 p-6 shadow-2xl sm:p-8">
+        <h2 class="text-xl font-semibold text-stone-50">Bibliotecas registradas</h2>
+        <div id="library-list" phx-update="stream" class="mt-5 space-y-3">
+          <p
+            id="libraries-empty"
+            class="hidden rounded-xl border border-dashed border-stone-700 p-5 text-sm text-stone-400 only:block"
+          >
+            Todavía no hay bibliotecas.
+          </p>
+          <div
+            :for={{id, library} <- @streams.libraries}
+            id={id}
+            data-library-name={library.name}
+            class="rounded-xl border border-stone-700 bg-stone-800/60 p-5"
+          >
+            <h3 class="font-semibold text-stone-50">{library.name}</h3>
+            <p class="mt-2 break-all text-sm text-stone-400">{library.path}</p>
+            <p class="mt-3 text-xs font-medium text-amber-300">Pendiente de escaneo</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-3xl border border-amber-200/10 bg-zinc-900 p-6 shadow-2xl sm:p-8">
+        <h2 class="text-xl font-semibold text-stone-50">Añadir fuente</h2>
+        <p class="mt-2 text-sm leading-6 text-stone-400">
+          Usa la ruta visible para Bolognesa dentro del servidor.
+        </p>
+        <p
+          :if={@error}
+          id="library-error"
+          role="alert"
+          class="mt-5 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200"
+        >
+          {@error}
+        </p>
+        <p
+          :if={@success}
+          id="library-success"
+          role="status"
+          class="mt-5 rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-4 text-sm text-emerald-200"
+        >
+          {@success}
+        </p>
+        <.form
+          for={@form}
+          id="library-form"
+          phx-change="validate"
+          phx-submit="save"
+          class="mt-6 space-y-5"
+        >
+          <.input
+            field={@form[:name]}
+            id="library-name"
+            type="text"
+            label="Nombre"
+            required
+            class="w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+          />
+          <.input
+            field={@form[:path]}
+            id="library-path"
+            type="text"
+            label="Carpeta de origen"
+            placeholder="/media/movies"
+            required
+            class="w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+          />
+          <button
+            id="library-submit"
+            type="submit"
+            phx-disable-with="Guardando…"
+            class="min-h-12 w-full rounded-xl bg-amber-300 px-5 py-3 font-semibold text-stone-950 transition hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+          >Guardar biblioteca</button>
+        </.form>
+      </div>
+    </div>
+  </section>
+</Layouts.app>

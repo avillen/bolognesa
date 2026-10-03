@@ -9,8 +9,15 @@
         Hola, {@admin_name}
       </h1>
       <p class="mt-5 max-w-2xl text-base leading-7 text-stone-300">
-        Tu biblioteca está lista para empezar. El siguiente paso será configurar una carpeta de películas.
+        Configura una carpeta de películas para empezar a construir tu biblioteca.
       </p>
+      <.link
+        navigate={~p"/libraries"}
+        id="home-libraries-link"
+        class="mt-7 inline-flex min-h-12 items-center rounded-xl bg-amber-300 px-6 py-3 font-semibold text-stone-950 transition hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+      >
+        Configurar bibliotecas <.icon name="hero-arrow-right" class="ml-2 size-4" />
+      </.link>
       <div class="mt-10 flex flex-col gap-4 border-t border-stone-700/70 pt-6 sm:flex-row sm:items-center sm:justify-between">
         <p class="text-sm text-stone-400">Sesión iniciada como {@admin_email}</p>
         <.form for={@logout_form} action={~p"/logout"} method="delete" id="logout-form">

@@ -1,0 +1,49 @@
+defmodule BolognesaWeb.Library.Index.Reducers.Save do
+  @moduledoc false
+  import Phoenix.Component, only: [assign: 3, to_form: 1]
+  import Phoenix.LiveView, only: [stream_insert: 3]
+  alias Bolognesa.Libraries
+  alias BolognesaWeb.Library.Index.Forms.Library
+
+  @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
+  def call(socket, params) do
+    changeset = Library.changeset(params)
+    if changeset.valid?, do: save(socket, changeset), else: invalid(socket, changeset)
+  end
+
+  defp save(socket, changeset) do
+    attrs = Map.take(Ecto.Changeset.apply_changes(changeset), [:name, :path])
+
+    case Libraries.create_library(socket.assigns.current_scope.actor, attrs) do
+      {:ok, library} ->
+        socket
+        |> assign(:form, to_form(Library.changeset()))
+        |> assign(:error, nil)
+        |> assign(:success, "Biblioteca guardada. La carpeta todavía no se ha escaneado.")
+        |> stream_insert(:libraries, library)
+
+      {:error, reason} ->
+        socket
+        |> assign(:error, message(reason))
+        |> assign(:success, nil)
+        |> assign(:form, to_form(%{changeset | action: :insert}))
+    end
+  end
+
+  defp invalid(socket, changeset) do
+    socket
+    |> assign(:error, nil)
+    |> assign(:success, nil)
+    |> assign(:form, to_form(%{changeset | action: :insert}))
+  end
+
+  defp message(:duplicate_source), do: "Esta carpeta ya está registrada."
+
+  defp message(:source_inaccessible),
+    do: "No se puede leer la carpeta. Comprueba la ruta y vuelve a intentarlo."
+
+  defp message(:source_outside_roots), do: "La carpeta está fuera de las ubicaciones permitidas."
+  defp message(:invalid_name), do: "Introduce un nombre válido."
+  defp message(:invalid_path), do: "Introduce una ruta absoluta válida."
+  defp message(_), do: "Servicio temporalmente no disponible. Vuelve a intentarlo."
+end

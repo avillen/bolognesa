@@ -24,6 +24,7 @@ defmodule BolognesaWeb.Home.LiveTest do
     {:ok, view, _html} = live(conn, ~p"/")
     assert has_element?(view, "#home-screen")
     assert has_element?(view, "#home-welcome", "Ada")
+    assert has_element?(view, "#home-libraries-link[href='/libraries']")
     assert has_element?(view, "#logout-button")
     assert has_element?(view, "#logout-form[action='/logout']")
     assert has_element?(view, "#logout-form input[name='_method'][value='delete']")

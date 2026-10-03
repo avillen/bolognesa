@@ -38,6 +38,7 @@ defmodule BolognesaWeb.Router do
 
     live_session :authenticated, on_mount: [{BolognesaWeb.UserAuth, :require_authenticated}] do
       live "/", Home.Live, :index
+      live "/libraries", Library.Index.Live, :index
     end
   end
 
