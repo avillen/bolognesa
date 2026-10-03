@@ -11,6 +11,8 @@ config :bolognesa,
   ecto_repos: [Bolognesa.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+config :bolognesa, Oban, repo: Bolognesa.Repo, queues: false, plugins: false
+
 # Configure the endpoint
 config :bolognesa, BolognesaWeb.Endpoint,
   url: [host: "localhost"],

@@ -1,5 +1,7 @@
 import Config
 
+config :bolognesa, Oban, testing: :manual
+
 config :bolognesa, :library_roots, [Path.join(System.tmp_dir!(), "bolognesa-library-test")]
 
 config :bcrypt_elixir, :log_rounds, 4
