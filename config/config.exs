@@ -11,7 +11,12 @@ config :bolognesa,
   ecto_repos: [Bolognesa.Repo],
   generators: [timestamp_type: :utc_datetime]
 
-config :bolognesa, Oban, repo: Bolognesa.Repo, queues: false, plugins: false
+config :bolognesa, Oban,
+  repo: Bolognesa.Repo,
+  queues: [library_scans: 1],
+  plugins: [{Oban.Plugins.Lifeline, rescue_after: 900_000, interval: 60_000}]
+
+config :bolognesa, :scan_reconciler, true
 
 # Configure the endpoint
 config :bolognesa, BolognesaWeb.Endpoint,
@@ -63,7 +68,16 @@ config :tailwind,
 # Configure Elixir's Logger
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  metadata: [
+    :request_id,
+    :library_id,
+    :scan_id,
+    :job_id,
+    :attempt,
+    :reason,
+    :files_discovered,
+    :duration_ms
+  ]
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason

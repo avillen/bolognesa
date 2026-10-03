@@ -217,8 +217,8 @@ defmodule Bolognesa.Libraries.StartScanTest do
     assert Repo.get!(MediaFileSchema, file.id).revision == 1
   end
 
-  test "pending job reconciliation explicitly reports unavailable" do
-    assert {:error, :unavailable} = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
+  test "job reconciliation is a no-op without active scans" do
+    assert :ok = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
   end
 
   defp request_terminal_scan(library_id, state, finished_at) do

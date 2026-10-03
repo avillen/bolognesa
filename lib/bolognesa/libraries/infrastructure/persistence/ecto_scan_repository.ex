@@ -3,6 +3,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
   @behaviour Bolognesa.Libraries.Application.Ports.ScanRepository
 
   import Ecto.Query
+  alias Bolognesa.Libraries.Infrastructure.Jobs.{ScanPolicy, ScanWorker}
   alias Bolognesa.Repo
   alias Bolognesa.Libraries.Domain.{MediaFile, Scan, ScanStatus}
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
@@ -21,11 +22,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
       })
     )
     |> Oban.insert(:job, fn %{scan: scan} ->
-      Oban.Job.new(%{scan_id: scan.id},
-        worker: "Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker",
-        queue: "library_scans",
-        max_attempts: 3
-      )
+      ScanWorker.new(%{scan_id: scan.id})
     end)
     |> Ecto.Multi.update(:referenced_scan, fn %{scan: scan, job: job} ->
       ScanSchema.changeset(scan, %{job_id: job.id})
@@ -86,6 +83,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
       rows = Enum.map(entries, &file_row(scan, Map.get(existing, &1.relative_path), &1))
 
       Repo.insert_all(MediaFileSchema, rows,
+        log: false,
         conflict_target: [:library_id, :relative_path],
         on_conflict:
           {:replace, [:size_bytes, :modified_at, :availability, :revision, :last_seen_generation]}
@@ -129,7 +127,76 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
   end
 
   @impl true
-  def reconcile_jobs(_now), do: {:error, :unavailable}
+  def reconcile_jobs(now) do
+    candidates =
+      Repo.all(
+        from scan in ScanSchema,
+          left_join: job in Oban.Job,
+          on: job.id == scan.job_id,
+          where: scan.state in [:queued, :running, :retrying],
+          where:
+            is_nil(job.id) or job.state in ["retryable", "discarded", "cancelled", "completed"],
+          select: scan.id
+      )
+
+    Enum.reduce_while(candidates, :ok, fn id, :ok ->
+      reconcile_result(transaction(fn -> reconcile_locked(locked_scan(id, :not_found), now) end))
+    end)
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp reconcile_locked(%ScanSchema{state: state}, _now) when state in [:completed, :failed],
+    do: :ok
+
+  defp reconcile_locked(scan, now) do
+    if attempt_within_budget?(scan, now),
+      do: :ok,
+      else: reconcile_job(scan, reconciliation_job(scan.job_id), now)
+  end
+
+  defp reconciliation_job(nil), do: nil
+  defp reconciliation_job(id), do: Repo.get(Oban.Job, id)
+
+  defp attempt_within_budget?(
+         %ScanSchema{state: :running, attempt_started_at: %DateTime{} = started},
+         now
+       ),
+       do: DateTime.diff(now, started, :millisecond) < ScanPolicy.timeout_ms()
+
+  defp attempt_within_budget?(_scan, _now), do: false
+
+  defp reconcile_job(scan, nil, now),
+    do: reconcile_transition(scan, :failed, :unexpected_failure, now)
+
+  defp reconcile_job(scan, %{state: "discarded"}, now),
+    do: reconcile_transition(scan, :failed, :attempts_exhausted, now)
+
+  defp reconcile_job(scan, %{state: state}, now) when state in ["cancelled", "completed"],
+    do: reconcile_transition(scan, :failed, :unexpected_failure, now)
+
+  defp reconcile_job(%ScanSchema{state: :retrying}, %{state: "retryable"}, _now), do: :ok
+
+  defp reconcile_job(scan, %{state: "retryable"}, now),
+    do: reconcile_transition(scan, :retrying, :unexpected_failure, now)
+
+  defp reconcile_job(_scan, _job, _now), do: :ok
+
+  defp reconcile_transition(scan, state, fallback, now) do
+    reason = scan.failure_reason || fallback
+
+    with {:ok, transitioned} <- Scan.transition(ScanMapper.to_scan(scan), state, reason, now) do
+      _stored = save_scan(scan, transitioned)
+      :ok
+    else
+      _ -> Repo.rollback(:unavailable)
+    end
+  end
+
+  defp reconcile_result(:ok), do: {:cont, :ok}
+  defp reconcile_result({:error, :not_found}), do: {:cont, :ok}
+  defp reconcile_result({:error, _reason}), do: {:halt, {:error, :unavailable}}
 
   defp transaction(operation) do
     case Repo.transaction(operation) do
@@ -210,8 +277,10 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
     paths = Enum.map(entries, & &1.relative_path)
 
     Repo.all(
-      from file in MediaFileSchema,
+      from(file in MediaFileSchema,
         where: file.library_id == ^library_id and file.relative_path in ^paths
+      ),
+      log: false
     )
     |> Map.new(&{&1.relative_path, MediaFileMapper.to_media_file(&1)})
   end

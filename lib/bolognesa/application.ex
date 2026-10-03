@@ -21,8 +21,15 @@ defmodule Bolognesa.Application do
 
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
+    children = children ++ scan_reconciler_children()
     opts = [strategy: :one_for_one, name: Bolognesa.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp scan_reconciler_children do
+    if Application.get_env(:bolognesa, :scan_reconciler, true),
+      do: [Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler],
+      else: []
   end
 
   # Tell Phoenix to update the endpoint configuration

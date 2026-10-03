@@ -1,6 +1,7 @@
 import Config
 
-config :bolognesa, Oban, testing: :manual
+config :bolognesa, Oban, testing: :manual, queues: false, plugins: false
+config :bolognesa, :scan_reconciler, false
 
 config :bolognesa, :library_roots, [Path.join(System.tmp_dir!(), "bolognesa-library-test")]
 
