@@ -3,6 +3,9 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
+  alias Bolognesa.Libraries
+  alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
+  use Oban.Testing, repo: Bolognesa.Repo
 
   setup do
     {:ok, _} =
@@ -17,7 +20,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path = Path.join(root, "web-#{System.unique_integer([:positive])}")
     File.mkdir_p!(path)
     on_exit(fn -> File.rm_rf!(path) end)
-    %{token: token, path: path}
+    {:ok, actor} = Identity.fetch_actor(token)
+    %{token: token, path: path, actor: actor}
   end
 
   test "administrator adds a source and sees it after reconnecting", %{
@@ -55,5 +59,184 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
 
   test "anonymous visitors cannot open libraries", %{conn: conn} do
     assert {:error, {:redirect, %{to: "/login"}}} = live(conn, ~p"/libraries")
+  end
+
+  test "scan is queued durably and remains visible after reconnect", %{
+    conn: conn,
+    token: token,
+    path: path,
+    actor: actor
+  } do
+    {:ok, library} = Libraries.create_library(actor, %{name: "Scan", path: path})
+    conn = init_test_session(conn, user_token: token)
+    {:ok, view, _} = live(conn, ~p"/libraries")
+    render_async(view)
+    view |> element("#library-scan-#{library.id}") |> render_click()
+    assert has_element?(view, "#library-scan-#{library.id}[disabled]")
+    assert has_element?(view, "#library-scan-state-#{library.id}[data-state='queued']")
+    assert {:ok, %{latest_scan: scan}} = Libraries.get_scan_status(actor, library.id)
+    assert_enqueued(worker: ScanWorker, args: %{scan_id: scan.id})
+    {:ok, reopened, _} = live(conn, ~p"/libraries")
+    render_async(reopened)
+    assert has_element?(reopened, "#library-scan-state-#{library.id}[data-state='queued']")
+  end
+
+  test "manual drain completes discovery and refresh shows the last success", %{
+    conn: conn,
+    token: token,
+    path: path,
+    actor: actor
+  } do
+    File.write!(Path.join(path, "movie.MKV"), "video")
+    {:ok, library} = Libraries.create_library(actor, %{name: "Complete", path: path})
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+    render_async(view)
+    view |> element("#library-scan-#{library.id}") |> render_click()
+    render_async(view)
+    assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
+    send(view.pid, :refresh_scan_statuses)
+    render_async(view)
+    assert has_element?(view, "#library-scan-state-#{library.id}[data-state='completed']")
+    assert has_element?(view, "#library-scan-count-#{library.id}", "1 archivos")
+    assert has_element?(view, "#library-scan-completed-#{library.id}")
+    refute has_element?(view, "#library-scan-#{library.id}[disabled]")
+  end
+
+  @tag capture_log: true
+  test "failed scan can be retried and leaving the page does not cancel its job", %{
+    conn: conn,
+    token: token,
+    path: path,
+    actor: actor
+  } do
+    {:ok, library} = Libraries.create_library(actor, %{name: "Retry", path: path})
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+    render_async(view)
+    view |> element("#library-scan-#{library.id}") |> render_click()
+    render_async(view)
+    File.rmdir!(path)
+    assert %{cancelled: 1} = Oban.drain_queue(queue: :library_scans)
+    send(view.pid, :refresh_scan_statuses)
+    render_async(view)
+    assert has_element?(view, "#library-scan-error-#{library.id}")
+    assert has_element?(view, "#library-scan-#{library.id}", "Reintentar")
+    File.mkdir_p!(path)
+    view |> element("#library-scan-#{library.id}") |> render_click()
+
+    assert {:ok, %{latest_scan: %{state: :queued} = scan}} =
+             Libraries.get_scan_status(actor, library.id)
+
+    ref = Process.monitor(view.pid)
+    GenServer.stop(view.pid)
+    assert_receive {:DOWN, ^ref, :process, _, _}
+    assert_enqueued(worker: ScanWorker, args: %{scan_id: scan.id})
+  end
+
+  test "invalid and missing library clicks produce feedback without a job", %{
+    conn: conn,
+    token: token
+  } do
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+    render_async(view)
+
+    for id <- ["0", "-1", "1oops", "999999999"] do
+      render_click(view, "scan", %{"library_id" => id})
+      assert has_element?(view, "#library-scan-feedback")
+      render_async(view)
+    end
+
+    refute_enqueued(worker: ScanWorker)
+  end
+
+  test "stale status replies and update failures preserve rendered rows", %{
+    path: path,
+    actor: actor
+  } do
+    alias BolognesaWeb.Library.Index.Reducers.{Initialize, ApplyScanStatuses}
+    alias BolognesaWeb.Library.Index.Live
+    {:ok, library} = Libraries.create_library(actor, %{name: "Retained", path: path})
+    {:ok, _scan} = Libraries.start_scan(actor, library.id)
+    {:ok, status} = Libraries.get_scan_status(actor, library.id)
+
+    socket =
+      %Phoenix.LiveView.Socket{
+        endpoint: BolognesaWeb.Endpoint,
+        private: %{live_temp: %{}, lifecycle: %Phoenix.LiveView.Lifecycle{}},
+        assigns: %{__changed__: %{}, flash: %{}}
+      }
+      |> Phoenix.Component.assign(:current_scope, %{actor: actor})
+      |> Initialize.call()
+
+    request_id = socket.assigns.scan_request_id
+    socket = ApplyScanStatuses.call(socket, request_id, {:ok, {:ok, [{library, status}]}})
+    socket = ApplyScanStatuses.call(socket, make_ref(), {:ok, {:ok, []}})
+    socket = ApplyScanStatuses.call(socket, request_id, {:ok, {:error, :unavailable}})
+    html = render_component(&Live.render/1, Map.put(socket.assigns, :__changed__, nil))
+    document = LazyHTML.from_fragment(html)
+
+    assert LazyHTML.query(document, "#library-scan-state-#{library.id}[data-state='queued']")
+           |> LazyHTML.to_tree() != []
+
+    assert LazyHTML.query(document, "#library-scan-feedback") |> LazyHTML.to_tree() != []
+    assert {:ok, %{latest_scan: %{state: :queued}}} = Libraries.get_scan_status(actor, library.id)
+  end
+
+  test "scan reducer delegates authorization and creates no unauthorized job", %{
+    path: path,
+    actor: actor
+  } do
+    alias BolognesaWeb.Library.Index.Reducers.{Initialize, StartScan}
+    {:ok, library} = Libraries.create_library(actor, %{name: "Authorized", path: path})
+
+    socket =
+      %Phoenix.LiveView.Socket{
+        endpoint: BolognesaWeb.Endpoint,
+        private: %{live_temp: %{}, lifecycle: %Phoenix.LiveView.Lifecycle{}},
+        assigns: %{__changed__: %{}, flash: %{}}
+      }
+      |> Phoenix.Component.assign(:current_scope, %{actor: actor})
+      |> Initialize.call()
+      |> Phoenix.Component.assign(:current_scope, %{actor: nil})
+      |> StartScan.call(Integer.to_string(library.id))
+
+    html =
+      render_component(
+        &BolognesaWeb.Library.Index.Live.render/1,
+        Map.put(socket.assigns, :__changed__, nil)
+      )
+
+    assert LazyHTML.from_fragment(html)
+           |> LazyHTML.query("#library-scan-feedback")
+           |> LazyHTML.to_tree() != []
+
+    refute_enqueued(worker: ScanWorker)
+  end
+
+  test "saving a new source invalidates an older status response", %{path: path, actor: actor} do
+    alias BolognesaWeb.Library.Index.Reducers.{Initialize, Save, ApplyScanStatuses}
+
+    socket =
+      %Phoenix.LiveView.Socket{
+        endpoint: BolognesaWeb.Endpoint,
+        private: %{live_temp: %{}, lifecycle: %Phoenix.LiveView.Lifecycle{}},
+        assigns: %{__changed__: %{}, flash: %{}}
+      }
+      |> Phoenix.Component.assign(:current_scope, %{actor: actor})
+      |> Initialize.call()
+
+    old_request = socket.assigns.scan_request_id
+    socket = Save.call(socket, %{"name" => "New source", "path" => path})
+    refute socket.assigns.scan_request_id == old_request
+    socket = ApplyScanStatuses.call(socket, old_request, {:ok, {:ok, []}})
+
+    html =
+      render_component(
+        &BolognesaWeb.Library.Index.Live.render/1,
+        Map.put(socket.assigns, :__changed__, nil)
+      )
+
+    assert LazyHTML.from_fragment(html)
+           |> LazyHTML.query("#library-list [data-library-name='New source']")
+           |> LazyHTML.to_tree() != []
   end
 end

@@ -3,6 +3,9 @@ defmodule BolognesaWeb.Library.Index.Reducers.Save do
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [stream_insert: 3]
   alias Bolognesa.Libraries
+  alias BolognesaWeb.Library.Index.Reducers.{CancelScanStatuses, FetchScanStatuses}
+  alias Bolognesa.Libraries.Domain.ScanStatus
+  alias BolognesaWeb.Library.Index.State.Library, as: LibraryState
   alias BolognesaWeb.Library.Index.Forms.Library
 
   @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
@@ -17,10 +20,15 @@ defmodule BolognesaWeb.Library.Index.Reducers.Save do
     case Libraries.create_library(socket.assigns.current_scope.actor, attrs) do
       {:ok, library} ->
         socket
+        |> CancelScanStatuses.call()
         |> assign(:form, to_form(Library.changeset()))
         |> assign(:error, nil)
         |> assign(:success, "Biblioteca guardada. La carpeta todavía no se ha escaneado.")
-        |> stream_insert(:libraries, library)
+        |> stream_insert(
+          :libraries,
+          LibraryState.from_domain(library, %ScanStatus{library_id: library.id})
+        )
+        |> FetchScanStatuses.call()
 
       {:error, reason} ->
         socket

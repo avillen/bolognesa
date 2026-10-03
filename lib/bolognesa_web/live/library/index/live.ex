@@ -11,4 +11,15 @@ defmodule BolognesaWeb.Library.Index.Live do
 
   def handle_event("save", %{"library" => params}, socket),
     do: {:noreply, Reducers.Save.call(socket, params)}
+
+  def handle_event("scan", %{"library_id" => id}, socket),
+    do: {:noreply, Reducers.StartScan.call(socket, id)}
+
+  @impl true
+  def handle_info(:refresh_scan_statuses, socket),
+    do: {:noreply, Reducers.FetchScanStatuses.call(socket)}
+
+  @impl true
+  def handle_async({:scan_statuses, request_id}, result, socket),
+    do: {:noreply, Reducers.ApplyScanStatuses.call(socket, request_id, result)}
 end

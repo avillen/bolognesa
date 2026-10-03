@@ -7,7 +7,7 @@
           Fuentes de películas
         </h1>
         <p class="mt-3 max-w-2xl text-sm leading-6 text-stone-300">
-          Registra una carpeta que Bolognesa pueda leer. El escaneo se añadirá después.
+          Registra una carpeta y escanéala para descubrir sus archivos de vídeo. Puedes salir de esta pantalla mientras continúa.
         </p>
       </div>
       <.link
@@ -20,6 +20,14 @@
     <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.85fr)]">
       <div class="rounded-3xl border border-amber-200/10 bg-zinc-900 p-6 shadow-2xl sm:p-8">
         <h2 class="text-xl font-semibold text-stone-50">Bibliotecas registradas</h2>
+        <p
+          :if={@scan_feedback}
+          id="library-scan-feedback"
+          role="status"
+          class="mt-4 rounded-xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-100"
+        >
+          {@scan_feedback}
+        </p>
         <div id="library-list" phx-update="stream" class="mt-5 space-y-3">
           <p
             id="libraries-empty"
@@ -35,7 +43,55 @@
           >
             <h3 class="font-semibold text-stone-50">{library.name}</h3>
             <p class="mt-2 break-all text-sm text-stone-400">{library.path}</p>
-            <p class="mt-3 text-xs font-medium text-amber-300">Pendiente de escaneo</p>
+            <div class="mt-5 flex flex-wrap items-center justify-between gap-4">
+              <div class="space-y-2">
+                <p
+                  id={"library-scan-state-#{library.id}"}
+                  data-state={library.state}
+                  class="flex items-center gap-2 text-sm font-medium text-amber-300"
+                >
+                  <.icon
+                    :if={library.active?}
+                    name="hero-arrow-path"
+                    class="size-4 motion-safe:animate-spin"
+                  />
+                  {library.state_label}
+                </p>
+                <p
+                  :if={library.state != :not_scanned}
+                  id={"library-scan-count-#{library.id}"}
+                  class="text-xs text-stone-300"
+                >
+                  {library.files_discovered} archivos descubiertos · Intento {library.attempt}
+                </p>
+                <p
+                  :if={library.last_completed_at}
+                  id={"library-scan-completed-#{library.id}"}
+                  class="text-xs text-stone-400"
+                >
+                  Último escaneo completo: {library.last_completed_at}
+                </p>
+              </div>
+              <button
+                id={"library-scan-#{library.id}"}
+                type="button"
+                phx-click="scan"
+                phx-value-library_id={library.id}
+                disabled={library.active?}
+                phx-disable-with="Solicitando…"
+                class="min-h-11 rounded-xl border border-amber-300/40 px-5 py-3 text-sm font-semibold text-amber-200 transition hover:bg-amber-300/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50"
+              >
+                {library.button_label}
+              </button>
+            </div>
+            <p
+              :if={library.error}
+              id={"library-scan-error-#{library.id}"}
+              role="alert"
+              class="mt-4 rounded-lg border border-red-300/20 bg-red-300/10 p-3 text-sm text-red-200"
+            >
+              {library.error}
+            </p>
           </div>
         </div>
       </div>
