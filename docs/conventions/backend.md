@@ -98,7 +98,7 @@ Son agregados separados. Los escaneos repetidos reconcilian archivos sin duplica
 
 Solo un recorrido completo y correcto de una fuente permite concluir que un archivo está ausente. Una fuente inaccesible o un escaneo parcial registra un error y no convierte todos sus archivos en desaparecidos.
 
-El primer alcance no garantiza reconocer automáticamente un archivo movido o renombrado como el mismo archivo. La estrategia concreta de identidad física y detección de cambios se decidirá en el diseño del escáner; no debe prometerse deduplicación por contenido sin implementarla.
+El diseño H2b aprobado fija la identidad física como `(library_id, relative_path)`, preservando los bytes originales de la ruta. Tamaño y modificación determinan una revisión técnica; un renombrado produce otra entrada y deja la anterior ausente tras un recorrido correcto. No se promete deduplicación por contenido ni identidad compartida entre bibliotecas. La implementación del escáner sigue pendiente; ver [decisión 0003](../decisions/0003-recoverable-library-scans.md).
 
 ### Catálogo
 
@@ -159,7 +159,9 @@ La entrega es al menos una vez: los consumidores y casos de uso deben tolerar du
 
 Los fallos transitorios se reintentan de forma acotada. Los errores permanentes o los reintentos agotados quedan visibles y permiten una nueva ejecución explícita. Los registros incluyen identificadores de trabajo, escaneo y archivo para facilitar el diagnóstico.
 
-La selección del motor de trabajos, proveedores de metadatos y herramientas multimedia requiere una decisión técnica durante los planes respectivos. Este documento fija los contratos y garantías, no dependencias aún no evaluadas.
+El motor acordado para H2b es Oban gratuito con PostgreSQL, detrás de puertos de aplicación. Solicitud y trabajo se guardan atómicamente y la base limita escaneos activos por biblioteca. Cada invocación adquiere una generación nueva; comprobarla y guardar sus efectos exige una misma transacción corta. Un reintento repite el recorrido y no utiliza observaciones anteriores para concluir ausencias. El rescate de trabajos se complementa con reconciliación de estados terminales del dominio. Ver [decisión 0003](../decisions/0003-recoverable-library-scans.md); aún no está implementado.
+
+H2b consulta progreso persistido desde la pantalla y no introduce eventos independientes ni outbox. Cuando descubrimiento produzca trabajos de inspección u otras consecuencias duraderas, deberán confirmarse con el cambio que las produce conforme a la regla de eventos anterior. La selección de proveedores de metadatos y herramientas multimedia permanece para sus planes respectivos.
 
 ### Publicación y consumo de eventos
 
