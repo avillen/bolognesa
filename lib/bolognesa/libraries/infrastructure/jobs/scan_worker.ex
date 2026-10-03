@@ -22,27 +22,22 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker do
   def perform(%Oban.Job{args: %{"scan_id" => id}, attempt: attempt} = job, repository, discovery)
       when is_integer(id) and id > 0 do
     metadata = [scan_id: id, job_id: job.id, attempt: attempt]
-    Logger.info("Library scan started", metadata)
-    result = execute(id, attempt, repository, discovery)
-    log_result(result, metadata)
-    result
+    execute(id, attempt, repository, discovery, metadata, System.monotonic_time(:millisecond))
   end
 
   def perform(_job, _repository, _discovery), do: {:cancel, :unexpected_failure}
 
-  defp execute(id, attempt, repository, discovery) do
+  defp execute(id, attempt, repository, discovery, metadata, started) do
     DiscoverFiles.call(id, attempt, repository, discovery)
   rescue
-    _exception -> {:error, :unexpected_failure}
+    _exception -> unexpected_failure(metadata, started)
   catch
-    _kind, _value -> {:error, :unexpected_failure}
+    _kind, _value -> unexpected_failure(metadata, started)
   end
 
-  defp log_result(:ok, metadata), do: Logger.info("Library scan finished", metadata)
-
-  defp log_result({:cancel, reason}, metadata),
-    do: Logger.error("Library scan failed", [reason: reason] ++ metadata)
-
-  defp log_result({:error, reason}, metadata),
-    do: Logger.warning("Library scan execution failed", [reason: reason] ++ metadata)
+  defp unexpected_failure(metadata, started) do
+    metadata = metadata ++ [duration_ms: max(System.monotonic_time(:millisecond) - started, 0)]
+    Logger.warning("Library scan execution failed", [reason: :unexpected_failure] ++ metadata)
+    {:error, :unexpected_failure}
+  end
 end

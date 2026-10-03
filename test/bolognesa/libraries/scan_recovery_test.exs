@@ -183,6 +183,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
       end)
 
     assert log =~ "Library scan execution failed"
+    assert log =~ "reason=storage_unavailable"
+    assert log =~ "library_id=#{scan.library_id}"
     assert Repo.get!(Oban.Job, scan.job_id).state == "discarded"
     assert Repo.get!(ScanSchema, scan.id).state == :retrying
     assert :ok = EctoScanRepository.reconcile_jobs(DateTime.utc_now())

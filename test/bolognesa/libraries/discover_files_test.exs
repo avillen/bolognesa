@@ -1,5 +1,7 @@
 defmodule Bolognesa.Libraries.DiscoverFilesTest do
   use Bolognesa.DataCase, async: false
+  @moduletag capture_log: true
+  require Logger
 
   alias Bolognesa.Libraries.Application.DiscoverFiles
   alias Bolognesa.Libraries.Domain.NewMediaFile
@@ -130,6 +132,33 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
       end)
 
     refute log =~ private
+  end
+
+  test "real formatter exposes scan identifiers counters and measured duration", context do
+    previous_level = Logger.level()
+    Logger.configure(level: :info)
+    on_exit(fn -> Logger.configure(level: previous_level) end)
+    formatter = Application.fetch_env!(:logger, :default_formatter)
+
+    log =
+      ExUnit.CaptureLog.capture_log(formatter ++ [level: :info], fn ->
+        Logger.info("Scan formatter context", request_id: "scan-test-request")
+        task = start_worker(context)
+        send(task.pid, {:batch, [entry()]})
+        assert_receive {:batch_result, _, :ok}
+        send(task.pid, {:finish, :ok})
+        assert :ok = Task.await(task)
+      end)
+
+    assert log =~ "request_id=scan-test-request"
+    assert log =~ "Library scan completed"
+    assert log =~ "library_id=#{context.scan.library_id}"
+    assert log =~ "scan_id=#{context.scan.id}"
+    assert log =~ "job_id=#{context.scan.job_id}"
+    assert log =~ "attempt=1"
+    assert log =~ "files_discovered=1"
+    assert log =~ ~r/duration_ms=\d+/
+    refute log =~ "movie.mp4"
   end
 
   defp start_discovery(context, attempt \\ 1, repository \\ EctoScanRepository) do
