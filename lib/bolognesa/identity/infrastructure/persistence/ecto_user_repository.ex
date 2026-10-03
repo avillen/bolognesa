@@ -1,11 +1,11 @@
-defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoRepository do
+defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository do
   @moduledoc false
-  @behaviour Bolognesa.Identity.Application.Ports.Repository
+  @behaviour Bolognesa.Identity.Application.Ports.UserRepository
 
   import Ecto.Query
   alias Bolognesa.Repo
 
-  alias Bolognesa.Identity.Infrastructure.Persistence.{
+  alias Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository.{
     SessionMapper,
     SessionSchema,
     UserMapper,

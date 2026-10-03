@@ -1,11 +1,12 @@
 defmodule Bolognesa.Identity.Application.StartSession do
   @moduledoc "Authenticate credentials and create a durable session."
   alias Bolognesa.Identity.Application.Ports.PasswordHasher
-  alias Bolognesa.Identity.Application.Ports.Repository
+  alias Bolognesa.Identity.Application.Ports.UserRepository
   alias Bolognesa.Identity.Domain.Session
+  alias Bolognesa.Identity.Domain.SessionToken
   alias Bolognesa.Identity.Domain.User
 
-  @spec call(User.email(), User.password(), Repository.adapter(), PasswordHasher.adapter()) ::
+  @spec call(User.email(), User.password(), UserRepository.adapter(), PasswordHasher.adapter()) ::
           {:ok, Session.token()} | {:error, :invalid_credentials | :unavailable}
   def call(email, password, repository, hasher) when is_binary(email) and is_binary(password) do
     normalized_email = email |> String.trim() |> String.downcase()
@@ -43,7 +44,7 @@ defmodule Bolognesa.Identity.Application.StartSession do
   end
 
   defp create_session(user, repository) do
-    raw = :crypto.strong_rand_bytes(32)
+    raw = :crypto.strong_rand_bytes(SessionToken.raw_byte_length())
     token = Base.url_encode64(raw, padding: false)
     session = Session.new(user.id, :crypto.hash(:sha256, raw), DateTime.utc_now())
 

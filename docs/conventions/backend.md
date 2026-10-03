@@ -45,22 +45,30 @@ lib/bolognesa/libraries/
       file_source.ex
   infrastructure/
     persistence/
-      library_schema.ex
-      library_mapper.ex
       ecto_library_repository.ex
+      ecto_library_repository/
+        library_schema.ex
+        library_mapper.ex
     local_file_source.ex
   libraries.ex
 ```
 
 El cableado de adaptadores se realiza fuera del dominio. Se inyectan dependencias en los casos de uso con un mecanismo uniforme que se concretará en el primer plan de implementación. Las pruebas no deben modificar configuración global mientras se ejecutan concurrentemente.
 
+Los puertos se nombran por su responsabilidad, como `UserRepository` o `LibraryRepository`, en lugar de `Repository` sin contexto. El adaptador añade la tecnología al nombre del puerto, como `EctoUserRepository`. Un puerto puede incluir las operaciones de sesión necesarias para autenticar a sus usuarios; el nombre no tiene que reproducir cada tabla.
+
 ## Convenciones del dominio y persistencia
 
 - Las entidades tienen identidad interna propia; los identificadores de proveedores externos son referencias adicionales.
+- Si un objeto todavía no tiene la identidad que asigna la persistencia, se representa con una estructura de entrada distinta, como `NewAdmin`. El tipo de la entidad persistida, como `User.t()`, exige un ID presente. Los contratos del caso de uso y del repositorio distinguen ambas etapas.
 - Las funciones de construcción y modificación comprueban invariantes y devuelven `{:ok, resultado}` o `{:error, motivo}`. Los errores esperables tienen motivos explícitos y estables.
+- Cada entrada al dominio declara un formato de atributos. La conversión desde parámetros web se hace en la frontera; no se aceptan a la vez claves string y átomo por precaución si los consumidores actuales usan solo uno de esos formatos.
+- Los datos sensibles de estructuras temporales, como contraseñas, se excluyen de `Inspect`. El adaptador persiste el hash, no la contraseña original.
 - Los schemas Ecto representan almacenamiento. Los mappers convierten entre estos schemas y entidades del dominio.
+- Los schemas y mappers usados solo por un repositorio Ecto se agrupan bajo el directorio y namespace de ese repositorio, por ejemplo `infrastructure/persistence/ecto_user_repository/`.
 - Los changesets comprueban requisitos de persistencia; las reglas de negocio viven en el dominio. Las restricciones de base de datos también protegen unicidad e integridad ante concurrencia.
 - Los repositorios exponen necesidades concretas del dominio, sin devolver queries o changesets a la aplicación. No se introduce un repositorio CRUD genérico.
+- Cuando varios pasos producen y consumen el mismo formato, sus tamaños y reglas se definen una sola vez. En las sesiones, `SessionToken` define el tamaño del token aleatorio y deriva de él la longitud codificada; emisión y lectura usan esa definición.
 - Un puerto de transacciones permite ejecutar una unidad atómica sin exponer `Ecto.Multi` al caso de uso. No se mantiene una transacción abierta durante consultas HTTP, escaneos o análisis multimedia.
 - Los agregados son pequeños y delimitan consistencia transaccional. Una biblioteca no contiene todos sus archivos en memoria; una serie tampoco implica cargar todos sus episodios.
 - Cada contexto controla las escrituras de sus datos. Las referencias entre contextos utilizan identificadores y sus interfaces públicas.

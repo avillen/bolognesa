@@ -1,16 +1,16 @@
 defmodule Bolognesa.Identity.Application.InstallAdmin do
   @moduledoc "Install the sole initial administrator."
   alias Bolognesa.Identity.Application.Ports.PasswordHasher
-  alias Bolognesa.Identity.Application.Ports.Repository
+  alias Bolognesa.Identity.Application.Ports.UserRepository
+  alias Bolognesa.Identity.Domain.NewAdmin
   alias Bolognesa.Identity.Domain.User
 
-  @spec call(User.admin_attrs(), Repository.adapter(), PasswordHasher.adapter()) ::
+  @spec call(NewAdmin.attrs(), UserRepository.adapter(), PasswordHasher.adapter()) ::
           {:ok, User.t()}
-          | {:error, {:invalid, User.validation_errors()} | :setup_closed | :unavailable}
+          | {:error, {:invalid, NewAdmin.validation_errors()} | :setup_closed | :unavailable}
   def call(attrs, repository, hasher) do
-    with {:ok, user} <- User.new_admin(attrs) do
-      password = Map.get(attrs, :password) || Map.get(attrs, "password")
-      repository.insert_initial_admin(user, hasher.hash(password))
+    with {:ok, registration} <- NewAdmin.new(attrs) do
+      repository.insert_initial_admin(registration, hasher.hash(registration.password))
     end
   end
 end

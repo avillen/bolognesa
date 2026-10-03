@@ -1,6 +1,7 @@
-defmodule Bolognesa.Identity.Application.Ports.Repository do
+defmodule Bolognesa.Identity.Application.Ports.UserRepository do
   @moduledoc "Storage operations needed by identity use cases."
   alias Bolognesa.Identity.Application.Ports.PasswordHasher
+  alias Bolognesa.Identity.Domain.NewAdmin
   alias Bolognesa.Identity.Domain.Session
   alias Bolognesa.Identity.Domain.User
 
@@ -8,7 +9,7 @@ defmodule Bolognesa.Identity.Application.Ports.Repository do
   @type adapter :: atom()
 
   @callback admin_exists?() :: {:ok, boolean()} | {:error, :unavailable}
-  @callback insert_initial_admin(User.t(), PasswordHasher.hash()) ::
+  @callback insert_initial_admin(NewAdmin.t(), PasswordHasher.hash()) ::
               {:ok, User.t()} | {:error, :setup_closed | :unavailable}
   @callback find_user_by_email(User.email()) ::
               {:ok, User.t(), PasswordHasher.hash()} | :not_found | {:error, :unavailable}

@@ -3,7 +3,7 @@ defmodule Bolognesa.Identity.InstallAdminTest do
 
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Identity.Infrastructure.Persistence.UserSchema
+  alias Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository.UserSchema
 
   @password "correct horse battery staple"
 
@@ -46,6 +46,18 @@ defmodule Bolognesa.Identity.InstallAdminTest do
     end
 
     assert Repo.aggregate(UserSchema, :count) == 0
+  end
+
+  test "administrator attributes use atom keys after the web form is parsed" do
+    assert {:error, {:invalid, errors}} =
+             Identity.install_admin(%{
+               "name" => "Ada",
+               "email" => "ada@example.com",
+               "password" => @password
+             })
+
+    assert Map.keys(errors) |> Enum.sort() == [:email, :name, :password]
+    assert {:ok, :open} = Identity.setup_status()
   end
 
   test "setup closes after the first administrator and rejects another email" do

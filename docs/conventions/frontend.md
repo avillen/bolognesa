@@ -94,6 +94,8 @@ Los modelos insertados en streams proporcionan una identidad estable. Los templa
 
 Los changesets comprueban formato, campos obligatorios y coherencia de entrada. El backend valida de nuevo las reglas del dominio. No se exponen schemas Ecto de persistencia a la interfaz.
 
+Los parámetros web llegan con claves string. Antes de llamar a la fachada, el reducer obtiene del formulario validado un mapa con las claves átomo que declara el contrato del backend; el dominio no necesita admitir ambos formatos por defecto.
+
 Los reducers convierten los changesets con `to_form/2` y asignan el resultado al socket. Los templates utilizan `<.form>` y `<.input>` sobre ese formulario, conforme a `AGENTS.md`.
 
 ## Cargas, errores y navegación
