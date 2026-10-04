@@ -37,7 +37,7 @@ jobs:
           build-args: |
             BOLOGNESA_LAN_HTTP=true
           push: true
-          tags: ghcr.io/avillen/bolognesa:sha-${{ github.sha }}
+          tags: ghcr.io/avillen/bolognesa-lan:sha-${{ github.sha }}
           provenance: false
           sbom: false
           cache-from: type=gha,scope=bolognesa-arm64
@@ -49,7 +49,7 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
         run: |
           set -eu
-          image="ghcr.io/avillen/bolognesa@${IMAGE_DIGEST}"
+          image="ghcr.io/avillen/bolognesa-lan@${IMAGE_DIGEST}"
           docker buildx imagetools inspect "$image"
           duration_seconds=$(($(date +%s) - BUILD_STARTED))
           {
