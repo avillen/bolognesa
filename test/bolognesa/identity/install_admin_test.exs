@@ -29,6 +29,19 @@ defmodule Bolognesa.Identity.InstallAdminTest do
     assert Bcrypt.verify_pass(@password, stored.hashed_password)
   end
 
+  test "the release console binds the administrator actor at startup" do
+    {_result, bindings} = Code.eval_file("rel/overlays/.iex.exs")
+    assert bindings[:admin] == nil
+
+    assert {:ok, installed} =
+             Identity.install_admin(%{name: "Ada", email: "ada@example.com", password: @password})
+
+    {_result, bindings} = Code.eval_file("rel/overlays/.iex.exs")
+    assert %Actor{} = bindings[:admin]
+    assert bindings[:admin] == installed
+    refute Map.has_key?(Map.from_struct(bindings[:admin]), :hashed_password)
+  end
+
   test "invalid identity and password input leave setup open" do
     for attrs <- [
           %{name: "", email: "ada@example.com", password: @password},
