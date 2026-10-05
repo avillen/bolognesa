@@ -1,6 +1,6 @@
 # 0003. Escaneo persistido con generaciones por intento
 
-Estado: aceptada por el propietario al aprobar la especificación H2b el 2026-10-03. Implementada localmente en `h2-library-scan`; publicación y validación QNAP pendientes.
+Estado: aceptada por el propietario al aprobar la especificación H2b el 2026-10-03. Implementada y desplegada en QNAP; escaneo real y repetición observados, recuperación tras interrupción en QNAP no validada.
 
 ## Contexto
 
