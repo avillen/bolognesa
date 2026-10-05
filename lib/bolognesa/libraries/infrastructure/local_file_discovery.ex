@@ -17,6 +17,7 @@ defmodule Bolognesa.Libraries.Infrastructure.LocalFileDiscovery do
   @impl true
   def walk(path, sink) do
     with {:ok, root} <- LocalSourcePath.canonical_directory(path),
+         :ok <- same_identity(path, root),
          {:ok, stat} <- source_stat(root),
          source = %{root: root, identity: identity(stat)},
          {:ok, entries} <- list_directory(source, ""),

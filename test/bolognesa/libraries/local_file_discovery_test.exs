@@ -8,7 +8,8 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
     path = Path.join(root, "discovery-#{System.unique_integer([:positive])}")
     File.mkdir_p!(path)
     on_exit(fn -> File.rm_rf!(path) end)
-    %{path: path}
+    {:ok, canonical_path} = LocalSourcePath.canonical_directory(path)
+    %{path: canonical_path}
   end
 
   test "discovers candidates without changing their bytes", %{path: path} do
@@ -228,6 +229,26 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
     after
       File.rm(path)
       File.rename(moved, path)
+    end
+  end
+
+  test "a persisted source redirected before a scan cannot inventory another directory", %{
+    path: path
+  } do
+    moved = path <> "-moved"
+    replacement = path <> "-replacement"
+    File.rename!(path, moved)
+    File.mkdir!(replacement)
+    File.write!(Path.join(replacement, "other.mp4"), "other")
+    File.ln_s!(replacement, path)
+
+    try do
+      assert {:error, :source_changed} = LocalFileDiscovery.walk(path, capture_sink())
+      refute_receive {:entries, _}
+    after
+      File.rm!(path)
+      File.rename!(moved, path)
+      File.rm_rf!(replacement)
     end
   end
 
