@@ -27,6 +27,7 @@ defmodule Bolognesa.Libraries.Domain.Scan do
     :finished_at,
     :updated_at,
     state: :queued,
+    force_inspection?: false,
     attempt: 0,
     files_discovered: 0
   ]
@@ -49,6 +50,7 @@ defmodule Bolognesa.Libraries.Domain.Scan do
           library_id: Library.id(),
           job_id: pos_integer(),
           state: state(),
+          force_inspection?: boolean(),
           generation: generation() | nil,
           attempt: non_neg_integer(),
           files_discovered: non_neg_integer(),

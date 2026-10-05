@@ -10,6 +10,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.Scan
       library_id: schema.library_id,
       job_id: schema.job_id,
       state: schema.state,
+      force_inspection?: schema.force_inspection,
       generation: schema.generation,
       attempt: schema.attempt,
       files_discovered: schema.files_discovered,

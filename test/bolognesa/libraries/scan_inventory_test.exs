@@ -3,6 +3,12 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
+
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.{
+    InspectionSchema,
+    OutboxSchema
+  }
+
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
   alias EctoScanRepository.{MediaFileMapper, MediaFileSchema, ScanMapper, ScanSchema}
 
@@ -41,6 +47,42 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     assert [file] = files(current.library_id)
     assert file.revision == 1
     assert file.last_seen_generation == current.generation
+  end
+
+  test "existing scans default to normal inspection mode", %{scan: scan} do
+    assert stored_scan(scan.id).force_inspection? == false
+  end
+
+  test "stores one technical state per file and one event per token", %{scan: scan} do
+    running = start(scan)
+    save(running, [entry("a.mp4")])
+    [file] = files(scan.library_id)
+    token = Ecto.UUID.generate()
+
+    attrs = %{
+      media_file_id: file.id,
+      token: token,
+      observed_revision: file.revision,
+      state: :pending
+    }
+
+    assert {:ok, _inspection} =
+             struct(InspectionSchema) |> InspectionSchema.changeset(attrs) |> Repo.insert()
+
+    assert {:error, _changeset} =
+             struct(InspectionSchema)
+             |> InspectionSchema.changeset(%{attrs | token: Ecto.UUID.generate()})
+             |> Repo.insert()
+
+    assert {:ok, _event} =
+             struct(OutboxSchema)
+             |> OutboxSchema.changeset(%{media_file_id: file.id, token: token})
+             |> Repo.insert()
+
+    assert {:error, _changeset} =
+             struct(OutboxSchema)
+             |> OutboxSchema.changeset(%{media_file_id: file.id, token: token})
+             |> Repo.insert()
   end
 
   test "begins each invocation with a new generation and preserves the first start",

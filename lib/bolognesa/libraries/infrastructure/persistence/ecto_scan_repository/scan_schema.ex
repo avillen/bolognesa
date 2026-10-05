@@ -12,6 +12,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.Scan
       default: :queued
 
     field :generation, Ecto.UUID
+    field :force_inspection, :boolean, default: false
     field :attempt, :integer, default: 0
     field :files_discovered, :integer, default: 0
 
@@ -39,7 +40,14 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.Scan
   def changeset(scan, attrs) do
     scan
     |> change(attrs)
-    |> validate_required([:library_id, :state, :attempt, :files_discovered, :requested_at])
+    |> validate_required([
+      :library_id,
+      :state,
+      :force_inspection,
+      :attempt,
+      :files_discovered,
+      :requested_at
+    ])
     |> validate_number(:attempt, greater_than_or_equal_to: 0)
     |> validate_number(:files_discovered, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:library_id)
