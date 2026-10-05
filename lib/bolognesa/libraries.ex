@@ -1,9 +1,22 @@
 defmodule Bolognesa.Libraries do
   @moduledoc "Configure and read media libraries."
-  alias Bolognesa.Libraries.Application.{CreateLibrary, GetScanStatus, ListLibraries, StartScan}
+  alias Bolognesa.Libraries.Application.{
+    CreateLibrary,
+    GetInspectionCounts,
+    GetScanStatus,
+    ListLibraries,
+    StartScan
+  }
+
   alias Bolognesa.Libraries.Domain.{Library, NewLibrary, Scan, ScanStatus}
   alias Bolognesa.Libraries.Infrastructure.LocalFileSource
-  alias Bolognesa.Libraries.Infrastructure.Persistence.{EctoLibraryRepository, EctoScanRepository}
+
+  alias Bolognesa.Libraries.Infrastructure.Persistence.{
+    EctoInspectionRepository,
+    EctoLibraryRepository,
+    EctoScanRepository
+  }
+
   alias Bolognesa.Identity.Domain.Actor
 
   @spec create_library(Actor.t() | nil, NewLibrary.attrs()) ::
@@ -31,4 +44,9 @@ defmodule Bolognesa.Libraries do
           {:ok, ScanStatus.t()} | {:error, :forbidden | :not_found | :unavailable}
   def get_scan_status(actor, library_id),
     do: GetScanStatus.call(actor, library_id, EctoScanRepository)
+
+  @spec get_inspection_counts(Actor.t() | nil, Library.id()) ::
+          {:ok, map()} | {:error, :forbidden | :not_found | :unavailable}
+  def get_inspection_counts(actor, library_id),
+    do: GetInspectionCounts.call(actor, library_id, EctoInspectionRepository)
 end

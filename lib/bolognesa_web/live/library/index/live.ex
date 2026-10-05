@@ -15,6 +15,15 @@ defmodule BolognesaWeb.Library.Index.Live do
   def handle_event("scan", %{"library_id" => id}, socket),
     do: {:noreply, Reducers.StartScan.call(socket, id)}
 
+  def handle_event("prepare_reinspect", %{"library_id" => id}, socket),
+    do: {:noreply, Reducers.Reinspect.prepare(socket, id)}
+
+  def handle_event("cancel_reinspect", _params, socket),
+    do: {:noreply, Reducers.Reinspect.cancel(socket)}
+
+  def handle_event("confirm_reinspect", %{"library_id" => id}, socket),
+    do: {:noreply, Reducers.Reinspect.confirm(socket, id)}
+
   @impl true
   def handle_info(:refresh_scan_statuses, socket),
     do: {:noreply, Reducers.FetchScanStatuses.call(socket)}

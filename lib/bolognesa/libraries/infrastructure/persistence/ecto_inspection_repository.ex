@@ -24,6 +24,35 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
   end
 
   @impl true
+  def counts(library_id) do
+    case Repo.get(LibrarySchema, library_id) do
+      nil ->
+        {:error, :not_found}
+
+      _library ->
+        rows =
+          Repo.all(
+            from file in MediaFileSchema,
+              left_join: inspection in InspectionSchema,
+              on: inspection.media_file_id == file.id,
+              where: file.library_id == ^library_id and file.availability == :available,
+              group_by: inspection.state,
+              select: {inspection.state, count(file.id)}
+          )
+
+        counts = %{uninspected: 0, pending: 0, running: 0, succeeded: 0, failed: 0}
+
+        {:ok,
+         Enum.reduce(rows, counts, fn {state, count}, acc ->
+           Map.put(acc, state || :uninspected, count)
+         end)}
+    end
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  @impl true
   def begin_inspection(file_id, token, job_id) do
     transaction(fn ->
       case current(file_id, token) do

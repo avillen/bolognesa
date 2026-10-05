@@ -71,18 +71,39 @@
                 >
                   Último escaneo completo: {library.last_completed_at}
                 </p>
+                <p
+                  id={"library-inspection-counts-#{library.id}"}
+                  role="status"
+                  data-pending={library.inspection_counts.pending}
+                  data-running={library.inspection_counts.running}
+                  data-succeeded={library.inspection_counts.succeeded}
+                  data-failed={library.inspection_counts.failed}
+                  class="max-w-md text-xs leading-5 text-stone-300"
+                >
+                  {library.inspection_summary}
+                </p>
               </div>
-              <button
-                id={"library-scan-#{library.id}"}
-                type="button"
-                phx-click="scan"
-                phx-value-library_id={library.id}
-                disabled={library.active?}
-                phx-disable-with="Solicitando…"
-                class="min-h-11 rounded-xl border border-amber-300/40 px-5 py-3 text-sm font-semibold text-amber-200 transition hover:bg-amber-300/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50"
-              >
-                {library.button_label}
-              </button>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  id={"library-scan-#{library.id}"}
+                  type="button"
+                  phx-click="scan"
+                  phx-value-library_id={library.id}
+                  disabled={library.active?}
+                  phx-disable-with="Solicitando…"
+                  class="min-h-11 rounded-xl border border-amber-300/40 px-5 py-3 text-sm font-semibold text-amber-200 transition hover:bg-amber-300/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50"
+                >
+                  {library.button_label}
+                </button>
+                <button
+                  id={"library-reinspect-#{library.id}"}
+                  type="button"
+                  phx-click="prepare_reinspect"
+                  phx-value-library_id={library.id}
+                  disabled={library.active?}
+                  class="min-h-11 rounded-xl border border-stone-500 px-5 py-3 text-sm font-medium text-stone-200 transition hover:border-amber-300 hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50"
+                >Reanalizar</button>
+              </div>
             </div>
             <p
               :if={library.error}
@@ -92,6 +113,32 @@
             >
               {library.error}
             </p>
+          </div>
+        </div>
+        <div
+          :if={@reinspect_library_id}
+          id={"library-reinspect-confirm-#{@reinspect_library_id}"}
+          role="group"
+          aria-label="Confirmar nuevo análisis"
+          class="mt-5 rounded-xl border border-amber-300/30 bg-amber-300/10 p-5"
+        >
+          <p class="text-sm leading-6 text-amber-100">
+            Se volverán a leer los archivos de esta biblioteca. El análisis puede tardar y utilizar recursos del servidor.
+          </p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button
+              id={"library-reinspect-confirm-button-#{@reinspect_library_id}"}
+              type="button"
+              phx-click="confirm_reinspect"
+              phx-value-library_id={@reinspect_library_id}
+              class="min-h-11 rounded-xl bg-amber-300 px-4 py-2 font-semibold text-stone-950 transition hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+            >Confirmar</button>
+            <button
+              id={"library-reinspect-cancel-button-#{@reinspect_library_id}"}
+              type="button"
+              phx-click="cancel_reinspect"
+              class="min-h-11 rounded-xl border border-stone-500 px-4 py-2 text-stone-100 transition hover:border-stone-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+            >Cancelar</button>
           </div>
         </div>
       </div>

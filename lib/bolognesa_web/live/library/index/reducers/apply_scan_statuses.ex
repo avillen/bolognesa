@@ -22,11 +22,12 @@ defmodule BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses do
 
   defp apply_result(socket, {:ok, {:ok, pairs}}) do
     rows =
-      Enum.map(pairs, fn {library, status} ->
-        BolognesaWeb.Library.Index.State.Library.from_domain(library, status)
+      Enum.map(pairs, fn {library, status, counts} ->
+        BolognesaWeb.Library.Index.State.Library.from_domain(library, status, counts)
       end)
 
-    active_ids = for row <- rows, row.active?, into: MapSet.new(), do: row.id
+    active_ids =
+      for row <- rows, row.active? or row.inspection_active?, into: MapSet.new(), do: row.id
 
     socket
     |> assign(:scan_active_ids, active_ids)

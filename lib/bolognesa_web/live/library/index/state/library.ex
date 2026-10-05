@@ -10,9 +10,12 @@ defmodule BolognesaWeb.Library.Index.State.Library do
     :state_label,
     :error,
     :last_completed_at,
+    :inspection_summary,
+    :inspection_counts,
     files_discovered: 0,
     attempt: 0,
     active?: false,
+    inspection_active?: false,
     button_label: "Escanear"
   ]
 
@@ -24,14 +27,19 @@ defmodule BolognesaWeb.Library.Index.State.Library do
           state_label: String.t(),
           error: String.t() | nil,
           last_completed_at: String.t() | nil,
+          inspection_summary: String.t(),
+          inspection_counts: map(),
           files_discovered: non_neg_integer(),
           attempt: non_neg_integer(),
           active?: boolean(),
+          inspection_active?: boolean(),
           button_label: String.t()
         }
 
-  @spec from_domain(Library.t(), ScanStatus.t()) :: t()
-  def from_domain(library, status) do
+  @empty_counts %{uninspected: 0, pending: 0, running: 0, succeeded: 0, failed: 0}
+
+  @spec from_domain(Library.t(), ScanStatus.t(), map()) :: t()
+  def from_domain(library, status, counts \\ @empty_counts) do
     scan = status.latest_scan
 
     %__MODULE__{
@@ -45,8 +53,17 @@ defmodule BolognesaWeb.Library.Index.State.Library do
       attempt: if(scan, do: scan.attempt, else: 0),
       error: failure(scan),
       last_completed_at: format_date(status.last_completed_at),
+      inspection_counts: counts,
+      inspection_summary: summary(counts),
+      inspection_active?: counts.pending + counts.running > 0,
       button_label: if(state(scan) == :failed, do: "Reintentar", else: "Escanear")
     }
+  end
+
+  defp summary(counts) do
+    "Análisis: #{counts.pending} pendientes, #{counts.running} en curso, " <>
+      "#{counts.succeeded} correctos, #{counts.failed} fallidos" <>
+      if(counts.uninspected > 0, do: ", #{counts.uninspected} sin analizar", else: "")
   end
 
   defp state(nil), do: :not_scanned

@@ -21,6 +21,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.Initialize do
       |> assign(:scan_timer_ref, nil)
       |> assign(:scan_active_ids, MapSet.new())
       |> assign(:scan_feedback, nil)
+      |> assign(:reinspect_library_id, nil)
 
     case Libraries.list_libraries(socket.assigns.current_scope.actor) do
       {:ok, libraries} ->

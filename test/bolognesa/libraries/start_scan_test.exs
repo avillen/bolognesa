@@ -5,7 +5,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
 
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Libraries
-  alias Bolognesa.Libraries.Application.{GetScanStatus, StartScan}
+  alias Bolognesa.Libraries.Application.{GetInspectionCounts, GetScanStatus, StartScan}
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
   alias EctoScanRepository.{MediaFileMapper, MediaFileSchema, ScanSchema}
@@ -56,6 +56,16 @@ defmodule Bolognesa.Libraries.StartScanTest do
     assert status.library_id == library.id
     assert status.latest_scan == nil
     assert status.last_completed_at == nil
+  end
+
+  test "authorizes technical counters and reports empty libraries", %{library: library} do
+    assert {:ok, %{uninspected: 0, pending: 0, running: 0, succeeded: 0, failed: 0}} =
+             Libraries.get_inspection_counts(@admin, library.id)
+
+    assert {:error, :forbidden} = Libraries.get_inspection_counts(@member, library.id)
+    assert {:error, :forbidden} = Libraries.get_inspection_counts(nil, library.id)
+    assert {:error, :not_found} = Libraries.get_inspection_counts(@admin, 0)
+    assert {:error, :forbidden} = GetInspectionCounts.call(@member, 0, __MODULE__)
   end
 
   test "rejects absent libraries" do

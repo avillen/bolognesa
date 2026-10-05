@@ -6,12 +6,12 @@ defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
   alias BolognesaWeb.Library.Index.State.Library
   alias BolognesaWeb.Library.Index.Reducers.{FetchScanStatuses, CancelScanStatuses}
 
-  @spec call(Phoenix.LiveView.Socket.t(), String.t()) :: Phoenix.LiveView.Socket.t()
-  def call(socket, web_id) do
+  @spec call(Phoenix.LiveView.Socket.t(), String.t(), keyword()) :: Phoenix.LiveView.Socket.t()
+  def call(socket, web_id, opts \\ []) do
     socket = CancelScanStatuses.call(socket)
 
     with {:ok, id} <- parse_id(web_id),
-         {:ok, _scan} <- Libraries.start_scan(socket.assigns.current_scope.actor, id) do
+         {:ok, _scan} <- Libraries.start_scan(socket.assigns.current_scope.actor, id, opts) do
       socket |> refresh_row(id) |> FetchScanStatuses.call()
     else
       {:error, reason} ->
@@ -24,8 +24,9 @@ defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
 
     with {:ok, libraries} <- Libraries.list_libraries(actor),
          library when library != nil <- Enum.find(libraries, &(&1.id == id)),
-         {:ok, status} <- Libraries.get_scan_status(actor, id) do
-      row = Library.from_domain(library, status)
+         {:ok, status} <- Libraries.get_scan_status(actor, id),
+         {:ok, counts} <- Libraries.get_inspection_counts(actor, id) do
+      row = Library.from_domain(library, status, counts)
 
       socket
       |> assign(:scan_feedback, nil)

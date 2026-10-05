@@ -4,7 +4,9 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
 
   alias Bolognesa.Identity
   alias Bolognesa.Libraries
+  alias Bolognesa.Repo
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.InspectionSchema
   use Oban.Testing, repo: Bolognesa.Repo
 
   setup do
@@ -102,6 +104,60 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     refute has_element?(view, "#library-scan-#{library.id}[disabled]")
   end
 
+  test "shows inspection counts and requests a confirmed forced scan", %{
+    conn: conn,
+    token: token,
+    path: path,
+    actor: actor
+  } do
+    File.write!(Path.join(path, "movie.mkv"), "video")
+    {:ok, library} = Libraries.create_library(actor, %{name: "Technical", path: path})
+    {:ok, first_scan} = Libraries.start_scan(actor, library.id)
+    assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
+
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+    render_async(view)
+    assert has_element?(view, "#library-inspection-counts-#{library.id}[data-pending='1']")
+    view |> element("#library-reinspect-#{library.id}") |> render_click()
+    assert has_element?(view, "#library-reinspect-confirm-#{library.id}")
+    view |> element("#library-reinspect-confirm-button-#{library.id}") |> render_click()
+    assert has_element?(view, "#library-scan-state-#{library.id}[data-state='queued']")
+    assert has_element?(view, "#library-reinspect-#{library.id}[disabled]")
+    assert {:ok, %{latest_scan: forced}} = Libraries.get_scan_status(actor, library.id)
+    assert forced.id != first_scan.id
+    assert forced.force_inspection?
+
+    {:ok, reopened, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+    render_async(reopened)
+    assert has_element?(reopened, "#library-inspection-counts-#{library.id}")
+    assert has_element?(reopened, "#library-reinspect-#{library.id}[disabled]")
+  end
+
+  test "refresh and reconnect show a failed technical inspection", %{
+    conn: conn,
+    token: token,
+    path: path,
+    actor: actor
+  } do
+    File.write!(Path.join(path, "broken.mkv"), "not media")
+    {:ok, library} = Libraries.create_library(actor, %{name: "Broken", path: path})
+    {:ok, _} = Libraries.start_scan(actor, library.id)
+    assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
+    inspection = Repo.one!(InspectionSchema)
+
+    inspection
+    |> InspectionSchema.changeset(%{state: :failed, failure_reason: :invalid_output})
+    |> Repo.update!()
+
+    conn = init_test_session(conn, user_token: token)
+    {:ok, view, _} = live(conn, ~p"/libraries")
+    render_async(view)
+    assert has_element?(view, "#library-inspection-counts-#{library.id}[data-failed='1']")
+    {:ok, reopened, _} = live(conn, ~p"/libraries")
+    render_async(reopened)
+    assert has_element?(reopened, "#library-inspection-counts-#{library.id}[data-failed='1']")
+  end
+
   @tag capture_log: true
   test "failed scan can be retried and leaving the page does not cancel its job", %{
     conn: conn,
@@ -157,6 +213,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     {:ok, library} = Libraries.create_library(actor, %{name: "Retained", path: path})
     {:ok, _scan} = Libraries.start_scan(actor, library.id)
     {:ok, status} = Libraries.get_scan_status(actor, library.id)
+    {:ok, counts} = Libraries.get_inspection_counts(actor, library.id)
 
     socket =
       %Phoenix.LiveView.Socket{
@@ -168,7 +225,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
       |> Initialize.call()
 
     request_id = socket.assigns.scan_request_id
-    socket = ApplyScanStatuses.call(socket, request_id, {:ok, {:ok, [{library, status}]}})
+    socket = ApplyScanStatuses.call(socket, request_id, {:ok, {:ok, [{library, status, counts}]}})
     socket = ApplyScanStatuses.call(socket, make_ref(), {:ok, {:ok, []}})
     socket = ApplyScanStatuses.call(socket, request_id, {:ok, {:error, :unavailable}})
     html = render_component(&Live.render/1, Map.put(socket.assigns, :__changed__, nil))
