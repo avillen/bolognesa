@@ -17,6 +17,7 @@ config :bolognesa, Oban,
   plugins: [{Oban.Plugins.Lifeline, rescue_after: 900_000, interval: 60_000}]
 
 config :bolognesa, :scan_reconciler, true
+config :bolognesa, :inspection_outbox_dispatcher, true
 
 # Configure the endpoint
 config :bolognesa, BolognesaWeb.Endpoint,

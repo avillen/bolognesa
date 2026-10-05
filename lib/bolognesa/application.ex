@@ -21,7 +21,7 @@ defmodule Bolognesa.Application do
 
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
-    children = children ++ scan_reconciler_children()
+    children = children ++ scan_reconciler_children() ++ outbox_dispatcher_children()
     opts = [strategy: :one_for_one, name: Bolognesa.Supervisor]
     Supervisor.start_link(children, opts)
   end
@@ -29,6 +29,12 @@ defmodule Bolognesa.Application do
   defp scan_reconciler_children do
     if Application.get_env(:bolognesa, :scan_reconciler, true),
       do: [Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler],
+      else: []
+  end
+
+  defp outbox_dispatcher_children do
+    if Application.get_env(:bolognesa, :inspection_outbox_dispatcher, true),
+      do: [Bolognesa.Libraries.Infrastructure.Jobs.OutboxDispatcher],
       else: []
   end
 
