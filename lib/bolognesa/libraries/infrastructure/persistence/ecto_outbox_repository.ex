@@ -5,6 +5,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoOutboxRepository do
   import Ecto.Query
 
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.OutboxSchema
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.InspectionSchema
   alias Bolognesa.Repo
 
   @worker "Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker"
@@ -15,6 +16,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoOutboxRepository do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:events, fn repo, _changes -> {:ok, lock_pending_events(repo, limit)} end)
     |> Oban.insert_all(:jobs, fn %{events: events} -> Enum.map(events, &inspection_job/1) end)
+    |> Ecto.Multi.run(:linked, fn repo, %{jobs: jobs} -> link_jobs(repo, jobs) end)
     |> Ecto.Multi.run(:delivered, fn repo, %{events: events} -> mark_delivered(repo, events) end)
     |> Repo.transaction()
     |> case do
@@ -56,5 +58,20 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoOutboxRepository do
       )
 
     {:ok, count}
+  end
+
+  defp link_jobs(repo, jobs) do
+    Enum.each(jobs, fn job ->
+      %{"media_file_id" => file_id, "token" => token} = job.args
+
+      repo.update_all(
+        from(inspection in InspectionSchema,
+          where: inspection.media_file_id == ^file_id and inspection.token == ^token
+        ),
+        set: [job_id: job.id]
+      )
+    end)
+
+    {:ok, length(jobs)}
   end
 end

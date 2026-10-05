@@ -6,6 +6,7 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
   alias Bolognesa.Libraries.Infrastructure.Jobs.OutboxDispatcher
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.OutboxSchema
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.InspectionSchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.{EctoOutboxRepository, EctoScanRepository}
 
   test "dispatches a committed event once and recovers an event created while stopped" do
@@ -19,6 +20,7 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
 
     assert file_id == event.media_file_id
     assert token == event.token
+    assert is_integer(Repo.get_by!(InspectionSchema, media_file_id: file_id).job_id)
   end
 
   test "a supervised dispatcher picks up pending events at startup" do

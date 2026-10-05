@@ -13,11 +13,12 @@ config :bolognesa,
 
 config :bolognesa, Oban,
   repo: Bolognesa.Repo,
-  queues: [library_scans: 1],
+  queues: [library_scans: 1, media_inspections: 1],
   plugins: [{Oban.Plugins.Lifeline, rescue_after: 900_000, interval: 60_000}]
 
 config :bolognesa, :scan_reconciler, true
 config :bolognesa, :inspection_outbox_dispatcher, true
+config :bolognesa, :inspection_reconciler, true
 
 # Configure the endpoint
 config :bolognesa, BolognesaWeb.Endpoint,
