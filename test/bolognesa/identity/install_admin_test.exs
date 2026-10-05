@@ -30,13 +30,13 @@ defmodule Bolognesa.Identity.InstallAdminTest do
   end
 
   test "the release console binds the administrator actor at startup" do
-    {_result, bindings} = Code.eval_file("rel/overlays/.iex.exs")
+    {_result, bindings} = Code.eval_file("rel/overlays/bin/.iex.exs")
     assert bindings[:admin] == nil
 
     assert {:ok, installed} =
              Identity.install_admin(%{name: "Ada", email: "ada@example.com", password: @password})
 
-    {_result, bindings} = Code.eval_file("rel/overlays/.iex.exs")
+    {_result, bindings} = Code.eval_file("rel/overlays/bin/.iex.exs")
     assert %Actor{} = bindings[:admin]
     assert bindings[:admin] == installed
     refute Map.has_key?(Map.from_struct(bindings[:admin]), :hashed_password)
