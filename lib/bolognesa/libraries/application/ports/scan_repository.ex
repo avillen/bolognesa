@@ -7,6 +7,8 @@ defmodule Bolognesa.Libraries.Application.Ports.ScanRepository do
 
   @callback request(Library.id()) ::
               {:ok, Scan.t()} | {:error, :not_found | :scan_in_progress | :unavailable}
+  @callback request(Library.id(), boolean()) ::
+              {:ok, Scan.t()} | {:error, :not_found | :scan_in_progress | :unavailable}
   @callback status(Library.id()) ::
               {:ok, ScanStatus.t()} | {:error, :not_found | :unavailable}
   @callback begin_attempt(Scan.id(), pos_integer()) ::

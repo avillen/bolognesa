@@ -22,9 +22,10 @@ defmodule Bolognesa.Libraries do
           {:ok, [Library.t()]} | {:error, :forbidden | :unavailable}
   def list_libraries(actor), do: ListLibraries.call(actor, EctoLibraryRepository)
 
-  @spec start_scan(Actor.t() | nil, Library.id()) ::
+  @spec start_scan(Actor.t() | nil, Library.id(), keyword()) ::
           {:ok, Scan.t()} | {:error, :forbidden | :not_found | :scan_in_progress | :unavailable}
-  def start_scan(actor, library_id), do: StartScan.call(actor, library_id, EctoScanRepository)
+  def start_scan(actor, library_id, opts \\ []),
+    do: StartScan.call(actor, library_id, EctoScanRepository, opts)
 
   @spec get_scan_status(Actor.t() | nil, Library.id()) ::
           {:ok, ScanStatus.t()} | {:error, :forbidden | :not_found | :unavailable}

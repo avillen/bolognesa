@@ -5,11 +5,11 @@ defmodule Bolognesa.Libraries.Application.StartScan do
   alias Bolognesa.Libraries.Application.Ports.ScanRepository
   alias Bolognesa.Libraries.Domain.{Library, Scan}
 
-  @spec call(Actor.t() | nil, Library.id(), ScanRepository.adapter()) ::
+  @spec call(Actor.t() | nil, Library.id(), ScanRepository.adapter(), keyword()) ::
           {:ok, Scan.t()} | {:error, :forbidden | :not_found | :scan_in_progress | :unavailable}
-  def call(actor, library_id, repository) do
+  def call(actor, library_id, repository, opts \\ []) do
     with :ok <- Identity.authorize(actor, :admin) do
-      repository.request(library_id)
+      repository.request(library_id, Keyword.get(opts, :force_inspection?, false))
     end
   end
 end

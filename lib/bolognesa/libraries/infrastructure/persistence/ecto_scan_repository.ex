@@ -5,19 +5,29 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
   import Ecto.Query
   alias Bolognesa.Libraries.Infrastructure.Jobs.{ScanPolicy, ScanWorker}
   alias Bolognesa.Repo
-  alias Bolognesa.Libraries.Domain.{MediaFile, Scan, ScanStatus}
+  alias Bolognesa.Libraries.Domain.{Inspection, MediaFile, Scan, ScanStatus}
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibraryMapper
+
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.{
+    InspectionSchema,
+    OutboxSchema
+  }
+
   alias __MODULE__.{MediaFileMapper, MediaFileSchema, ScanMapper, ScanSchema}
 
   @impl true
-  def request(library_id) do
+  def request(library_id), do: request(library_id, false)
+
+  @impl true
+  def request(library_id, force_inspection?) when is_boolean(force_inspection?) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:library, fn repo, _changes -> find_library(repo, library_id) end)
     |> Ecto.Multi.insert(
       :scan,
       ScanSchema.changeset(%ScanSchema{}, %{
         library_id: library_id,
+        force_inspection: force_inspection?,
         requested_at: DateTime.utc_now()
       })
     )
@@ -80,6 +90,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
       scan = current_attempt!(scan_id, generation)
       entries = Enum.uniq_by(entries, & &1.relative_path)
       existing = load_batch_files(scan.library_id, entries)
+      inspections = load_batch_inspections(existing)
       rows = Enum.map(entries, &file_row(scan, Map.get(existing, &1.relative_path), &1))
 
       Repo.insert_all(MediaFileSchema, rows,
@@ -88,6 +99,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
         on_conflict:
           {:replace, [:size_bytes, :modified_at, :availability, :revision, :last_seen_generation]}
       )
+
+      saved = load_batch_files(scan.library_id, entries)
+      schedule_inspections(scan, entries, existing, saved, inspections)
 
       added =
         Enum.count(entries, &first_observation?(Map.get(existing, &1.relative_path), generation))
@@ -283,6 +297,54 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
       log: false
     )
     |> Map.new(&{&1.relative_path, MediaFileMapper.to_media_file(&1)})
+  end
+
+  defp load_batch_inspections(existing) do
+    ids = existing |> Map.values() |> Enum.map(& &1.id)
+
+    Repo.all(from(inspection in InspectionSchema, where: inspection.media_file_id in ^ids))
+    |> Map.new(&{&1.media_file_id, &1})
+  end
+
+  defp schedule_inspections(scan, entries, existing, saved, inspections) do
+    Enum.each(entries, fn entry ->
+      old = Map.get(existing, entry.relative_path)
+      file = Map.fetch!(saved, entry.relative_path)
+      current_inspection = old && Map.get(inspections, old.id)
+
+      changed? = old != nil and MediaFile.revision_for(old, entry) != old.revision
+      first_in_generation? = first_observation?(old, scan.generation)
+
+      if Inspection.request?(old, current_inspection != nil, entry, scan.force_inspection) and
+           (not scan.force_inspection or first_in_generation? or changed?) do
+        request_inspection!(file, current_inspection)
+      end
+    end)
+  end
+
+  defp request_inspection!(file, current) do
+    token = Ecto.UUID.generate()
+
+    attrs = %{
+      media_file_id: file.id,
+      token: token,
+      observed_revision: file.revision,
+      state: :pending,
+      failure_reason: nil,
+      job_id: nil,
+      format: nil,
+      duration_ms: nil,
+      tracks: %{"items" => []},
+      started_at: nil,
+      finished_at: nil
+    }
+
+    case current do
+      nil -> Repo.insert!(InspectionSchema.changeset(%InspectionSchema{}, attrs))
+      schema -> Repo.update!(InspectionSchema.changeset(schema, attrs))
+    end
+
+    Repo.insert!(OutboxSchema.changeset(%OutboxSchema{}, %{media_file_id: file.id, token: token}))
   end
 
   defp file_row(scan, existing, entry) do

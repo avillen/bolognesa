@@ -57,7 +57,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     running = start(scan)
     save(running, [entry("a.mp4")])
     [file] = files(scan.library_id)
-    token = Ecto.UUID.generate()
+    token = inspection(file.id).token
 
     attrs = %{
       media_file_id: file.id,
@@ -66,23 +66,88 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       state: :pending
     }
 
-    assert {:ok, _inspection} =
-             struct(InspectionSchema) |> InspectionSchema.changeset(attrs) |> Repo.insert()
-
     assert {:error, _changeset} =
              struct(InspectionSchema)
              |> InspectionSchema.changeset(%{attrs | token: Ecto.UUID.generate()})
              |> Repo.insert()
 
-    assert {:ok, _event} =
-             struct(OutboxSchema)
-             |> OutboxSchema.changeset(%{media_file_id: file.id, token: token})
-             |> Repo.insert()
-
     assert {:error, _changeset} =
              struct(OutboxSchema)
              |> OutboxSchema.changeset(%{media_file_id: file.id, token: token})
              |> Repo.insert()
+  end
+
+  test "schedules first inspection once and reuses it on an unchanged scan", %{scan: scan} do
+    running = start(scan)
+    save(running, [entry("a.mp4")])
+    [file] = files(scan.library_id)
+    assert %{state: :pending, observed_revision: 1, token: token} = inspection(file.id)
+    assert [%{token: ^token, delivered_at: nil}] = events(file.id)
+
+    save(running, [entry("a.mp4")])
+    assert [event] = events(file.id)
+    assert event.token == token
+    assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
+
+    unchanged = next_scan(scan.library_id)
+    save(unchanged, [entry("a.mp4")])
+    assert inspection(file.id).token == token
+    assert length(events(file.id)) == 1
+  end
+
+  test "schedules an existing H2b file without technical state", %{scan: scan} do
+    running = start(scan)
+    save(running, [entry("a.mp4")])
+    [file] = files(scan.library_id)
+    Repo.delete_all(from event in OutboxSchema, where: event.media_file_id == ^file.id)
+    Repo.delete!(inspection(file.id))
+    assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
+
+    unchanged = next_scan(scan.library_id)
+    save(unchanged, [entry("a.mp4")])
+    assert %{state: :pending, observed_revision: 1} = inspection(file.id)
+    assert [_event] = events(file.id)
+  end
+
+  test "reschedules changed and restored files while keeping their IDs", %{scan: scan} do
+    initial = start(scan)
+    save(initial, [entry("a.mp4")])
+    [original] = files(scan.library_id)
+    old_token = inspection(original.id).token
+    assert {:ok, _} = EctoScanRepository.complete(scan.id, initial.generation)
+
+    changed = next_scan(scan.library_id)
+    save(changed, [entry("a.mp4", 6)])
+    assert inspection(original.id).observed_revision == 2
+    refute inspection(original.id).token == old_token
+    assert length(events(original.id)) == 2
+    assert {:ok, _} = EctoScanRepository.complete(changed.id, changed.generation)
+
+    absent = next_scan(scan.library_id)
+    assert {:ok, _} = EctoScanRepository.complete(absent.id, absent.generation)
+    assert [%{id: id, availability: :missing}] = files(scan.library_id)
+    assert id == original.id
+
+    restored = next_scan(scan.library_id)
+    save(restored, [entry("a.mp4", 6)])
+    assert inspection(original.id).observed_revision == 2
+    assert length(events(original.id)) == 3
+  end
+
+  test "forced scan creates a new token without changing revision", %{scan: scan} do
+    initial = start(scan)
+    save(initial, [entry("a.mp4")])
+    [file] = files(scan.library_id)
+    old_token = inspection(file.id).token
+    assert {:ok, _} = EctoScanRepository.complete(scan.id, initial.generation)
+
+    assert {:ok, forced_scan} = EctoScanRepository.request(scan.library_id, true)
+    forced = start(forced_scan)
+    save(forced, [entry("a.mp4")])
+    save(forced, [entry("a.mp4")])
+    assert inspection(file.id).observed_revision == 1
+    refute inspection(file.id).token == old_token
+    assert length(events(file.id)) == 2
   end
 
   test "begins each invocation with a new generation and preserves the first start",
@@ -353,6 +418,42 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   end
 
   @tag committed: true
+  test "rolls back file, inspection and counter when outbox insertion fails" do
+    with_committed_scan(fn scan ->
+      running = start(scan)
+      save(running, [entry("existing.mp4")])
+      [existing] = files(scan.library_id)
+      before_scan = stored_scan(scan.id)
+      before_inspection = inspection(existing.id)
+      before_events = events(existing.id)
+
+      Ecto.Adapters.SQL.query!(Repo, """
+      ALTER TABLE media_inspection_events ADD CONSTRAINT inventory_test_reject_event
+      CHECK (media_file_id <> #{existing.id}) NOT VALID
+      """)
+
+      try do
+        assert {:error, :unavailable} =
+                 EctoScanRepository.save_batch(scan.id, running.generation, [
+                   entry("existing.mp4", 50),
+                   entry("new.mp4")
+                 ])
+
+        assert [file] = files(scan.library_id)
+        assert file == existing
+        assert inspection(existing.id) == before_inspection
+        assert events(existing.id) == before_events
+        assert stored_scan(scan.id) == before_scan
+      after
+        Ecto.Adapters.SQL.query!(
+          Repo,
+          "ALTER TABLE media_inspection_events DROP CONSTRAINT inventory_test_reject_event"
+        )
+      end
+    end)
+  end
+
+  @tag committed: true
   test "rolls back absence changes when PostgreSQL rejects scan completion" do
     with_committed_scan(fn scan ->
       running = start(scan)
@@ -419,6 +520,14 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   end
 
   defp stored_scan(id), do: Repo.get!(ScanSchema, id) |> ScanMapper.to_scan()
+
+  defp inspection(file_id), do: Repo.get_by!(InspectionSchema, media_file_id: file_id)
+
+  defp events(file_id) do
+    Repo.all(
+      from event in OutboxSchema, where: event.media_file_id == ^file_id, order_by: event.id
+    )
+  end
 
   defp with_committed_scan(callback) do
     Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->

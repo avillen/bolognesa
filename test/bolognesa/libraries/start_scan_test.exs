@@ -42,6 +42,15 @@ defmodule Bolognesa.Libraries.StartScanTest do
     assert status.last_completed_at == nil
   end
 
+  test "persists an authorized forced inspection request", %{library: library} do
+    assert {:ok, scan} = Libraries.start_scan(@admin, library.id, force_inspection?: true)
+    assert scan.force_inspection?
+    assert Repo.get!(ScanSchema, scan.id).force_inspection
+
+    assert {:error, :forbidden} =
+             Libraries.start_scan(@member, library.id, force_inspection?: true)
+  end
+
   test "reports no previous scan", %{library: library} do
     assert {:ok, status} = Libraries.get_scan_status(@admin, library.id)
     assert status.library_id == library.id
