@@ -58,7 +58,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
       case current(file_id, token) do
         {:ok, inspection, file} when inspection.state in [:pending, :running] ->
           library = Repo.get!(LibrarySchema, file.library_id)
-          attrs = %{state: :running, started_at: inspection.started_at || DateTime.utc_now()}
+          attrs = %{state: :running, started_at: DateTime.utc_now()}
           attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
           Repo.update!(InspectionSchema.changeset(inspection, attrs))
 
@@ -119,12 +119,12 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
   end
 
   defp current(file_id, token) do
+    file = Repo.one(from row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE")
+
     inspection =
       Repo.one(
         from row in InspectionSchema, where: row.media_file_id == ^file_id, lock: "FOR UPDATE"
       )
-
-    file = Repo.get(MediaFileSchema, file_id)
 
     if inspection && file && inspection.token == token && file.availability == :available &&
          file.revision == inspection.observed_revision,
@@ -136,7 +136,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
     track
     |> Map.from_struct()
     |> Map.new(fn {key, value} ->
-      {Atom.to_string(key), if(is_atom(value), do: Atom.to_string(value), else: value)}
+      {Atom.to_string(key), if(key == :kind, do: Atom.to_string(value), else: value)}
     end)
   end
 
@@ -163,7 +163,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
           where: inspection.state in [:pending, :running] and not is_nil(inspection.job_id),
           where:
             is_nil(job.id) or job.state in ["discarded", "cancelled", "completed"] or
-              (inspection.state == :running and inspection.started_at < ^cutoff),
+              (inspection.state == :running and job.state in ["retryable", "available"]) or
+              (inspection.state == :running and job.state == "executing" and
+                 inspection.started_at < ^cutoff and job.attempted_at < ^cutoff),
           order_by: inspection.id,
           limit: 100,
           select: inspection.id
@@ -186,35 +188,45 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
     if inspection && inspection.state in [:pending, :running] do
       job = Repo.get(Oban.Job, inspection.job_id)
 
-      reason =
-        cond do
-          is_nil(job) ->
-            :unexpected_failure
-
-          job.state == "discarded" ->
-            :attempts_exhausted
-
-          job.state in ["cancelled", "completed"] ->
-            :unexpected_failure
-
-          inspection.state == :running and DateTime.compare(inspection.started_at, cutoff) == :lt ->
-            :timeout
-
-          true ->
-            nil
-        end
-
-      if reason do
+      if (inspection.state == :running and job) && job.state in ["retryable", "available"] do
         inspection
-        |> InspectionSchema.changeset(%{
-          state: :failed,
-          failure_reason: reason,
-          finished_at: DateTime.utc_now()
-        })
+        |> InspectionSchema.changeset(%{state: :pending, started_at: nil})
         |> Repo.update!()
+      else
+        reason = reconciliation_reason(inspection, job, cutoff)
+
+        if reason do
+          inspection
+          |> InspectionSchema.changeset(%{
+            state: :failed,
+            failure_reason: reason,
+            finished_at: DateTime.utc_now()
+          })
+          |> Repo.update!()
+        end
       end
     end
 
     :ok
   end
+
+  defp reconciliation_reason(_inspection, nil, _cutoff), do: :unexpected_failure
+  defp reconciliation_reason(_inspection, %{state: "discarded"}, _cutoff), do: :attempts_exhausted
+
+  defp reconciliation_reason(_inspection, %{state: state}, _cutoff)
+       when state in ["cancelled", "completed"],
+       do: :unexpected_failure
+
+  defp reconciliation_reason(
+         %{state: :running, started_at: started},
+         %{state: "executing", attempted_at: attempted},
+         cutoff
+       )
+       when not is_nil(started) and not is_nil(attempted) do
+    if DateTime.compare(started, cutoff) == :lt and DateTime.compare(attempted, cutoff) == :lt,
+      do: :timeout,
+      else: nil
+  end
+
+  defp reconciliation_reason(_inspection, _job, _cutoff), do: nil
 end

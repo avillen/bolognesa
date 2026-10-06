@@ -10,12 +10,15 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
     previous = Application.get_env(:bolognesa, :library_roots)
     Application.put_env(:bolognesa, :library_roots, [root])
 
+    {:ok, canonical_root} =
+      Bolognesa.Libraries.Infrastructure.LocalSourcePath.canonical_directory(root)
+
     on_exit(fn ->
       Application.put_env(:bolognesa, :library_roots, previous)
       File.rm_rf!(root)
     end)
 
-    %{root: root}
+    %{root: canonical_root}
   end
 
   test "passes an absolute path with spaces and dash prefix as one argument", %{root: root} do
@@ -86,6 +89,39 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
 
     assert {:error, :source_changed} =
              FfprobeMediaProbe.inspect(library(root), file(path, root), executable: executable)
+  end
+
+  test "rejects a registered source redirected before probing", %{root: root} do
+    source = Path.join(root, "registered")
+    other = Path.join(root, "other")
+    File.mkdir_p!(source)
+    File.mkdir_p!(other)
+    File.write!(Path.join(source, "movie.mkv"), "video")
+    File.write!(Path.join(other, "movie.mkv"), "video")
+    observed = file(Path.join(source, "movie.mkv"), source)
+    File.rename!(source, source <> "-old")
+    File.ln_s!(other, source)
+    executable = fake(root, "printf '{\"format\":{},\"streams\":[]}'")
+
+    assert {:error, :source_changed} =
+             FfprobeMediaProbe.inspect(library(source), observed, executable: executable)
+  end
+
+  test "rejects a registered source with a redirected ancestor", %{root: root} do
+    ancestor = Path.join(root, "ancestor")
+    source = Path.join(ancestor, "registered")
+    replacement = Path.join(root, "replacement")
+    File.mkdir_p!(source)
+    File.mkdir_p!(Path.join(replacement, "registered"))
+    File.write!(Path.join(source, "movie.mkv"), "video")
+    File.write!(Path.join(replacement, "registered/movie.mkv"), "video")
+    observed = file(Path.join(source, "movie.mkv"), source)
+    File.rename!(ancestor, ancestor <> "-old")
+    File.ln_s!(replacement, ancestor)
+    executable = fake(root, "printf '{\"format\":{},\"streams\":[]}'")
+
+    assert {:error, :source_changed} =
+             FfprobeMediaProbe.inspect(library(source), observed, executable: executable)
   end
 
   defp fake(root, body) do

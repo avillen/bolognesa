@@ -10,6 +10,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   }
 
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
   alias EctoScanRepository.{MediaFileMapper, MediaFileSchema, ScanMapper, ScanSchema}
 
   @modified ~U[2026-10-03 00:00:00Z]
@@ -383,6 +384,65 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       assert [first, second] = files(scan.library_id)
       assert Enum.all?([first, second], &(&1.revision == 1 and &1.availability == :available))
       assert stored_scan(scan.id).files_discovered == 2
+    end)
+  end
+
+  @tag committed: true
+  test "inspection cannot publish after a concurrent absence commits" do
+    supervisor = start_supervised!(Task.Supervisor)
+    parent = self()
+
+    with_committed_scan(fn scan ->
+      running = start(scan)
+      save(running, [entry("film.mkv")])
+      [file] = files(scan.library_id)
+      token = inspection(file.id).token
+
+      assert {:ok, _file, _library} =
+               EctoInspectionRepository.begin_inspection(file.id, token, nil)
+
+      {:ok, media} = Bolognesa.Libraries.Domain.TechnicalMedia.new(%{tracks: []})
+
+      absent =
+        Task.Supervisor.async_nolink(supervisor, fn ->
+          Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+            Repo.transaction(fn ->
+              Repo.update_all(from(row in MediaFileSchema, where: row.id == ^file.id),
+                set: [availability: :missing]
+              )
+
+              send(parent, {:absence_locked, self()})
+
+              receive do
+                :commit_absence -> :ok
+              end
+            end)
+          end)
+        end)
+
+      assert_receive {:absence_locked, absent_pid}, 1_000
+
+      completion =
+        Task.Supervisor.async_nolink(supervisor, fn ->
+          Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+            send(parent, :completion_started)
+            result = EctoInspectionRepository.complete_inspection(file.id, token, media)
+            send(parent, {:completion_result, result})
+            result
+          end)
+        end)
+
+      assert_receive :completion_started, 1_000
+
+      try do
+        refute_receive {:completion_result, _}, 100
+      after
+        send(absent_pid, :commit_absence)
+        assert {:ok, :ok} = Task.await(absent)
+      end
+
+      assert {:ok, :stale} = Task.await(completion)
+      assert %{state: :running} = inspection(file.id)
     end)
   end
 

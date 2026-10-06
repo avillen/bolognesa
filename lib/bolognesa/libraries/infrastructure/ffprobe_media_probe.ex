@@ -48,10 +48,12 @@ defmodule Bolognesa.Libraries.Infrastructure.FfprobeMediaProbe do
 
   defp source(path) do
     with {:ok, root} <- LocalSourcePath.canonical_directory(path),
+         :ok <- same?(root, path),
          :ok <- source_ancestors(root),
          {:ok, stat} <- File.stat(root, time: :posix) do
       {:ok, root, identity(stat)}
     else
+      {:error, :source_changed} = error -> error
       _ -> {:error, :source_inaccessible}
     end
   end

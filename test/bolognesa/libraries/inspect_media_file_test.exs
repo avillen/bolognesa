@@ -52,6 +52,9 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
     assert {:ok, %{state: :succeeded, format: "matroska", duration_ms: 2_500}} =
              EctoInspectionRepository.get(inspection.media_file_id)
 
+    assert %{"items" => [%{"kind" => "video", "channels" => nil, "language" => nil}]} =
+             Repo.get!(InspectionSchema, inspection.id).tracks
+
     assert :ok =
              InspectMediaFile.call(
                inspection.media_file_id,

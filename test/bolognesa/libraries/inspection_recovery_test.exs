@@ -97,7 +97,7 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
       DateTime.add(DateTime.utc_now(), -InspectionPolicy.rescue_after_ms() - 1_000, :millisecond)
 
     Repo.get!(Oban.Job, inspection.job_id)
-    |> Ecto.Changeset.change(state: "executing")
+    |> Ecto.Changeset.change(state: "executing", attempted_at: old)
     |> Repo.update!()
 
     Repo.get!(InspectionSchema, inspection.id)
@@ -108,6 +108,55 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
 
     assert %{state: :failed, failure_reason: :timeout} =
              Repo.get!(InspectionSchema, inspection.id)
+  end
+
+  test "a scheduled retry remains eligible and resets its attempt clock", %{
+    inspection: inspection
+  } do
+    old =
+      DateTime.add(DateTime.utc_now(), -InspectionPolicy.rescue_after_ms() - 1_000, :millisecond)
+
+    Repo.get!(Oban.Job, inspection.job_id)
+    |> Ecto.Changeset.change(
+      state: "retryable",
+      attempted_at: old,
+      scheduled_at: DateTime.add(DateTime.utc_now(), 30)
+    )
+    |> Repo.update!()
+
+    Repo.get!(InspectionSchema, inspection.id)
+    |> Ecto.Changeset.change(state: :running, started_at: old)
+    |> Repo.update!()
+
+    assert :ok = EctoInspectionRepository.reconcile_jobs(DateTime.utc_now())
+    assert %{state: :pending, failure_reason: nil} = Repo.get!(InspectionSchema, inspection.id)
+
+    assert {:ok, _file, _library} =
+             EctoInspectionRepository.begin_inspection(
+               inspection.media_file_id,
+               inspection.token,
+               inspection.job_id
+             )
+
+    assert DateTime.compare(Repo.get!(InspectionSchema, inspection.id).started_at, old) == :gt
+  end
+
+  test "a recent Oban attempt is not failed because a previous attempt was old", %{
+    inspection: inspection
+  } do
+    old =
+      DateTime.add(DateTime.utc_now(), -InspectionPolicy.rescue_after_ms() - 1_000, :millisecond)
+
+    Repo.get!(Oban.Job, inspection.job_id)
+    |> Ecto.Changeset.change(state: "executing", attempted_at: DateTime.utc_now())
+    |> Repo.update!()
+
+    Repo.get!(InspectionSchema, inspection.id)
+    |> Ecto.Changeset.change(state: :running, started_at: old)
+    |> Repo.update!()
+
+    assert :ok = EctoInspectionRepository.reconcile_jobs(DateTime.utc_now())
+    assert Repo.get!(InspectionSchema, inspection.id).state == :running
   end
 
   test "worker keeps private probe exceptions out of logs and Oban errors", %{
