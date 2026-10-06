@@ -12,6 +12,7 @@ defmodule BolognesaWeb.Library.Index.State.Library do
     :last_completed_at,
     :inspection_summary,
     :inspection_counts,
+    :inspection_failure_reasons,
     files_discovered: 0,
     attempt: 0,
     active?: false,
@@ -29,6 +30,7 @@ defmodule BolognesaWeb.Library.Index.State.Library do
           last_completed_at: String.t() | nil,
           inspection_summary: String.t(),
           inspection_counts: map(),
+          inspection_failure_reasons: list(map()),
           files_discovered: non_neg_integer(),
           attempt: non_neg_integer(),
           active?: boolean(),
@@ -36,7 +38,14 @@ defmodule BolognesaWeb.Library.Index.State.Library do
           button_label: String.t()
         }
 
-  @empty_counts %{uninspected: 0, pending: 0, running: 0, succeeded: 0, failed: 0}
+  @empty_counts %{
+    uninspected: 0,
+    pending: 0,
+    running: 0,
+    succeeded: 0,
+    failed: 0,
+    failure_reasons: %{}
+  }
 
   @spec from_domain(Library.t(), ScanStatus.t(), map()) :: t()
   def from_domain(library, status, counts \\ @empty_counts) do
@@ -55,6 +64,7 @@ defmodule BolognesaWeb.Library.Index.State.Library do
       last_completed_at: format_date(status.last_completed_at),
       inspection_counts: counts,
       inspection_summary: summary(counts),
+      inspection_failure_reasons: failure_reasons(counts),
       inspection_active?: counts.pending + counts.running > 0,
       button_label: if(state(scan) == :failed, do: "Reintentar", else: "Escanear")
     }
@@ -62,9 +72,31 @@ defmodule BolognesaWeb.Library.Index.State.Library do
 
   defp summary(counts) do
     "Análisis: #{counts.pending} pendientes, #{counts.running} en curso, " <>
-      "#{counts.succeeded} correctos, #{counts.failed} fallidos" <>
+      "#{counts.succeeded} correctos, #{counts.failed} análisis técnicos con error" <>
       if(counts.uninspected > 0, do: ", #{counts.uninspected} sin analizar", else: "")
   end
+
+  defp failure_reasons(counts) do
+    counts
+    |> Map.get(:failure_reasons, %{})
+    |> Enum.sort_by(fn {reason, _count} -> to_string(reason) end)
+    |> Enum.map(fn {reason, count} ->
+      %{reason: reason, count: count, label: inspection_message(reason)}
+    end)
+  end
+
+  defp inspection_message(:source_changed), do: "El archivo cambió desde el escaneo"
+  defp inspection_message(:source_inaccessible), do: "No se puede acceder al archivo"
+  defp inspection_message(:unsafe_entry), do: "La entrada no se puede analizar de forma segura"
+  defp inspection_message(:unreadable), do: "No se pudo leer el archivo"
+  defp inspection_message(:unsupported), do: "Formato no admitido"
+  defp inspection_message(:timeout), do: "Se agotó el tiempo de análisis"
+  defp inspection_message(:tool_unavailable), do: "Herramienta de análisis no disponible"
+  defp inspection_message(:invalid_output), do: "No se pudieron interpretar los datos técnicos"
+  defp inspection_message(:storage_unavailable), do: "Almacenamiento no disponible"
+  defp inspection_message(:attempts_exhausted), do: "Se agotaron los reintentos"
+  defp inspection_message(:unexpected_failure), do: "Error inesperado durante el análisis"
+  defp inspection_message(_), do: "No se pudo completar el análisis"
 
   defp state(nil), do: :not_scanned
   defp state(scan), do: scan.state

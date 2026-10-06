@@ -82,6 +82,25 @@
                 >
                   {library.inspection_summary}
                 </p>
+                <ul
+                  :if={library.inspection_failure_reasons != []}
+                  id={"library-inspection-failures-#{library.id}"}
+                  class="space-y-1 border-l-2 border-red-300/40 pl-3 text-xs leading-5 text-red-200"
+                >
+                  <li
+                    :for={failure <- library.inspection_failure_reasons}
+                    id={"library-inspection-failure-#{library.id}-#{failure.reason}"}
+                  >
+                    {failure.count} · {failure.label}
+                  </li>
+                </ul>
+                <p
+                  :if={library.inspection_counts.failed > 0}
+                  id={"library-inspection-help-#{library.id}"}
+                  class="max-w-md text-xs leading-5 text-stone-400"
+                >
+                  El análisis técnico no terminó para esos archivos. Esto no confirma un problema de reproducción.
+                </p>
               </div>
               <div class="flex flex-wrap gap-2">
                 <button

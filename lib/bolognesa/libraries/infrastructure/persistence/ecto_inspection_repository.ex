@@ -36,15 +36,32 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
               left_join: inspection in InspectionSchema,
               on: inspection.media_file_id == file.id,
               where: file.library_id == ^library_id and file.availability == :available,
-              group_by: inspection.state,
-              select: {inspection.state, count(file.id)}
+              group_by: [inspection.state, inspection.failure_reason],
+              select: {inspection.state, inspection.failure_reason, count(file.id)}
           )
 
-        counts = %{uninspected: 0, pending: 0, running: 0, succeeded: 0, failed: 0}
+        counts = %{
+          uninspected: 0,
+          pending: 0,
+          running: 0,
+          succeeded: 0,
+          failed: 0,
+          failure_reasons: %{}
+        }
 
         {:ok,
-         Enum.reduce(rows, counts, fn {state, count}, acc ->
-           Map.put(acc, state || :uninspected, count)
+         Enum.reduce(rows, counts, fn {state, reason, count}, acc ->
+           acc = Map.update!(acc, state || :uninspected, &(&1 + count))
+
+           if state == :failed do
+             Map.update!(
+               acc,
+               :failure_reasons,
+               &Map.update(&1, reason, count, fn total -> total + count end)
+             )
+           else
+             acc
+           end
          end)}
     end
   rescue

@@ -133,29 +133,64 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     assert has_element?(reopened, "#library-reinspect-#{library.id}[disabled]")
   end
 
-  test "refresh and reconnect show a failed technical inspection", %{
+  test "refresh and reconnect show grouped technical failure reasons", %{
     conn: conn,
     token: token,
     path: path,
     actor: actor
   } do
-    File.write!(Path.join(path, "broken.mkv"), "not media")
+    for name <- ["first.mkv", "second.mkv", "third.mkv"] do
+      File.write!(Path.join(path, name), "not media")
+    end
+
     {:ok, library} = Libraries.create_library(actor, %{name: "Broken", path: path})
     {:ok, _} = Libraries.start_scan(actor, library.id)
     assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
-    inspection = Repo.one!(InspectionSchema)
 
-    inspection
-    |> InspectionSchema.changeset(%{state: :failed, failure_reason: :invalid_output})
-    |> Repo.update!()
+    InspectionSchema
+    |> Repo.all()
+    |> Enum.with_index()
+    |> Enum.each(fn {inspection, index} ->
+      reason = if index == 2, do: :source_changed, else: :invalid_output
+
+      inspection
+      |> InspectionSchema.changeset(%{state: :failed, failure_reason: reason})
+      |> Repo.update!()
+    end)
 
     conn = init_test_session(conn, user_token: token)
     {:ok, view, _} = live(conn, ~p"/libraries")
     render_async(view)
-    assert has_element?(view, "#library-inspection-counts-#{library.id}[data-failed='1']")
+
+    assert has_element?(
+             view,
+             "#library-inspection-counts-#{library.id}[data-failed='3']",
+             "3 análisis técnicos con error"
+           )
+
+    assert has_element?(
+             view,
+             "#library-inspection-failure-#{library.id}-invalid_output",
+             "2 · No se pudieron interpretar los datos técnicos"
+           )
+
+    assert has_element?(
+             view,
+             "#library-inspection-failure-#{library.id}-source_changed",
+             "1 · El archivo cambió desde el escaneo"
+           )
+
+    assert has_element?(
+             view,
+             "#library-inspection-help-#{library.id}",
+             "Esto no confirma un problema de reproducción"
+           )
+
     {:ok, reopened, _} = live(conn, ~p"/libraries")
     render_async(reopened)
-    assert has_element?(reopened, "#library-inspection-counts-#{library.id}[data-failed='1']")
+    assert has_element?(reopened, "#library-inspection-counts-#{library.id}[data-failed='3']")
+    assert has_element?(reopened, "#library-inspection-failure-#{library.id}-invalid_output")
+    assert has_element?(reopened, "#library-inspection-failure-#{library.id}-source_changed")
   end
 
   @tag capture_log: true
