@@ -41,6 +41,20 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
              FfprobeMediaProbe.inspect(library(root), persisted, executable: executable)
   end
 
+  test "suppresses tool diagnostics so successful JSON stays parseable", %{root: root} do
+    path = Path.join(root, "diagnostic.mkv")
+    File.write!(path, "video")
+
+    executable =
+      fake(
+        root,
+        "if [ \"$2\" != quiet ]; then printf diagnostic >&2; fi\nprintf '{\"format\":{\"format_name\":\"matroska\"},\"streams\":[]}'"
+      )
+
+    assert {:ok, %{format: "matroska"}} =
+             FfprobeMediaProbe.inspect(library(root), file(path, root), executable: executable)
+  end
+
   test "rejects descendant symlinks and changed observations", %{root: root} do
     target = Path.join(root, "target.mkv")
     File.write!(target, "video")

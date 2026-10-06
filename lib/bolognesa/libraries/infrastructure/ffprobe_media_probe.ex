@@ -8,7 +8,7 @@ defmodule Bolognesa.Libraries.Infrastructure.FfprobeMediaProbe do
   @max_bytes 262_144
   @args [
     "-v",
-    "error",
+    "quiet",
     "-show_format",
     "-show_streams",
     "-show_entries",
