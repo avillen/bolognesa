@@ -110,6 +110,12 @@ defmodule Bolognesa.Libraries.Infrastructure.FfprobeMediaProbe do
     end
   end
 
+  defp same?(%DateTime{} = stored, %DateTime{} = observed) do
+    if DateTime.compare(stored, observed) == :eq,
+      do: :ok,
+      else: {:error, :source_changed}
+  end
+
   defp same?(value, value), do: :ok
   defp same?(_, _), do: {:error, :source_changed}
 

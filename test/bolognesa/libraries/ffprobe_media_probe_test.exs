@@ -30,6 +30,17 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
              FfprobeMediaProbe.inspect(library(root), file(path, root), executable: executable)
   end
 
+  test "accepts the stored microsecond precision for an unchanged file", %{root: root} do
+    path = Path.join(root, "unchanged.mkv")
+    File.write!(path, "video")
+    executable = fake(root, "printf '{\"format\":{\"format_name\":\"matroska\"},\"streams\":[]}'")
+    observed = file(path, root)
+    persisted = %{observed | modified_at: %{observed.modified_at | microsecond: {0, 6}}}
+
+    assert {:ok, %{format: "matroska"}} =
+             FfprobeMediaProbe.inspect(library(root), persisted, executable: executable)
+  end
+
   test "rejects descendant symlinks and changed observations", %{root: root} do
     target = Path.join(root, "target.mkv")
     File.write!(target, "video")
