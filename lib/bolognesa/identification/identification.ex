@@ -3,7 +3,9 @@ defmodule Bolognesa.Identification do
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Identification.Application.CorrectIdentification
+  alias Bolognesa.Identification.Application.ListReviewItems
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader
   alias Bolognesa.Identification.Infrastructure.TmdbMovieProvider
 
   @spec correct(Actor.t() | nil, pos_integer(), :unidentified | {:tmdb, pos_integer()}) ::
@@ -24,6 +26,9 @@ defmodule Bolognesa.Identification do
       EctoIdentificationRepository.retry(file_id)
     end
   end
+
+  @spec list_review_items(Actor.t() | nil, pos_integer()) :: {:ok, map()} | {:error, atom()}
+  def list_review_items(actor, page), do: ListReviewItems.call(actor, page, EctoReviewReader)
 
   @spec search_candidates(Actor.t() | nil, binary()) :: {:ok, list()} | {:error, atom()}
   def search_candidates(actor, query) do
