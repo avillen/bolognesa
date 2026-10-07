@@ -51,6 +51,7 @@ jobs:
           set -eu
           image="ghcr.io/avillen/bolognesa-lan@${IMAGE_DIGEST}"
           docker buildx imagetools inspect "$image"
+          printf 'commit=%s\nimage=%s\n' "$COMMIT_SHA" "$image" > image-ref.txt
           duration_seconds=$(($(date +%s) - BUILD_STARTED))
           {
             echo "Commit: ${COMMIT_SHA}"
@@ -58,3 +59,10 @@ jobs:
             echo "Requested platform: linux/arm64"
             echo "Build and publication: ${duration_seconds} s"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qnap-image-ref
+          path: image-ref.txt
+          if-no-files-found: error
+          retention-days: 30
