@@ -1,0 +1,150 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <section id="movie-review" class="mx-auto max-w-6xl space-y-8">
+    <header>
+      <.link
+        navigate={~p"/movies"}
+        class="inline-flex min-h-11 items-center text-sm font-medium text-amber-200 hover:text-amber-100"
+      >← Películas</.link>
+      <h1 class="mt-3 text-4xl font-semibold tracking-tight text-stone-50">
+        Revisar identificaciones
+      </h1>
+      <p class="mt-3 max-w-2xl text-sm leading-6 text-stone-400">
+        Elige otra película, marca el archivo sin identificar o vuelve a solicitar la búsqueda automática.
+      </p>
+    </header>
+    <p
+      :if={@feedback}
+      id="review-feedback"
+      role="status"
+      class="rounded-xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-100"
+    >
+      {@feedback}
+    </p>
+    <p :if={@loading?} id="review-loading" role="status" class="text-sm text-stone-300">
+      Cargando archivos…
+    </p>
+    <p
+      :if={@error}
+      id="review-error"
+      role="alert"
+      class="rounded-xl border border-red-300/30 p-4 text-red-100"
+    >
+      {@error}
+    </p>
+    <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]">
+      <div id="review-list" phx-update="stream" class="space-y-3">
+        <article
+          :for={{dom_id, item} <- @streams.reviews}
+          id={dom_id}
+          class="rounded-2xl border border-stone-700 bg-zinc-900 p-5"
+        >
+          <h2 class="break-words font-semibold text-stone-50">{item.filename}</h2>
+          <p class="mt-2 text-xs text-stone-400">
+            {state_label(item.state)} · {if item.availability == :available,
+              do: "Disponible",
+              else: "Ausente"}
+          </p>
+          <p :if={item.movie_title} class="mt-2 text-sm text-amber-200">{item.movie_title}</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button
+              id={"review-select-#{item.file_id}"}
+              type="button"
+              phx-click="select"
+              phx-value-file_id={item.file_id}
+              class="min-h-11 rounded-xl bg-amber-300 px-4 text-sm font-semibold text-stone-950 transition hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+            >Corregir</button>
+            <button
+              id={"review-retry-#{item.file_id}"}
+              type="button"
+              phx-click="retry"
+              phx-value-file_id={item.file_id}
+              class="min-h-11 rounded-xl border border-stone-600 px-4 text-sm text-stone-200 transition hover:border-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+            >Reintentar</button>
+          </div>
+        </article>
+      </div>
+      <div class="rounded-2xl border border-stone-700 bg-zinc-900 p-5 sm:p-7">
+        <h2 class="text-xl font-semibold text-stone-50">Corrección manual</h2>
+        <p class="mt-2 text-sm text-stone-400">
+          {if @selected_file_id,
+            do: "Archivo seleccionado: #{@selected_file_id}",
+            else: "Selecciona un archivo de la lista."}
+        </p>
+        <.form for={@form} id="correction-form" phx-submit="search" class="mt-5 space-y-4">
+          <.input
+            field={@form[:query]}
+            id="correction-query"
+            type="search"
+            label="Buscar en TMDb"
+            class="w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50 outline-none focus:border-amber-300"
+          />
+          <button
+            id="correction-search"
+            type="submit"
+            disabled={is_nil(@selected_file_id) || @searching?}
+            class="min-h-11 w-full rounded-xl border border-amber-300/50 px-4 font-semibold text-amber-200 transition hover:bg-amber-300/10 disabled:opacity-50"
+          >{if @searching?, do: "Buscando…", else: "Buscar"}</button>
+        </.form>
+        <div id="correction-candidates" class="mt-5 space-y-2">
+          <button
+            :for={candidate <- @candidates}
+            id={"candidate-#{candidate.provider_id}"}
+            type="button"
+            phx-click="choose_candidate"
+            phx-value-tmdb_id={candidate.provider_id}
+            class="min-h-11 w-full rounded-xl border border-stone-600 p-3 text-left text-sm text-stone-100 transition hover:border-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+          >{candidate.title} {candidate.year}</button>
+        </div>
+        <.form for={@form} id="correction-choice-form" phx-submit="correct" class="mt-5 space-y-3">
+          <.input
+            field={@form[:tmdb_id]}
+            id="correction-tmdb-id"
+            type="number"
+            label="ID de TMDb"
+            min="1"
+            class="w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50 outline-none focus:border-amber-300"
+          />
+          <button
+            id="correction-submit"
+            type="submit"
+            disabled={is_nil(@selected_file_id)}
+            phx-disable-with="Guardando…"
+            class="min-h-11 w-full rounded-xl bg-amber-300 px-4 font-semibold text-stone-950 transition hover:bg-amber-200 disabled:opacity-50"
+          >Confirmar película</button>
+        </.form>
+        <button
+          id="correction-unidentified"
+          type="button"
+          phx-click="unidentified"
+          disabled={is_nil(@selected_file_id)}
+          class="mt-3 min-h-11 w-full rounded-xl border border-stone-600 px-4 text-sm text-stone-200 transition hover:border-stone-400 disabled:opacity-50"
+        >Dejar sin identificar</button>
+      </div>
+    </div>
+    <p
+      :if={!@loading? && @total == 0}
+      id="review-empty"
+      class="rounded-2xl border border-dashed border-stone-700 p-8 text-center text-stone-400"
+    >
+      No hay archivos que revisar.
+    </p>
+    <nav
+      :if={@total > 24}
+      id="review-pagination"
+      aria-label="Páginas de revisión"
+      class="flex items-center justify-center gap-4"
+    >
+      <.link
+        :if={@page > 1}
+        patch={~p"/movies/review?#{%{page: @page - 1}}"}
+        class="rounded-xl border border-stone-600 px-4 py-3 text-stone-200"
+      >Anterior</.link>
+      <span class="text-sm text-stone-400">Página {@page}</span>
+      <.link
+        :if={@page * 24 < @total}
+        patch={~p"/movies/review?#{%{page: @page + 1}}"}
+        class="rounded-xl border border-stone-600 px-4 py-3 text-stone-200"
+      >Siguiente</.link>
+    </nav>
+  </section>
+</Layouts.app>

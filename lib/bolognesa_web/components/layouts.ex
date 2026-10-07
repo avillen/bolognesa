@@ -44,7 +44,16 @@ defmodule BolognesaWeb.Layouts do
         <span class="flex size-10 items-center justify-center rounded-xl bg-amber-300 text-lg font-black text-stone-950">B</span>
         <span class="text-lg font-semibold tracking-tight">Bolognesa</span>
       </a>
-      <span class="hidden text-xs font-semibold uppercase tracking-[0.2em] text-stone-400 sm:block">Biblioteca personal</span>
+      <nav class="flex items-center gap-4 text-sm font-medium text-stone-300">
+        <.link
+          navigate={~p"/movies"}
+          class="min-h-11 py-3 transition hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+        >Películas</.link>
+        <.link
+          navigate={~p"/libraries"}
+          class="min-h-11 py-3 transition hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+        >Bibliotecas</.link>
+      </nav>
     </header>
 
     <main class="px-5 pb-20 pt-10 sm:px-8 sm:pt-16">
