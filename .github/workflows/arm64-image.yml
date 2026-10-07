@@ -60,7 +60,7 @@ jobs:
             echo "Build and publication: ${duration_seconds} s"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: qnap-image-ref
           path: image-ref.txt
