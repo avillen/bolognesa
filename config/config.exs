@@ -18,6 +18,7 @@ config :bolognesa, Oban,
 
 config :bolognesa, :scan_reconciler, true
 config :bolognesa, :inspection_outbox_dispatcher, true
+config :bolognesa, :identification_outbox_dispatcher, true
 config :bolognesa, :inspection_reconciler, true
 
 # Configure the endpoint

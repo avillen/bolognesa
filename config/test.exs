@@ -2,6 +2,7 @@ import Config
 
 config :bolognesa, Oban, testing: :manual, queues: false, plugins: false
 config :bolognesa, :inspection_outbox_dispatcher, false
+config :bolognesa, :identification_outbox_dispatcher, false
 config :bolognesa, :inspection_reconciler, false
 config :bolognesa, :scan_reconciler, false
 

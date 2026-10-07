@@ -24,7 +24,8 @@ defmodule Bolognesa.Application do
     children =
       children ++
         scan_reconciler_children() ++
-        outbox_dispatcher_children() ++ inspection_reconciler_children()
+        outbox_dispatcher_children() ++
+        inspection_reconciler_children() ++ identification_outbox_children()
 
     opts = [strategy: :one_for_one, name: Bolognesa.Supervisor]
     Supervisor.start_link(children, opts)
@@ -45,6 +46,12 @@ defmodule Bolognesa.Application do
   defp inspection_reconciler_children do
     if Application.get_env(:bolognesa, :inspection_reconciler, true),
       do: [Bolognesa.Libraries.Infrastructure.Jobs.InspectionReconciler],
+      else: []
+  end
+
+  defp identification_outbox_children do
+    if Application.get_env(:bolognesa, :identification_outbox_dispatcher, true),
+      do: [Bolognesa.Identification.Infrastructure.Jobs.OutboxDispatcher],
       else: []
   end
 
