@@ -13,6 +13,11 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
   alias EctoScanRepository.{MediaFileMapper, MediaFileSchema, ScanMapper, ScanSchema}
 
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.{
+    EventSchema,
+    IdentificationSchema
+  }
+
   @modified ~U[2026-10-03 00:00:00Z]
 
   setup context do
@@ -52,6 +57,93 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
   test "existing scans default to normal inspection mode", %{scan: scan} do
     assert stored_scan(scan.id).force_inspection? == false
+  end
+
+  test "requests identification once for a new file and again on revision change", %{scan: scan} do
+    running = start(scan)
+    save(running, [entry("a.mp4")])
+    [file] = files(scan.library_id)
+    first = Repo.get_by!(IdentificationSchema, media_file_id: file.id)
+    assert first.state == :pending
+    assert first.observed_revision == 1
+    assert [_event] = identification_events(file.id)
+
+    save(running, [entry("a.mp4")])
+    assert Repo.get_by!(IdentificationSchema, media_file_id: file.id).token == first.token
+    assert length(identification_events(file.id)) == 1
+    assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
+
+    unchanged = next_scan(scan.library_id)
+    save(unchanged, [entry("a.mp4")])
+    assert length(identification_events(file.id)) == 1
+    assert {:ok, _} = EctoScanRepository.complete(unchanged.id, unchanged.generation)
+
+    changed = next_scan(scan.library_id)
+    save(changed, [entry("a.mp4", 6)])
+    second = Repo.get_by!(IdentificationSchema, media_file_id: file.id)
+    assert second.observed_revision == 2
+    refute second.token == first.token
+    assert length(identification_events(file.id)) == 2
+    assert {:ok, _} = EctoScanRepository.complete(changed.id, changed.generation)
+
+    absent = next_scan(scan.library_id)
+    assert {:ok, _} = EctoScanRepository.complete(absent.id, absent.generation)
+    restored = next_scan(scan.library_id)
+    save(restored, [entry("a.mp4", 6)])
+    assert length(identification_events(file.id)) == 3
+  end
+
+  @tag committed: true
+  test "rolls back inventory when identification event cannot be stored" do
+    with_committed_scan(fn scan ->
+      running = start(scan)
+      existing = entry("existing.mp4")
+      save(running, [existing])
+      [file] = files(scan.library_id)
+      before = stored_scan(scan.id)
+
+      Ecto.Adapters.SQL.query!(Repo, """
+      ALTER TABLE media_identification_events ADD CONSTRAINT inventory_test_reject_identification
+      CHECK (media_file_id <> #{file.id}) NOT VALID
+      """)
+
+      try do
+        assert {:error, :unavailable} =
+                 EctoScanRepository.save_batch(scan.id, running.generation, [
+                   entry("existing.mp4", 6),
+                   entry("new.mp4")
+                 ])
+
+        assert [unchanged] = files(scan.library_id)
+        assert unchanged.revision == file.revision
+        assert stored_scan(scan.id) == before
+        assert length(identification_events(file.id)) == 1
+      after
+        Ecto.Adapters.SQL.query!(
+          Repo,
+          "ALTER TABLE media_identification_events DROP CONSTRAINT inventory_test_reject_identification"
+        )
+      end
+    end)
+  end
+
+  test "preserves manual identification after file changes", %{scan: scan} do
+    running = start(scan)
+    save(running, [entry("a.mp4")])
+    [file] = files(scan.library_id)
+    first = Repo.get_by!(IdentificationSchema, media_file_id: file.id)
+
+    first
+    |> IdentificationSchema.changeset(%{state: :manual_unidentified, origin: :manual})
+    |> Repo.update!()
+
+    assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
+    changed = next_scan(scan.library_id)
+    save(changed, [entry("a.mp4", 6)])
+    current = Repo.get_by!(IdentificationSchema, media_file_id: file.id)
+    assert current.state == :manual_unidentified
+    assert current.token == first.token
+    assert length(identification_events(file.id)) == 1
   end
 
   test "stores one technical state per file and one event per token", %{scan: scan} do
@@ -586,6 +678,14 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   defp events(file_id) do
     Repo.all(
       from event in OutboxSchema, where: event.media_file_id == ^file_id, order_by: event.id
+    )
+  end
+
+  defp identification_events(file_id) do
+    Repo.all(
+      from event in EventSchema,
+        where: event.media_file_id == ^file_id,
+        order_by: event.id
     )
   end
 

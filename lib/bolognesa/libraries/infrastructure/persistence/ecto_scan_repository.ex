@@ -8,6 +8,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
   alias Bolognesa.Libraries.Domain.{Inspection, MediaFile, Scan, ScanStatus}
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibraryMapper
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
 
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.{
     InspectionSchema,
@@ -102,6 +103,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
 
       saved = load_batch_files(scan.library_id, entries)
       schedule_inspections(scan, entries, existing, saved, inspections)
+      schedule_identifications(entries, existing, saved)
 
       added =
         Enum.count(entries, &first_observation?(Map.get(existing, &1.relative_path), generation))
@@ -345,6 +347,24 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
     end
 
     Repo.insert!(OutboxSchema.changeset(%OutboxSchema{}, %{media_file_id: file.id, token: token}))
+  end
+
+  defp schedule_identifications(entries, existing, saved) do
+    requests =
+      Enum.map(entries, fn entry ->
+        old = Map.get(existing, entry.relative_path)
+        file = Map.fetch!(saved, entry.relative_path)
+
+        %{
+          file_id: file.id,
+          revision: file.revision,
+          requested?:
+            old == nil or old.availability == :missing or
+              MediaFile.revision_for(old, entry) != old.revision
+        }
+      end)
+
+    EctoRequestWriter.request_batch!(Repo, requests)
   end
 
   defp file_row(scan, existing, entry) do
