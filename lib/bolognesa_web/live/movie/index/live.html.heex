@@ -59,8 +59,15 @@
           id={"movie-link-#{movie.id}"}
           class="block h-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
         >
-          <div class="flex aspect-[16/9] items-center justify-center bg-gradient-to-br from-stone-800 to-stone-950 text-4xl font-bold text-amber-200/50">
-            {String.first(movie.title)}
+          <div class="relative flex aspect-[16/9] items-center justify-center overflow-hidden bg-gradient-to-br from-stone-800 to-stone-950 text-4xl font-bold text-amber-200/50">
+            <span aria-hidden="true">{String.first(movie.title)}</span>
+            <img
+              :if={movie.poster_path}
+              src={"https://image.tmdb.org/t/p/w500#{movie.poster_path}"}
+              alt={"Cartel de #{movie.title}"}
+              loading="lazy"
+              class="absolute inset-0 size-full object-cover"
+            />
           </div>
           <div class="p-5">
             <h2 class="text-lg font-semibold text-stone-50">{movie.title}</h2>

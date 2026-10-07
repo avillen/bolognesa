@@ -61,7 +61,13 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
               on: identification.media_file_id == file.id,
               where: identification.movie_id == ^id,
               order_by: file.id,
-              select: %{id: file.id, availability: file.availability, size_bytes: file.size_bytes}
+              select: %{
+                id: file.id,
+                availability: file.availability,
+                size_bytes: file.size_bytes,
+                origin: identification.origin,
+                needs_review: identification.needs_review
+              }
           )
 
         {:ok,

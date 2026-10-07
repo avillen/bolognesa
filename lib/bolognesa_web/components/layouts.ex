@@ -53,6 +53,10 @@ defmodule BolognesaWeb.Layouts do
           navigate={~p"/libraries"}
           class="min-h-11 py-3 transition hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
         >Bibliotecas</.link>
+        <.link
+          navigate={~p"/about"}
+          class="min-h-11 py-3 transition hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+        >Acerca de</.link>
       </nav>
     </header>
 

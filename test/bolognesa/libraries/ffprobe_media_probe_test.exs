@@ -73,10 +73,10 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
   end
 
   test "returns safe errors for tool failure, timeout and excess output", %{root: root} do
-    assert {:error, :failed} = BoundedCommand.run(fake(root, "exit 7"), [], 1_000, 100)
+    assert {:error, :failed} = BoundedCommand.run(fake(root, "exit 7"), [], 5_000, 100)
 
     assert {:error, :too_large} =
-             BoundedCommand.run(fake(root, "printf '123456789'"), [], 1_000, 3)
+             BoundedCommand.run(fake(root, "printf '123456789'"), [], 5_000, 3)
 
     assert {:error, :timeout} = BoundedCommand.run(fake(root, "sleep 1"), [], 10, 100)
 

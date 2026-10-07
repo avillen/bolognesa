@@ -98,7 +98,7 @@ Son agregados separados. Los escaneos repetidos reconcilian archivos sin duplica
 
 Solo un recorrido completo y correcto de una fuente permite concluir que un archivo está ausente. Una fuente inaccesible o un escaneo parcial registra un error y no convierte todos sus archivos en desaparecidos.
 
-El diseño H2b aprobado fija la identidad física como `(library_id, relative_path)`, preservando los bytes originales de la ruta. Tamaño y modificación determinan una revisión técnica; un renombrado produce otra entrada y deja la anterior ausente tras un recorrido correcto. No se promete deduplicación por contenido ni identidad compartida entre bibliotecas. El escáner H2b está implementado localmente; análisis técnico H2c pendiente; ver [decisión 0003](../decisions/0003-recoverable-library-scans.md).
+El diseño H2b aprobado fija la identidad física como `(library_id, relative_path)`, preservando los bytes originales de la ruta. Tamaño y modificación determinan una revisión técnica; un renombrado produce otra entrada y deja la anterior ausente tras un recorrido correcto. No se promete deduplicación por contenido ni identidad compartida entre bibliotecas. El escáner H2b y el análisis técnico H2c están implementados; ver [decisiones 0003](../decisions/0003-recoverable-library-scans.md) y [0004](../decisions/0004-technical-media-inspection.md).
 
 ### Catálogo
 
@@ -107,6 +107,8 @@ Describe obras con independencia de su disponibilidad física. El primer agregad
 Los conceptos futuros son `Series`, `Season`, `Episode`, `Artist`, `Album` y `Track`. Sus límites transaccionales se diseñarán en sus fases; no se implementan por adelantado.
 
 Catálogo controla los metadatos internos de la obra y sus referencias a proveedores. Identificación utiliza su fachada para localizar o incorporar una obra.
+
+En H3, `Movie` mantiene la unicidad `(provider, provider_id)`. Las lecturas de Catálogo pueden unir películas, identificaciones y archivos mediante un adaptador de proyección; no escriben datos de Bibliotecas. Ver [decisión 0005](../decisions/0005-catalog-identification.md).
 
 ### Identificación
 
@@ -117,6 +119,8 @@ Una coincidencia dudosa requiere revisión. Una corrección manual queda protegi
 La relación confirmada referencia el identificador del archivo y de la obra. Identificación controla esa relación; no se mantienen dos fuentes de verdad independientes en Bibliotecas y Catálogo.
 
 Los adaptadores de proveedores normalizan respuestas externas antes de entregarlas a la aplicación. Las peticiones HTTP se realizan con Req.
+
+En H3, Bibliotecas llama al escritor de solicitudes de Identificación dentro de la transacción del lote de inventario. La solicitud y su evento outbox se confirman juntos. Los resultados automáticos comparan token, revisión, disponibilidad y origen bajo bloqueo antes de vincular la obra; una decisión manual renueva el token y queda protegida.
 
 ### Reproducción
 
@@ -161,7 +165,7 @@ Los fallos transitorios se reintentan de forma acotada. Los errores permanentes 
 
 El motor acordado para H2b es Oban gratuito con PostgreSQL, detrás de puertos de aplicación. Solicitud y trabajo se guardan atómicamente y la base limita escaneos activos por biblioteca. Cada invocación adquiere una generación nueva; comprobarla y guardar sus efectos exige una misma transacción corta. Un reintento repite el recorrido y no utiliza observaciones anteriores para concluir ausencias. El rescate de trabajos se complementa con reconciliación de estados terminales del dominio. Ver [decisión 0003](../decisions/0003-recoverable-library-scans.md); implementado localmente en H2b.
 
-H2b consulta progreso persistido desde la pantalla y no introduce eventos independientes ni outbox. Cuando descubrimiento produzca trabajos de inspección u otras consecuencias duraderas, deberán confirmarse con el cambio que las produce conforme a la regla de eventos anterior. La selección de proveedores de metadatos y herramientas multimedia permanece para sus planes respectivos.
+H2b consulta progreso persistido desde la pantalla y no introduce eventos independientes ni outbox. H2c y H3 confirman las solicitudes de análisis técnico e identificación con el lote de inventario mediante outbox. H2c usa `ffprobe`; H3 usa TMDb con Req y un token de lectura configurado en runtime.
 
 ### Publicación y consumo de eventos
 

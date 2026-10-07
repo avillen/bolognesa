@@ -42,6 +42,7 @@ defmodule BolognesaWeb.Router do
       live "/movies", Movie.Index.Live, :index
       live "/movies/review", Movie.Review.Live, :index
       live "/movies/:id", Movie.Show.Live, :show
+      live "/about", About.Live, :index
     end
   end
 
