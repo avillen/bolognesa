@@ -1,5 +1,7 @@
 import Config
 
+config :bolognesa, :tmdb_read_token, System.get_env("TMDB_READ_TOKEN")
+
 default_library_roots =
   if config_env() == :prod,
     do: "/media/movies",
