@@ -104,7 +104,7 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
   test "policy agrees with production configuration and worker options", %{scan: scan} do
     config = Config.Reader.read!("config/config.exs", env: :prod, target: :host)
     oban = config[:bolognesa][Oban]
-    assert oban[:queues] == [library_scans: 1, media_inspections: 1]
+    assert oban[:queues] == [library_scans: 1, media_inspections: 1, identifications: 1]
 
     assert oban[:plugins] == [
              {Oban.Plugins.Lifeline,

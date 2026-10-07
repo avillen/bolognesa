@@ -1,0 +1,233 @@
+defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository do
+  @moduledoc false
+  import Ecto.Query
+
+  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias __MODULE__.IdentificationSchema
+  alias Bolognesa.Repo
+
+  @spec get(pos_integer()) ::
+          {:ok, IdentificationSchema.t()} | {:error, :not_found | :unavailable}
+  def get(file_id) do
+    case Repo.get_by(IdentificationSchema, media_file_id: file_id) do
+      nil -> {:error, :not_found}
+      row -> {:ok, row}
+    end
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  @spec begin_identification(pos_integer(), binary(), integer() | nil) ::
+          {:ok, :stale} | {:ok, map()} | {:error, :unavailable}
+  def begin_identification(file_id, token, job_id) do
+    transaction(fn ->
+      case current(file_id, token) do
+        {:ok, identification, file} when identification.state == :pending ->
+          attrs = %{started_at: DateTime.utc_now()}
+          attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
+          Repo.update!(IdentificationSchema.changeset(identification, attrs))
+          {:ok, %{relative_path: file.relative_path, revision: file.revision}}
+
+        _ ->
+          {:ok, :stale}
+      end
+    end)
+  end
+
+  @spec complete(pos_integer(), binary(), list(), map() | nil, boolean()) ::
+          :ok | {:ok, :stale} | {:error, :unavailable}
+  def complete(file_id, token, candidates, details, needs_review) do
+    transaction(fn ->
+      case current(file_id, token) do
+        {:ok, identification, _file} when identification.state == :pending ->
+          movie = if details, do: EctoMovieRepository.upsert!(Repo, details), else: nil
+          state = if movie, do: :automatic, else: :unmatched
+
+          attrs = %{
+            state: state,
+            origin: :automatic,
+            movie_id: if(movie, do: movie.id, else: nil),
+            needs_review: needs_review,
+            failure_reason: nil,
+            candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
+            finished_at: DateTime.utc_now()
+          }
+
+          Repo.update!(IdentificationSchema.changeset(identification, attrs))
+          :ok
+
+        _ ->
+          {:ok, :stale}
+      end
+    end)
+  end
+
+  @spec fail(pos_integer(), binary(), atom()) :: :ok | {:ok, :stale} | {:error, :unavailable}
+  def fail(file_id, token, reason) do
+    transaction(fn ->
+      case current(file_id, token) do
+        {:ok, identification, _file} when identification.state == :pending ->
+          Repo.update!(
+            IdentificationSchema.changeset(identification, %{
+              state: :failed,
+              failure_reason: Atom.to_string(reason),
+              needs_review: true,
+              finished_at: DateTime.utc_now()
+            })
+          )
+
+          :ok
+
+        _ ->
+          {:ok, :stale}
+      end
+    end)
+  end
+
+  @spec correct(pos_integer(), :unidentified | map()) ::
+          {:ok, IdentificationSchema.t()} | {:error, :not_found | :unavailable}
+  def correct(file_id, choice) do
+    transaction(fn ->
+      file =
+        Repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
+          log: false
+        )
+
+      if file do
+        identification =
+          Repo.one(
+            from row in IdentificationSchema,
+              where: row.media_file_id == ^file_id,
+              lock: "FOR UPDATE"
+          )
+
+        movie =
+          if choice == :unidentified, do: nil, else: EctoMovieRepository.upsert!(Repo, choice)
+
+        attrs = %{
+          media_file_id: file_id,
+          observed_revision: file.revision,
+          token: Ecto.UUID.generate(),
+          state: if(movie, do: :manual, else: :manual_unidentified),
+          origin: :manual,
+          movie_id: if(movie, do: movie.id, else: nil),
+          needs_review: false,
+          failure_reason: nil,
+          candidate_data: %{"items" => []},
+          job_id: nil,
+          started_at: nil,
+          finished_at: DateTime.utc_now()
+        }
+
+        {:ok,
+         Repo.insert_or_update!(
+           IdentificationSchema.changeset(identification || %IdentificationSchema{}, attrs)
+         )}
+      else
+        {:error, :not_found}
+      end
+    end)
+  end
+
+  @spec retry(pos_integer()) ::
+          {:ok, IdentificationSchema.t()} | {:error, :not_found | :manual_locked | :unavailable}
+  def retry(file_id) do
+    transaction(fn ->
+      file =
+        Repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
+          log: false
+        )
+
+      identification =
+        Repo.one(
+          from row in IdentificationSchema,
+            where: row.media_file_id == ^file_id,
+            lock: "FOR UPDATE"
+        )
+
+      cond do
+        is_nil(file) ->
+          {:error, :not_found}
+
+        file.availability != :available ->
+          {:error, :not_found}
+
+        identification && identification.origin == :manual ->
+          {:error, :manual_locked}
+
+        true ->
+          EctoRequestWriter.request_batch!(Repo, [
+            %{file_id: file.id, revision: file.revision, requested?: true}
+          ])
+
+          get(file_id)
+      end
+    end)
+  end
+
+  @spec reconcile_jobs(DateTime.t()) :: :ok | {:error, :unavailable}
+  def reconcile_jobs(now) do
+    cutoff = DateTime.add(now, -60, :second)
+
+    rows =
+      Repo.all(
+        from identification in IdentificationSchema,
+          left_join: job in Oban.Job,
+          on: job.id == identification.job_id,
+          where: identification.state == :pending and not is_nil(identification.job_id),
+          where:
+            is_nil(job.id) or job.state in ["discarded", "cancelled", "completed"] or
+              (job.state == "executing" and job.attempted_at < ^cutoff and
+                 identification.started_at < ^cutoff),
+          order_by: identification.id,
+          limit: 100,
+          select: {identification.media_file_id, identification.token, job.state}
+      )
+
+    Enum.each(rows, fn {file_id, token, state} ->
+      reason = if state == "discarded", do: :attempts_exhausted, else: :unexpected_failure
+      fail(file_id, token, reason)
+    end)
+
+    :ok
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp current(file_id, token) do
+    file =
+      Repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
+        log: false
+      )
+
+    identification =
+      Repo.one(
+        from row in IdentificationSchema, where: row.media_file_id == ^file_id, lock: "FOR UPDATE"
+      )
+
+    if file && identification && identification.token == token &&
+         identification.origin != :manual && file.availability == :available &&
+         file.revision == identification.observed_revision,
+       do: {:ok, identification, file},
+       else: :stale
+  end
+
+  defp candidate_data(candidate) do
+    candidate |> Map.from_struct() |> Map.new(fn {key, value} -> {Atom.to_string(key), value} end)
+  end
+
+  defp transaction(fun) do
+    case Repo.transaction(fun) do
+      {:ok, value} -> value
+      {:error, _} -> {:error, :unavailable}
+    end
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+    Ecto.ConstraintError -> {:error, :unavailable}
+  end
+end
