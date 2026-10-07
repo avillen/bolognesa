@@ -43,3 +43,6 @@ npm-debug.log
 
 # Local design previews.
 /.superpowers/
+
+# Isolated local development worktrees.
+/.worktrees/
