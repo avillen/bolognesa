@@ -1,6 +1,6 @@
 # H3: catálogo e identificación de películas
 
-Estado: diseño conversacional aprobado por el propietario el 2026-10-06; especificación pendiente de revisión. No es un plan de implementación.
+Estado: especificación aprobada por el propietario el 2026-10-07. No es un plan de implementación.
 
 ## Propósito y alcance
 
