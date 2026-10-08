@@ -23,6 +23,7 @@ defmodule Bolognesa.Identification.Domain.TitleHint do
 
     title =
       title_part
+      |> String.replace(~r/\bweb[-_. ]dl\b/iu, " ")
       |> String.replace(~r/[._-]+/u, " ")
       |> String.replace(~r/[()[\]{}]+/u, " ")
       |> String.split(~r/\s+/u, trim: true)

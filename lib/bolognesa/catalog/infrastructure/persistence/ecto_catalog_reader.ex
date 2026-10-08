@@ -17,12 +17,12 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
       from movie in MovieSchema,
         where: fragment("strpos(lower(?), lower(?)) > 0", movie.title, ^query)
 
-    total = Repo.aggregate(filtered, :count, :id)
+    total = Repo.aggregate(filtered, :count, :id, log: false)
     offset = (page - 1) * @page_size
 
     rows =
       Repo.all(
-        from movie in filtered,
+        from(movie in filtered,
           left_join: identification in IdentificationSchema,
           on: identification.movie_id == movie.id,
           left_join: file in MediaFileSchema,
@@ -39,6 +39,8 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
             version_count: count(file.id),
             available_count: filter(count(file.id), file.availability == :available)
           }
+        ),
+        log: false
       )
 
     {:ok, %{items: rows, total: total}}

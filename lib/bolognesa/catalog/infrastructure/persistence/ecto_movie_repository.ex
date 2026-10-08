@@ -1,5 +1,6 @@
 defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository do
   @moduledoc false
+  @behaviour Bolognesa.Catalog.Application.Ports.MovieRepository
 
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
   alias Bolognesa.Repo
@@ -10,7 +11,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository do
 
     %MovieSchema{}
     |> MovieSchema.changeset(attrs)
-    |> repo.insert!(on_conflict: :nothing, conflict_target: [:provider, :provider_id])
+    |> repo.insert!(on_conflict: :nothing, conflict_target: [:provider, :provider_id], log: false)
 
     repo.get_by!(MovieSchema, provider: :tmdb, provider_id: details.provider_id)
   end

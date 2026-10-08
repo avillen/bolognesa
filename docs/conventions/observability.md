@@ -25,4 +25,6 @@ Logger.info("Library scan completed",
 
 Los logs no sustituyen los estados persistidos de trabajos, el outbox ni el feedback de la interfaz. Tampoco se convierten en requisitos de prueba para cada operación: comprobar su contenido solo cuando exista un contrato operativo o de confidencialidad relevante.
 
+Las búsquedas de películas usan el parámetro `query`, filtrado por Phoenix junto con contraseñas y tokens. Las consultas y escrituras Ecto que incluyen títulos, candidatos o rutas privadas emplean `log: false`; los diagnósticos operativos usan identificadores internos y motivos acotados.
+
 El formatter muestra request_id, library_id, scan_id, job_id, attempt, files_discovered, duration_ms y reason. H2b registra resultados con contadores confirmados y duración medida; la frontera del worker sanitiza excepciones. Las consultas de inventario con rutas privadas usan `log: false`.

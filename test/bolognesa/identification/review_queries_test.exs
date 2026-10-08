@@ -9,11 +9,15 @@ defmodule Bolognesa.Identification.ReviewQueriesTest do
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
 
-  test "shows pending and failed files to administrators only" do
+  test "shows pending, failed and manually unidentified files to administrators only" do
     library =
       Repo.insert!(LibrarySchema.changeset(%LibrarySchema{}, %{name: "Review", path: "/review"}))
 
-    for {name, state} <- [{"a.mkv", :pending}, {"b.mkv", :failed}] do
+    for {name, state} <- [
+          {"a.mkv", :pending},
+          {"b.mkv", :failed},
+          {"c.mkv", :manual_unidentified}
+        ] do
       file =
         Repo.insert!(
           MediaFileSchema.changeset(%MediaFileSchema{}, %{
@@ -30,16 +34,17 @@ defmodule Bolognesa.Identification.ReviewQueriesTest do
           media_file_id: file.id,
           observed_revision: 1,
           token: Ecto.UUID.generate(),
-          state: state
+          state: state,
+          origin: if(state == :manual_unidentified, do: :manual, else: nil)
         })
       )
     end
 
     assert {:error, :forbidden} = Identification.list_review_items(nil, 1)
 
-    assert {:ok, %{items: items, total: 2}} =
+    assert {:ok, %{items: items, total: 3}} =
              Identification.list_review_items(%Actor{id: 1, role: :admin}, 1)
 
-    assert Enum.map(items, & &1.filename) == ["a.mkv", "b.mkv"]
+    assert Enum.map(items, & &1.filename) == ["a.mkv", "b.mkv", "c.mkv"]
   end
 end

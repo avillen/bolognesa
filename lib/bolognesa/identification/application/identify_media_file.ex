@@ -39,7 +39,7 @@ defmodule Bolognesa.Identification.Application.IdentifyMediaFile do
 
   defp review?(hint, candidate) do
     normalize_title(hint.title) != normalize_title(candidate.title) or
-      (hint.year && candidate.year && hint.year != candidate.year)
+      (not is_nil(hint.year) and not is_nil(candidate.year) and hint.year != candidate.year)
   end
 
   defp normalize_title(title),

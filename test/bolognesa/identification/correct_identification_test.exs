@@ -3,6 +3,7 @@ defmodule Bolognesa.Identification.CorrectIdentificationTest do
 
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Identification.Application.CorrectIdentification
+  alias Bolognesa.Identification.Domain.Identification
   alias Bolognesa.Identification.Domain.MovieDetails
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
@@ -25,13 +26,13 @@ defmodule Bolognesa.Identification.CorrectIdentificationTest do
 
     actor = %Actor{id: 1, role: :admin}
 
-    assert {:ok, %{state: :manual, movie_id: movie_id}} =
+    assert {:ok, %Identification{state: :manual, movie_id: movie_id}} =
              CorrectIdentification.call(actor, file.id, {:tmdb, 51}, Repository, Provider)
 
     assert is_integer(movie_id)
     assert {:error, :manual_locked} = Repository.retry(file.id)
 
-    assert {:ok, %{state: :manual_unidentified, movie_id: nil}} =
+    assert {:ok, %Identification{state: :manual_unidentified, movie_id: nil}} =
              CorrectIdentification.call(actor, file.id, :unidentified, Repository, Provider)
 
     assert {:error, :invalid_choice} =

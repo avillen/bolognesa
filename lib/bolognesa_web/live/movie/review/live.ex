@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Movie.Review.Live do
   use BolognesaWeb, :live_view
   alias Bolognesa.Identification
+  alias BolognesaWeb.Movie.Review.Reducer
 
   @impl true
   def mount(_params, _session, socket) do
@@ -14,8 +15,10 @@ defmodule BolognesaWeb.Movie.Review.Live do
       |> assign(:selected_file_id, nil)
       |> assign(:candidates, [])
       |> assign(:searching?, false)
+      |> assign(:saving?, false)
       |> assign(:request_id, nil)
       |> assign(:search_request_id, nil)
+      |> assign(:correction_request_id, nil)
       |> assign(:form, to_form(%{"query" => "", "tmdb_id" => ""}, as: :correction))
       |> stream_configure(:reviews, dom_id: &"review-#{&1.file_id}")
       |> stream(:reviews, [])
@@ -37,19 +40,19 @@ defmodule BolognesaWeb.Movie.Review.Live do
         :error -> socket.assigns.selected_file_id
       end
 
-    {:noreply,
-     socket |> assign(:page, page) |> assign(:selected_file_id, selected_file_id) |> load()}
+    socket =
+      if selected_file_id != socket.assigns.selected_file_id,
+        do: Reducer.select_file(socket, selected_file_id),
+        else: socket
+
+    {:noreply, socket |> assign(:page, page) |> Reducer.load()}
   end
 
   @impl true
   def handle_event("select", %{"file_id" => id}, socket) do
     case positive_id(id) do
       {:ok, file_id} ->
-        {:noreply,
-         socket
-         |> assign(:selected_file_id, file_id)
-         |> assign(:candidates, [])
-         |> assign(:feedback, nil)}
+        {:noreply, Reducer.select_file(socket, file_id)}
 
       :error ->
         {:noreply, assign(socket, :feedback, "Archivo inválido.")}
@@ -89,10 +92,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
   def handle_event("correct", %{"correction" => %{"tmdb_id" => id}}, socket) do
     case {socket.assigns.selected_file_id, positive_id(id)} do
       {file_id, {:ok, tmdb_id}} when is_integer(file_id) ->
-        finish_correction(
-          socket,
-          Identification.correct(socket.assigns.current_scope.actor, file_id, {:tmdb, tmdb_id})
-        )
+        {:noreply, Reducer.begin_correction(socket, file_id, {:tmdb, tmdb_id})}
 
       _ ->
         {:noreply, assign(socket, :feedback, "Selecciona una película válida.")}
@@ -105,10 +105,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
         {:noreply, assign(socket, :feedback, "Selecciona un archivo.")}
 
       file_id ->
-        finish_correction(
-          socket,
-          Identification.correct(socket.assigns.current_scope.actor, file_id, :unidentified)
-        )
+        {:noreply, Reducer.begin_correction(socket, file_id, :unidentified)}
     end
   end
 
@@ -119,7 +116,8 @@ defmodule BolognesaWeb.Movie.Review.Live do
 
     case result do
       {:ok, _} ->
-        {:noreply, socket |> assign(:feedback, "Identificación solicitada de nuevo.") |> load()}
+        {:noreply,
+         socket |> assign(:feedback, "Identificación solicitada de nuevo.") |> Reducer.load()}
 
       _ ->
         {:noreply, assign(socket, :feedback, "No se pudo reintentar.")}
@@ -127,68 +125,14 @@ defmodule BolognesaWeb.Movie.Review.Live do
   end
 
   @impl true
-  def handle_async({:reviews, request_id}, result, socket) do
-    if request_id == socket.assigns.request_id do
-      case result do
-        {:ok, {:ok, %{items: items, total: total}}} ->
-          {:noreply,
-           socket
-           |> assign(:loading?, false)
-           |> assign(:total, total)
-           |> stream(:reviews, items, reset: true)}
+  def handle_async({:reviews, request_id}, result, socket),
+    do: {:noreply, Reducer.reviews_result(socket, request_id, result)}
 
-        _ ->
-          {:noreply,
-           socket |> assign(:loading?, false) |> assign(:error, "No se pudo cargar la revisión.")}
-      end
-    else
-      {:noreply, socket}
-    end
-  end
+  def handle_async({:candidates, request_id}, result, socket),
+    do: {:noreply, Reducer.candidates_result(socket, request_id, result)}
 
-  def handle_async({:candidates, request_id}, result, socket) do
-    if request_id == socket.assigns.search_request_id do
-      case result do
-        {:ok, {:ok, candidates}} ->
-          {:noreply, socket |> assign(:searching?, false) |> assign(:candidates, candidates)}
-
-        {:ok, {:error, :not_configured}} ->
-          {:noreply,
-           socket
-           |> assign(:searching?, false)
-           |> assign(:feedback, "TMDb sin configurar. Añade TMDB_READ_TOKEN al servidor.")}
-
-        _ ->
-          {:noreply,
-           socket |> assign(:searching?, false) |> assign(:feedback, "No se pudo buscar en TMDb.")}
-      end
-    else
-      {:noreply, socket}
-    end
-  end
-
-  defp finish_correction(socket, {:ok, _}) do
-    {:noreply,
-     socket
-     |> assign(:selected_file_id, nil)
-     |> assign(:candidates, [])
-     |> assign(:feedback, "Corrección guardada.")
-     |> load()}
-  end
-
-  defp finish_correction(socket, _),
-    do: {:noreply, assign(socket, :feedback, "No se pudo guardar la corrección.")}
-
-  defp load(socket) do
-    actor = socket.assigns.current_scope.actor
-    page = socket.assigns.page
-    request_id = make_ref()
-
-    socket
-    |> assign(:request_id, request_id)
-    |> assign(:loading?, true)
-    |> start_async({:reviews, request_id}, fn -> Identification.list_review_items(actor, page) end)
-  end
+  def handle_async({:correction, request_id}, result, socket),
+    do: {:noreply, Reducer.correction_result(socket, request_id, result)}
 
   defp positive_id(id) when is_binary(id) do
     case Integer.parse(id) do
@@ -209,6 +153,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
   defp state_label(:pending), do: "Pendiente"
   defp state_label(:failed), do: "Error"
   defp state_label(:unmatched), do: "Sin coincidencia"
+  defp state_label(:manual_unidentified), do: "Sin identificar manualmente"
   defp state_label(:automatic), do: "Revisar coincidencia"
   defp state_label(_), do: "Revisión"
 

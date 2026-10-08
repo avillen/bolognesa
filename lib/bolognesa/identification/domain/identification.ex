@@ -26,7 +26,7 @@ defmodule Bolognesa.Identification.Domain.Identification do
           observed_revision: pos_integer(),
           token: Ecto.UUID.t(),
           needs_review?: boolean(),
-          failure_reason: atom() | nil,
+          failure_reason: binary() | nil,
           candidate_data: map(),
           job_id: pos_integer() | nil,
           started_at: DateTime.t() | nil,

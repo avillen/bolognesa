@@ -1,6 +1,6 @@
 defmodule BolognesaWeb.Movie.Index.Live do
   use BolognesaWeb, :live_view
-  alias Bolognesa.Catalog
+  alias BolognesaWeb.Movie.Index.Reducer
 
   @impl true
   def mount(_params, _session, socket) do
@@ -12,53 +12,25 @@ defmodule BolognesaWeb.Movie.Index.Live do
      |> assign(:loading?, true)
      |> assign(:error, nil)
      |> assign(:request_id, nil)
-     |> assign(:form, to_form(%{"q" => ""}, as: :search))
+     |> assign(:form, to_form(%{"query" => ""}, as: :search))
      |> stream(:movies, [])}
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
-    query = Map.get(params, "q", "")
+    query = Map.get(params, "query", "")
     page = parse_page(Map.get(params, "page", "1"))
-    actor = socket.assigns.current_scope.actor
-    request_id = make_ref()
-
-    socket =
-      socket
-      |> assign(:query, query)
-      |> assign(:page, page)
-      |> assign(:loading?, true)
-      |> assign(:error, nil)
-      |> assign(:request_id, request_id)
-      |> assign(:form, to_form(%{"q" => query}, as: :search))
-      |> start_async({:movies, request_id}, fn -> Catalog.list_movies(actor, query, page) end)
-
-    {:noreply, socket}
+    {:noreply, Reducer.load(socket, query, page)}
   end
 
   @impl true
-  def handle_event("search", %{"search" => %{"q" => query}}, socket) do
-    {:noreply, push_patch(socket, to: ~p"/movies?#{%{q: query}}")}
+  def handle_event("search", %{"search" => %{"query" => query}}, socket) do
+    {:noreply, push_patch(socket, to: ~p"/movies?#{%{query: query}}")}
   end
 
   @impl true
   def handle_async({:movies, request_id}, result, socket) do
-    if socket.assigns.request_id == request_id do
-      case result do
-        {:ok, {:ok, %{items: items, total: total}}} ->
-          {:noreply,
-           socket
-           |> assign(:loading?, false)
-           |> assign(:total, total)
-           |> stream(:movies, items, reset: true)}
-
-        _ ->
-          {:noreply,
-           socket |> assign(:loading?, false) |> assign(:error, "No se pudo cargar el catálogo.")}
-      end
-    else
-      {:noreply, socket}
-    end
+    {:noreply, Reducer.result(socket, request_id, result)}
   end
 
   defp parse_page(value) when is_binary(value) do

@@ -63,6 +63,35 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
   end
 
   @tag committed: true
+  test "failure after Oban insert rolls back the job and leaves the event pending" do
+    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+      {event, scan} = pending_event()
+
+      Ecto.Adapters.SQL.query!(Repo, """
+      ALTER TABLE media_identifications ADD CONSTRAINT identification_test_reject_job_link
+      CHECK (job_id IS NULL) NOT VALID
+      """)
+
+      try do
+        assert {:error, :unavailable} = EctoOutboxRepository.dispatch_batch(25)
+        assert is_nil(Repo.get!(EventSchema, event.id).delivered_at)
+
+        assert Repo.aggregate(
+                 from(job in Oban.Job, where: job.queue == "identifications"),
+                 :count
+               ) == 0
+      after
+        Ecto.Adapters.SQL.query!(
+          Repo,
+          "ALTER TABLE media_identifications DROP CONSTRAINT identification_test_reject_job_link"
+        )
+
+        cleanup(scan)
+      end
+    end)
+  end
+
+  @tag committed: true
   test "two dispatchers cannot enqueue the same event" do
     Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
       {event, scan} = pending_event()

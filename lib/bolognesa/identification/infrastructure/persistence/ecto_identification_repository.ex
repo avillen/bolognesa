@@ -2,7 +2,9 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   @moduledoc false
   import Ecto.Query
 
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository
+  @behaviour Bolognesa.Identification.Application.Ports.IdentificationRepository
+  alias Bolognesa.Catalog
+  alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
   alias __MODULE__.IdentificationSchema
@@ -28,7 +30,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
         {:ok, identification, file} when identification.state == :pending ->
           attrs = %{started_at: DateTime.utc_now()}
           attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
-          Repo.update!(IdentificationSchema.changeset(identification, attrs))
+          Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
           {:ok, %{relative_path: file.relative_path, revision: file.revision}}
 
         _ ->
@@ -43,7 +45,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     transaction(fn ->
       case current(file_id, token) do
         {:ok, identification, _file} when identification.state == :pending ->
-          movie = if details, do: EctoMovieRepository.upsert!(Repo, details), else: nil
+          movie = if details, do: Catalog.upsert_in_transaction!(Repo, details), else: nil
           state = if movie, do: :automatic, else: :unmatched
 
           attrs = %{
@@ -56,7 +58,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
             finished_at: DateTime.utc_now()
           }
 
-          Repo.update!(IdentificationSchema.changeset(identification, attrs))
+          Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
           :ok
 
         _ ->
@@ -105,7 +107,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
           )
 
         movie =
-          if choice == :unidentified, do: nil, else: EctoMovieRepository.upsert!(Repo, choice)
+          if choice == :unidentified, do: nil, else: Catalog.upsert_in_transaction!(Repo, choice)
 
         attrs = %{
           media_file_id: file_id,
@@ -122,10 +124,13 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
           finished_at: DateTime.utc_now()
         }
 
-        {:ok,
-         Repo.insert_or_update!(
-           IdentificationSchema.changeset(identification || %IdentificationSchema{}, attrs)
-         )}
+        row =
+          Repo.insert_or_update!(
+            IdentificationSchema.changeset(identification || %IdentificationSchema{}, attrs),
+            log: false
+          )
+
+        {:ok, IdentificationMapper.to_domain(row)}
       else
         {:error, :not_found}
       end
@@ -163,7 +168,10 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
             %{file_id: file.id, revision: file.revision, requested?: true}
           ])
 
-          get(file_id)
+          case get(file_id) do
+            {:ok, row} -> {:ok, IdentificationMapper.to_domain(row)}
+            error -> error
+          end
       end
     end)
   end

@@ -45,7 +45,7 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     render_async(view)
     assert has_element?(view, "#movie-link-#{movie.id}")
     assert has_element?(view, "#movie-poster-#{movie.id}[phx-hook='ImageFallback']")
-    view |> form("#movie-search-form", search: %{q: "otra"}) |> render_submit()
+    view |> form("#movie-search-form", search: %{query: "otra"}) |> render_submit()
     render_async(view)
     refute has_element?(view, "#movie-link-#{movie.id}")
     assert has_element?(view, "#movies-empty")

@@ -16,7 +16,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader d
     base =
       from identification in IdentificationSchema,
         where:
-          identification.state in [:pending, :failed, :unmatched] or
+          identification.state in [:pending, :failed, :unmatched, :manual_unidentified] or
             identification.needs_review == true
 
     total = Repo.aggregate(base, :count, :id)

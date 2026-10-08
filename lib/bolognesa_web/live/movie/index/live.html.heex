@@ -20,7 +20,7 @@
       class="flex flex-col gap-3 sm:flex-row"
     >
       <.input
-        field={@form[:q]}
+        field={@form[:query]}
         id="movie-search-query"
         type="search"
         label="Buscar película"
@@ -99,13 +99,13 @@
     >
       <.link
         :if={@page > 1}
-        patch={~p"/movies?#{%{q: @query, page: @page - 1}}"}
+        patch={~p"/movies?#{%{query: @query, page: @page - 1}}"}
         class="rounded-xl border border-stone-600 px-4 py-3 text-stone-200"
       >Anterior</.link>
       <span class="text-sm text-stone-400">Página {@page}</span>
       <.link
         :if={@page * 24 < @total}
-        patch={~p"/movies?#{%{q: @query, page: @page + 1}}"}
+        patch={~p"/movies?#{%{query: @query, page: @page + 1}}"}
         class="rounded-xl border border-stone-600 px-4 py-3 text-stone-200"
       >Siguiente</.link>
     </nav>

@@ -1,6 +1,7 @@
 defmodule Bolognesa.Identification.Application.CorrectIdentification do
   @moduledoc "Resolve an identification by an administrator's explicit choice."
   alias Bolognesa.Identity
+  alias Bolognesa.Identification.Domain.Identification
 
   @spec call(
           Bolognesa.Identity.Domain.Actor.t() | nil,
@@ -9,7 +10,8 @@ defmodule Bolognesa.Identification.Application.CorrectIdentification do
           module(),
           module()
         ) ::
-          {:ok, map()} | {:error, :forbidden | :not_found | :unavailable | :invalid_choice}
+          {:ok, Identification.t()}
+          | {:error, :forbidden | :not_found | :unavailable | :invalid_choice}
   def call(actor, file_id, choice, repository, provider) do
     with :ok <- Identity.authorize(actor, :admin),
          {:ok, details} <- details(choice, provider) do

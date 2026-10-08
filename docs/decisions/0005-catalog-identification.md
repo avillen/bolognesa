@@ -9,10 +9,11 @@ El inventario H2 guarda archivos y revisiones, pero no conoce obras. H3 necesita
 ## Decisión
 
 - `Movie` tiene identidad interna y referencia única `(provider, provider_id)`. La asociación archivo–obra vive en Identificación, con estado, procedencia, revisión observada y token de solicitud.
-- Bibliotecas escribe la solicitud de identificación y el evento outbox en la misma transacción que el lote de inventario, mediante `EctoRequestWriter`. Esta llamada es la única escritura entre contextos. El despachador entrega el evento a Oban tras el commit.
+- Bibliotecas escribe la solicitud de identificación y el evento outbox en la misma transacción que el lote de inventario, mediante `EctoRequestWriter`. El despachador entrega el evento a Oban tras el commit.
 - El proveedor recibe solo el título extraído del nombre base y el año inferido; no recibe rutas, biblioteca ni contenido. La consulta con Req se hace fuera de la transacción y usa `TMDB_READ_TOKEN` como token de lectura en runtime. Sin token, el trabajo termina con estado visible `not_configured`.
 - Se confirma el primer candidato válido aunque título o año discrepen; la discrepancia marca `needs_review`. La elección se puede cambiar manualmente o dejar «sin identificar».
 - Al confirmar un resultado automático, una transacción bloquea el archivo y la identificación y comprueba token, revisión, disponibilidad y origen. Una corrección manual genera un token nuevo y prevalece ante escaneos, reintentos y respuestas antiguas. La misma transacción reutiliza o crea la obra TMDb y vincula el archivo.
+- La escritura de `Movie` se solicita mediante `Catalog.upsert_in_transaction!/2`, con un adaptador detrás del puerto `MovieRepository`. Comparte la transacción abierta por Identificación para que obra y asociación se confirmen juntas. Es una excepción explícita al aislamiento habitual de transacciones entre contextos; la fachada de Catálogo conserva el control de la escritura y el adaptador de Identificación no accede a su repositorio interno.
 - La cola de identificación empieza con concurrencia 1 y tres intentos. Los fallos transitorios se reintentan de forma acotada; los permanentes quedan visibles y se pueden solicitar de nuevo. Un reconciliador resuelve trabajos terminales sin resultado.
 
 ## Consecuencias

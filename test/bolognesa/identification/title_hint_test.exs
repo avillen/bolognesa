@@ -14,6 +14,7 @@ defmodule Bolognesa.Identification.TitleHintTest do
   test "rejects invalid UTF-8 and names without a title" do
     assert {:error, :unusable_name} = TitleHint.from_path(<<"privado/pelicula-", 255, ".mkv">>)
     assert {:error, :unusable_name} = TitleHint.from_path("carpeta/1080p.BluRay.mkv")
+    assert {:error, :unusable_name} = TitleHint.from_path("private/1080p.WEB-DL.x265.mkv")
     assert {:error, :unusable_name} = TitleHint.from_path("carpeta/.mp4")
   end
 end
