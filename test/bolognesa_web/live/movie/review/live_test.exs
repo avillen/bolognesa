@@ -71,4 +71,50 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
     assert %{state: :manual_unidentified, origin: :manual} =
              Repo.get_by!(IdentificationSchema, media_file_id: file.id)
   end
+
+  test "missing TMDb token has an actionable review state", %{conn: conn} do
+    {:ok, _} =
+      Identity.install_admin(%{
+        name: "Ada",
+        email: "missing-token@example.com",
+        password: "correct horse battery staple"
+      })
+
+    {:ok, token} =
+      Identity.start_session("missing-token@example.com", "correct horse battery staple")
+
+    library =
+      Repo.insert!(
+        LibrarySchema.changeset(%LibrarySchema{}, %{name: "No token", path: "/no-token"})
+      )
+
+    file =
+      Repo.insert!(
+        MediaFileSchema.changeset(%MediaFileSchema{}, %{
+          library_id: library.id,
+          relative_path: "Film.mkv",
+          size_bytes: 1,
+          modified_at: DateTime.utc_now(),
+          last_seen_generation: Ecto.UUID.generate()
+        })
+      )
+
+    Repo.insert!(
+      IdentificationSchema.changeset(%IdentificationSchema{}, %{
+        media_file_id: file.id,
+        observed_revision: 1,
+        token: Ecto.UUID.generate(),
+        state: :failed,
+        failure_reason: "not_configured"
+      })
+    )
+
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies/review")
+    render_async(view)
+    assert has_element?(view, "#review-failure-#{file.id}", "TMDb sin configurar")
+    view |> element("#review-select-#{file.id}") |> render_click()
+    view |> form("#correction-form", correction: %{query: "Film"}) |> render_submit()
+    render_async(view)
+    assert has_element?(view, "#review-feedback", "TMDb sin configurar")
+  end
 end

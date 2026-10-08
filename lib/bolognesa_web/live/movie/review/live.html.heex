@@ -45,6 +45,13 @@
               else: "Ausente"}
           </p>
           <p :if={item.movie_title} class="mt-2 text-sm text-amber-200">{item.movie_title}</p>
+          <p
+            :if={item.failure_reason}
+            id={"review-failure-#{item.file_id}"}
+            class="mt-2 text-sm text-red-200"
+          >
+            {failure_label(item.failure_reason)}
+          </p>
           <div class="mt-4 flex flex-wrap gap-2">
             <button
               id={"review-select-#{item.file_id}"}

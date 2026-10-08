@@ -36,7 +36,7 @@ defmodule BolognesaWeb.Layouts do
   @spec app(map()) :: Phoenix.LiveView.Rendered.t()
   def app(assigns) do
     ~H"""
-    <header class="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-6 sm:px-8">
+    <header class="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-6 sm:px-8">
       <a
         href={~p"/"}
         class="inline-flex min-h-11 items-center gap-3 rounded-xl text-stone-100 transition hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
@@ -44,7 +44,7 @@ defmodule BolognesaWeb.Layouts do
         <span class="flex size-10 items-center justify-center rounded-xl bg-amber-300 text-lg font-black text-stone-950">B</span>
         <span class="text-lg font-semibold tracking-tight">Bolognesa</span>
       </a>
-      <nav class="flex items-center gap-4 text-sm font-medium text-stone-300">
+      <nav class="flex w-full items-center justify-between gap-3 text-sm font-medium text-stone-300 sm:w-auto sm:justify-start sm:gap-4">
         <.link
           navigate={~p"/movies"}
           class="min-h-11 py-3 transition hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"

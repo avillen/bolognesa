@@ -31,7 +31,14 @@ defmodule BolognesaWeb.Movie.Review.Live do
         _ -> 1
       end
 
-    {:noreply, socket |> assign(:page, page) |> load()}
+    selected_file_id =
+      case positive_id(Map.get(params, "file_id")) do
+        {:ok, id} -> id
+        :error -> socket.assigns.selected_file_id
+      end
+
+    {:noreply,
+     socket |> assign(:page, page) |> assign(:selected_file_id, selected_file_id) |> load()}
   end
 
   @impl true
@@ -145,6 +152,12 @@ defmodule BolognesaWeb.Movie.Review.Live do
         {:ok, {:ok, candidates}} ->
           {:noreply, socket |> assign(:searching?, false) |> assign(:candidates, candidates)}
 
+        {:ok, {:error, :not_configured}} ->
+          {:noreply,
+           socket
+           |> assign(:searching?, false)
+           |> assign(:feedback, "TMDb sin configurar. Añade TMDB_READ_TOKEN al servidor.")}
+
         _ ->
           {:noreply,
            socket |> assign(:searching?, false) |> assign(:feedback, "No se pudo buscar en TMDb.")}
@@ -198,4 +211,12 @@ defmodule BolognesaWeb.Movie.Review.Live do
   defp state_label(:unmatched), do: "Sin coincidencia"
   defp state_label(:automatic), do: "Revisar coincidencia"
   defp state_label(_), do: "Revisión"
+
+  defp failure_label("not_configured"), do: "TMDb sin configurar"
+  defp failure_label("rate_limited"), do: "TMDb limitó las solicitudes"
+  defp failure_label("provider_unavailable"), do: "TMDb no disponible"
+  defp failure_label("unauthorized"), do: "Token de TMDb rechazado"
+  defp failure_label("unusable_name"), do: "Nombre de archivo no interpretable"
+  defp failure_label("attempts_exhausted"), do: "Se agotaron los reintentos"
+  defp failure_label(_), do: "No se pudo identificar"
 end

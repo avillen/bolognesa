@@ -56,6 +56,11 @@
                                                                    :available,
                                                                  do: "Disponible",
                                                                  else: "No disponible"}</span>
+          <.link
+            navigate={~p"/movies/review?#{%{file_id: version.id}}"}
+            id={"movie-correct-#{version.id}"}
+            class="min-h-11 rounded-xl border border-stone-600 px-4 py-3 text-sm text-stone-200 transition hover:border-amber-300 hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+          >Corregir</.link>
         </div>
       </div>
       <p :if={@movie.versions == []} id="movie-no-versions" class="mt-4 text-sm text-stone-400">

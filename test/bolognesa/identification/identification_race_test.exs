@@ -9,6 +9,7 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
     as: Repository
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.IdentificationSchema
+  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
 
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
@@ -63,6 +64,46 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
       assert movie_id == corrected.movie_id
       assert current_token == corrected.token
     end
+  end
+
+  @tag committed: true
+  test "concurrent versions reuse one TMDb movie" do
+    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+      {first, _} = fixture()
+      {second, _} = fixture()
+      supervisor = start_supervised!(Task.Supervisor)
+      details = %MovieDetails{provider_id: 9182, title: "Shared movie"}
+
+      try do
+        tasks =
+          for file <- [first, second] do
+            Task.Supervisor.async_nolink(supervisor, fn ->
+              Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+                Repository.correct(file.id, details)
+              end)
+            end)
+          end
+
+        assert [{:ok, %{movie_id: first_movie_id}}, {:ok, %{movie_id: second_movie_id}}] =
+                 Enum.map(tasks, &Task.await/1)
+
+        assert first_movie_id == second_movie_id
+
+        assert Repo.aggregate(
+                 from(movie in MovieSchema, where: movie.provider_id == 9182),
+                 :count,
+                 :id
+               ) == 1
+      after
+        Repo.delete_all(from file in MediaFileSchema, where: file.id in ^[first.id, second.id])
+        Repo.delete_all(from movie in MovieSchema, where: movie.provider_id == 9182)
+
+        Repo.delete_all(
+          from library in LibrarySchema,
+            where: library.id in ^[first.library_id, second.library_id]
+        )
+      end
+    end)
   end
 
   defp fixture do
