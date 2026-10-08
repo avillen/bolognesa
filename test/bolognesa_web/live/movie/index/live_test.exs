@@ -36,13 +36,15 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
         MovieSchema.changeset(%MovieSchema{}, %{
           provider: :tmdb,
           provider_id: 200,
-          title: "Luz de invierno"
+          title: "Luz de invierno",
+          poster_path: "/poster.jpg"
         })
       )
 
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies")
     render_async(view)
     assert has_element?(view, "#movie-link-#{movie.id}")
+    assert has_element?(view, "#movie-poster-#{movie.id}[phx-hook='ImageFallback']")
     view |> form("#movie-search-form", search: %{q: "otra"}) |> render_submit()
     render_async(view)
     refute has_element?(view, "#movie-link-#{movie.id}")

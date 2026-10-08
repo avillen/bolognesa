@@ -19,6 +19,9 @@
         class="mb-8 aspect-[21/9] overflow-hidden rounded-2xl bg-stone-800"
       >
         <img
+          id={"movie-backdrop-#{@movie.id}"}
+          phx-hook="ImageFallback"
+          phx-update="ignore"
           src={"https://image.tmdb.org/t/p/w780#{@movie.backdrop_path}"}
           alt={"Imagen de #{@movie.title}"}
           class="size-full object-cover"

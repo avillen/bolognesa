@@ -63,6 +63,9 @@
             <span aria-hidden="true">{String.first(movie.title)}</span>
             <img
               :if={movie.poster_path}
+              id={"movie-poster-#{movie.id}"}
+              phx-hook="ImageFallback"
+              phx-update="ignore"
               src={"https://image.tmdb.org/t/p/w500#{movie.poster_path}"}
               alt={"Cartel de #{movie.title}"}
               loading="lazy"
