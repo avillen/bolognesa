@@ -2,7 +2,7 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Catalog
-  alias Bolognesa.Catalog.Application.Dto.{MovieDetail, MovieVersion}
+  alias Bolognesa.Catalog.Application.Dto.{MovieDetail, MovieListItem, MoviePage, MovieVersion}
   alias Bolognesa.Catalog.Domain.Movie
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
   alias Bolognesa.Identity.Domain.Actor
@@ -72,7 +72,11 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
 
     assert {:error, :forbidden} = Catalog.list_movies(nil, "", 1)
 
-    assert {:ok, %{items: [%{id: id, version_count: 2, available_count: 1}], total: 1}} =
+    assert {:ok,
+            %MoviePage{
+              items: [%MovieListItem{id: id, version_count: 2, available_count: 1}],
+              total: 1
+            }} =
              Catalog.list_movies(actor, "Mi", 1)
 
     assert id == movie.id
@@ -84,6 +88,6 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
     assert catalog_movie.title == "Mi pelicula"
     assert length(versions) == 2
     assert Enum.all?(versions, &match?(%MovieVersion{}, &1))
-    assert {:ok, %{items: [], total: 0}} = Catalog.list_movies(actor, "No existe", 1)
+    assert {:ok, %MoviePage{items: [], total: 0}} = Catalog.list_movies(actor, "No existe", 1)
   end
 end

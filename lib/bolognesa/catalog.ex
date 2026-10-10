@@ -1,13 +1,14 @@
 defmodule Bolognesa.Catalog do
   @moduledoc "Movie catalog queries and the controlled shared-transaction writer."
   alias Bolognesa.Catalog.Application.{GetMovie, ListMovies}
-  alias Bolognesa.Catalog.Application.Dto.MovieDetail
+  alias Bolognesa.Catalog.Application.Dto.{MovieDetail, MoviePage}
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository
   alias Bolognesa.Catalog.Domain.{Movie, NewMovie}
   alias Bolognesa.Identity.Domain.Actor
 
-  @spec list_movies(Actor.t(), binary(), pos_integer()) :: {:ok, map()} | {:error, atom()}
+  @spec list_movies(Actor.t(), binary(), pos_integer()) ::
+          {:ok, MoviePage.t()} | {:error, :forbidden | :invalid_query | :unavailable}
   def list_movies(actor, query, page), do: ListMovies.call(actor, query, page, EctoCatalogReader)
 
   @spec get_movie(Actor.t(), pos_integer()) ::

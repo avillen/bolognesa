@@ -1,9 +1,10 @@
 defmodule Bolognesa.Catalog.Application.ListMovies do
   @moduledoc "Authorize and bound a movie catalog search."
+  alias Bolognesa.Catalog.Application.Dto.MoviePage
   alias Bolognesa.Identity
 
   @spec call(Bolognesa.Identity.Domain.Actor.t(), binary(), pos_integer(), module()) ::
-          {:ok, map()} | {:error, atom()}
+          {:ok, MoviePage.t()} | {:error, :forbidden | :invalid_query | :unavailable}
   def call(actor, query, page, reader) do
     with :ok <- Identity.authorize(actor, :admin),
          :ok <- validate(query, page) do

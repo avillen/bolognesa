@@ -2,7 +2,13 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
   @moduledoc false
   import Ecto.Query
 
-  alias Bolognesa.Catalog.Application.Dto.{MovieDetail, MovieVersion}
+  alias Bolognesa.Catalog.Application.Dto.{
+    MovieDetail,
+    MovieListItem,
+    MoviePage,
+    MovieVersion
+  }
+
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieMapper
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
 
@@ -13,7 +19,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
 
   @page_size 24
 
-  @spec list_movies(binary(), pos_integer()) :: {:ok, map()} | {:error, :unavailable}
+  @spec list_movies(binary(), pos_integer()) :: {:ok, MoviePage.t()} | {:error, :unavailable}
   def list_movies(query, page) do
     filtered =
       from movie in MovieSchema,
@@ -45,7 +51,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
         log: false
       )
 
-    {:ok, %{items: rows, total: total}}
+    {:ok, %MoviePage{items: Enum.map(rows, &struct!(MovieListItem, &1)), total: total}}
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}

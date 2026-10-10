@@ -15,15 +15,18 @@ defmodule Bolognesa.Catalog.Domain.Movie do
 
   @type id :: pos_integer()
   @type provider :: :tmdb
+  @type title :: String.t()
+  @type year :: integer()
+  @type poster_path :: String.t()
   @type t :: %__MODULE__{
           id: id(),
           provider: provider(),
           provider_id: pos_integer(),
-          title: binary(),
+          title: title(),
           original_title: binary() | nil,
-          year: integer() | nil,
+          year: year() | nil,
           overview: binary() | nil,
-          poster_path: binary() | nil,
+          poster_path: poster_path() | nil,
           backdrop_path: binary() | nil
         }
 end
