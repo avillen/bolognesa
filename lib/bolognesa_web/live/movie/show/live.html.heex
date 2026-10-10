@@ -38,12 +38,42 @@
         {@movie.overview}
       </p>
       <p :if={!@movie.overview} class="mt-7 text-sm text-stone-400">Todavía no hay sinopsis.</p>
+      <section
+        :if={@selected_file_id}
+        id="movie-player"
+        class="mt-10 space-y-3"
+        aria-label="Reproductor"
+      >
+        <h2 class="text-xl font-semibold text-stone-50">
+          Reproduciendo versión {@selected_file_id}
+        </h2>
+        <video
+          id={"movie-video-#{@selected_file_id}"}
+          phx-hook="VideoError"
+          data-file-id={@selected_file_id}
+          controls
+          playsinline
+          preload="metadata"
+          src={~p"/movies/#{@movie.id}/media/#{@selected_file_id}"}
+          class="aspect-video w-full rounded-xl bg-black"
+        >
+          Tu navegador no admite la reproducción de vídeo.
+        </video>
+        <p
+          :if={@playback_error}
+          id="movie-playback-error"
+          role="alert"
+          class="rounded-xl border border-red-300/30 bg-red-950/30 p-4 text-sm text-red-100"
+        >
+          {@playback_error}
+        </p>
+      </section>
       <h2 class="mt-10 text-xl font-semibold text-stone-50">Versiones en tu biblioteca</h2>
       <div id="movie-versions" phx-update="stream" class="mt-4 space-y-3">
         <div
           :for={{dom_id, version} <- @streams.versions}
           id={dom_id}
-          class="flex items-center justify-between rounded-xl border border-stone-700 bg-stone-800/50 p-4"
+          class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-700 bg-stone-800/50 p-4"
         >
           <div>
             <p class="text-sm text-stone-200">Versión {version.id}</p>
@@ -59,6 +89,16 @@
                                                                    :available,
                                                                  do: "Disponible",
                                                                  else: "No disponible"}</span>
+          <button
+            :if={version.availability == :available}
+            id={"movie-play-#{version.id}"}
+            type="button"
+            phx-click="play"
+            phx-value-file_id={version.id}
+            class="min-h-11 rounded-xl bg-amber-300 px-5 py-3 text-sm font-semibold text-stone-950 transition hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+          >
+            Reproducir
+          </button>
           <.link
             navigate={~p"/movies/review?#{%{file_id: version.id}}"}
             id={"movie-correct-#{version.id}"}
