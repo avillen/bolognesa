@@ -28,10 +28,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     transaction(fn ->
       case current(file_id, token) do
         {:ok, identification, file} when identification.state == :pending ->
-          attrs = %{started_at: DateTime.utc_now()}
-          attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
-          Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
-          {:ok, %{relative_path: file.relative_path, revision: file.revision}}
+          start_pending_identification(identification, file, job_id)
 
         _ ->
           {:ok, :stale}
@@ -45,21 +42,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     transaction(fn ->
       case current(file_id, token) do
         {:ok, identification, _file} when identification.state == :pending ->
-          movie = if details, do: Catalog.upsert_in_transaction!(Repo, details), else: nil
-          state = if movie, do: :automatic, else: :unmatched
-
-          attrs = %{
-            state: state,
-            origin: :automatic,
-            movie_id: if(movie, do: movie.id, else: nil),
-            needs_review: needs_review,
-            failure_reason: nil,
-            candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
-            finished_at: DateTime.utc_now()
-          }
-
-          Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
-          :ok
+          complete_pending_identification(identification, candidates, details, needs_review)
 
         _ ->
           {:ok, :stale}
@@ -99,38 +82,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
         )
 
       if file do
-        identification =
-          Repo.one(
-            from row in IdentificationSchema,
-              where: row.media_file_id == ^file_id,
-              lock: "FOR UPDATE"
-          )
-
-        movie =
-          if choice == :unidentified, do: nil, else: Catalog.upsert_in_transaction!(Repo, choice)
-
-        attrs = %{
-          media_file_id: file_id,
-          observed_revision: file.revision,
-          token: Ecto.UUID.generate(),
-          state: if(movie, do: :manual, else: :manual_unidentified),
-          origin: :manual,
-          movie_id: if(movie, do: movie.id, else: nil),
-          needs_review: false,
-          failure_reason: nil,
-          candidate_data: %{"items" => []},
-          job_id: nil,
-          started_at: nil,
-          finished_at: DateTime.utc_now()
-        }
-
-        row =
-          Repo.insert_or_update!(
-            IdentificationSchema.changeset(identification || %IdentificationSchema{}, attrs),
-            log: false
-          )
-
-        {:ok, IdentificationMapper.to_domain(row)}
+        correct_file(file, file_id, choice)
       else
         {:error, :not_found}
       end
@@ -164,14 +116,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
           {:error, :manual_locked}
 
         true ->
-          EctoRequestWriter.request_batch!(Repo, [
-            %{file_id: file.id, revision: file.revision, requested?: true}
-          ])
-
-          case get(file_id) do
-            {:ok, row} -> {:ok, IdentificationMapper.to_domain(row)}
-            error -> error
-          end
+          request_retry(file)
       end
     end)
   end
@@ -204,6 +149,77 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp start_pending_identification(identification, file, job_id) do
+    attrs = %{started_at: DateTime.utc_now()}
+    attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
+    Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
+    {:ok, %{relative_path: file.relative_path, revision: file.revision}}
+  end
+
+  defp complete_pending_identification(identification, candidates, details, needs_review) do
+    movie = if details, do: Catalog.upsert_in_transaction!(Repo, details), else: nil
+    state = if movie, do: :automatic, else: :unmatched
+
+    attrs = %{
+      state: state,
+      origin: :automatic,
+      movie_id: if(movie, do: movie.id, else: nil),
+      needs_review: needs_review,
+      failure_reason: nil,
+      candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
+      finished_at: DateTime.utc_now()
+    }
+
+    Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
+    :ok
+  end
+
+  defp correct_file(file, file_id, choice) do
+    identification =
+      Repo.one(
+        from row in IdentificationSchema,
+          where: row.media_file_id == ^file_id,
+          lock: "FOR UPDATE"
+      )
+
+    movie =
+      if choice == :unidentified, do: nil, else: Catalog.upsert_in_transaction!(Repo, choice)
+
+    attrs = %{
+      media_file_id: file_id,
+      observed_revision: file.revision,
+      token: Ecto.UUID.generate(),
+      state: if(movie, do: :manual, else: :manual_unidentified),
+      origin: :manual,
+      movie_id: if(movie, do: movie.id, else: nil),
+      needs_review: false,
+      failure_reason: nil,
+      candidate_data: %{"items" => []},
+      job_id: nil,
+      started_at: nil,
+      finished_at: DateTime.utc_now()
+    }
+
+    row =
+      Repo.insert_or_update!(
+        IdentificationSchema.changeset(identification || %IdentificationSchema{}, attrs),
+        log: false
+      )
+
+    {:ok, IdentificationMapper.to_domain(row)}
+  end
+
+  defp request_retry(file) do
+    EctoRequestWriter.request_batch!(Repo, [
+      %{file_id: file.id, revision: file.revision, requested?: true}
+    ])
+
+    case get(file.id) do
+      {:ok, row} -> {:ok, IdentificationMapper.to_domain(row)}
+      error -> error
+    end
   end
 
   defp current(file_id, token) do

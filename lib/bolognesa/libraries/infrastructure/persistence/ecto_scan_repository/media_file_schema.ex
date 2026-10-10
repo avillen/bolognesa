@@ -3,6 +3,17 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.Medi
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          library_id: integer() | nil,
+          relative_path: binary() | nil,
+          size_bytes: non_neg_integer() | nil,
+          modified_at: DateTime.t() | nil,
+          availability: :available | :missing,
+          revision: pos_integer(),
+          last_seen_generation: Ecto.UUID.t() | nil
+        }
+
   schema "media_files" do
     field :library_id, :id
     field :relative_path, :binary

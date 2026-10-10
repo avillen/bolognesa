@@ -26,14 +26,18 @@ defmodule BolognesaWeb.Library.Index.Reducers.FetchScanStatuses do
   defp load(actor) do
     with {:ok, libraries} <- Libraries.list_libraries(actor) do
       Enum.reduce_while(libraries, {:ok, []}, fn library, {:ok, rows} ->
-        with {:ok, status} <- Libraries.get_scan_status(actor, library.id),
-             {:ok, counts} <- Libraries.get_inspection_counts(actor, library.id) do
-          {:cont, {:ok, [{library, status, counts} | rows]}}
-        else
-          {:error, reason} -> {:halt, {:error, reason}}
-        end
+        load_library(actor, library, rows)
       end)
       |> ordered()
+    end
+  end
+
+  defp load_library(actor, library, rows) do
+    with {:ok, status} <- Libraries.get_scan_status(actor, library.id),
+         {:ok, counts} <- Libraries.get_inspection_counts(actor, library.id) do
+      {:cont, {:ok, [{library, status, counts} | rows]}}
+    else
+      {:error, reason} -> {:halt, {:error, reason}}
     end
   end
 

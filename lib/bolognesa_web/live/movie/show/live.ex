@@ -1,16 +1,17 @@
 defmodule BolognesaWeb.Movie.Show.Live do
+  @moduledoc false
   use BolognesaWeb, :live_view
   alias BolognesaWeb.Movie.Show.Reducer
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     actor = socket.assigns.current_scope.actor
-    {:ok, Reducer.load(socket, actor, parse_id(id))}
+    {:ok, Reducer.Initialize.call(socket, actor, parse_id(id))}
   end
 
   @impl true
   def handle_async({:movie, request_id}, result, socket) do
-    {:noreply, Reducer.result(socket, request_id, result)}
+    {:noreply, Reducer.ApplyResult.call(socket, request_id, result)}
   end
 
   defp parse_id(id) do

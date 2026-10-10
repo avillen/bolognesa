@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.Library.Index.Live do
+  @moduledoc false
   use BolognesaWeb, :live_view
   alias BolognesaWeb.Library.Index.Reducers
 

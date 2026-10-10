@@ -4,18 +4,17 @@ Este documento recoge las convenciones acordadas para la presentación web de Bo
 
 ## Organización por pantalla
 
-Cada pantalla agrupa su LiveView, template, reducers, modelos de presentación, formularios y componentes específicos. Se crea un archivo por reducer público. Los directorios y módulos se añaden cuando una funcionalidad los necesita, sin generar carpetas vacías por adelantado.
+Cada pantalla agrupa su LiveView, template, reducers, modelos de presentación, formularios y componentes específicos. En `live/movie/`, los reducers viven en el directorio singular `reducer/`, con un archivo por operación pública. Los directorios y módulos se añaden cuando una funcionalidad los necesita, sin generar carpetas vacías por adelantado.
 
 ```text
 lib/bolognesa_web/live/movie/
   index/
     live.ex
     live.html.heex
-    reducers/
+    reducer/
       initialize.ex
-      apply_filters.ex
-      fetch_movies.ex
-      apply_movies_result.ex
+      load.ex
+      apply_result.ex
     state/
       movie.ex
     forms/
@@ -25,7 +24,9 @@ lib/bolognesa_web/live/movie/
   show/
     live.ex
     live.html.heex
-    reducers/
+    reducer/
+      initialize.ex
+      apply_result.ex
     state/
     forms/
 ```
@@ -35,7 +36,7 @@ Los módulos siguen la estructura:
 | Archivo relativo a `live/movie/` | Módulo |
 | --- | --- |
 | `index/live.ex` | `BolognesaWeb.Movie.Index.Live` |
-| `index/reducers/fetch_movies.ex` | `BolognesaWeb.Movie.Index.Reducers.FetchMovies` |
+| `index/reducer/load.ex` | `BolognesaWeb.Movie.Index.Reducer.Load` |
 | `index/state/movie.ex` | `BolognesaWeb.Movie.Index.State.Movie` |
 | `index/forms/filters.ex` | `BolognesaWeb.Movie.Index.Forms.Filters` |
 | `index/components/movie_card.ex` | `BolognesaWeb.Movie.Index.Components.MovieCard` |
@@ -49,19 +50,16 @@ La LiveView recibe y delega los callbacks de ciclo de vida, parámetros, eventos
 Cada reducer expone `call(socket, ...)`, recibe el socket como primer argumento y devuelve siempre un socket. Los argumentos adicionales contienen los datos necesarios para la operación. Las funciones privadas pueden transformar datos sin recibir un socket.
 
 ```elixir
-alias BolognesaWeb.Movie.Index.Reducers
+alias BolognesaWeb.Movie.Index.Reducer
 
 def handle_params(params, _uri, socket) do
-  socket =
-    socket
-    |> Reducers.ApplyFilters.call(params)
-    |> Reducers.FetchMovies.call()
-
-  {:noreply, socket}
+  query = Map.get(params, "query", "")
+  page = parse_page(Map.get(params, "page", "1"))
+  {:noreply, Reducer.Load.call(socket, query, page)}
 end
 
-def handle_async(:load_movies, result, socket) do
-  {:noreply, Reducers.ApplyMoviesResult.call(socket, result)}
+def handle_async({:movies, request_id}, result, socket) do
+  {:noreply, Reducer.ApplyResult.call(socket, request_id, result)}
 end
 ```
 

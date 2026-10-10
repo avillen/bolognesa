@@ -7,6 +7,6 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository.Sessi
     UserMapper
   }
 
-  @spec to_user(%SessionSchema{}) :: User.t()
+  @spec to_user(SessionSchema.t()) :: User.t()
   def to_user(%{user: user}), do: UserMapper.to_user(user)
 end

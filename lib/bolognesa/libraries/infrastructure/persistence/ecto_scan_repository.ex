@@ -202,11 +202,13 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
   defp reconcile_transition(scan, state, fallback, now) do
     reason = scan.failure_reason || fallback
 
-    with {:ok, transitioned} <- Scan.transition(ScanMapper.to_scan(scan), state, reason, now) do
-      _stored = save_scan(scan, transitioned)
-      :ok
-    else
-      _ -> Repo.rollback(:unavailable)
+    case Scan.transition(ScanMapper.to_scan(scan), state, reason, now) do
+      {:ok, transitioned} ->
+        _stored = save_scan(scan, transitioned)
+        :ok
+
+      _ ->
+        Repo.rollback(:unavailable)
     end
   end
 

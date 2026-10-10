@@ -74,13 +74,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
     transaction(fn ->
       case current(file_id, token) do
         {:ok, inspection, file} when inspection.state in [:pending, :running] ->
-          library = Repo.get!(LibrarySchema, file.library_id)
-          attrs = %{state: :running, started_at: DateTime.utc_now()}
-          attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
-          Repo.update!(InspectionSchema.changeset(inspection, attrs))
-
-          {:ok, MediaFileMapper.to_media_file(file),
-           %Library{id: library.id, name: library.name, path: library.path}}
+          start_running(inspection, file, job_id)
 
         _ ->
           {:ok, :stale}
@@ -172,59 +166,84 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
   def reconcile_jobs(now) do
     cutoff = DateTime.add(now, -InspectionPolicy.rescue_after_ms(), :millisecond)
 
-    ids =
-      Repo.all(
-        from inspection in InspectionSchema,
-          left_join: job in Oban.Job,
-          on: job.id == inspection.job_id,
-          where: inspection.state in [:pending, :running] and not is_nil(inspection.job_id),
-          where:
-            is_nil(job.id) or job.state in ["discarded", "cancelled", "completed"] or
-              (inspection.state == :running and job.state in ["retryable", "available"]) or
-              (inspection.state == :running and job.state == "executing" and
-                 inspection.started_at < ^cutoff and job.attempted_at < ^cutoff),
-          order_by: inspection.id,
-          limit: 100,
-          select: inspection.id
-      )
+    ids = reconciliation_ids(cutoff)
 
-    Enum.reduce_while(ids, :ok, fn id, :ok ->
-      case transaction(fn -> reconcile_one(id, cutoff) end) do
-        :ok -> {:cont, :ok}
-        {:error, :unavailable} = error -> {:halt, error}
-      end
-    end)
+    Enum.reduce_while(ids, :ok, fn id, :ok -> reconcile_id(id, cutoff) end)
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp reconcile_id(id, cutoff) do
+    case transaction(fn -> reconcile_one(id, cutoff) end) do
+      :ok -> {:cont, :ok}
+      {:error, :unavailable} = error -> {:halt, error}
+    end
+  end
+
+  defp start_running(inspection, file, job_id) do
+    library = Repo.get!(LibrarySchema, file.library_id)
+    attrs = %{state: :running, started_at: DateTime.utc_now()}
+    attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
+    Repo.update!(InspectionSchema.changeset(inspection, attrs))
+
+    {:ok, MediaFileMapper.to_media_file(file),
+     %Library{id: library.id, name: library.name, path: library.path}}
+  end
+
+  defp reconciliation_ids(cutoff) do
+    Repo.all(
+      from inspection in InspectionSchema,
+        left_join: job in Oban.Job,
+        on: job.id == inspection.job_id,
+        where: inspection.state in [:pending, :running] and not is_nil(inspection.job_id),
+        where:
+          is_nil(job.id) or job.state in ["discarded", "cancelled", "completed"] or
+            (inspection.state == :running and job.state in ["retryable", "available"]) or
+            (inspection.state == :running and job.state == "executing" and
+               inspection.started_at < ^cutoff and job.attempted_at < ^cutoff),
+        order_by: inspection.id,
+        limit: 100,
+        select: inspection.id
+    )
   end
 
   defp reconcile_one(id, cutoff) do
     inspection = Repo.one(from row in InspectionSchema, where: row.id == ^id, lock: "FOR UPDATE")
 
     if inspection && inspection.state in [:pending, :running] do
-      job = Repo.get(Oban.Job, inspection.job_id)
-
-      if (inspection.state == :running and job) && job.state in ["retryable", "available"] do
-        inspection
-        |> InspectionSchema.changeset(%{state: :pending, started_at: nil})
-        |> Repo.update!()
-      else
-        reason = reconciliation_reason(inspection, job, cutoff)
-
-        if reason do
-          inspection
-          |> InspectionSchema.changeset(%{
-            state: :failed,
-            failure_reason: reason,
-            finished_at: DateTime.utc_now()
-          })
-          |> Repo.update!()
-        end
-      end
+      reconcile_active(inspection, cutoff)
     end
 
     :ok
+  end
+
+  defp reconcile_active(inspection, cutoff) do
+    job = Repo.get(Oban.Job, inspection.job_id)
+
+    if (inspection.state == :running and job) && job.state in ["retryable", "available"] do
+      inspection
+      |> InspectionSchema.changeset(%{state: :pending, started_at: nil})
+      |> Repo.update!()
+    else
+      fail_if_reason(inspection, job, cutoff)
+    end
+  end
+
+  defp fail_if_reason(inspection, job, cutoff) do
+    case reconciliation_reason(inspection, job, cutoff) do
+      nil ->
+        :ok
+
+      reason ->
+        inspection
+        |> InspectionSchema.changeset(%{
+          state: :failed,
+          failure_reason: reason,
+          finished_at: DateTime.utc_now()
+        })
+        |> Repo.update!()
+    end
   end
 
   defp reconciliation_reason(_inspection, nil, _cutoff), do: :unexpected_failure

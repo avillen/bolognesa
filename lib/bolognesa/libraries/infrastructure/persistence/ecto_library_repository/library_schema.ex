@@ -3,6 +3,12 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.L
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          name: String.t() | nil,
+          path: String.t() | nil
+        }
+
   schema "libraries" do
     field :name, :string
     field :path, :string

@@ -22,18 +22,40 @@ defmodule Bolognesa.Identification.Application.IdentifyMediaFile do
           normalize(repository.complete(file_id, token, [], nil, true))
 
         [candidate | _] ->
-          case provider.details(candidate.provider_id) do
-            {:ok, details} ->
-              normalize(
-                repository.complete(file_id, token, candidates, details, review?(hint, candidate))
-              )
-
-            {:error, reason} ->
-              handle_error(file_id, token, reason, attempt, repository)
-          end
+          identify_candidate(
+            file_id,
+            token,
+            attempt,
+            repository,
+            provider,
+            hint,
+            candidate,
+            candidates
+          )
       end
     else
       {:error, reason} -> handle_error(file_id, token, reason, attempt, repository)
+    end
+  end
+
+  defp identify_candidate(
+         file_id,
+         token,
+         attempt,
+         repository,
+         provider,
+         hint,
+         candidate,
+         candidates
+       ) do
+    case provider.details(candidate.provider_id) do
+      {:ok, details} ->
+        normalize(
+          repository.complete(file_id, token, candidates, details, review?(hint, candidate))
+        )
+
+      {:error, reason} ->
+        handle_error(file_id, token, reason, attempt, repository)
     end
   end
 

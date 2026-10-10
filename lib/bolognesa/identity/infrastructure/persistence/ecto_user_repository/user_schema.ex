@@ -3,6 +3,14 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository.UserS
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          name: String.t() | nil,
+          email: String.t() | nil,
+          role: String.t() | nil,
+          hashed_password: String.t() | nil
+        }
+
   schema "identity_users" do
     field :name, :string
     field :email, :string

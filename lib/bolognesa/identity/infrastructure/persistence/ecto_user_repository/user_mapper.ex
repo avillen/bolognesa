@@ -3,7 +3,7 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository.UserM
   alias Bolognesa.Identity.Domain.User
   alias Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository.UserSchema
 
-  @spec to_user(%UserSchema{}) :: User.t()
+  @spec to_user(UserSchema.t()) :: User.t()
   def to_user(schema) do
     %User{
       id: schema.id,

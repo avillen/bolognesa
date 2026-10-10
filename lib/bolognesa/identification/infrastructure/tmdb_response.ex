@@ -5,23 +5,12 @@ defmodule Bolognesa.Identification.Infrastructure.TmdbResponse do
 
   @spec search(binary()) :: {:ok, [MovieCandidate.t()]} | {:error, :invalid_response}
   def search(body) when is_binary(body) do
-    with {:ok, %{"results" => results}} when is_list(results) <- Jason.decode(body) do
-      candidates =
-        results
-        |> Enum.filter(&is_map/1)
-        |> Enum.reject(&(&1["adult"] == true))
-        |> Enum.reduce([], fn raw, acc ->
-          case candidate(raw) do
-            {:ok, value} -> [value | acc]
-            _ -> acc
-          end
-        end)
-        |> Enum.reverse()
-        |> Enum.take(5)
+    case Jason.decode(body) do
+      {:ok, %{"results" => results}} when is_list(results) ->
+        {:ok, parse_candidates(results)}
 
-      {:ok, candidates}
-    else
-      _ -> {:error, :invalid_response}
+      _ ->
+        {:error, :invalid_response}
     end
   end
 
@@ -38,6 +27,20 @@ defmodule Bolognesa.Identification.Infrastructure.TmdbResponse do
   end
 
   def details(_body), do: {:error, :invalid_response}
+
+  defp parse_candidates(results) do
+    results
+    |> Enum.filter(&is_map/1)
+    |> Enum.reject(&(&1["adult"] == true))
+    |> Enum.reduce([], fn raw, acc ->
+      case candidate(raw) do
+        {:ok, value} -> [value | acc]
+        _ -> acc
+      end
+    end)
+    |> Enum.reverse()
+    |> Enum.take(5)
+  end
 
   defp candidate(raw) when is_map(raw), do: MovieCandidate.new(attrs(raw))
   defp candidate(_raw), do: {:error, :invalid_candidate}

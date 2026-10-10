@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.About.Live do
+  @moduledoc false
   use BolognesaWeb, :live_view
 
   @impl true

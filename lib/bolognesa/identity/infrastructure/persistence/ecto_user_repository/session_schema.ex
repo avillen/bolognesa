@@ -2,6 +2,12 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository.Sessi
   @moduledoc false
   use Ecto.Schema
 
+  @type t :: %__MODULE__{
+          user:
+            Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository.UserSchema.t()
+            | Ecto.Association.NotLoaded.t()
+        }
+
   schema "identity_sessions" do
     field :token_hash, :binary, redact: true
     field :expires_at, :utc_datetime_usec

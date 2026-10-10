@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.Medi
   alias Bolognesa.Libraries.Domain.MediaFile
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
 
-  @spec to_media_file(%MediaFileSchema{}) :: MediaFile.t()
+  @spec to_media_file(MediaFileSchema.t()) :: MediaFile.t()
   def to_media_file(schema) do
     %MediaFile{
       id: schema.id,

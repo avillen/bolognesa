@@ -25,19 +25,21 @@ defmodule Bolognesa.Identification.Domain.MovieDetails do
 
   @spec new(map()) :: {:ok, t()} | {:error, :invalid_details}
   def new(attrs) do
-    with {:ok, candidate} <- MovieCandidate.new(attrs) do
-      {:ok,
-       %__MODULE__{
-         provider_id: candidate.provider_id,
-         title: candidate.title,
-         original_title: candidate.original_title,
-         year: candidate.year,
-         overview: overview(Map.get(attrs, :overview)),
-         poster_path: candidate.poster_path,
-         backdrop_path: MovieCandidate.image_path(Map.get(attrs, :backdrop_path))
-       }}
-    else
-      _ -> {:error, :invalid_details}
+    case MovieCandidate.new(attrs) do
+      {:ok, candidate} ->
+        {:ok,
+         %__MODULE__{
+           provider_id: candidate.provider_id,
+           title: candidate.title,
+           original_title: candidate.original_title,
+           year: candidate.year,
+           overview: overview(Map.get(attrs, :overview)),
+           poster_path: candidate.poster_path,
+           backdrop_path: MovieCandidate.image_path(Map.get(attrs, :backdrop_path))
+         }}
+
+      _ ->
+        {:error, :invalid_details}
     end
   end
 

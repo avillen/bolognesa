@@ -1,26 +1,16 @@
 defmodule BolognesaWeb.Movie.Index.Live do
+  @moduledoc false
   use BolognesaWeb, :live_view
   alias BolognesaWeb.Movie.Index.Reducer
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:query, "")
-     |> assign(:page, 1)
-     |> assign(:total, 0)
-     |> assign(:loading?, true)
-     |> assign(:error, nil)
-     |> assign(:request_id, nil)
-     |> assign(:form, to_form(%{"query" => ""}, as: :search))
-     |> stream(:movies, [])}
-  end
+  def mount(_params, _session, socket), do: {:ok, Reducer.Initialize.call(socket)}
 
   @impl true
   def handle_params(params, _uri, socket) do
     query = Map.get(params, "query", "")
     page = parse_page(Map.get(params, "page", "1"))
-    {:noreply, Reducer.load(socket, query, page)}
+    {:noreply, Reducer.Load.call(socket, query, page)}
   end
 
   @impl true
@@ -30,7 +20,7 @@ defmodule BolognesaWeb.Movie.Index.Live do
 
   @impl true
   def handle_async({:movies, request_id}, result, socket) do
-    {:noreply, Reducer.result(socket, request_id, result)}
+    {:noreply, Reducer.ApplyResult.call(socket, request_id, result)}
   end
 
   defp parse_page(value) when is_binary(value) do

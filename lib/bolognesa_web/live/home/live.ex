@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.Home.Live do
+  @moduledoc false
   use BolognesaWeb, :live_view
   alias BolognesaWeb.Home.Reducers.Initialize
 

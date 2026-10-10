@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.Scan
   alias Bolognesa.Libraries.Domain.Scan
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.ScanSchema
 
-  @spec to_scan(%ScanSchema{}) :: Scan.t()
+  @spec to_scan(ScanSchema.t()) :: Scan.t()
   def to_scan(%ScanSchema{job_id: job_id} = schema) when is_integer(job_id) do
     %Scan{
       id: schema.id,

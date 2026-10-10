@@ -3,6 +3,16 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.Scan
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          library_id: integer() | nil,
+          job_id: integer() | nil,
+          state: :queued | :running | :retrying | :completed | :failed,
+          generation: Ecto.UUID.t() | nil,
+          attempt: non_neg_integer(),
+          files_discovered: non_neg_integer()
+        }
+
   schema "library_scans" do
     field :library_id, :id
     field :job_id, :integer

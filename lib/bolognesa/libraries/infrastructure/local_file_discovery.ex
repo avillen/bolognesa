@@ -21,9 +21,8 @@ defmodule Bolognesa.Libraries.Infrastructure.LocalFileDiscovery do
          {:ok, stat} <- source_stat(root),
          source = %{root: root, identity: identity(stat)},
          {:ok, entries} <- list_directory(source, ""),
-         :ok <- traverse(source, [{"", entries}], [], 0, sink),
-         :ok <- revalidate_source(path, source) do
-      :ok
+         :ok <- traverse(source, [{"", entries}], [], 0, sink) do
+      revalidate_source(path, source)
     end
   end
 
@@ -156,9 +155,8 @@ defmodule Bolognesa.Libraries.Infrastructure.LocalFileDiscovery do
 
   defp revalidate_source(path, source) do
     with {:ok, root} <- LocalSourcePath.canonical_directory(path),
-         :ok <- same_identity(source.root, root),
-         :ok <- check_directory(source, "") do
-      :ok
+         :ok <- same_identity(source.root, root) do
+      check_directory(source, "")
     end
   end
 
