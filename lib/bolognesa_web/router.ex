@@ -57,7 +57,6 @@ defmodule BolognesaWeb.Router do
     pipe_through :media
 
     get "/movies/:movie_id/media/:file_id", MediaController, :show
-    head "/movies/:movie_id/media/:file_id", MediaController, :show
   end
 
   # Other scopes may use custom stacks.

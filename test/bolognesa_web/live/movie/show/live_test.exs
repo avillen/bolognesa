@@ -150,6 +150,48 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     assert has_element?(view, "#movie-playback-error[data-reason='file_unavailable']")
   end
 
+  test "shows the first selection error when the file has disappeared", %{conn: conn} do
+    {:ok, _} =
+      Identity.install_admin(%{
+        name: "Ada",
+        email: "missing-play@example.com",
+        password: "correct horse battery staple"
+      })
+
+    {:ok, token} =
+      Identity.start_session("missing-play@example.com", "correct horse battery staple")
+
+    movie =
+      Repo.insert!(
+        MovieSchema.changeset(%MovieSchema{}, %{
+          provider: :tmdb,
+          provider_id: 1002,
+          title: "Mi pelicula"
+        })
+      )
+
+    base = hd(Application.fetch_env!(:bolognesa, :library_roots))
+    directory = Path.join(base, "missing-play-#{System.unique_integer([:positive])}")
+    File.mkdir_p!(directory)
+    on_exit(fn -> File.rm_rf!(directory) end)
+    {:ok, physical} = LocalSourcePath.canonical_directory(directory)
+    physical_file = Path.join(physical, "film.mp4")
+    File.write!(physical_file, "abcdefgh")
+
+    library =
+      Repo.insert!(LibrarySchema.changeset(%LibrarySchema{}, %{name: "Play", path: physical}))
+
+    file = insert_version(library.id, movie.id, physical, "film.mp4", :available)
+
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies/#{movie.id}")
+    render_async(view)
+    File.rm!(physical_file)
+
+    render_click(element(view, "#movie-play-#{file.id}"))
+    assert has_element?(view, "#movie-playback-error[data-reason='file_unavailable']")
+    refute has_element?(view, "#movie-player video")
+  end
+
   defp insert_version(library_id, movie_id, directory, path, availability) do
     physical_path = Path.join(directory, path)
 

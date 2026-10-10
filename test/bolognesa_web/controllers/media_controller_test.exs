@@ -125,6 +125,7 @@ defmodule BolognesaWeb.MediaControllerTest do
     path = ~p"/movies/#{movie.id}/media/#{file.id}"
     head_conn = conn |> init_test_session(user_token: token) |> head(path)
     assert head_conn.status == 200
+    assert head_conn.state == :sent
     assert response(head_conn, 200) == ""
     assert get_resp_header(head_conn, "content-length") == ["8"]
 

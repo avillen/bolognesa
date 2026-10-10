@@ -59,16 +59,16 @@
         >
           Tu navegador no admite la reproducción de vídeo.
         </video>
-        <p
-          :if={@playback_error}
-          id="movie-playback-error"
-          role="alert"
-          data-reason={@playback_error_reason}
-          class="rounded-xl border border-red-300/30 bg-red-950/30 p-4 text-sm text-red-100"
-        >
-          {@playback_error}
-        </p>
       </section>
+      <p
+        :if={@playback_error}
+        id="movie-playback-error"
+        role="alert"
+        data-reason={@playback_error_reason}
+        class="mt-4 rounded-xl border border-red-300/30 bg-red-950/30 p-4 text-sm text-red-100"
+      >
+        {@playback_error}
+      </p>
       <h2 class="mt-10 text-xl font-semibold text-stone-50">Versiones en tu biblioteca</h2>
       <div id="movie-versions" phx-update="stream" class="mt-4 space-y-3">
         <div

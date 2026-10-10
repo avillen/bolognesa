@@ -3,6 +3,7 @@ defmodule Bolognesa.Playback.LocalMediaFileTest do
 
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   alias Bolognesa.Libraries.Infrastructure.LocalSourcePath
+  alias Bolognesa.Test.SwitchingFileAccess
 
   setup do
     base = hd(Application.fetch_env!(:bolognesa, :library_roots))
@@ -59,6 +60,31 @@ defmodule Bolognesa.Playback.LocalMediaFileTest do
 
     File.write!(Path.join(directory, "film.mp4"), "changed content")
     assert {:error, :source_changed} = LocalMediaFile.open(valid)
+  end
+
+  test "rejects an ancestor replaced with a symlink during opening", %{directory: directory} do
+    library = Path.join(directory, "library")
+    nested = Path.join(library, "nested")
+    outside = Path.join(directory, "outside")
+    File.mkdir_p!(nested)
+    File.mkdir_p!(outside)
+    File.write!(Path.join(nested, "film.mp4"), "abcdefgh")
+    File.write!(Path.join(outside, "film.mp4"), "secrets!")
+    File.touch!(Path.join(outside, "film.mp4"), File.stat!(Path.join(nested, "film.mp4")).mtime)
+    source = source(library, "nested/film.mp4")
+    physical_nested = Path.join(source.path, "nested")
+
+    Process.put(:playback_switch_on_lstat, %{
+      path: Path.join(physical_nested, "film.mp4"),
+      from: physical_nested,
+      moved: Path.join(source.path, "nested-original"),
+      target: outside
+    })
+
+    on_exit(fn -> Process.delete(:playback_switch_on_lstat) end)
+
+    assert {:error, :unsafe_entry} = LocalMediaFile.open(source, SwitchingFileAccess)
+    assert File.read!(Path.join(outside, "film.mp4")) == "secrets!"
   end
 
   defp source(directory, relative_path) do

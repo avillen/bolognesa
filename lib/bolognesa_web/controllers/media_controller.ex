@@ -78,7 +78,7 @@ defmodule BolognesaWeb.MediaController do
           |> put_resp_header("content-length", Integer.to_string(length))
           |> maybe_content_range(status, offset, length, size)
 
-        if conn.method == "HEAD" do
+        if conn.private[:original_method] == "HEAD" do
           send_resp(conn, status, "")
         else
           conn |> send_chunked(status) |> stream_range(device, offset, length)

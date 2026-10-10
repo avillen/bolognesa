@@ -10,15 +10,26 @@ defmodule Bolognesa.Playback.Infrastructure.LocalMediaFile do
   @type opened :: %{device: IO.device(), size: non_neg_integer()}
   @type failure :: :source_inaccessible | :source_changed | :unsafe_entry | :unreadable
 
-  @spec open(PlaybackRepository.source()) :: {:ok, opened()} | {:error, failure()}
-  def open(source) do
+  @type file_access :: atom()
+
+  @spec open(PlaybackRepository.source(), file_access()) ::
+          {:ok, opened()} | {:error, failure()}
+  def open(source, file_access \\ File) do
     with {:ok, root_identity} <- check_root(source.path),
          :ok <- safe_relative_path(source.relative_path),
-         :ok <- check_ancestors(source.path, source.relative_path),
+         {:ok, ancestor_identities} <-
+           relative_ancestors(source.path, source.relative_path, file_access),
          path = source.path <> "/" <> source.relative_path,
-         {:ok, before_stat} <- regular_file(path, source),
+         {:ok, before_stat} <- regular_file(path, source, file_access),
          {:ok, device} <- open_file(path) do
-      validate_device(device, before_stat, source, root_identity)
+      validate_device(
+        device,
+        before_stat,
+        source,
+        root_identity,
+        ancestor_identities,
+        file_access
+      )
     end
   end
 
@@ -50,9 +61,28 @@ defmodule Bolognesa.Playback.Infrastructure.LocalMediaFile do
     check_directory_chain("", parts)
   end
 
-  defp check_ancestors(root, relative_path) do
+  defp relative_ancestors(root, relative_path, file_access) do
     parts = :binary.split(relative_path, "/", [:global]) |> Enum.drop(-1)
-    check_directory_chain(root, parts)
+
+    Enum.reduce_while(parts, {root, []}, fn part, {parent, identities} ->
+      path = parent <> "/" <> part
+
+      case file_access.lstat(path, time: :posix) do
+        {:ok, %{type: :directory, access: access} = stat}
+        when access in [:read, :read_write] ->
+          {:cont, {path, [identity(stat) | identities]}}
+
+        {:ok, _} ->
+          {:halt, {:error, :unsafe_entry}}
+
+        {:error, _} ->
+          {:halt, {:error, :source_inaccessible}}
+      end
+    end)
+    |> case do
+      {:error, _} = error -> error
+      {_, identities} -> {:ok, Enum.reverse(identities)}
+    end
   end
 
   defp check_directory_chain(root, parts) do
@@ -76,8 +106,9 @@ defmodule Bolognesa.Playback.Infrastructure.LocalMediaFile do
     end
   end
 
-  defp regular_file(path, source) do
-    with {:ok, %{type: :regular, access: access} = stat} <- File.lstat(path, time: :posix),
+  defp regular_file(path, source, file_access) do
+    with {:ok, %{type: :regular, access: access} = stat} <-
+           file_access.lstat(path, time: :posix),
          true <- access in [:read, :read_write],
          {:ok, modified_at} <- DateTime.from_unix(stat.mtime),
          true <-
@@ -98,7 +129,14 @@ defmodule Bolognesa.Playback.Infrastructure.LocalMediaFile do
     end
   end
 
-  defp validate_device(device, before_stat, source, root_identity) do
+  defp validate_device(
+         device,
+         before_stat,
+         source,
+         root_identity,
+         ancestor_identities,
+         file_access
+       ) do
     result =
       with {:ok, info} <- :file.read_file_info(device, time: :posix),
            true <- file_info(info, :type) == :regular,
@@ -106,7 +144,10 @@ defmodule Bolognesa.Playback.Infrastructure.LocalMediaFile do
            true <- file_info(info, :mtime) == before_stat.mtime,
            true <- device_identity(info) == identity(before_stat),
            {:ok, after_root_identity} <- check_root(source.path),
-           true <- after_root_identity == root_identity do
+           true <- after_root_identity == root_identity,
+           {:ok, after_ancestor_identities} <-
+             relative_ancestors(source.path, source.relative_path, file_access),
+           true <- after_ancestor_identities == ancestor_identities do
         :ok
       else
         {:error, _} = error -> error
