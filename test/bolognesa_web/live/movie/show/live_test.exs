@@ -10,6 +10,8 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Persistence.InspectionSchema
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias Bolognesa.Infrastructure.LocalSourcePath
 
   test "shows movie details and versions container", %{conn: conn} do
@@ -117,13 +119,13 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     on_exit(fn -> File.rm_rf!(directory) end)
     {:ok, physical} = LocalSourcePath.canonical_directory(directory)
     File.write!(Path.join(physical, "first.mp4"), "abcdefgh")
-    File.write!(Path.join(physical, "second.mp4"), "abcdefgh")
+    File.write!(Path.join(physical, "second.mkv"), "abcdefgh")
 
     library =
       Repo.insert!(LibrarySchema.changeset(%LibrarySchema{}, %{name: "Play", path: physical}))
 
     first = insert_version(library.id, movie.id, physical, "first.mp4", :available)
-    second = insert_version(library.id, movie.id, physical, "second.mp4", :available)
+    second = insert_version(library.id, movie.id, physical, "second.mkv", :available)
     missing = insert_version(library.id, movie.id, physical, "missing.mp4", :missing)
 
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies/#{movie.id}")
@@ -137,12 +139,93 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     assert has_element?(view, "#movie-player video[src='/movies/#{movie.id}/media/#{first.id}']")
     render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
     assert has_element?(view, "#movie-playback-error[role='alert']")
+    assert has_element?(view, "#movie-compatible-#{first.id}", "Probar modo compatible")
 
     render_click(element(view, "#movie-play-#{second.id}"))
     assert has_element?(view, "#movie-player video[src='/movies/#{movie.id}/media/#{second.id}']")
     refute has_element?(view, "#movie-video-#{first.id}")
     refute has_element?(view, "#movie-playback-error")
     render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
+    refute has_element?(view, "#movie-playback-error")
+
+    Repo.insert!(
+      InspectionSchema.changeset(%InspectionSchema{}, %{
+        media_file_id: second.id,
+        token: Ecto.UUID.generate(),
+        observed_revision: second.revision,
+        state: :succeeded,
+        format: "matroska,webm",
+        duration_ms: 60_000,
+        tracks: %{
+          "items" => [
+            %{"kind" => "video", "codec" => "h264"},
+            %{"kind" => "audio", "codec" => "ac3"}
+          ]
+        }
+      })
+    )
+
+    executable = Path.join(physical, "fake-ffmpeg")
+    File.write!(executable, "#!/bin/sh\nwhile :; do sleep 1; done\n")
+    File.chmod!(executable, 0o700)
+    old_executable = Application.get_env(:bolognesa, :ffmpeg_executable)
+    Application.put_env(:bolognesa, :ffmpeg_executable, executable)
+
+    on_exit(fn ->
+      TranscodeManager.stop_all()
+
+      if old_executable,
+        do: Application.put_env(:bolognesa, :ffmpeg_executable, old_executable),
+        else: Application.delete_env(:bolognesa, :ffmpeg_executable)
+    end)
+
+    render_click(element(view, "#movie-play-#{second.id}"))
+    assert has_element?(view, "#movie-playback-preparing", "Preparando reproducción")
+    refute has_element?(view, "#movie-player video[src]")
+
+    html = render(view)
+
+    [_, session_id] =
+      Regex.run(~r/id="movie-playback-preparing"[^>]*data-session-id="([^"]+)"/, html)
+
+    {:ok, session} = TranscodeManager.lookup(session_id)
+    File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
+
+    File.write!(
+      Path.join(session.directory, "index.m3u8"),
+      "#EXTM3U\n#EXTINF:4.0,\nseg-000000.ts\n"
+    )
+
+    send(view.pid, {:compatible_poll, session_id})
+    assert has_element?(view, "#movie-video-#{session_id}[data-src$='/index.m3u8']")
+    assert has_element?(view, "#movie-seek-#{session_id}")
+
+    render_hook(view, "playback_pause", %{"session_id" => session_id})
+    assert {:ok, _} = TranscodeManager.lookup(session_id)
+    assert has_element?(view, "#movie-video-#{session_id}[data-paused-server='true']")
+    render_hook(view, "playback_resume", %{"session_id" => session_id, "position_ms" => "1000"})
+    assert has_element?(view, "#movie-video-#{session_id}[data-paused-server='false']")
+    render_hook(view, "playback_seek", %{"session_id" => session_id, "position_ms" => 1000})
+    assert has_element?(view, "#movie-video-#{session_id}")
+
+    render_hook(view, "playback_seek", %{"session_id" => session_id, "position_ms" => "10000"})
+    assert has_element?(view, "#movie-playback-preparing")
+    assert {:error, :not_found} = TranscodeManager.lookup(session_id)
+
+    render_click(element(view, "#movie-play-#{first.id}"))
+    render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
+    render_click(element(view, "#movie-compatible-#{first.id}"))
+
+    [_, forced_id] =
+      Regex.run(
+        ~r/id="movie-playback-preparing"[^>]*data-session-id="([^"]+)"/,
+        render(view)
+      )
+
+    {:ok, forced_session} = TranscodeManager.lookup(forced_id)
+    assert forced_session.profile == :video
+    render_hook(view, "playback_seek", %{"session_id" => forced_id, "position_ms" => "1000"})
+    assert has_element?(view, "#movie-playback-preparing")
     refute has_element?(view, "#movie-playback-error")
 
     File.rm!(Path.join(physical, "first.mp4"))

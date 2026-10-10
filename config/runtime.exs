@@ -15,6 +15,18 @@ if config_env() != :test do
   config :bolognesa, :library_roots, library_roots
 end
 
+if config_env() != :test do
+  config :bolognesa,
+         :transcode_root,
+         System.get_env(
+           "BOLOGNESA_TRANSCODE_ROOT",
+           if(config_env() == :prod,
+             do: "/transcode",
+             else: Path.join(System.tmp_dir!(), "bolognesa-transcode")
+           )
+         )
+end
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration

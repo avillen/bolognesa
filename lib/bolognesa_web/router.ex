@@ -57,6 +57,12 @@ defmodule BolognesaWeb.Router do
     pipe_through :media
 
     get "/movies/:movie_id/media/:file_id", MediaController, :show
+
+    get "/movies/:movie_id/media/:file_id/hls/:session_id/index.m3u8",
+        TranscodeController,
+        :manifest
+
+    get "/movies/:movie_id/media/:file_id/hls/:session_id/:segment", TranscodeController, :segment
   end
 
   # Other scopes may use custom stacks.

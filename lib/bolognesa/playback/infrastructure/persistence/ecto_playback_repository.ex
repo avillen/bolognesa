@@ -10,7 +10,9 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
 
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Persistence.InspectionSchema
   alias Bolognesa.Playback.Domain.Source
+  alias Bolognesa.Playback.Domain.TechnicalTrack
   alias Bolognesa.Repo
 
   @impl true
@@ -23,6 +25,10 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
         on: file.id == identification.media_file_id,
         join: library in LibrarySchema,
         on: library.id == file.library_id,
+        left_join: inspection in InspectionSchema,
+        on:
+          inspection.media_file_id == file.id and inspection.observed_revision == file.revision and
+            inspection.state == :succeeded,
         where:
           movie.id == ^movie_id and file.id == ^file_id and
             identification.state in [:automatic, :manual],
@@ -31,7 +37,11 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
           relative_path: file.relative_path,
           size_bytes: file.size_bytes,
           modified_at: file.modified_at,
-          availability: file.availability
+          availability: file.availability,
+          revision: file.revision,
+          format: inspection.format,
+          duration_ms: inspection.duration_ms,
+          tracks: inspection.tracks
         }
 
     case Repo.one(query, log: false) do
@@ -47,11 +57,33 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
            path: source.path,
            relative_path: source.relative_path,
            size_bytes: source.size_bytes,
-           modified_at: source.modified_at
+           modified_at: source.modified_at,
+           revision: source.revision,
+           format: source.format,
+           duration_ms: source.duration_ms,
+           tracks: tracks(source.tracks)
          }}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
+
+  defp tracks(%{"items" => items}) when is_list(items) do
+    Enum.flat_map(items, fn row ->
+      case row do
+        %{"kind" => kind, "codec" => codec} when kind in ["video", "audio", "subtitle"] ->
+          [%TechnicalTrack{kind: track_kind(kind), codec: codec}]
+
+        _ ->
+          []
+      end
+    end)
+  end
+
+  defp tracks(_), do: []
+
+  defp track_kind("video"), do: :video
+  defp track_kind("audio"), do: :audio
+  defp track_kind("subtitle"), do: :subtitle
 end

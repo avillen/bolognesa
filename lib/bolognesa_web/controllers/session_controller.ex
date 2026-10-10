@@ -2,6 +2,7 @@ defmodule BolognesaWeb.SessionController do
   use BolognesaWeb, :controller
 
   alias Bolognesa.Identity
+  alias Bolognesa.Playback
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"login" => %{"email" => email, "password" => password}}) do
@@ -32,6 +33,10 @@ defmodule BolognesaWeb.SessionController do
   def delete(conn, _params) do
     case Identity.end_session(get_session(conn, :user_token)) do
       :ok ->
+        if conn.assigns.current_scope.actor do
+          Playback.stop_actor_compatible(conn.assigns.current_scope.actor)
+        end
+
         conn
         |> delete_session(:user_token)
         |> configure_session(drop: true)
