@@ -19,6 +19,7 @@ defmodule Bolognesa.Identity.SessionTest do
   } do
     assert {:ok, token} = Identity.start_session(" ADA@Example.COM ", @password)
     assert is_binary(token)
+    assert byte_size(token) == 43
     assert {:ok, %Actor{id: actor_id, email: "ada@example.com"}} = Identity.fetch_actor(token)
     assert actor_id == actor.id
     assert stored = Repo.one!(SessionSchema)
@@ -68,5 +69,10 @@ defmodule Bolognesa.Identity.SessionTest do
     for token <- [nil, "", "invalid", String.duplicate("!", 43), String.duplicate("a", 1000)] do
       assert {:error, :unauthenticated} = Identity.fetch_actor(token)
     end
+  end
+
+  test "a padded version of a valid token is rejected" do
+    assert {:ok, token} = Identity.start_session("ada@example.com", @password)
+    assert {:error, :unauthenticated} = Identity.fetch_actor(token <> "=")
   end
 end

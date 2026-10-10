@@ -5,9 +5,8 @@ defmodule Bolognesa.Identity.Domain.SessionToken do
   @type raw_token :: binary()
 
   @raw_token_bytes 32
-  @encoded_token_bytes byte_size(
-                         Base.url_encode64(:binary.copy(<<0>>, @raw_token_bytes), padding: false)
-                       )
+  # 32 bytes encode to 43 Base64url characters without padding.
+  @encoded_token_bytes 43
 
   @spec raw_byte_length() :: pos_integer()
   def raw_byte_length, do: @raw_token_bytes
