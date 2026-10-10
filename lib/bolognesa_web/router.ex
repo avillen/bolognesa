@@ -16,6 +16,13 @@ defmodule BolognesaWeb.Router do
     plug :require_authenticated_user
   end
 
+  pipeline :media do
+    plug :fetch_session
+    plug :put_secure_browser_headers
+    plug :fetch_current_scope
+    plug :require_authenticated_media
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -44,6 +51,13 @@ defmodule BolognesaWeb.Router do
       live "/movies/:id", Movie.Show.Live, :show
       live "/about", About.Live, :index
     end
+  end
+
+  scope "/", BolognesaWeb do
+    pipe_through :media
+
+    get "/movies/:movie_id/media/:file_id", MediaController, :show
+    head "/movies/:movie_id/media/:file_id", MediaController, :show
   end
 
   # Other scopes may use custom stacks.

@@ -36,6 +36,18 @@ defmodule BolognesaWeb.UserAuth do
     end
   end
 
+  @spec require_authenticated_media(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
+  def require_authenticated_media(conn, _opts) do
+    if conn.assigns.current_scope do
+      conn
+    else
+      conn
+      |> put_resp_header("cache-control", "private, no-store")
+      |> send_resp(401, "")
+      |> halt()
+    end
+  end
+
   @spec on_mount(:require_authenticated, map(), map(), Phoenix.LiveView.Socket.t()) ::
           {:cont, Phoenix.LiveView.Socket.t()} | {:halt, Phoenix.LiveView.Socket.t()}
   def on_mount(:require_authenticated, _params, session, socket) do
