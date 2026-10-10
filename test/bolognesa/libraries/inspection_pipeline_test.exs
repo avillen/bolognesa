@@ -4,6 +4,7 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
 
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Libraries
+  alias Bolognesa.Libraries.Domain.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
   alias Bolognesa.Persistence.{InspectionEventSchema, InspectionSchema}
@@ -31,7 +32,7 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
     before = File.read!(source)
     {:ok, _} = Libraries.start_scan(@admin, library.id)
     assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
-    assert %{pending: 1} = counts(library.id)
+    assert %InspectionCounts{pending: 1} = counts(library.id)
     assert {:ok, 1} = EctoOutboxRepository.dispatch_batch(25)
 
     first = Repo.one!(InspectionSchema)

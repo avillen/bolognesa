@@ -5,14 +5,14 @@ defmodule Bolognesa.Playback.Infrastructure.LocalMediaFile do
   Record.defrecordp(:file_info, Record.extract(:file_info, from_lib: "kernel/include/file.hrl"))
 
   alias Bolognesa.Libraries.Infrastructure.LocalSourcePath
-  alias Bolognesa.Playback.Application.Ports.PlaybackRepository
+  alias Bolognesa.Playback.Domain.Source
 
   @type opened :: %{device: IO.device(), size: non_neg_integer()}
   @type failure :: :source_inaccessible | :source_changed | :unsafe_entry | :unreadable
 
   @type file_access :: atom()
 
-  @spec open(PlaybackRepository.source(), file_access()) ::
+  @spec open(Source.t(), file_access()) ::
           {:ok, opened()} | {:error, failure()}
   def open(source, file_access \\ File) do
     with {:ok, root_identity} <- check_root(source.path),

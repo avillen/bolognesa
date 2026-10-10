@@ -4,7 +4,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
 
   import Ecto.Query
 
-  alias Bolognesa.Libraries.Domain.Library
+  alias Bolognesa.Libraries.Domain.{InspectionCounts, Library}
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.InspectionMapper
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
@@ -16,7 +17,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
   def get(file_id) do
     case Repo.get_by(InspectionSchema, media_file_id: file_id) do
       nil -> {:error, :not_found}
-      inspection -> {:ok, inspection}
+      inspection -> {:ok, InspectionMapper.to_inspection(inspection)}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -40,14 +41,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
               select: {inspection.state, inspection.failure_reason, count(file.id)}
           )
 
-        counts = %{
-          uninspected: 0,
-          pending: 0,
-          running: 0,
-          succeeded: 0,
-          failed: 0,
-          failure_reasons: %{}
-        }
+        counts = %InspectionCounts{}
 
         {:ok,
          Enum.reduce(rows, counts, fn {state, reason, count}, acc ->

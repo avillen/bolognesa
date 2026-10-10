@@ -5,6 +5,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
 
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Libraries
+  alias Bolognesa.Libraries.Domain.InspectionCounts
   alias Bolognesa.Libraries.Application.{GetInspectionCounts, GetScanStatus, StartScan}
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
@@ -60,8 +61,10 @@ defmodule Bolognesa.Libraries.StartScanTest do
   end
 
   test "authorizes technical counters and reports empty libraries", %{library: library} do
-    assert {:ok, %{uninspected: 0, pending: 0, running: 0, succeeded: 0, failed: 0}} =
+    assert {:ok, %{uninspected: 0, pending: 0, running: 0, succeeded: 0, failed: 0} = counts} =
              Libraries.get_inspection_counts(@admin, library.id)
+
+    assert counts.__struct__ == InspectionCounts
 
     assert {:error, :forbidden} = Libraries.get_inspection_counts(@member, library.id)
     assert {:error, :forbidden} = Libraries.get_inspection_counts(nil, library.id)

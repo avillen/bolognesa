@@ -3,6 +3,8 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
 
   alias Bolognesa.Libraries.Application.InspectMediaFile
   alias Bolognesa.Libraries.Domain.NewMediaFile
+  alias Bolognesa.Libraries.Domain.Inspection
+  alias Bolognesa.Libraries.Domain.TechnicalTrack
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
   alias Bolognesa.Persistence.InspectionSchema
@@ -49,8 +51,11 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
                SuccessfulMediaProbe
              )
 
-    assert {:ok, %{state: :succeeded, format: "matroska", duration_ms: 2_500}} =
+    assert {:ok, %{state: :succeeded, format: "matroska", duration_ms: 2_500} = result} =
              EctoInspectionRepository.get(inspection.media_file_id)
+
+    assert result.__struct__ == Inspection
+    assert [%TechnicalTrack{kind: :video}] = result.tracks
 
     assert %{"items" => [%{"kind" => "video", "channels" => nil, "language" => nil}]} =
              Repo.get!(InspectionSchema, inspection.id).tracks
@@ -89,8 +94,10 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
                FailingMediaProbe
              )
 
-    assert {:ok, %{state: :failed, failure_reason: :invalid_output}} =
+    assert {:ok, %{state: :failed, failure_reason: :invalid_output} = result} =
              EctoInspectionRepository.get(inspection.media_file_id)
+
+    assert result.__struct__ == Inspection
   end
 
   test "does not publish a result after the file becomes absent", %{

@@ -4,9 +4,10 @@ defmodule Bolognesa.Playback.Application.StartPlayback do
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Playback.Application.Ports.PlaybackRepository
+  alias Bolognesa.Playback.Domain.Source
 
   @spec call(Actor.t(), integer(), integer(), PlaybackRepository.adapter()) ::
-          {:ok, PlaybackRepository.source()}
+          {:ok, Source.t()}
           | {:error, :forbidden | :not_found | :missing | :unavailable}
   def call(actor, movie_id, file_id, repository) do
     with :ok <- Identity.authorize(actor, :admin),

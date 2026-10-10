@@ -3,10 +3,10 @@ defmodule Bolognesa.Libraries.Application.GetInspectionCounts do
 
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Libraries.Domain.Library
+  alias Bolognesa.Libraries.Domain.{InspectionCounts, Library}
 
   @spec call(Actor.t(), Library.id(), module()) ::
-          {:ok, map()} | {:error, :forbidden | :not_found | :unavailable}
+          {:ok, InspectionCounts.t()} | {:error, :forbidden | :not_found | :unavailable}
   def call(actor, library_id, repository) do
     with :ok <- Identity.authorize(actor, :admin) do
       repository.counts(library_id)

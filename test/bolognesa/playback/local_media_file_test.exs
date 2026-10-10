@@ -2,6 +2,7 @@ defmodule Bolognesa.Playback.LocalMediaFileTest do
   use ExUnit.Case, async: false
 
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
+  alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Libraries.Infrastructure.LocalSourcePath
   alias Bolognesa.Test.SwitchingFileAccess
 
@@ -92,7 +93,7 @@ defmodule Bolognesa.Playback.LocalMediaFileTest do
     {:ok, stat} = File.lstat(Path.join(physical, relative_path), time: :posix)
     {:ok, modified_at} = DateTime.from_unix(stat.mtime)
 
-    %{
+    %Source{
       path: physical,
       relative_path: relative_path,
       size_bytes: stat.size,

@@ -3,11 +3,12 @@ defmodule Bolognesa.Playback do
 
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Playback.Application.StartPlayback
+  alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   alias Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository
 
   @spec start(Actor.t(), integer(), integer()) ::
-          {:ok, map()} | {:error, :forbidden | :not_found | :missing | :unavailable}
+          {:ok, Source.t()} | {:error, :forbidden | :not_found | :missing | :unavailable}
   def start(actor, movie_id, file_id),
     do: StartPlayback.call(actor, movie_id, file_id, EctoPlaybackRepository)
 

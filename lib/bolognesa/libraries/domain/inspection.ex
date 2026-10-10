@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.Domain.Inspection do
   @moduledoc "Rules for requesting and recording technical media inspection."
 
-  alias Bolognesa.Libraries.Domain.{MediaFile, NewMediaFile}
+  alias Bolognesa.Libraries.Domain.{MediaFile, NewMediaFile, TechnicalTrack}
 
   @type reason ::
           :source_changed
@@ -24,7 +24,10 @@ defmodule Bolognesa.Libraries.Domain.Inspection do
           observed_revision: pos_integer(),
           state: state(),
           failure_reason: reason() | nil,
-          job_id: pos_integer() | nil
+          job_id: pos_integer() | nil,
+          format: String.t() | nil,
+          duration_ms: non_neg_integer() | nil,
+          tracks: [TechnicalTrack.t()]
         }
 
   defstruct [
@@ -33,6 +36,9 @@ defmodule Bolognesa.Libraries.Domain.Inspection do
     :observed_revision,
     :failure_reason,
     :job_id,
+    :format,
+    :duration_ms,
+    tracks: [],
     state: :pending
   ]
 

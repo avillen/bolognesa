@@ -10,6 +10,7 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
 
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Repo
 
   @impl true
@@ -34,9 +35,20 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
         }
 
     case Repo.one(query, log: false) do
-      nil -> {:error, :not_found}
-      %{availability: :missing} -> {:error, :missing}
-      %{availability: :available} = source -> {:ok, Map.delete(source, :availability)}
+      nil ->
+        {:error, :not_found}
+
+      %{availability: :missing} ->
+        {:error, :missing}
+
+      %{availability: :available} = source ->
+        {:ok,
+         %Source{
+           path: source.path,
+           relative_path: source.relative_path,
+           size_bytes: source.size_bytes,
+           modified_at: source.modified_at
+         }}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}

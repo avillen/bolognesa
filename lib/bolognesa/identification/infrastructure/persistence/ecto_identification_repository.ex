@@ -8,14 +8,16 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
   alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Persistence.IdentificationSchema
+  alias Bolognesa.Identification.Domain.{Identification, MovieCandidate, MovieDetails}
+  alias Bolognesa.Libraries.Domain.MediaFile
   alias Bolognesa.Repo
 
   @spec get(pos_integer()) ::
-          {:ok, IdentificationSchema.t()} | {:error, :not_found | :unavailable}
+          {:ok, Identification.t()} | {:error, :not_found | :unavailable}
   def get(file_id) do
     case Repo.get_by(IdentificationSchema, media_file_id: file_id) do
       nil -> {:error, :not_found}
-      row -> {:ok, row}
+      row -> {:ok, IdentificationMapper.to_domain(row)}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -23,7 +25,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   end
 
   @spec begin_identification(pos_integer(), binary(), integer() | nil) ::
-          {:ok, :stale} | {:ok, map()} | {:error, :unavailable}
+          {:ok, :stale} | {:ok, MediaFile.t()} | {:error, :unavailable}
   def begin_identification(file_id, token, job_id) do
     transaction(fn ->
       case current(file_id, token) do
@@ -36,7 +38,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     end)
   end
 
-  @spec complete(pos_integer(), binary(), list(), map() | nil, boolean()) ::
+  @spec complete(pos_integer(), binary(), [MovieCandidate.t()], MovieDetails.t() | nil, boolean()) ::
           :ok | {:ok, :stale} | {:error, :unavailable}
   def complete(file_id, token, candidates, details, needs_review) do
     transaction(fn ->
@@ -72,8 +74,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     end)
   end
 
-  @spec correct(pos_integer(), :unidentified | map()) ::
-          {:ok, IdentificationSchema.t()} | {:error, :not_found | :unavailable}
+  @spec correct(pos_integer(), :unidentified | MovieDetails.t()) ::
+          {:ok, Identification.t()} | {:error, :not_found | :unavailable}
   def correct(file_id, choice) do
     transaction(fn ->
       file =
@@ -90,7 +92,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   end
 
   @spec retry(pos_integer()) ::
-          {:ok, IdentificationSchema.t()} | {:error, :not_found | :manual_locked | :unavailable}
+          {:ok, Identification.t()} | {:error, :not_found | :manual_locked | :unavailable}
   def retry(file_id) do
     transaction(fn ->
       file =
@@ -155,7 +157,20 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     attrs = %{started_at: DateTime.utc_now()}
     attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
     Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
-    {:ok, %{relative_path: file.relative_path, revision: file.revision}}
+    {:ok, to_media_file(file)}
+  end
+
+  defp to_media_file(file) do
+    %MediaFile{
+      id: file.id,
+      library_id: file.library_id,
+      relative_path: file.relative_path,
+      size_bytes: file.size_bytes,
+      modified_at: file.modified_at,
+      availability: file.availability,
+      revision: file.revision,
+      last_seen_generation: file.last_seen_generation
+    }
   end
 
   defp complete_pending_identification(identification, candidates, details, needs_review) do
@@ -222,7 +237,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     ])
 
     case get(file.id) do
-      {:ok, row} -> {:ok, IdentificationMapper.to_domain(row)}
+      {:ok, identification} -> {:ok, identification}
       error -> error
     end
   end

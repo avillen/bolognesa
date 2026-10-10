@@ -7,6 +7,8 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
     as: Repository
 
   alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
+  alias Bolognesa.Identification.Domain.Identification
+  alias Bolognesa.Libraries.Domain.MediaFile
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
 
@@ -56,10 +58,18 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
       })
     )
 
+    assert {:ok, %{relative_path: "Mi.pelicula.(2001).mkv"} = beginning_file} =
+             Repository.begin_identification(file.id, token, nil)
+
+    assert beginning_file.__struct__ == MediaFile
+    assert beginning_file.id == file.id
+
     assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, Provider)
 
-    assert {:ok, %{state: :automatic, needs_review: true, movie_id: movie_id}} =
+    assert {:ok, %{state: :automatic, needs_review?: true, movie_id: movie_id} = identification} =
              Repository.get(file.id)
+
+    assert identification.__struct__ == Identification
 
     assert is_integer(movie_id)
     assert :ok = IdentifyMediaFile.call(file.id, token, 2, Repository, Provider)
@@ -68,7 +78,9 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
   test "matching title without years completes without review" do
     {file, token} = pending_file("Film.mkv")
     assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, ExactProvider)
-    assert {:ok, %{state: :automatic, needs_review: false}} = Repository.get(file.id)
+
+    assert {:ok, %Identification{state: :automatic, needs_review?: false}} =
+             Repository.get(file.id)
   end
 
   test "release-only filename never reaches provider" do

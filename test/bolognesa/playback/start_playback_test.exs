@@ -2,6 +2,7 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Playback
+  alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Persistence.MovieSchema
 
@@ -25,8 +26,10 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
     identification = identify(file.id, movie.id)
     identify(missing.id, movie.id)
 
-    assert {:ok, %{path: "/playback", relative_path: "film.mp4", size_bytes: 8}} =
+    assert {:ok, %{path: "/playback", relative_path: "film.mp4", size_bytes: 8} = source} =
              Playback.start(actor, movie.id, file.id)
+
+    assert source.__struct__ == Source
 
     assert {:error, :forbidden} = Playback.start(nil, movie.id, file.id)
     assert {:error, :not_found} = Playback.start(actor, other.id, file.id)
