@@ -10,6 +10,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Libraries.Infrastructure.LocalSourcePath
 
   test "shows movie details and versions container", %{conn: conn} do
     {:ok, _} =
@@ -110,12 +111,20 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         })
       )
 
-    library =
-      Repo.insert!(LibrarySchema.changeset(%LibrarySchema{}, %{name: "Play", path: "/play"}))
+    base = hd(Application.fetch_env!(:bolognesa, :library_roots))
+    directory = Path.join(base, "play-show-#{System.unique_integer([:positive])}")
+    File.mkdir_p!(directory)
+    on_exit(fn -> File.rm_rf!(directory) end)
+    {:ok, physical} = LocalSourcePath.canonical_directory(directory)
+    File.write!(Path.join(physical, "first.mp4"), "abcdefgh")
+    File.write!(Path.join(physical, "second.mp4"), "abcdefgh")
 
-    first = insert_version(library.id, movie.id, "first.mp4", :available)
-    second = insert_version(library.id, movie.id, "second.mp4", :available)
-    missing = insert_version(library.id, movie.id, "missing.mp4", :missing)
+    library =
+      Repo.insert!(LibrarySchema.changeset(%LibrarySchema{}, %{name: "Play", path: physical}))
+
+    first = insert_version(library.id, movie.id, physical, "first.mp4", :available)
+    second = insert_version(library.id, movie.id, physical, "second.mp4", :available)
+    missing = insert_version(library.id, movie.id, physical, "missing.mp4", :missing)
 
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies/#{movie.id}")
     render_async(view)
@@ -135,16 +144,30 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     refute has_element?(view, "#movie-playback-error")
     render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
     refute has_element?(view, "#movie-playback-error")
+
+    File.rm!(Path.join(physical, "first.mp4"))
+    render_click(element(view, "#movie-play-#{first.id}"))
+    assert has_element?(view, "#movie-playback-error[data-reason='file_unavailable']")
   end
 
-  defp insert_version(library_id, movie_id, path, availability) do
+  defp insert_version(library_id, movie_id, directory, path, availability) do
+    physical_path = Path.join(directory, path)
+
+    modified_at =
+      if availability == :available do
+        {:ok, stat} = File.lstat(physical_path, time: :posix)
+        DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond)
+      else
+        DateTime.utc_now()
+      end
+
     file =
       Repo.insert!(
         MediaFileSchema.changeset(%MediaFileSchema{}, %{
           library_id: library_id,
           relative_path: path,
-          size_bytes: 1,
-          modified_at: DateTime.utc_now(),
+          size_bytes: 8,
+          modified_at: modified_at,
           availability: availability,
           last_seen_generation: Ecto.UUID.generate()
         })

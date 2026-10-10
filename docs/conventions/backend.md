@@ -124,11 +124,11 @@ En H3, Bibliotecas llama al escritor de solicitudes de Identificación dentro de
 
 ### Reproducción
 
-Controla autorización, selección del archivo y pistas, estrategia de entrega y sesiones. `StartPlayback` recibe el actor, la obra y las capacidades conocidas del cliente, comprueba acceso y disponibilidad y devuelve un plan de reproducción o un motivo de rechazo explícito.
+Controla autorización, selección del archivo y pistas, estrategia de entrega y sesiones. En H4a el usuario elige una versión física: `StartPlayback` recibe el actor, la obra y el archivo, comprueba la relación vigente y la disponibilidad, y devuelve los datos necesarios para la entrega o un motivo de rechazo explícito. Las capacidades conocidas del cliente podrán orientar una selección automática posterior, cuando exista esa necesidad.
 
 Inicialmente solo se ofrece reproducción directa. Las capacidades declaradas por el cliente orientan la selección, pero no garantizan que su navegador pueda reproducir el contenido. La compatibilidad real se valida con archivos de prueba en los dispositivos previstos.
 
-La entrega debe soportar peticiones de rangos de bytes para buscar posiciones. Cada petición de contenido requiere autorización, también cuando el navegador la realiza fuera del canal interactivo de la página. Los clientes solicitan identificadores autorizados, no rutas de disco arbitrarias.
+La entrega debe soportar peticiones de rangos de bytes para buscar posiciones. Cada petición de contenido requiere autorización, también cuando el navegador la realiza fuera del canal interactivo de la página. Los clientes solicitan identificadores autorizados, no rutas de disco arbitrarias. H4a transmite desde un descriptor validado y vuelve a comprobar sesión, vínculo y archivo en cada petición; ver [decisión 0006](../decisions/0006-authorized-direct-playback.md).
 
 La conversión de formatos tendrá un puerto propio cuando se implemente. No se asume capacidad de transcodificación del NAS sin una evaluación previa.
 

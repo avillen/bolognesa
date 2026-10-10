@@ -63,6 +63,7 @@
           :if={@playback_error}
           id="movie-playback-error"
           role="alert"
+          data-reason={@playback_error_reason}
           class="rounded-xl border border-red-300/30 bg-red-950/30 p-4 text-sm text-red-100"
         >
           {@playback_error}

@@ -6,11 +6,12 @@ defmodule BolognesaWeb.Movie.Show.Reducer.PlaybackError do
   def call(socket, file_id_text) do
     if socket.assigns.selected_file_id &&
          Integer.to_string(socket.assigns.selected_file_id) == file_id_text do
-      assign(
-        socket,
+      socket
+      |> assign(
         :playback_error,
-        "No se pudo reproducir esta versión. Prueba otra disponible."
+        "El navegador no pudo reproducir esta versión. Prueba otra disponible."
       )
+      |> assign(:playback_error_reason, "browser_error")
     else
       socket
     end

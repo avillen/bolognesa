@@ -15,6 +15,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
     |> assign(:error, nil)
     |> assign(:selected_file_id, nil)
     |> assign(:playback_error, nil)
+    |> assign(:playback_error_reason, nil)
     |> assign(:request_id, request_id)
     |> stream(:versions, [])
     |> start_async({:movie, request_id}, fn -> Catalog.get_movie(actor, id) end)
