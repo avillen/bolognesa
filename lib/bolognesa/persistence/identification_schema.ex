@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.IdentificationSchema do
+defmodule Bolognesa.Persistence.IdentificationSchema do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset

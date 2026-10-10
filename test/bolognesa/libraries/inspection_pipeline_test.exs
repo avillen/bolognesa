@@ -6,9 +6,9 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
-  alias EctoInspectionRepository.{InspectionSchema, OutboxSchema}
+  alias Bolognesa.Persistence.{InspectionEventSchema, InspectionSchema}
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoOutboxRepository
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Libraries.Support.SuccessfulMediaProbe
 
   @admin %Actor{id: 1, name: "Admin", email: "admin@example.com", role: :admin}
@@ -51,7 +51,7 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
 
     {:ok, _} = Libraries.start_scan(@admin, library.id)
     assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
-    assert Repo.aggregate(OutboxSchema, :count) == 1
+    assert Repo.aggregate(InspectionEventSchema, :count) == 1
     assert {:ok, 0} = EctoOutboxRepository.dispatch_batch(25)
     assert Repo.get!(InspectionSchema, first.id).token == first.token
 

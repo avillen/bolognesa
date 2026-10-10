@@ -4,8 +4,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoOutboxRepository do
 
   import Ecto.Query
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.OutboxSchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.InspectionSchema
+  alias Bolognesa.Persistence.InspectionEventSchema
+  alias Bolognesa.Persistence.InspectionSchema
   alias Bolognesa.Repo
 
   @worker "Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker"
@@ -31,7 +31,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoOutboxRepository do
 
   defp lock_pending_events(repo, limit) do
     repo.all(
-      from(event in OutboxSchema,
+      from(event in InspectionEventSchema,
         where: is_nil(event.delivered_at),
         order_by: event.id,
         limit: ^limit,
@@ -53,7 +53,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoOutboxRepository do
 
     {count, _} =
       repo.update_all(
-        from(event in OutboxSchema, where: event.id in ^ids),
+        from(event in InspectionEventSchema, where: event.id in ^ids),
         set: [delivered_at: DateTime.utc_now()]
       )
 

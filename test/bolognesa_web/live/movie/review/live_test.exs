@@ -5,10 +5,10 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
   alias Bolognesa.Identity
   alias Bolognesa.Repo
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.IdentificationSchema
+  alias Bolognesa.Persistence.IdentificationSchema
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.MediaFileSchema
 
   test "review queue shows correction controls", %{conn: conn} do
     {:ok, _} =

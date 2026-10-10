@@ -3,10 +3,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoOutboxReposito
 
   import Ecto.Query
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.{
-    EventSchema,
-    IdentificationSchema
-  }
+  alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
 
   alias Bolognesa.Repo
 
@@ -33,7 +30,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoOutboxReposito
 
   defp lock_pending(repo, limit) do
     repo.all(
-      from(event in EventSchema,
+      from(event in IdentificationEventSchema,
         where: is_nil(event.delivered_at),
         order_by: event.id,
         limit: ^limit,
@@ -70,7 +67,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoOutboxReposito
 
     {count, _} =
       repo.update_all(
-        from(event in EventSchema, where: event.id in ^ids),
+        from(event in IdentificationEventSchema, where: event.id in ^ids),
         set: [delivered_at: DateTime.utc_now()]
       )
 

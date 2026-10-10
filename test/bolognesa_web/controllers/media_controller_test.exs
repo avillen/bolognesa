@@ -2,13 +2,13 @@ defmodule BolognesaWeb.MediaControllerTest do
   use BolognesaWeb.ConnCase, async: false
 
   alias Bolognesa.Identity
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
+  alias Bolognesa.Persistence.MovieSchema
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.IdentificationSchema
+  alias Bolognesa.Persistence.IdentificationSchema
 
   alias Bolognesa.Libraries.Infrastructure.LocalSourcePath
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Repo
 
   setup do

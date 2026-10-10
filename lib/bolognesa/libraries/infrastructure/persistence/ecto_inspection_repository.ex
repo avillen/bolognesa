@@ -6,10 +6,10 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
 
   alias Bolognesa.Libraries.Domain.Library
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileMapper
-  alias __MODULE__.InspectionSchema
+  alias Bolognesa.Persistence.InspectionSchema
   alias Bolognesa.Repo
 
   @impl true

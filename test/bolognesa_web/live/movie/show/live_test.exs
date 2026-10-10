@@ -3,13 +3,13 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
+  alias Bolognesa.Persistence.MovieSchema
   alias Bolognesa.Repo
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.IdentificationSchema
+  alias Bolognesa.Persistence.IdentificationSchema
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Libraries.Infrastructure.LocalSourcePath
 
   test "shows movie details and versions container", %{conn: conn} do

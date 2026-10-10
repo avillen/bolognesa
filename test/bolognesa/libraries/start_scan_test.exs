@@ -6,9 +6,10 @@ defmodule Bolognesa.Libraries.StartScanTest do
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Application.{GetInspectionCounts, GetScanStatus, StartScan}
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
+  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
-  alias EctoScanRepository.{MediaFileMapper, MediaFileSchema, ScanSchema}
+  alias EctoScanRepository.MediaFileMapper
+  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
 
   @admin %Actor{id: 1, name: "Ada", email: "ada@example.com", role: :admin}
   @member %Actor{id: 2, name: "Joe", email: "joe@example.com", role: :member}

@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.LibraryTest do
 
   alias Bolognesa.Libraries
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
+  alias Bolognesa.Persistence.LibrarySchema
 
   @admin %Actor{id: 1, name: "Ada", email: "ada@example.com", role: :admin}
   @member %Actor{id: 2, name: "Joe", email: "joe@example.com", role: :member}

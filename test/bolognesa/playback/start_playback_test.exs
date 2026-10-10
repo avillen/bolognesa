@@ -3,12 +3,12 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
 
   alias Bolognesa.Playback
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
+  alias Bolognesa.Persistence.MovieSchema
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.IdentificationSchema
+  alias Bolognesa.Persistence.IdentificationSchema
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.MediaFileSchema
 
   test "authorizes only a currently linked available version" do
     actor = %Actor{id: 1, role: :admin}

@@ -4,13 +4,16 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
   alias Bolognesa.Catalog
   alias Bolognesa.Catalog.Application.Dto.{MovieDetail, MovieListItem, MoviePage, MovieVersion}
   alias Bolognesa.Catalog.Domain.Movie
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
+  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader
+  alias Bolognesa.Persistence.MovieSchema
   alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identification.Domain.Identification
+  alias Bolognesa.Libraries.Domain.MediaFile
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.IdentificationSchema
+  alias Bolognesa.Persistence.IdentificationSchema
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.MediaFileSchema
 
   test "upsert returns a persisted movie and reuses its provider identity" do
     attrs = %{provider: :tmdb, provider_id: 425, title: " La película "}
@@ -80,6 +83,11 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
              Catalog.list_movies(actor, "Mi", 1)
 
     assert id == movie.id
+
+    assert {:ok, {[{%Movie{id: ^id}, 2, 1}], 1}} = EctoCatalogReader.list_movies("Mi", 1)
+
+    assert {:ok, {%Movie{id: ^id}, [{%MediaFile{}, %Identification{}} | _]}} =
+             EctoCatalogReader.get_movie(id)
 
     assert {:ok, %MovieDetail{movie: %Movie{} = catalog_movie, versions: versions}} =
              Catalog.get_movie(actor, movie.id)

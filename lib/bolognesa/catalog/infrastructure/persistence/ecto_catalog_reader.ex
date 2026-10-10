@@ -1,25 +1,22 @@
 defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
   @moduledoc false
+  @behaviour Bolognesa.Catalog.Application.Ports.CatalogReader
+
   import Ecto.Query
 
-  alias Bolognesa.Catalog.Application.Dto.{
-    MovieDetail,
-    MovieListItem,
-    MoviePage,
-    MovieVersion
-  }
-
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieMapper
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
+  alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileMapper
+  alias Bolognesa.Persistence.MovieSchema
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.IdentificationSchema
+  alias Bolognesa.Persistence.IdentificationSchema
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Repo
 
   @page_size 24
 
-  @spec list_movies(binary(), pos_integer()) :: {:ok, MoviePage.t()} | {:error, :unavailable}
+  @impl true
   def list_movies(query, page) do
     filtered =
       from movie in MovieSchema,
@@ -35,29 +32,27 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
           on: identification.movie_id == movie.id,
           left_join: file in MediaFileSchema,
           on: file.id == identification.media_file_id,
-          group_by: [movie.id, movie.title, movie.year, movie.poster_path],
+          group_by: movie.id,
           order_by: [asc: movie.title, asc: movie.id],
           limit: @page_size,
           offset: ^offset,
-          select: %{
-            id: movie.id,
-            title: movie.title,
-            year: movie.year,
-            poster_path: movie.poster_path,
-            version_count: count(file.id),
-            available_count: filter(count(file.id), file.availability == :available)
-          }
+          select: {movie, count(file.id), filter(count(file.id), file.availability == :available)}
         ),
         log: false
       )
 
-    {:ok, %MoviePage{items: Enum.map(rows, &struct!(MovieListItem, &1)), total: total}}
+    entries =
+      Enum.map(rows, fn {movie, version_count, available_count} ->
+        {MovieMapper.to_movie(movie), version_count, available_count}
+      end)
+
+    {:ok, {entries, total}}
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  @spec get_movie(pos_integer()) :: {:ok, MovieDetail.t()} | {:error, :not_found | :unavailable}
+  @impl true
   def get_movie(id) do
     case Repo.get(MovieSchema, id) do
       nil ->
@@ -71,20 +66,15 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
               on: identification.media_file_id == file.id,
               where: identification.movie_id == ^id,
               order_by: file.id,
-              select: %{
-                id: file.id,
-                availability: file.availability,
-                size_bytes: file.size_bytes,
-                origin: identification.origin,
-                needs_review: identification.needs_review
-              }
+              select: {file, identification}
           )
 
-        {:ok,
-         %MovieDetail{
-           movie: MovieMapper.to_movie(movie),
-           versions: Enum.map(versions, &struct!(MovieVersion, &1))
-         }}
+        entries =
+          Enum.map(versions, fn {file, identification} ->
+            {MediaFileMapper.to_media_file(file), IdentificationMapper.to_domain(identification)}
+          end)
+
+        {:ok, {MovieMapper.to_movie(movie), entries}}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}

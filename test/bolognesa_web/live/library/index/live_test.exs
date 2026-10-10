@@ -6,7 +6,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   alias Bolognesa.Libraries
   alias Bolognesa.Repo
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.InspectionSchema
+  alias Bolognesa.Persistence.InspectionSchema
   use Oban.Testing, repo: Bolognesa.Repo
 
   setup do

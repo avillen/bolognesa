@@ -3,11 +3,15 @@ defmodule Bolognesa.Identification.ReviewQueriesTest do
 
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Identification
+  alias Bolognesa.Identification.Application.Dto.{ReviewItem, ReviewPage}
+  alias Bolognesa.Identification.Domain.Identification, as: IdentificationDecision
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader
+  alias Bolognesa.Libraries.Domain.MediaFile
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.IdentificationSchema
+  alias Bolognesa.Persistence.IdentificationSchema
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.MediaFileSchema
 
   test "shows pending, failed and manually unidentified files to administrators only" do
     library =
@@ -42,9 +46,12 @@ defmodule Bolognesa.Identification.ReviewQueriesTest do
 
     assert {:error, :forbidden} = Identification.list_review_items(nil, 1)
 
-    assert {:ok, %{items: items, total: 3}} =
+    assert {:ok, %ReviewPage{items: [%ReviewItem{} | _] = items, total: 3}} =
              Identification.list_review_items(%Actor{id: 1, role: :admin}, 1)
 
     assert Enum.map(items, & &1.filename) == ["a.mkv", "b.mkv", "c.mkv"]
+
+    assert {:ok, {[{%IdentificationDecision{}, %MediaFile{}, nil} | _], 3}} =
+             EctoReviewReader.list_review_items(1)
   end
 end

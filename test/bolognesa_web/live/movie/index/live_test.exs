@@ -4,7 +4,7 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
 
   alias Bolognesa.Identity
   alias Bolognesa.Repo
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
+  alias Bolognesa.Persistence.MovieSchema
 
   setup do
     {:ok, _} =

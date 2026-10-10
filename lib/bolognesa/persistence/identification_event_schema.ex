@@ -1,9 +1,9 @@
-defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.OutboxSchema do
+defmodule Bolognesa.Persistence.IdentificationEventSchema do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "media_inspection_events" do
+  schema "media_identification_events" do
     field :media_file_id, :id
     field :token, Ecto.UUID
     field :delivered_at, :utc_datetime_usec

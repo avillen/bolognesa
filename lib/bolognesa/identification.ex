@@ -2,6 +2,7 @@ defmodule Bolognesa.Identification do
   @moduledoc "Public identification and manual correction API."
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Identification.Application.CorrectIdentification
+  alias Bolognesa.Identification.Application.Dto.ReviewPage
   alias Bolognesa.Identification.Application.ListReviewItems
   alias Bolognesa.Identification.Application.RetryIdentification
   alias Bolognesa.Identification.Application.SearchCandidates
@@ -27,7 +28,8 @@ defmodule Bolognesa.Identification do
   def retry(actor, file_id),
     do: RetryIdentification.call(actor, file_id, EctoIdentificationRepository)
 
-  @spec list_review_items(Actor.t(), pos_integer()) :: {:ok, map()} | {:error, atom()}
+  @spec list_review_items(Actor.t(), pos_integer()) ::
+          {:ok, ReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}
   def list_review_items(actor, page), do: ListReviewItems.call(actor, page, EctoReviewReader)
 
   @spec search_candidates(Actor.t(), binary()) :: {:ok, list()} | {:error, atom()}

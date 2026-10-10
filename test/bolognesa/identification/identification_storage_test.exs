@@ -1,16 +1,13 @@
 defmodule Bolognesa.Identification.IdentificationStorageTest do
   use Bolognesa.DataCase, async: true
 
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
+  alias Bolognesa.Persistence.MovieSchema
   alias Bolognesa.Identification.Domain.Identification
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.{
-    EventSchema,
-    IdentificationSchema
-  }
+  alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.MediaFileSchema
 
   test "manual choice rejects later automatic request" do
     identification = %Identification{
@@ -99,10 +96,10 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
   test "one event exists for a file and request token" do
     file = file_fixture()
     attrs = %{media_file_id: file.id, token: Ecto.UUID.generate()}
-    Repo.insert!(struct(EventSchema, attrs))
+    Repo.insert!(struct(IdentificationEventSchema, attrs))
 
     assert_raise Ecto.ConstraintError, fn ->
-      Repo.insert!(struct(EventSchema, attrs))
+      Repo.insert!(struct(IdentificationEventSchema, attrs))
     end
   end
 

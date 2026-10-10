@@ -32,25 +32,27 @@ Se aplicará DDD con dominio independiente de Ecto y arquitectura hexagonal dent
 Ejemplo orientativo de organización, creando únicamente los módulos necesarios para cada caso de uso:
 
 ```text
-lib/bolognesa/libraries/
-  domain/
-    library.ex
-    media_file.ex
-    source_path.ex
-  application/
-    create_library.ex
-    scan_library.ex
-    ports/
-      library_repository.ex
-      file_source.ex
-  infrastructure/
-    persistence/
-      ecto_library_repository.ex
-      ecto_library_repository/
-        library_schema.ex
-        library_mapper.ex
-    local_file_source.ex
-  libraries.ex
+lib/bolognesa/
+  persistence/
+    library_schema.ex
+    media_file_schema.ex
+  libraries/
+    domain/
+      library.ex
+      media_file.ex
+      source_path.ex
+    application/
+      create_library.ex
+      scan_library.ex
+      ports/
+        library_repository.ex
+        file_source.ex
+    infrastructure/
+      persistence/
+        ecto_library_repository.ex
+        ecto_library_repository/
+          library_mapper.ex
+      local_file_source.ex
 ```
 
 El cableado de adaptadores se realiza fuera del dominio. Se inyectan dependencias en los casos de uso con un mecanismo uniforme que se concretará en el primer plan de implementación. Las pruebas no deben modificar configuración global mientras se ejecutan concurrentemente.
@@ -65,7 +67,8 @@ Los puertos se nombran por su responsabilidad, como `UserRepository` o `LibraryR
 - Cada entrada al dominio declara un formato de atributos. La conversión desde parámetros web se hace en la frontera; no se aceptan a la vez claves string y átomo por precaución si los consumidores actuales usan solo uno de esos formatos.
 - Los datos sensibles de estructuras temporales, como contraseñas, se excluyen de `Inspect`. El adaptador persiste el hash, no la contraseña original.
 - Los schemas Ecto representan almacenamiento. Los mappers convierten entre estos schemas y entidades del dominio.
-- Los schemas y mappers usados solo por un repositorio Ecto se agrupan bajo el directorio y namespace de ese repositorio, por ejemplo `infrastructure/persistence/ecto_user_repository/`.
+- Los schemas Ecto se agrupan en `Bolognesa.Persistence`, con un módulo por tabla y nombres únicos, como `MediaFileSchema` o `IdentificationEventSchema`. Los adaptadores importan los schemas que necesitan; esa ubicación compartida no cambia qué contexto controla cada escritura.
+- Los mappers usados solo por un repositorio Ecto permanecen bajo el directorio y namespace de ese repositorio, por ejemplo `infrastructure/persistence/ecto_user_repository/user_mapper.ex`.
 - Los changesets comprueban requisitos de persistencia; las reglas de negocio viven en el dominio. Las restricciones de base de datos también protegen unicidad e integridad ante concurrencia.
 - Los repositorios exponen necesidades concretas del dominio, sin devolver queries o changesets a la aplicación. No se introduce un repositorio CRUD genérico.
 - Cuando varios pasos producen y consumen el mismo formato, sus tamaños y reglas se definen una sola vez. En las sesiones, `SessionToken` fija el tamaño aleatorio de 32 bytes y la longitud canónica de 43 caracteres Base64url sin relleno; emisión y lectura usan esa definición.
@@ -73,7 +76,8 @@ Los puertos se nombran por su responsabilidad, como `UserRepository` o `LibraryR
 - Los agregados son pequeños y delimitan consistencia transaccional. Una biblioteca no contiene todos sus archivos en memoria; una serie tampoco implica cargar todos sus episodios.
 - Cada contexto controla las escrituras de sus datos. Las referencias entre contextos utilizan identificadores y sus interfaces públicas.
 - Las lecturas pueden utilizar proyecciones específicas, sin reconstruir agregados completos. Las consultas que cruzan contextos se encapsulan en adaptadores de lectura explícitos; no conceden permiso para modificar datos ajenos.
-- Cuando una proyección de lectura es parte del contrato público, puede representarse con DTOs de aplicación tipados. El adaptador los construye a partir de los datos consultados; no se añaden al dominio campos de otros contextos para formar la respuesta.
+- Los adaptadores de lectura convierten schemas Ecto en entidades de dominio y entregan los metadatos necesarios de la consulta, como el total de una página. No construyen DTOs de aplicación.
+- Cuando una proyección de lectura es parte del contrato público, el caso de uso construye DTOs de aplicación tipados a partir de esas entidades. No se añaden a una entidad de dominio campos de otros contextos para formar la respuesta.
 - Una entidad no corresponde a un proceso OTP. Los procesos se reservan para coordinación, concurrencia, supervisión y estado temporal.
 - No se introduce event sourcing ni CQRS completo.
 

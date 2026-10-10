@@ -1,15 +1,33 @@
 defmodule Bolognesa.Catalog.Application.ListMovies do
   @moduledoc "Authorize and bound a movie catalog search."
-  alias Bolognesa.Catalog.Application.Dto.MoviePage
+  alias Bolognesa.Catalog.Application.Dto.{MovieListItem, MoviePage}
+  alias Bolognesa.Catalog.Application.Ports.CatalogReader
   alias Bolognesa.Identity
 
-  @spec call(Bolognesa.Identity.Domain.Actor.t(), binary(), pos_integer(), module()) ::
+  @spec call(
+          Bolognesa.Identity.Domain.Actor.t(),
+          binary(),
+          pos_integer(),
+          CatalogReader.adapter()
+        ) ::
           {:ok, MoviePage.t()} | {:error, :forbidden | :invalid_query | :unavailable}
   def call(actor, query, page, reader) do
     with :ok <- Identity.authorize(actor, :admin),
-         :ok <- validate(query, page) do
-      reader.list_movies(String.trim(query), page)
+         :ok <- validate(query, page),
+         {:ok, {rows, total}} <- reader.list_movies(String.trim(query), page) do
+      {:ok, %MoviePage{items: Enum.map(rows, &to_list_item/1), total: total}}
     end
+  end
+
+  defp to_list_item({movie, version_count, available_count}) do
+    %MovieListItem{
+      id: movie.id,
+      title: movie.title,
+      year: movie.year,
+      poster_path: movie.poster_path,
+      version_count: version_count,
+      available_count: available_count
+    }
   end
 
   defp validate(query, page)

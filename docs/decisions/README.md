@@ -13,3 +13,4 @@ Crear un registro cuando se elija o cambie un límite arquitectónico, contrato,
 | [0005](0005-catalog-identification.md) | Aceptada; desplegada, revisión manual pendiente | Películas TMDb, solicitudes con inventario y corrección manual protegida |
 | [0006](0006-authorized-direct-playback.md) | Aceptada; desplegada, validación parcial | Ruta privada por sesión, descriptor validado y rangos HTTP |
 | [0007](0007-project-owned-documentation.md) | Aceptada | Documentos clasificados por función y rutas del proyecto para los artefactos de habilidades |
+| [0008](0008-global-persistence-schemas.md) | Aceptada; implementada localmente | Schemas Ecto en `Bolognesa.Persistence` con nombres globales únicos |

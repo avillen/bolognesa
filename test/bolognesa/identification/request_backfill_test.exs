@@ -3,13 +3,10 @@ defmodule Bolognesa.Identification.RequestBackfillTest do
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.{
-    EventSchema,
-    IdentificationSchema
-  }
+  alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.MediaFileSchema
 
   test "backfills existing available files in bounded id order and is idempotent" do
     first = file_fixture("first.mp4")
@@ -22,7 +19,7 @@ defmodule Bolognesa.Identification.RequestBackfillTest do
     assert {:ok, ^second_id, 0} = EctoRequestWriter.backfill_batch(second_id, 1)
     assert {:ok, ^second_id, 0} = EctoRequestWriter.backfill_batch(0, 100)
     assert Repo.aggregate(IdentificationSchema, :count, :id) == 2
-    assert Repo.aggregate(EventSchema, :count, :id) == 2
+    assert Repo.aggregate(IdentificationEventSchema, :count, :id) == 2
   end
 
   test "backfill skips unavailable files" do

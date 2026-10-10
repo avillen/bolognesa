@@ -4,16 +4,16 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
 
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.OutboxDispatcher
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.OutboxSchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.InspectionSchema
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.InspectionEventSchema
+  alias Bolognesa.Persistence.InspectionSchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.{EctoOutboxRepository, EctoScanRepository}
 
   test "dispatches a committed event once and recovers an event created while stopped" do
     {event, _scan} = pending_event()
     assert {:ok, 1} = EctoOutboxRepository.dispatch_batch(25)
     assert {:ok, 0} = EctoOutboxRepository.dispatch_batch(25)
-    assert %DateTime{} = Repo.get!(OutboxSchema, event.id).delivered_at
+    assert %DateTime{} = Repo.get!(InspectionEventSchema, event.id).delivered_at
 
     assert [%Oban.Job{args: %{"media_file_id" => file_id, "token" => token}}] =
              all_enqueued(queue: "media_inspections")
@@ -30,7 +30,7 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
       start_supervised!({OutboxDispatcher, name: :TestInspectionDispatcher, interval_ms: 60_000})
 
     _state = :sys.get_state(pid)
-    assert %DateTime{} = Repo.get!(OutboxSchema, event.id).delivered_at
+    assert %DateTime{} = Repo.get!(InspectionEventSchema, event.id).delivered_at
     assert length(all_enqueued(queue: "media_inspections")) == 1
   end
 
@@ -46,7 +46,7 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
 
       try do
         assert {:error, :unavailable} = EctoOutboxRepository.dispatch_batch(25)
-        assert is_nil(Repo.get!(OutboxSchema, event.id).delivered_at)
+        assert is_nil(Repo.get!(InspectionEventSchema, event.id).delivered_at)
       after
         Ecto.Adapters.SQL.query!(
           Repo,
@@ -75,7 +75,7 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
           end
 
         assert Enum.map(tasks, &Task.await/1) |> Enum.sort() == [{:ok, 0}, {:ok, 1}]
-        assert %DateTime{} = Repo.get!(OutboxSchema, event.id).delivered_at
+        assert %DateTime{} = Repo.get!(InspectionEventSchema, event.id).delivered_at
 
         assert Repo.aggregate(
                  from(job in Oban.Job, where: job.queue == "media_inspections"),
@@ -107,7 +107,7 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
       })
 
     {:ok, _} = EctoScanRepository.save_batch(scan.id, running.generation, [entry])
-    event = Repo.one!(from event in OutboxSchema, where: is_nil(event.delivered_at))
+    event = Repo.one!(from event in InspectionEventSchema, where: is_nil(event.delivered_at))
     {event, scan}
   end
 
@@ -115,10 +115,11 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
     Repo.delete_all(from job in Oban.Job, where: job.queue == "media_inspections")
 
     Repo.delete_all(
-      from file in EctoScanRepository.MediaFileSchema, where: file.library_id == ^scan.library_id
+      from file in Bolognesa.Persistence.MediaFileSchema,
+        where: file.library_id == ^scan.library_id
     )
 
-    Repo.delete_all(from row in EctoScanRepository.ScanSchema, where: row.id == ^scan.id)
+    Repo.delete_all(from row in Bolognesa.Persistence.ScanSchema, where: row.id == ^scan.id)
     Repo.delete_all(from job in Oban.Job, where: job.id == ^scan.job_id)
     Repo.delete!(Repo.get!(LibrarySchema, scan.library_id))
   end

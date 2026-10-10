@@ -3,12 +3,9 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter 
 
   import Ecto.Query
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.{
-    EventSchema,
-    IdentificationSchema
-  }
+  alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Repo
 
   @type request_entry :: %{
@@ -124,6 +121,11 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter 
   end
 
   defp insert_event!(repo, file_id, token) do
-    repo.insert!(EventSchema.changeset(%EventSchema{}, %{media_file_id: file_id, token: token}))
+    repo.insert!(
+      IdentificationEventSchema.changeset(%IdentificationEventSchema{}, %{
+        media_file_id: file_id,
+        token: token
+      })
+    )
   end
 end

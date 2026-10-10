@@ -3,9 +3,9 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
 
   alias Bolognesa.Libraries.Application.InspectMediaFile
   alias Bolognesa.Libraries.Domain.NewMediaFile
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
+  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.InspectionSchema
+  alias Bolognesa.Persistence.InspectionSchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
 
   alias Bolognesa.Libraries.Support.{

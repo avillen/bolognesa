@@ -18,6 +18,7 @@ defmodule Bolognesa.Identification.Domain.Identification do
 
   @type state :: :pending | :automatic | :manual | :manual_unidentified | :failed | :unmatched
   @type origin :: :automatic | :manual | nil
+  @type candidate_data :: %{items: [map()]} | %{String.t() => [map()]}
   @type t :: %__MODULE__{
           media_file_id: pos_integer(),
           movie_id: pos_integer() | nil,
@@ -27,7 +28,7 @@ defmodule Bolognesa.Identification.Domain.Identification do
           token: Ecto.UUID.t(),
           needs_review?: boolean(),
           failure_reason: binary() | nil,
-          candidate_data: map(),
+          candidate_data: candidate_data(),
           job_id: pos_integer() | nil,
           started_at: DateTime.t() | nil,
           finished_at: DateTime.t() | nil

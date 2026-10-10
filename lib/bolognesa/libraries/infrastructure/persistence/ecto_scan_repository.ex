@@ -7,16 +7,14 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
   alias Bolognesa.Repo
   alias Bolognesa.Libraries.Application.InventoryRequestPlan
   alias Bolognesa.Libraries.Domain.{Scan, ScanStatus}
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
+  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibraryMapper
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.{
-    InspectionSchema,
-    OutboxSchema
-  }
+  alias Bolognesa.Persistence.{InspectionEventSchema, InspectionSchema}
 
-  alias __MODULE__.{MediaFileMapper, MediaFileSchema, ScanMapper, ScanSchema}
+  alias __MODULE__.{MediaFileMapper, ScanMapper}
+  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
 
   @impl true
   def request(library_id), do: request(library_id, false)
@@ -363,7 +361,12 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
       schema -> Repo.update!(InspectionSchema.changeset(schema, attrs))
     end
 
-    Repo.insert!(OutboxSchema.changeset(%OutboxSchema{}, %{media_file_id: file.id, token: token}))
+    Repo.insert!(
+      InspectionEventSchema.changeset(%InspectionEventSchema{}, %{
+        media_file_id: file.id,
+        token: token
+      })
+    )
   end
 
   defp schedule_identifications(entries, saved, plans) do

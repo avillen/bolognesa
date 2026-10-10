@@ -6,9 +6,9 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
   alias Bolognesa.Libraries.Application.DiscoverFiles
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
+  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
-  alias EctoScanRepository.{MediaFileSchema, ScanSchema}
+  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
   alias Bolognesa.Libraries.Support.{ControlledFileDiscovery, UnavailableScanRepository}
 
   setup do

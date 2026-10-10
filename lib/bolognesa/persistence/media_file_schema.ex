@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema do
+defmodule Bolognesa.Persistence.MediaFileSchema do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset

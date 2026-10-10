@@ -4,7 +4,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository do
 
   alias Bolognesa.Catalog.Domain.NewMovie
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieMapper
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
+  alias Bolognesa.Persistence.MovieSchema
 
   @impl true
   def upsert!(repo, %NewMovie{} = new_movie) do

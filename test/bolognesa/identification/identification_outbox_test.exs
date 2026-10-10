@@ -5,10 +5,10 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
   alias Bolognesa.Identification.Infrastructure.Jobs.OutboxDispatcher
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoOutboxRepository
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.EventSchema
+  alias Bolognesa.Persistence.IdentificationEventSchema
 
   alias Bolognesa.Libraries.Domain.NewMediaFile
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
+  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
 
   test "delivers one committed event and leaves none pending" do
@@ -16,7 +16,7 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
 
     assert {:ok, 1} = EctoOutboxRepository.dispatch_batch(25)
     assert {:ok, 0} = EctoOutboxRepository.dispatch_batch(25)
-    assert %DateTime{} = Repo.get!(EventSchema, event.id).delivered_at
+    assert %DateTime{} = Repo.get!(IdentificationEventSchema, event.id).delivered_at
 
     assert [%Oban.Job{args: %{"file_id" => file_id, "token" => token}}] =
              all_enqueued(queue: "identifications")
@@ -34,7 +34,7 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
       )
 
     _state = :sys.get_state(pid)
-    assert %DateTime{} = Repo.get!(EventSchema, event.id).delivered_at
+    assert %DateTime{} = Repo.get!(IdentificationEventSchema, event.id).delivered_at
     assert length(all_enqueued(queue: "identifications")) == 1
   end
 
@@ -50,7 +50,7 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
 
       try do
         assert {:error, :unavailable} = EctoOutboxRepository.dispatch_batch(25)
-        assert is_nil(Repo.get!(EventSchema, event.id).delivered_at)
+        assert is_nil(Repo.get!(IdentificationEventSchema, event.id).delivered_at)
       after
         Ecto.Adapters.SQL.query!(
           Repo,
@@ -74,7 +74,7 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
 
       try do
         assert {:error, :unavailable} = EctoOutboxRepository.dispatch_batch(25)
-        assert is_nil(Repo.get!(EventSchema, event.id).delivered_at)
+        assert is_nil(Repo.get!(IdentificationEventSchema, event.id).delivered_at)
 
         assert Repo.aggregate(
                  from(job in Oban.Job, where: job.queue == "identifications"),
@@ -108,7 +108,7 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
           end
 
         assert Enum.map(tasks, &Task.await/1) |> Enum.sort() == [{:ok, 0}, {:ok, 1}]
-        assert %DateTime{} = Repo.get!(EventSchema, event.id).delivered_at
+        assert %DateTime{} = Repo.get!(IdentificationEventSchema, event.id).delivered_at
 
         assert Repo.aggregate(
                  from(job in Oban.Job, where: job.queue == "identifications"),
@@ -140,7 +140,7 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
       })
 
     {:ok, _} = EctoScanRepository.save_batch(scan.id, running.generation, [entry])
-    event = Repo.one!(from event in EventSchema, where: is_nil(event.delivered_at))
+    event = Repo.one!(from event in IdentificationEventSchema, where: is_nil(event.delivered_at))
     {event, scan}
   end
 
@@ -148,10 +148,11 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
     Repo.delete_all(from job in Oban.Job, where: job.queue == "identifications")
 
     Repo.delete_all(
-      from file in EctoScanRepository.MediaFileSchema, where: file.library_id == ^scan.library_id
+      from file in Bolognesa.Persistence.MediaFileSchema,
+        where: file.library_id == ^scan.library_id
     )
 
-    Repo.delete_all(from row in EctoScanRepository.ScanSchema, where: row.id == ^scan.id)
+    Repo.delete_all(from row in Bolognesa.Persistence.ScanSchema, where: row.id == ^scan.id)
     Repo.delete_all(from job in Oban.Job, where: job.id == ^scan.job_id)
     Repo.delete!(Repo.get!(LibrarySchema, scan.library_id))
   end

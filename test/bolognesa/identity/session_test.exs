@@ -3,7 +3,7 @@ defmodule Bolognesa.Identity.SessionTest do
 
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository.SessionSchema
+  alias Bolognesa.Persistence.SessionSchema
 
   @password "correct horse battery staple"
 

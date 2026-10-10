@@ -6,8 +6,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   alias Bolognesa.Catalog
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
-  alias __MODULE__.IdentificationSchema
+  alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Persistence.IdentificationSchema
   alias Bolognesa.Repo
 
   @spec get(pos_integer()) ::

@@ -2,21 +2,16 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Libraries.Domain.NewMediaFile
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
+  alias Bolognesa.Persistence.LibrarySchema
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.{
-    InspectionSchema,
-    OutboxSchema
-  }
+  alias Bolognesa.Persistence.{InspectionEventSchema, InspectionSchema}
 
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
-  alias EctoScanRepository.{MediaFileMapper, MediaFileSchema, ScanMapper, ScanSchema}
+  alias EctoScanRepository.{MediaFileMapper, ScanMapper}
+  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.{
-    EventSchema,
-    IdentificationSchema
-  }
+  alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
 
   @modified ~U[2026-10-03 00:00:00Z]
 
@@ -165,8 +160,8 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
              |> Repo.insert()
 
     assert {:error, _changeset} =
-             struct(OutboxSchema)
-             |> OutboxSchema.changeset(%{media_file_id: file.id, token: token})
+             struct(InspectionEventSchema)
+             |> InspectionEventSchema.changeset(%{media_file_id: file.id, token: token})
              |> Repo.insert()
   end
 
@@ -192,7 +187,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     running = start(scan)
     save(running, [entry("a.mp4")])
     [file] = files(scan.library_id)
-    Repo.delete_all(from event in OutboxSchema, where: event.media_file_id == ^file.id)
+    Repo.delete_all(from event in InspectionEventSchema, where: event.media_file_id == ^file.id)
     Repo.delete!(inspection(file.id))
     assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
 
@@ -677,13 +672,15 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
   defp events(file_id) do
     Repo.all(
-      from event in OutboxSchema, where: event.media_file_id == ^file_id, order_by: event.id
+      from event in InspectionEventSchema,
+        where: event.media_file_id == ^file_id,
+        order_by: event.id
     )
   end
 
   defp identification_events(file_id) do
     Repo.all(
-      from event in EventSchema,
+      from event in IdentificationEventSchema,
         where: event.media_file_id == ^file_id,
         order_by: event.id
     )

@@ -1,17 +1,20 @@
 defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader do
   @moduledoc false
+  @behaviour Bolognesa.Identification.Application.Ports.ReviewReader
+
   import Ecto.Query
 
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
-
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.IdentificationSchema
-
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieMapper
+  alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileMapper
+  alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Persistence.IdentificationSchema
+  alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Repo
 
   @page_size 24
 
-  @spec list_review_items(pos_integer()) :: {:ok, map()} | {:error, :unavailable}
+  @impl true
   def list_review_items(page) do
     base =
       from identification in IdentificationSchema,
@@ -31,34 +34,26 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader d
           order_by: identification.media_file_id,
           limit: @page_size,
           offset: ^((page - 1) * @page_size),
-          select: %{
-            file_id: identification.media_file_id,
-            state: identification.state,
-            needs_review: identification.needs_review,
-            failure_reason: identification.failure_reason,
-            availability: file.availability,
-            relative_path: file.relative_path,
-            movie_id: movie.id,
-            movie_title: movie.title,
-            candidates: identification.candidate_data
-          }
+          select: {identification, file, movie}
         ),
         log: false
       )
 
-    items =
-      Enum.map(rows, fn row ->
-        row |> Map.delete(:relative_path) |> Map.put(:filename, safe_basename(row.relative_path))
+    entries =
+      Enum.map(rows, fn {identification, file, movie} ->
+        {
+          IdentificationMapper.to_domain(identification),
+          MediaFileMapper.to_media_file(file),
+          to_movie(movie)
+        }
       end)
 
-    {:ok, %{items: items, total: total}}
+    {:ok, {entries, total}}
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  defp safe_basename(path) when is_binary(path) do
-    name = :filename.basename(path)
-    if String.valid?(name), do: name, else: "Archivo"
-  end
+  defp to_movie(nil), do: nil
+  defp to_movie(movie), do: MovieMapper.to_movie(movie)
 end
