@@ -1,6 +1,6 @@
 # Frontend: arquitectura y convenciones
 
-Este documento recoge las convenciones acordadas para la presentación web de Bolognesa. Debe mantenerse actualizado cuando cambien. Complementa las reglas de Phoenix y LiveView de `AGENTS.md` y las [convenciones del backend](backend.md).
+Este documento recoge las convenciones acordadas para la presentación web de Bolognesa. Debe mantenerse actualizado cuando cambien. Complementa las reglas de Phoenix y LiveView de [Phoenix e interfaz](phoenix.md) y las [convenciones del backend](backend.md).
 
 ## Organización por pantalla
 
@@ -80,7 +80,7 @@ El socket es el contenedor del estado de la pantalla. No se introduce un struct 
 Los modelos insertados en streams proporcionan una identidad estable. Los templates consumen datos preparados para la vista. No se crea un modelo adicional para cada assign sencillo.
 
 - `assign` se utiliza para filtros, selección, formularios y estados de carga.
-- Las colecciones se gestionan con streams y las reglas de DOM indicadas en `AGENTS.md`.
+- Las colecciones se gestionan con streams y las reglas de DOM indicadas en [Phoenix e interfaz](phoenix.md).
 - Los helpers compartidos de streams se extraen a `lib/bolognesa_web/live_support/` cuando exista repetición real.
 - Los helpers expresan operaciones concretas, como reiniciar una colección y actualizar su estado vacío. No deciden silenciosamente entre `assign` y `stream`.
 - El total de resultados y el número de elementos cargados son conceptos distintos al paginar.
@@ -94,7 +94,7 @@ Los changesets comprueban formato, campos obligatorios y coherencia de entrada. 
 
 Los parámetros web llegan con claves string. Antes de llamar a la fachada, el reducer obtiene del formulario validado un mapa con las claves átomo que declara el contrato del backend; el dominio no necesita admitir ambos formatos por defecto.
 
-Los reducers convierten los changesets con `to_form/2` y asignan el resultado al socket. Los templates utilizan `<.form>` y `<.input>` sobre ese formulario, conforme a `AGENTS.md`.
+Los reducers convierten los changesets con `to_form/2` y asignan el resultado al socket. Los templates utilizan `<.form>` y `<.input>` sobre ese formulario, conforme a [Phoenix e interfaz](phoenix.md).
 
 ## Cargas, errores y navegación
 
@@ -122,7 +122,7 @@ El template principal se mantiene junto a la LiveView. Los componentes reciben a
 
 Los componentes específicos viven dentro de la pantalla. Cuando se comparten entre pantallas de películas pueden situarse en `live/movie/components/`; si se reutilizan entre funcionalidades, en `lib/bolognesa_web/components/`. La extracción responde a reutilización o responsabilidades claras.
 
-Todos los templates LiveView comienzan con `<Layouts.app flash={@flash} ...>`, pasando el scope cuando corresponda. Se mantienen las convenciones de formularios, iconos y componentes de `AGENTS.md`.
+Todos los templates LiveView comienzan con `<Layouts.app flash={@flash} ...>`, pasando el scope cuando corresponda. Se mantienen las convenciones de formularios, iconos y componentes de [Phoenix e interfaz](phoenix.md).
 
 Los hooks viven en `assets/js/hooks/` y se importan desde `assets/js/app.js`. Los estilos adicionales se importan desde `assets/css/app.css`, conservando la configuración Tailwind existente. No se añaden scripts externos o scripts inline ordinarios a los templates.
 

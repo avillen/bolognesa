@@ -28,5 +28,5 @@ Oban añade tablas y una dependencia. Lifeline rescata por tiempo y puede provoc
 
 ## Referencias
 
-- [Especificación](../plans/h2-library-scan-design.md) y [plan](../plans/h2-library-scan.md).
+- [Especificación](../designs/h2-library-scan-design.md) y [plan](../plans/h2-library-scan.md).
 - [Oban 2.19.4](https://oban.hexdocs.pm/2.19.4/Oban.html) y [Lifeline](https://oban.hexdocs.pm/2.19.4/Oban.Plugins.Lifeline.html).

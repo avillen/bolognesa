@@ -1,6 +1,6 @@
 # 0006. Entrega directa autorizada de archivos
 
-Estado: aceptada para la implementación local de H4a el 2026-10-10; despliegue y compatibilidad real pendientes.
+Estado: aceptada para la implementación local de H4a el 2026-10-10; desplegada; reproducción de una versión compatible observada en Chrome, otros formatos y dispositivos pendientes.
 
 ## Contexto
 
@@ -25,5 +25,5 @@ La entrega de bytes no implica compatibilidad de contenedor o codec. H4a informa
 
 ## Referencias
 
-- [Diseño H4a](../plans/h4-direct-playback-design.md)
+- [Diseño H4a](../designs/h4-direct-playback-design.md)
 - [Plan H4a](../plans/h4-direct-playback.md)

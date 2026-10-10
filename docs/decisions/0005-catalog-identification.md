@@ -1,6 +1,6 @@
 # 0005. Catálogo de películas e identificación por TMDb
 
-Estado: aceptada para la implementación local de H3 el 2026-10-07; integración real y QNAP pendientes.
+Estado: aceptada para la implementación local de H3 el 2026-10-07; desplegada en QNAP; revisión manual pendiente.
 
 ## Contexto
 
@@ -24,7 +24,7 @@ La unicidad de obra evita duplicar películas para varias versiones. El outbox a
 
 ## Referencias
 
-- [Especificación H3](../superpowers/specs/2026-10-06-h3-catalog-identification-design.md)
+- [Especificación H3](../designs/2026-10-06-h3-catalog-identification-design.md)
 - [Plan H3](../plans/h3-catalog-identification.md)
 - [Atribución oficial de TMDb](https://developer.themoviedb.org/docs/faq)
 - [Logotipos aprobados de TMDb](https://www.themoviedb.org/about/logos-attribution)

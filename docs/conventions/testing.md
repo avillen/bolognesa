@@ -37,8 +37,19 @@ Elegir el nivel más directo que proteja el comportamiento y sus riesgos. No dup
 
 Los dobles se sitúan en los límites externos. No se simula cada módulo interno. Las pruebas de integración verifican lo que un doble no puede garantizar, como atomicidad o restricciones de base de datos. Las pruebas normales no dependen de proveedores públicos ni del NAS o televisor reales.
 
-Se siguen las reglas de procesos supervisados, sincronización y selectores de `AGENTS.md`. No se modifica configuración global desde pruebas concurrentes.
+Se siguen las reglas de procesos supervisados y sincronización de este documento, y los selectores de las convenciones de Phoenix. No se modifica configuración global desde pruebas concurrentes.
 
 ## Verificación proporcional
 
 Durante el desarrollo ejecutar las pruebas afectadas; ampliar cuando exista un riesgo concreto o una comprobación obligatoria. Registrar los comandos ejecutados y sus resultados, distinguiendo los tests automatizados de las verificaciones manuales en dispositivos. No asumir compatibilidad de hardware a partir de pruebas unitarias.
+
+## Procesos en pruebas
+
+- **Always use `start_supervised!/1`** to start processes in tests as it guarantees cleanup between tests
+- **Avoid** `Process.sleep/1` and `Process.alive?/1` in tests
+  - Instead of sleeping to wait for a process to finish, **always** use `Process.monitor/1` and assert on the DOWN message:
+
+      ref = Process.monitor(pid)
+      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
+
+   - Instead of sleeping to synchronize before the next call, **always** use `_ = :sys.get_state/1` to ensure the process has handled prior messages

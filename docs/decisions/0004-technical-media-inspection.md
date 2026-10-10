@@ -1,6 +1,6 @@
 # 0004. Inspección técnica por revisión con trabajos duraderos
 
-Estado: aceptada por el propietario al aprobar la especificación H2c el 2026-10-05; implementación pendiente.
+Estado: aceptada por el propietario al aprobar la especificación H2c el 2026-10-05; implementada y desplegada; validación de recuperación parcial.
 
 ## Contexto
 
@@ -22,5 +22,5 @@ La decisión no valida recuperación en el QNAP ni compatibilidad de reproducci�
 
 ## Referencias
 
-- [Especificación H2c](../plans/h2-media-inspection-design.md).
+- [Especificación H2c](../designs/h2-media-inspection-design.md).
 - [Decisión 0003](0003-recoverable-library-scans.md) y [convención de backend](../conventions/backend.md).

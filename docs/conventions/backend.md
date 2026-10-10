@@ -196,7 +196,7 @@ Aplicar las [convenciones de testing](testing.md), incluyendo TDD centrado en co
 - Dominio: pruebas sin base de datos de invariantes, transiciones y errores.
 - Aplicación: pruebas con adaptadores de prueba de autorización, coordinación, reintentos e idempotencia.
 - Infraestructura: pruebas con PostgreSQL de mapeo, restricciones, transacciones y outbox; pruebas controladas de disco y proveedores.
-- Procesos: inicio supervisado y sincronización determinista conforme a AGENTS.md.
+- Procesos: inicio supervisado y sincronización determinista conforme a [testing](testing.md).
 - Integración: el primer recorrido completo funciona con una carpeta de películas y una cuenta administradora.
 
 Casos esenciales: escaneo repetido sin duplicados; fuente inaccesible sin bajas masivas; recuperación tras reinicio; evento duplicado sin efectos duplicados; corrección manual protegida ante un trabajo concurrente; acceso a contenido rechazado sin autenticación válida; progreso recuperado en una sesión posterior.

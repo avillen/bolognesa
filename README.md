@@ -11,7 +11,8 @@ Empieza por [AGENTS.md](AGENTS.md) y el [estado actual](docs/status.md).
 - Convenciones de [backend](docs/conventions/backend.md) y [frontend](docs/conventions/frontend.md).
 - Convenciones de [testing](docs/conventions/testing.md) y [observabilidad](docs/conventions/observability.md).
 - [Decisiones](docs/decisions/README.md): motivos de las elecciones arquitectónicas.
-- [Primer hito funcional](docs/plans/first-milestone.md): encargo para diseñar la cuenta inicial.
+- [Diseños](docs/designs/) y [planes](docs/plans/): alcance acordado y pasos de implementación.
+- [Validaciones](docs/validation/) e [historial](docs/history/): pruebas reales y antecedentes.
 
 ## Desarrollo local
 
