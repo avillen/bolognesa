@@ -6,7 +6,7 @@ defmodule Bolognesa.Libraries.Application.CreateLibrary do
   alias Bolognesa.Libraries.Domain.{Library, NewLibrary}
 
   @spec call(
-          Actor.t() | nil,
+          Actor.t(),
           NewLibrary.attrs(),
           LibraryRepository.adapter(),
           FileSource.adapter()

@@ -4,7 +4,7 @@ defmodule Bolognesa.Identification.Application.CorrectIdentification do
   alias Bolognesa.Identification.Domain.Identification
 
   @spec call(
-          Bolognesa.Identity.Domain.Actor.t() | nil,
+          Bolognesa.Identity.Domain.Actor.t(),
           pos_integer(),
           :unidentified | {:tmdb, pos_integer()},
           module(),

@@ -6,12 +6,12 @@ defmodule Bolognesa.Playback do
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   alias Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository
 
-  @spec start(Actor.t() | nil, integer(), integer()) ::
+  @spec start(Actor.t(), integer(), integer()) ::
           {:ok, map()} | {:error, :forbidden | :not_found | :missing | :unavailable}
   def start(actor, movie_id, file_id),
     do: StartPlayback.call(actor, movie_id, file_id, EctoPlaybackRepository)
 
-  @spec prepare(Actor.t() | nil, integer(), integer()) ::
+  @spec prepare(Actor.t(), integer(), integer()) ::
           :ok
           | {:error, :forbidden | :not_found | :missing | :unavailable | LocalMediaFile.failure()}
   def prepare(actor, movie_id, file_id) do

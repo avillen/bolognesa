@@ -9,6 +9,6 @@ defmodule Bolognesa.Playback.Application.Ports.PlaybackRepository do
           modified_at: DateTime.t()
         }
 
-  @callback find_source(pos_integer(), pos_integer()) ::
+  @callback find_source(movie_id :: pos_integer(), file_id :: pos_integer()) ::
               {:ok, source()} | {:error, :not_found | :missing | :unavailable}
 end

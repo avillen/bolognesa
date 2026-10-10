@@ -10,7 +10,7 @@ defmodule Bolognesa.Identification do
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader
   alias Bolognesa.Identification.Infrastructure.TmdbMovieProvider
 
-  @spec correct(Actor.t() | nil, pos_integer(), :unidentified | {:tmdb, pos_integer()}) ::
+  @spec correct(Actor.t(), pos_integer(), :unidentified | {:tmdb, pos_integer()}) ::
           {:ok, IdentificationDecision.t()} | {:error, atom()}
   def correct(actor, file_id, choice),
     do:
@@ -22,15 +22,15 @@ defmodule Bolognesa.Identification do
         TmdbMovieProvider
       )
 
-  @spec retry(Actor.t() | nil, pos_integer()) ::
+  @spec retry(Actor.t(), pos_integer()) ::
           {:ok, IdentificationDecision.t()} | {:error, atom()}
   def retry(actor, file_id),
     do: RetryIdentification.call(actor, file_id, EctoIdentificationRepository)
 
-  @spec list_review_items(Actor.t() | nil, pos_integer()) :: {:ok, map()} | {:error, atom()}
+  @spec list_review_items(Actor.t(), pos_integer()) :: {:ok, map()} | {:error, atom()}
   def list_review_items(actor, page), do: ListReviewItems.call(actor, page, EctoReviewReader)
 
-  @spec search_candidates(Actor.t() | nil, binary()) :: {:ok, list()} | {:error, atom()}
+  @spec search_candidates(Actor.t(), binary()) :: {:ok, list()} | {:error, atom()}
   def search_candidates(actor, query),
     do: SearchCandidates.call(actor, query, TmdbMovieProvider)
 end

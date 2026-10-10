@@ -5,7 +5,7 @@ defmodule Bolognesa.Playback.Application.StartPlayback do
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Playback.Application.Ports.PlaybackRepository
 
-  @spec call(Actor.t() | nil, integer(), integer(), PlaybackRepository.adapter()) ::
+  @spec call(Actor.t(), integer(), integer(), PlaybackRepository.adapter()) ::
           {:ok, PlaybackRepository.source()}
           | {:error, :forbidden | :not_found | :missing | :unavailable}
   def call(actor, movie_id, file_id, repository) do

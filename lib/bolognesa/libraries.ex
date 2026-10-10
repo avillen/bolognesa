@@ -19,7 +19,7 @@ defmodule Bolognesa.Libraries do
 
   alias Bolognesa.Identity.Domain.Actor
 
-  @spec create_library(Actor.t() | nil, NewLibrary.attrs()) ::
+  @spec create_library(Actor.t(), NewLibrary.attrs()) ::
           {:ok, Library.t()}
           | {:error,
              NewLibrary.error()
@@ -31,21 +31,21 @@ defmodule Bolognesa.Libraries do
   def create_library(actor, attrs),
     do: CreateLibrary.call(actor, attrs, EctoLibraryRepository, LocalFileSource)
 
-  @spec list_libraries(Actor.t() | nil) ::
+  @spec list_libraries(Actor.t()) ::
           {:ok, [Library.t()]} | {:error, :forbidden | :unavailable}
   def list_libraries(actor), do: ListLibraries.call(actor, EctoLibraryRepository)
 
-  @spec start_scan(Actor.t() | nil, Library.id(), keyword()) ::
+  @spec start_scan(Actor.t(), Library.id(), keyword()) ::
           {:ok, Scan.t()} | {:error, :forbidden | :not_found | :scan_in_progress | :unavailable}
   def start_scan(actor, library_id, opts \\ []),
     do: StartScan.call(actor, library_id, EctoScanRepository, opts)
 
-  @spec get_scan_status(Actor.t() | nil, Library.id()) ::
+  @spec get_scan_status(Actor.t(), Library.id()) ::
           {:ok, ScanStatus.t()} | {:error, :forbidden | :not_found | :unavailable}
   def get_scan_status(actor, library_id),
     do: GetScanStatus.call(actor, library_id, EctoScanRepository)
 
-  @spec get_inspection_counts(Actor.t() | nil, Library.id()) ::
+  @spec get_inspection_counts(Actor.t(), Library.id()) ::
           {:ok, map()} | {:error, :forbidden | :not_found | :unavailable}
   def get_inspection_counts(actor, library_id),
     do: GetInspectionCounts.call(actor, library_id, EctoInspectionRepository)
