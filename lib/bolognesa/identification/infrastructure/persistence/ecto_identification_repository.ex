@@ -159,7 +159,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   end
 
   defp complete_pending_identification(identification, candidates, details, needs_review) do
-    movie = if details, do: Catalog.upsert_in_transaction!(Repo, details), else: nil
+    movie = if details, do: upsert_movie(details), else: nil
     state = if movie, do: :automatic, else: :unmatched
 
     attrs = %{
@@ -176,6 +176,11 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     :ok
   end
 
+  defp upsert_movie(details) do
+    attrs = details |> Map.from_struct() |> Map.put(:provider, :tmdb)
+    Catalog.upsert_in_transaction!(Repo, attrs)
+  end
+
   defp correct_file(file, file_id, choice) do
     identification =
       Repo.one(
@@ -185,7 +190,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
       )
 
     movie =
-      if choice == :unidentified, do: nil, else: Catalog.upsert_in_transaction!(Repo, choice)
+      if choice == :unidentified, do: nil, else: upsert_movie(choice)
 
     attrs = %{
       media_file_id: file_id,

@@ -2,6 +2,8 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
   @moduledoc false
   import Ecto.Query
 
+  alias Bolognesa.Catalog.Application.Dto.{MovieDetail, MovieVersion}
+  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieMapper
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.IdentificationSchema
@@ -49,7 +51,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  @spec get_movie(pos_integer()) :: {:ok, map()} | {:error, :not_found | :unavailable}
+  @spec get_movie(pos_integer()) :: {:ok, MovieDetail.t()} | {:error, :not_found | :unavailable}
   def get_movie(id) do
     case Repo.get(MovieSchema, id) do
       nil ->
@@ -73,15 +75,9 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
           )
 
         {:ok,
-         %{
-           id: movie.id,
-           title: movie.title,
-           original_title: movie.original_title,
-           year: movie.year,
-           overview: movie.overview,
-           poster_path: movie.poster_path,
-           backdrop_path: movie.backdrop_path,
-           versions: versions
+         %MovieDetail{
+           movie: MovieMapper.to_movie(movie),
+           versions: Enum.map(versions, &struct!(MovieVersion, &1))
          }}
     end
   rescue

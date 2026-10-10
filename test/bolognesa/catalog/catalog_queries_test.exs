@@ -2,6 +2,8 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Catalog
+  alias Bolognesa.Catalog.Application.Dto.{MovieDetail, MovieVersion}
+  alias Bolognesa.Catalog.Domain.Movie
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieSchema
   alias Bolognesa.Identity.Domain.Actor
 
@@ -9,6 +11,22 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
 
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileSchema
+
+  test "upsert returns a persisted movie and reuses its provider identity" do
+    attrs = %{provider: :tmdb, provider_id: 425, title: " La película "}
+
+    assert {:ok, %Movie{} = first} =
+             Repo.transaction(fn -> Catalog.upsert_in_transaction!(Repo, attrs) end)
+
+    assert first.id > 0
+    assert first.title == "La película"
+
+    assert {:ok, %Movie{id: same_id}} =
+             Repo.transaction(fn -> Catalog.upsert_in_transaction!(Repo, attrs) end)
+
+    assert same_id == first.id
+    assert Repo.aggregate(MovieSchema, :count) == 1
+  end
 
   test "groups physical versions and retains movies with missing files" do
     actor = %Actor{id: 1, role: :admin}
@@ -58,8 +76,14 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
              Catalog.list_movies(actor, "Mi", 1)
 
     assert id == movie.id
-    assert {:ok, %{versions: versions}} = Catalog.get_movie(actor, movie.id)
+
+    assert {:ok, %MovieDetail{movie: %Movie{} = catalog_movie, versions: versions}} =
+             Catalog.get_movie(actor, movie.id)
+
+    assert catalog_movie.id == movie.id
+    assert catalog_movie.title == "Mi pelicula"
     assert length(versions) == 2
+    assert Enum.all?(versions, &match?(%MovieVersion{}, &1))
     assert {:ok, %{items: [], total: 0}} = Catalog.list_movies(actor, "No existe", 1)
   end
 end

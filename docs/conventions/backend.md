@@ -73,6 +73,7 @@ Los puertos se nombran por su responsabilidad, como `UserRepository` o `LibraryR
 - Los agregados son pequeños y delimitan consistencia transaccional. Una biblioteca no contiene todos sus archivos en memoria; una serie tampoco implica cargar todos sus episodios.
 - Cada contexto controla las escrituras de sus datos. Las referencias entre contextos utilizan identificadores y sus interfaces públicas.
 - Las lecturas pueden utilizar proyecciones específicas, sin reconstruir agregados completos. Las consultas que cruzan contextos se encapsulan en adaptadores de lectura explícitos; no conceden permiso para modificar datos ajenos.
+- Cuando una proyección de lectura es parte del contrato público, puede representarse con DTOs de aplicación tipados. El adaptador los construye a partir de los datos consultados; no se añaden al dominio campos de otros contextos para formar la respuesta.
 - Una entidad no corresponde a un proceso OTP. Los procesos se reservan para coordinación, concurrencia, supervisión y estado temporal.
 - No se introduce event sourcing ni CQRS completo.
 
