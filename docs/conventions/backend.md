@@ -24,7 +24,7 @@ Se aplicará DDD con dominio independiente de Ecto y arquitectura hexagonal dent
 
 - **Dominio:** structs, objetos de valor, agregados, invariantes y transiciones. No depende de Phoenix, Ecto, Req, ejecución de procesos externos ni del sistema de archivos.
 - **Aplicación:** casos de uso que coordinan autorización, dominio y puertos. Define qué cambios necesitan una transacción.
-- Un módulo de aplicación no llama a funciones de otro módulo de aplicación. La lógica pura compartida pertenece al dominio; los efectos compartidos se expresan mediante puertos y adaptadores. Así, cada caso de uso coordina sus propios pasos sin depender de otro caso de uso.
+- Un módulo de aplicación no llama a funciones de otro módulo de aplicación. La lógica pura pertenece al dominio del contexto que la usa; los efectos compartidos se expresan mediante puertos y adaptadores. Así, cada caso de uso coordina sus propios pasos sin depender de otro caso de uso.
 - **Puertos:** behaviours con operaciones concretas que la aplicación necesita del exterior.
 - **Infraestructura:** adaptadores Ecto, consultas, mappers, sistema de archivos, proveedores HTTP y herramientas multimedia.
 - **Fachada:** operaciones públicas del contexto. Los consumidores no acceden a sus schemas ni repositorios internos.
@@ -68,6 +68,8 @@ Los puertos se nombran por su responsabilidad, como `UserRepository` o `LibraryR
 - Los datos sensibles de estructuras temporales, como contraseñas, se excluyen de `Inspect`. El adaptador persiste el hash, no la contraseña original.
 - Los schemas Ecto representan almacenamiento. Los mappers convierten entre estos schemas y entidades del dominio.
 - Los schemas Ecto se agrupan en `Bolognesa.Persistence`, con un módulo por tabla y nombres únicos, como `MediaFileSchema` o `IdentificationEventSchema`. Los adaptadores importan los schemas que necesitan; esa ubicación compartida no cambia qué contexto controla cada escritura.
+- Cada contexto define sus propios modelos de dominio y proyecciones con los datos que necesita. No importa modelos, mappers, repositorios ni otros módulos internos de otro contexto para reutilizarlos. Si necesita parte de un concepto ajeno, define un modelo local con esos campos; la duplicación deliberada evita acoplar los contratos. La identidad autenticada `Identity.Domain.Actor` es el contrato explícito que reciben las operaciones protegidas, no un modelo de negocio que se incorpora al dominio de otro contexto.
+- La comunicación entre contextos pasa por sus fachadas públicas y, cuando basta, intercambia identificadores. Las consultas Ecto entre tablas pueden usar los schemas globales y construyen modelos del contexto lector. Una función técnica neutral que necesitan varios contextos vive fuera de ellos, por ejemplo en `Bolognesa.Infrastructure`; no se promueve allí lógica de negocio para evitar duplicarla.
 - Los mappers usados solo por un repositorio Ecto permanecen bajo el directorio y namespace de ese repositorio, por ejemplo `infrastructure/persistence/ecto_user_repository/user_mapper.ex`.
 - Los changesets comprueban requisitos de persistencia; las reglas de negocio viven en el dominio. Las restricciones de base de datos también protegen unicidad e integridad ante concurrencia.
 - Los repositorios exponen necesidades concretas del dominio, sin devolver queries o changesets a la aplicación. No se introduce un repositorio CRUD genérico.
@@ -78,7 +80,7 @@ Los puertos se nombran por su responsabilidad, como `UserRepository` o `LibraryR
 - Los agregados son pequeños y delimitan consistencia transaccional. Una biblioteca no contiene todos sus archivos en memoria; una serie tampoco implica cargar todos sus episodios.
 - Cada contexto controla las escrituras de sus datos. Las referencias entre contextos utilizan identificadores y sus interfaces públicas.
 - Las lecturas pueden utilizar proyecciones específicas, sin reconstruir agregados completos. Las consultas que cruzan contextos se encapsulan en adaptadores de lectura explícitos; no conceden permiso para modificar datos ajenos.
-- Los adaptadores de lectura convierten schemas Ecto en entidades de dominio y entregan los metadatos necesarios de la consulta, como el total de una página. No construyen DTOs de aplicación.
+- Los adaptadores de lectura convierten schemas Ecto en modelos de dominio del contexto lector y entregan los metadatos necesarios de la consulta, como el total de una página. No construyen DTOs de aplicación.
 - Cuando una proyección de lectura es parte del contrato público, el caso de uso construye DTOs de aplicación tipados a partir de esas entidades. No se añaden a una entidad de dominio campos de otros contextos para formar la respuesta.
 - Una entidad no corresponde a un proceso OTP. Los procesos se reservan para coordinación, concurrencia, supervisión y estado temporal.
 - No se introduce event sourcing ni CQRS completo.

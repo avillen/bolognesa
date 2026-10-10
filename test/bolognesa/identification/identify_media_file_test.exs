@@ -8,7 +8,7 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
 
   alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
   alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Libraries.Domain.MediaFile
+  alias Bolognesa.Identification.Domain.FileToIdentify
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
 
@@ -61,8 +61,7 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
     assert {:ok, %{relative_path: "Mi.pelicula.(2001).mkv"} = beginning_file} =
              Repository.begin_identification(file.id, token, nil)
 
-    assert beginning_file.__struct__ == MediaFile
-    assert beginning_file.id == file.id
+    assert beginning_file.__struct__ == FileToIdentify
 
     assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, Provider)
 

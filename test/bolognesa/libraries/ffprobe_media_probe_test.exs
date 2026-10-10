@@ -11,7 +11,7 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
     Application.put_env(:bolognesa, :library_roots, [root])
 
     {:ok, canonical_root} =
-      Bolognesa.Libraries.Infrastructure.LocalSourcePath.canonical_directory(root)
+      Bolognesa.Infrastructure.LocalSourcePath.canonical_directory(root)
 
     on_exit(fn ->
       Application.put_env(:bolognesa, :library_roots, previous)

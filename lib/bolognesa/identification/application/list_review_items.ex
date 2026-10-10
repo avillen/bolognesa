@@ -1,12 +1,10 @@
 defmodule Bolognesa.Identification.Application.ListReviewItems do
   @moduledoc "Authorize paginated identification review."
 
-  alias Bolognesa.Catalog.Domain.Movie
   alias Bolognesa.Identity
   alias Bolognesa.Identification.Application.Dto.{ReviewItem, ReviewPage}
   alias Bolognesa.Identification.Application.Ports.ReviewReader
-  alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Libraries.Domain.MediaFile
+  alias Bolognesa.Identification.Domain.{Identification, ReviewFile, ReviewMovie}
 
   @spec call(Bolognesa.Identity.Domain.Actor.t(), pos_integer(), ReviewReader.adapter()) ::
           {:ok, ReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}
@@ -21,7 +19,7 @@ defmodule Bolognesa.Identification.Application.ListReviewItems do
   defp validate_page(page) when is_integer(page) and page > 0 and page <= 100_000, do: :ok
   defp validate_page(_page), do: {:error, :invalid_page}
 
-  defp to_review_item({%Identification{} = decision, %MediaFile{} = file, movie}) do
+  defp to_review_item({%Identification{} = decision, %ReviewFile{} = file, movie}) do
     {movie_id, movie_title} = movie_details(movie)
 
     %ReviewItem{
@@ -38,7 +36,7 @@ defmodule Bolognesa.Identification.Application.ListReviewItems do
   end
 
   defp movie_details(nil), do: {nil, nil}
-  defp movie_details(%Movie{id: id, title: title}), do: {id, title}
+  defp movie_details(%ReviewMovie{id: id, title: title}), do: {id, title}
 
   defp safe_basename(path) when is_binary(path) do
     name = :filename.basename(path)

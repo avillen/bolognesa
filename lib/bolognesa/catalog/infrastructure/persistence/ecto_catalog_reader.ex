@@ -5,8 +5,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
   import Ecto.Query
 
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieMapper
-  alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileMapper
+  alias Bolognesa.Catalog.Domain.MovieVersion
   alias Bolognesa.Persistence.MovieSchema
 
   alias Bolognesa.Persistence.IdentificationSchema
@@ -71,7 +70,13 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
 
         entries =
           Enum.map(versions, fn {file, identification} ->
-            {MediaFileMapper.to_media_file(file), IdentificationMapper.to_domain(identification)}
+            %MovieVersion{
+              id: file.id,
+              availability: file.availability,
+              size_bytes: file.size_bytes,
+              origin: identification.origin,
+              needs_review?: identification.needs_review
+            }
           end)
 
         {:ok, {MovieMapper.to_movie(movie), entries}}

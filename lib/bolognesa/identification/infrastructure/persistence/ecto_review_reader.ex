@@ -4,9 +4,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader d
 
   import Ecto.Query
 
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieMapper
+  alias Bolognesa.Identification.Domain.{ReviewFile, ReviewMovie}
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileMapper
   alias Bolognesa.Persistence.MovieSchema
   alias Bolognesa.Persistence.IdentificationSchema
   alias Bolognesa.Persistence.MediaFileSchema
@@ -43,7 +42,11 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader d
       Enum.map(rows, fn {identification, file, movie} ->
         {
           IdentificationMapper.to_domain(identification),
-          MediaFileMapper.to_media_file(file),
+          %ReviewFile{
+            id: file.id,
+            relative_path: file.relative_path,
+            availability: file.availability
+          },
           to_movie(movie)
         }
       end)
@@ -55,5 +58,5 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader d
   end
 
   defp to_movie(nil), do: nil
-  defp to_movie(movie), do: MovieMapper.to_movie(movie)
+  defp to_movie(movie), do: %ReviewMovie{id: movie.id, title: movie.title}
 end

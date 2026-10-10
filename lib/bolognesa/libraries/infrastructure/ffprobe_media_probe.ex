@@ -2,7 +2,8 @@ defmodule Bolognesa.Libraries.Infrastructure.FfprobeMediaProbe do
   @moduledoc "Probes a validated physical file and rechecks it after the command."
   @behaviour Bolognesa.Libraries.Application.Ports.MediaProbe
 
-  alias Bolognesa.Libraries.Infrastructure.{BoundedCommand, FfprobeJson, LocalSourcePath}
+  alias Bolognesa.Infrastructure.LocalSourcePath
+  alias Bolognesa.Libraries.Infrastructure.{BoundedCommand, FfprobeJson}
 
   @timeout_ms 30_000
   @max_bytes 262_144

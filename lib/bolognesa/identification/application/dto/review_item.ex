@@ -2,7 +2,7 @@ defmodule Bolognesa.Identification.Application.Dto.ReviewItem do
   @moduledoc "Identification and file details shown in the review list."
 
   alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Libraries.Domain.MediaFile
+  alias Bolognesa.Identification.Domain.ReviewFile
 
   @enforce_keys [
     :file_id,
@@ -18,11 +18,11 @@ defmodule Bolognesa.Identification.Application.Dto.ReviewItem do
   defstruct @enforce_keys
 
   @type t :: %__MODULE__{
-          file_id: MediaFile.id(),
+          file_id: pos_integer(),
           state: Identification.state(),
           needs_review: boolean(),
           failure_reason: binary() | nil,
-          availability: MediaFile.availability(),
+          availability: ReviewFile.availability(),
           filename: String.t(),
           movie_id: pos_integer() | nil,
           movie_title: String.t() | nil,

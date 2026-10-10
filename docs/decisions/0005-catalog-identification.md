@@ -9,7 +9,7 @@ El inventario H2 guarda archivos y revisiones, pero no conoce obras. H3 necesita
 ## Decisión
 
 - `Movie` tiene identidad interna y referencia única `(provider, provider_id)`. La asociación archivo–obra vive en Identificación, con estado, procedencia, revisión observada y token de solicitud.
-- Bibliotecas escribe la solicitud de identificación y el evento outbox en la misma transacción que el lote de inventario, mediante `EctoRequestWriter`. El despachador entrega el evento a Oban tras el commit.
+- Bibliotecas solicita a la fachada de Identificación que escriba la solicitud y el evento outbox en la misma transacción que el lote de inventario. La fachada delega en `EctoRequestWriter`; el despachador entrega el evento a Oban tras el commit.
 - El proveedor recibe solo el título extraído del nombre base y el año inferido; no recibe rutas, biblioteca ni contenido. La consulta con Req se hace fuera de la transacción y usa `TMDB_READ_TOKEN` como token de lectura en runtime. Sin token, el trabajo termina con estado visible `not_configured`.
 - Se confirma el primer candidato válido aunque título o año discrepen; la discrepancia marca `needs_review`. La elección se puede cambiar manualmente o dejar «sin identificar».
 - Al confirmar un resultado automático, una transacción bloquea el archivo y la identificación y comprueba token, revisión, disponibilidad y origen. Una corrección manual genera un token nuevo y prevalece ante escaneos, reintentos y respuestas antiguas. La misma transacción reutiliza o crea la obra TMDb y vincula el archivo.

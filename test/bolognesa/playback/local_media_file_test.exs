@@ -3,7 +3,7 @@ defmodule Bolognesa.Playback.LocalMediaFileTest do
 
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   alias Bolognesa.Playback.Domain.Source
-  alias Bolognesa.Libraries.Infrastructure.LocalSourcePath
+  alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Test.SwitchingFileAccess
 
   setup do

@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Infrastructure.LocalSourcePath do
+defmodule Bolognesa.Infrastructure.LocalSourcePath do
   @moduledoc false
 
   @spec canonical_directory(String.t()) ::

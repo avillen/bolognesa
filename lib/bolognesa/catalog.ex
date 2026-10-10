@@ -15,11 +15,11 @@ defmodule Bolognesa.Catalog do
           {:ok, MovieDetail.t()} | {:error, :forbidden | :not_found | :unavailable}
   def get_movie(actor, id), do: GetMovie.call(actor, id, EctoCatalogReader)
 
-  @doc false
-  @spec upsert_in_transaction!(module(), NewMovie.attrs()) :: Movie.t()
+  @doc "Upsert a movie inside the caller's transaction and return its identifier."
+  @spec upsert_in_transaction!(module(), NewMovie.attrs()) :: Movie.id()
   def upsert_in_transaction!(repo, attrs) do
     case NewMovie.new(attrs) do
-      {:ok, new_movie} -> EctoMovieRepository.upsert!(repo, new_movie)
+      {:ok, new_movie} -> EctoMovieRepository.upsert!(repo, new_movie).id
       {:error, :invalid_movie} -> raise ArgumentError, "invalid movie"
     end
   end

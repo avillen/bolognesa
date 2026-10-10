@@ -8,8 +8,14 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
   alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Persistence.IdentificationSchema
-  alias Bolognesa.Identification.Domain.{Identification, MovieCandidate, MovieDetails}
-  alias Bolognesa.Libraries.Domain.MediaFile
+
+  alias Bolognesa.Identification.Domain.{
+    FileToIdentify,
+    Identification,
+    MovieCandidate,
+    MovieDetails
+  }
+
   alias Bolognesa.Repo
 
   @spec get(pos_integer()) ::
@@ -25,7 +31,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   end
 
   @spec begin_identification(pos_integer(), binary(), integer() | nil) ::
-          {:ok, :stale} | {:ok, MediaFile.t()} | {:error, :unavailable}
+          {:ok, :stale} | {:ok, FileToIdentify.t()} | {:error, :unavailable}
   def begin_identification(file_id, token, job_id) do
     transaction(fn ->
       case current(file_id, token) do
@@ -157,30 +163,17 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     attrs = %{started_at: DateTime.utc_now()}
     attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
     Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
-    {:ok, to_media_file(file)}
-  end
-
-  defp to_media_file(file) do
-    %MediaFile{
-      id: file.id,
-      library_id: file.library_id,
-      relative_path: file.relative_path,
-      size_bytes: file.size_bytes,
-      modified_at: file.modified_at,
-      availability: file.availability,
-      revision: file.revision,
-      last_seen_generation: file.last_seen_generation
-    }
+    {:ok, %FileToIdentify{relative_path: file.relative_path}}
   end
 
   defp complete_pending_identification(identification, candidates, details, needs_review) do
-    movie = if details, do: upsert_movie(details), else: nil
-    state = if movie, do: :automatic, else: :unmatched
+    movie_id = if details, do: upsert_movie_id(details), else: nil
+    state = if movie_id, do: :automatic, else: :unmatched
 
     attrs = %{
       state: state,
       origin: :automatic,
-      movie_id: if(movie, do: movie.id, else: nil),
+      movie_id: movie_id,
       needs_review: needs_review,
       failure_reason: nil,
       candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
@@ -191,7 +184,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     :ok
   end
 
-  defp upsert_movie(details) do
+  defp upsert_movie_id(details) do
     attrs = details |> Map.from_struct() |> Map.put(:provider, :tmdb)
     Catalog.upsert_in_transaction!(Repo, attrs)
   end
@@ -204,16 +197,16 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
           lock: "FOR UPDATE"
       )
 
-    movie =
-      if choice == :unidentified, do: nil, else: upsert_movie(choice)
+    movie_id =
+      if choice == :unidentified, do: nil, else: upsert_movie_id(choice)
 
     attrs = %{
       media_file_id: file_id,
       observed_revision: file.revision,
       token: Ecto.UUID.generate(),
-      state: if(movie, do: :manual, else: :manual_unidentified),
+      state: if(movie_id, do: :manual, else: :manual_unidentified),
       origin: :manual,
-      movie_id: if(movie, do: movie.id, else: nil),
+      movie_id: movie_id,
       needs_review: false,
       failure_reason: nil,
       candidate_data: %{"items" => []},

@@ -1,12 +1,10 @@
 defmodule Bolognesa.Identification.Application.Ports.ReviewReader do
   @moduledoc "Read domain records needed to assemble an identification review page."
 
-  alias Bolognesa.Catalog.Domain.Movie
-  alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Libraries.Domain.MediaFile
+  alias Bolognesa.Identification.Domain.{Identification, ReviewFile, ReviewMovie}
 
   @type adapter :: atom()
-  @type entry :: {Identification.t(), MediaFile.t(), Movie.t() | nil}
+  @type entry :: {Identification.t(), ReviewFile.t(), ReviewMovie.t() | nil}
   @type result :: {[entry()], non_neg_integer()}
 
   @callback list_review_items(pos_integer()) :: {:ok, result()} | {:error, :unavailable}

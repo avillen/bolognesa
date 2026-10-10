@@ -6,7 +6,7 @@ defmodule BolognesaWeb.MediaControllerTest do
 
   alias Bolognesa.Persistence.IdentificationSchema
 
-  alias Bolognesa.Libraries.Infrastructure.LocalSourcePath
+  alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Repo

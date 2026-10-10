@@ -7,8 +7,7 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader
   alias Bolognesa.Persistence.MovieSchema
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Libraries.Domain.MediaFile
+  alias Bolognesa.Catalog.Domain.MovieVersion, as: DomainMovieVersion
 
   alias Bolognesa.Persistence.IdentificationSchema
 
@@ -18,16 +17,16 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
   test "upsert returns a persisted movie and reuses its provider identity" do
     attrs = %{provider: :tmdb, provider_id: 425, title: " La película "}
 
-    assert {:ok, %Movie{} = first} =
+    assert {:ok, first_id} =
              Repo.transaction(fn -> Catalog.upsert_in_transaction!(Repo, attrs) end)
 
-    assert first.id > 0
-    assert first.title == "La película"
+    assert first_id > 0
+    assert Repo.get!(MovieSchema, first_id).title == "La película"
 
-    assert {:ok, %Movie{id: same_id}} =
+    assert {:ok, same_id} =
              Repo.transaction(fn -> Catalog.upsert_in_transaction!(Repo, attrs) end)
 
-    assert same_id == first.id
+    assert same_id == first_id
     assert Repo.aggregate(MovieSchema, :count) == 1
   end
 
@@ -86,8 +85,11 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
 
     assert {:ok, {[{%Movie{id: ^id}, 2, 1}], 1}} = EctoCatalogReader.list_movies("Mi", 1)
 
-    assert {:ok, {%Movie{id: ^id}, [{%MediaFile{}, %Identification{}} | _]}} =
+    assert {:ok, {%Movie{id: ^id}, [version | _]}} =
              EctoCatalogReader.get_movie(id)
+
+    assert version.__struct__ == DomainMovieVersion
+    assert version.availability == :available
 
     assert {:ok, %MovieDetail{movie: %Movie{} = catalog_movie, versions: versions}} =
              Catalog.get_movie(actor, movie.id)

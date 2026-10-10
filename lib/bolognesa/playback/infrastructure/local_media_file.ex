@@ -4,7 +4,7 @@ defmodule Bolognesa.Playback.Infrastructure.LocalMediaFile do
   require Record
   Record.defrecordp(:file_info, Record.extract(:file_info, from_lib: "kernel/include/file.hrl"))
 
-  alias Bolognesa.Libraries.Infrastructure.LocalSourcePath
+  alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Playback.Domain.Source
 
   @type opened :: %{device: IO.device(), size: non_neg_integer()}

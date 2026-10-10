@@ -1,10 +1,14 @@
 defmodule Bolognesa.Identification.Application.Ports.IdentificationRepository do
   @moduledoc "Persistence boundary for identification transitions."
-  alias Bolognesa.Identification.Domain.{Identification, MovieCandidate, MovieDetails}
-  alias Bolognesa.Libraries.Domain.MediaFile
+  alias Bolognesa.Identification.Domain.{
+    FileToIdentify,
+    Identification,
+    MovieCandidate,
+    MovieDetails
+  }
 
   @callback begin_identification(pos_integer(), binary(), integer() | nil) ::
-              {:ok, :stale | MediaFile.t()} | {:error, :unavailable}
+              {:ok, :stale | FileToIdentify.t()} | {:error, :unavailable}
   @callback complete(
               pos_integer(),
               binary(),

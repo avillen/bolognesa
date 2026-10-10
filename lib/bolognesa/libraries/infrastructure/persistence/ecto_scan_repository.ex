@@ -9,7 +9,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
   alias Bolognesa.Libraries.Domain.{Scan, ScanStatus}
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibraryMapper
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
+  alias Bolognesa.Identification
 
   alias Bolognesa.Persistence.{InspectionEventSchema, InspectionSchema}
 
@@ -381,7 +381,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
         }
       end)
 
-    EctoRequestWriter.request_batch!(Repo, requests)
+    Identification.request_batch_in_transaction!(Repo, requests)
   end
 
   defp file_row(scan, entry, plan) do

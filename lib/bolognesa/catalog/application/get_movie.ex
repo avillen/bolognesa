@@ -2,6 +2,7 @@ defmodule Bolognesa.Catalog.Application.GetMovie do
   @moduledoc "Authorize a movie detail read."
   alias Bolognesa.Catalog.Application.Dto.{MovieDetail, MovieVersion}
   alias Bolognesa.Catalog.Application.Ports.CatalogReader
+  alias Bolognesa.Catalog.Domain.MovieVersion, as: DomainMovieVersion
   alias Bolognesa.Identity
 
   @spec call(Bolognesa.Identity.Domain.Actor.t(), pos_integer(), CatalogReader.adapter()) ::
@@ -17,13 +18,13 @@ defmodule Bolognesa.Catalog.Application.GetMovie do
   defp validate_id(id) when is_integer(id) and id > 0, do: :ok
   defp validate_id(_id), do: {:error, :not_found}
 
-  defp to_movie_version({file, identification}) do
+  defp to_movie_version(%DomainMovieVersion{} = version) do
     %MovieVersion{
-      id: file.id,
-      availability: file.availability,
-      size_bytes: file.size_bytes,
-      origin: identification.origin,
-      needs_review: identification.needs_review?
+      id: version.id,
+      availability: version.availability,
+      size_bytes: version.size_bytes,
+      origin: version.origin,
+      needs_review: version.needs_review?
     }
   end
 end

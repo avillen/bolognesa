@@ -10,7 +10,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
-  alias Bolognesa.Libraries.Infrastructure.LocalSourcePath
+  alias Bolognesa.Infrastructure.LocalSourcePath
 
   test "shows movie details and versions container", %{conn: conn} do
     {:ok, _} =

@@ -15,3 +15,4 @@ Crear un registro cuando se elija o cambie un límite arquitectónico, contrato,
 | [0007](0007-project-owned-documentation.md) | Aceptada | Documentos clasificados por función y rutas del proyecto para los artefactos de habilidades |
 | [0008](0008-global-persistence-schemas.md) | Aceptada; implementada localmente | Schemas Ecto en `Bolognesa.Persistence` con nombres globales únicos |
 | [0009](0009-domain-results-from-repositories.md) | Aceptada; contratos identificados adaptados localmente | Resultados de dominio en repositorios, sin schemas, DTOs ni mapas libres |
+| [0010](0010-context-owned-models.md) | Aceptada; implementada localmente | Modelos propios por contexto y comunicación mediante fachadas |

@@ -8,6 +8,7 @@ defmodule Bolognesa.Identification do
   alias Bolognesa.Identification.Application.SearchCandidates
   alias Bolognesa.Identification.Domain.Identification, as: IdentificationDecision
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader
   alias Bolognesa.Identification.Infrastructure.TmdbMovieProvider
 
@@ -35,4 +36,15 @@ defmodule Bolognesa.Identification do
   @spec search_candidates(Actor.t(), binary()) :: {:ok, list()} | {:error, atom()}
   def search_candidates(actor, query),
     do: SearchCandidates.call(actor, query, TmdbMovieProvider)
+
+  @type request_entry :: %{
+          required(:file_id) => pos_integer(),
+          required(:revision) => pos_integer(),
+          required(:requested?) => boolean()
+        }
+
+  @doc "Write identification requests within an existing inventory transaction."
+  @spec request_batch_in_transaction!(module(), [request_entry()]) :: non_neg_integer()
+  def request_batch_in_transaction!(repo, entries),
+    do: EctoRequestWriter.request_batch!(repo, entries)
 end
