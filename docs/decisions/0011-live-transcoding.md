@@ -1,6 +1,6 @@
 # 0011. Conversión al vuelo para reproducción compatible
 
-Estado: implementada en `main` localmente el 2026-10-10; publicación y capacidad real del QNAP pendientes de comprobar.
+Estado: implementada en `main` y desplegada en QNAP el 2026-10-10 mediante el commit `ab628a6`; capacidad real y fluidez en clientes pendientes de comprobar con el propietario.
 
 ## Contexto
 
