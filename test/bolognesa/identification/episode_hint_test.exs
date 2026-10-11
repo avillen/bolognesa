@@ -40,6 +40,16 @@ defmodule Bolognesa.Identification.EpisodeHintTest do
 
     assert {:error, :too_many_episodes} = EpisodeHint.from_path("Serie 1x01-101.mkv")
     assert {:error, :ambiguous_name} = EpisodeHint.from_path("Serie S01E01 S02E02.mkv")
+
+    for name <- [
+          "Serie S01E01S02E02.mkv",
+          "Serie 1x01S02E02.mkv",
+          "Serie S01E01E.mkv",
+          "Serie S01E01-E.mkv"
+        ] do
+      assert {:error, _} = EpisodeHint.from_path(name)
+    end
+
     assert {:error, :unusable_name} = EpisodeHint.from_path("Serie 123.mkv")
     assert {:error, :unusable_name} = EpisodeHint.from_path(<<255>>)
     assert {:error, :unusable_name} = EpisodeHint.from_path("/private/Serie/S01E01.mkv")

@@ -31,7 +31,8 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
           inspection.media_file_id == file.id and inspection.observed_revision == file.revision and
             inspection.state == :succeeded,
         where:
-          entry.id == ^catalog_entry_id and file.id == ^file_id and
+          entry.id == ^catalog_entry_id and entry.kind in [:movie, :episode] and
+            file.id == ^file_id and
             identification.state in [:automatic, :manual],
         select: %{
           path: library.path,

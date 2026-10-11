@@ -50,6 +50,11 @@ defmodule BolognesaWeb.Layouts do
           class="min-h-11 py-3 transition hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
         >Películas</.link>
         <.link
+          navigate={~p"/series"}
+          id="nav-series"
+          class="min-h-11 py-3 transition hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+        >Series</.link>
+        <.link
           navigate={~p"/libraries"}
           class="min-h-11 py-3 transition hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
         >Bibliotecas</.link>

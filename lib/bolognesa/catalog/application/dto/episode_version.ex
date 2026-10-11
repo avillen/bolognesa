@@ -1,7 +1,18 @@
 defmodule Bolognesa.Catalog.Application.Dto.EpisodeVersion do
   @moduledoc "Public episode version projection."
   alias Bolognesa.Catalog.Domain.EpisodeVersion, as: DomainEpisodeVersion
-  defstruct [:id, :availability, :size_bytes, :origin, :needs_review?, :episode_numbers]
+
+  defstruct [
+    :id,
+    :availability,
+    :size_bytes,
+    :origin,
+    :needs_review?,
+    :episode_numbers,
+    :format,
+    :duration_ms,
+    codecs: []
+  ]
 
   @type t :: %__MODULE__{
           id: DomainEpisodeVersion.id(),
@@ -9,7 +20,10 @@ defmodule Bolognesa.Catalog.Application.Dto.EpisodeVersion do
           size_bytes: non_neg_integer(),
           origin: :automatic | :manual,
           needs_review?: boolean(),
-          episode_numbers: [pos_integer()]
+          episode_numbers: [pos_integer()],
+          format: binary() | nil,
+          duration_ms: non_neg_integer() | nil,
+          codecs: [binary()]
         }
   @spec from_domain(DomainEpisodeVersion.t()) :: t()
   def from_domain(row),
@@ -19,6 +33,9 @@ defmodule Bolognesa.Catalog.Application.Dto.EpisodeVersion do
       size_bytes: row.size_bytes,
       origin: row.origin,
       needs_review?: row.needs_review?,
-      episode_numbers: row.episode_numbers
+      episode_numbers: row.episode_numbers,
+      format: row.format,
+      duration_ms: row.duration_ms,
+      codecs: row.codecs
     }
 end

@@ -9,7 +9,7 @@
         Hola, {@admin_name}
       </h1>
       <p class="mt-5 max-w-2xl text-base leading-7 text-stone-300">
-        Configura una carpeta de películas para empezar a construir tu biblioteca.
+        Configura una carpeta de películas o series para empezar a construir tu biblioteca.
       </p>
       <.link
         navigate={~p"/libraries"}
@@ -23,6 +23,11 @@
         id="home-movies-link"
         class="ml-0 mt-3 inline-flex min-h-12 items-center rounded-xl border border-amber-300/40 px-6 py-3 font-semibold text-amber-200 transition hover:bg-amber-300/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 sm:ml-3 sm:mt-0"
       >Ver películas</.link>
+      <.link
+        navigate={~p"/series"}
+        id="home-series-link"
+        class="ml-3 mt-3 inline-flex min-h-12 items-center rounded-xl border border-amber-300/40 px-6 py-3 font-semibold text-amber-200"
+      >Ver series</.link>
       <div class="mt-10 flex flex-col gap-4 border-t border-stone-700/70 pt-6 sm:flex-row sm:items-center sm:justify-between">
         <p class="text-sm text-stone-400">Sesión iniciada como {@admin_email}</p>
         <.form for={@logout_form} action={~p"/logout"} method="delete" id="logout-form">

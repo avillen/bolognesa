@@ -48,6 +48,11 @@ defmodule BolognesaWeb.Router do
       live "/libraries", Library.Index.Live, :index
       live "/movies", Movie.Index.Live, :index
       live "/movies/review", Movie.Review.Live, :index
+      live "/series", Series.Index.Live, :index
+      live "/series/review", Series.Review.Live, :index
+      live "/series/seasons/:id", Series.Season.Live, :show
+      live "/series/:id", Series.Show.Live, :show
+      live "/episodes/:id", Episode.Show.Live, :show
       live "/movies/:id", Movie.Show.Live, :show
       live "/about", About.Live, :index
     end
@@ -55,6 +60,16 @@ defmodule BolognesaWeb.Router do
 
   scope "/", BolognesaWeb do
     pipe_through :media
+
+    get "/episodes/:episode_id/media/:file_id", MediaController, :episode
+
+    get "/episodes/:episode_id/media/:file_id/hls/:session_id/index.m3u8",
+        TranscodeController,
+        :manifest
+
+    get "/episodes/:episode_id/media/:file_id/hls/:session_id/:segment",
+        TranscodeController,
+        :segment
 
     get "/movies/:movie_id/media/:file_id", MediaController, :show
 

@@ -45,4 +45,17 @@ defmodule Bolognesa.Identification.SeriesReviewQueriesTest do
     assert {:error, :forbidden} = Identification.list_series_review_items(nil, 1)
     assert {:error, :invalid_page} = Identification.list_series_review_items(@actor, 0)
   end
+
+  test "reads an identified file for correction even outside the review queue" do
+    library = SeriesFixtures.library()
+    file = SeriesFixtures.file(library.id, "Serie S00E01E02.mkv")
+    SeriesFixtures.identify(file, 0, [1, 2])
+
+    assert {:ok, %{file_id: id, episode_numbers: [1, 2]}} =
+             Identification.get_series_review_item(@actor, file.id)
+
+    assert id == file.id
+    assert {:error, :forbidden} = Identification.get_series_review_item(nil, file.id)
+    assert {:error, :not_found} = Identification.get_series_review_item(@actor, 9_999_999)
+  end
 end

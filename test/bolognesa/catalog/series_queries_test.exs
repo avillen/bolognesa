@@ -2,7 +2,7 @@ defmodule Bolognesa.Catalog.SeriesQueriesTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Catalog
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Infrastructure.Persistence.{CatalogEntrySchema, MovieSchema}
+  alias Bolognesa.Infrastructure.Persistence.{CatalogEntrySchema, InspectionSchema, MovieSchema}
   alias Bolognesa.SeriesFixtures
   @actor %Actor{id: 1, role: :admin}
 
@@ -57,5 +57,41 @@ defmodule Bolognesa.Catalog.SeriesQueriesTest do
     assert {:error, :not_found} = Catalog.get_series(@actor, 9_999_999)
     assert {:error, :not_found} = Catalog.get_episode(@actor, 9_999_999)
     assert {:error, :not_found} = Catalog.list_episodes(@actor, 9_999_999, 1)
+  end
+
+  test "episode versions expose only technical data for the current revision" do
+    library = SeriesFixtures.library()
+    file = SeriesFixtures.file(library.id, "Serie S01E01.mkv")
+    decision = SeriesFixtures.identify(file, 1, [1])
+
+    inspection =
+      Repo.insert!(%InspectionSchema{
+        media_file_id: file.id,
+        token: Ecto.UUID.generate(),
+        observed_revision: file.revision,
+        state: :succeeded,
+        format: "matroska",
+        duration_ms: 120_000,
+        tracks: %{
+          "items" => [
+            %{"kind" => "video", "codec" => "h264"},
+            %{"kind" => "audio", "codec" => "ac3"}
+          ]
+        }
+      })
+
+    assert {:ok, %{versions: [version]}} =
+             Catalog.get_episode(@actor, hd(decision.catalog_entry_ids))
+
+    assert version.format == "matroska"
+    assert version.duration_ms == 120_000
+    assert version.codecs == ["h264", "ac3"]
+    Repo.update!(Ecto.Changeset.change(inspection, observed_revision: file.revision + 1))
+
+    assert {:ok, %{versions: [version]}} =
+             Catalog.get_episode(@actor, hd(decision.catalog_entry_ids))
+
+    assert version.format == nil
+    assert version.codecs == []
   end
 end

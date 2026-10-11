@@ -18,7 +18,7 @@ defmodule BolognesaWeb.TranscodeController do
   end
 
   defp serve(conn, params, name, mime_type) do
-    with {:ok, catalog_entry_id} <- positive_id(params["movie_id"]),
+    with {:ok, catalog_entry_id} <- positive_id(entry_param(params)),
          {:ok, file_id} <- positive_id(params["file_id"]),
          {:ok, session} <-
            Playback.compatible_session(
@@ -51,6 +51,10 @@ defmodule BolognesaWeb.TranscodeController do
       _ -> {:error, :not_found}
     end
   end
+
+  defp entry_param(%{"movie_id" => id}), do: id
+  defp entry_param(%{"episode_id" => id}), do: id
+  defp entry_param(_), do: nil
 
   defp positive_id(text) when is_binary(text) do
     case Integer.parse(text) do

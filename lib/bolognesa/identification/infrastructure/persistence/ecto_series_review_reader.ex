@@ -51,6 +51,29 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoSeriesReviewRe
     Postgrex.Error -> {:error, :unavailable}
   end
 
+  @impl true
+  def get_series_review_item(id) do
+    row =
+      Repo.one(
+        from decision in IdentificationSchema,
+          join: file in MediaFileSchema,
+          on: file.id == decision.media_file_id,
+          join: library in LibrarySchema,
+          on: library.id == file.library_id,
+          where: file.id == ^id and library.content_type == :series,
+          select: {decision, file},
+          limit: 1
+      )
+
+    case row do
+      nil -> {:error, :not_found}
+      value -> {:ok, review_row(value)}
+    end
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
   defp review_row({decision, file}) do
     episodes =
       Repo.all(

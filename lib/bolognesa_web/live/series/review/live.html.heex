@@ -1,0 +1,134 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-5xl space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <h1 class="text-3xl font-bold">Revisión de series</h1>
+      <.link navigate={~p"/series"} class="btn btn-ghost">Volver a series</.link>
+    </div>
+    <p :if={@loading?} role="status">Cargando archivos…</p>
+    <div :if={@error} role="alert" class="alert alert-error">
+      {@error}<.link
+        patch={~p"/series/review?page=#{@page}&file_id=#{@selected_file_id}"}
+        class="btn"
+      >Reintentar</.link>
+    </div>
+    <p :if={!@loading? && @total == 0}>No hay archivos pendientes de revisión.</p>
+    <div id="series-review-list" phx-update="stream" class="space-y-3">
+      <article
+        :for={{dom_id, item} <- @streams.reviews}
+        id={dom_id}
+        class="rounded-box border border-base-300 p-4"
+      >
+        <p class="font-semibold break-all">{item.filename}</p>
+        <p>{state_label(item.state)} · {failure_label(item.failure_reason)}</p>
+        <p :if={item.episode_numbers != []}>
+          {item.series_title} · temporada {item.season_number} · episodios {Enum.join(
+            item.episode_numbers,
+            ", "
+          )}
+        </p>
+        <p :if={item.availability == :missing}>Archivo no disponible</p>
+        <.link
+          patch={~p"/series/review?page=#{@page}&file_id=#{item.file_id}"}
+          class="btn btn-sm"
+          aria-disabled={@saving?}
+        >Corregir</.link>
+        <button
+          phx-click="retry"
+          phx-value-file_id={item.file_id}
+          disabled={@saving?}
+          class="btn btn-sm btn-ghost"
+        >Reintentar identificación</button>
+      </article>
+    </div>
+    <nav :if={@total > 24} aria-label="Paginación" class="flex gap-4">
+      <.link :if={@page > 1} patch={~p"/series/review?page=#{@page - 1}"}>Anterior</.link>
+      <span>Página {@page}</span>
+      <.link :if={@page * 24 < @total} patch={~p"/series/review?page=#{@page + 1}"}>Siguiente</.link>
+    </nav>
+    <section
+      :if={@selected_item}
+      id="series-file-correction"
+      class="space-y-4 rounded-box border border-base-300 p-5"
+    >
+      <h2 class="text-xl font-semibold break-all">Corregir {@selected_item.filename}</h2>
+      <p :if={@selected_item.episode_numbers != []}>
+        Actual: {@selected_item.series_title} · temporada {@selected_item.season_number} · episodios {Enum.join(
+          @selected_item.episode_numbers,
+          ", "
+        )}
+      </p>
+      <p>
+        La selección sustituye todos los episodios asociados a este archivo. Especiales: temporada 0.
+      </p>
+      <.form
+        for={@search_form}
+        id="series-search"
+        phx-submit="search"
+        class="flex flex-wrap gap-2 items-end"
+      >
+        <.input field={@search_form[:query]} label="Buscar serie en TMDb" disabled={@saving?} />
+        <button class="btn btn-primary" disabled={@saving? || @searching?}>Buscar</button>
+      </.form>
+      <p :if={@searching?} role="status">Buscando series…</p>
+      <div id="series-candidates" phx-update="stream" class="flex flex-wrap gap-2">
+        <button
+          :for={{dom_id, candidate} <- @streams.candidates}
+          id={dom_id}
+          phx-click="choose"
+          phx-value-id={candidate.provider_id}
+          disabled={@saving?}
+          class="btn btn-outline"
+        >{candidate.title} {candidate.year}</button>
+      </div>
+      <div :if={@series_id} class="space-y-4">
+        <p>Serie seleccionada: {@series_title}</p>
+        <.form
+          for={@season_form}
+          id="series-season-form"
+          phx-submit="season"
+          class="flex flex-wrap gap-2 items-end"
+        >
+          <.input
+            type="number"
+            field={@season_form[:number]}
+            label="Temporada"
+            min="0"
+            disabled={@saving?}
+          />
+          <button class="btn" disabled={@saving? || @season_loading?}>Cargar episodios</button>
+        </.form>
+        <p :if={@season_loading?} role="status">Cargando temporada…</p>
+        <.form
+          for={@selection_form}
+          id="series-correction-form"
+          phx-submit="correct"
+          class="space-y-3"
+        >
+          <input type="hidden" name="selection[episode_numbers][]" value="" />
+          <div id="series-episode-selection" phx-update="stream" class="space-y-2">
+            <label
+              :for={{dom_id, episode} <- @streams.episodes}
+              id={dom_id}
+              class="flex gap-3 items-center"
+            >
+              <input
+                type="checkbox"
+                name="selection[episode_numbers][]"
+                value={episode.number}
+                disabled={@saving?}
+                class="checkbox"
+              />
+              <span>{episode.number}. {episode.title}</span>
+            </label>
+          </div>
+          <button
+            class="btn btn-primary"
+            disabled={@saving? || @season_number == nil || @episode_numbers == []}
+          >{if @saving?, do: "Guardando…", else: "Guardar selección completa"}</button>
+        </.form>
+      </div>
+      <button phx-click="unidentified" disabled={@saving?} class="btn btn-ghost">Marcar sin identificar</button>
+    </section>
+    <p :if={@feedback} id="series-review-feedback" role="status" class="alert">{@feedback}</p>
+  </div>
+</Layouts.app>

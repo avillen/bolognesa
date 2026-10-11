@@ -40,89 +40,18 @@
       <p :if={!@detail.movie.overview} class="mt-7 text-sm text-stone-400">
         Todavía no hay sinopsis.
       </p>
-      <section
-        :if={@selected_file_id}
-        id="movie-player"
-        class="mt-10 space-y-3"
-        aria-label="Reproductor"
-      >
-        <h2 class="text-xl font-semibold text-stone-50">
-          Reproduciendo versión {@selected_file_id}
-        </h2>
-        <p
-          :if={@compatible_session && !@compatible_ready? && !@playback_error}
-          id="movie-playback-preparing"
-          role="status"
-          data-session-id={@compatible_session.id}
-          class="text-stone-300"
-        >
-          Preparando reproducción…
-        </p>
-        <video
-          :if={!@compatible_session}
-          id={"movie-video-#{@selected_file_id}"}
-          phx-hook="VideoError"
-          data-file-id={@selected_file_id}
-          controls
-          playsinline
-          preload="metadata"
-          src={~p"/movies/#{@detail.movie.id}/media/#{@selected_file_id}"}
-          class="aspect-video w-full rounded-xl bg-black"
-        >
-          Tu navegador no admite la reproducción de vídeo.
-        </video>
-        <div :if={@compatible_session && @compatible_ready?} class="space-y-3">
-          <video
-            id={"movie-video-#{@compatible_session.id}"}
-            phx-hook="CompatibleVideo"
-            data-session-id={@compatible_session.id}
-            data-paused-server={to_string(@compatible_paused?)}
-            data-autoplay={to_string(@compatible_autoplay?)}
-            data-offset-ms={@compatible_session.offset_ms}
-            data-duration-ms={@compatible_session.duration_ms}
-            data-src={
-              ~p"/movies/#{@detail.movie.id}/media/#{@selected_file_id}/hls/#{@compatible_session.id}/index.m3u8"
-            }
-            controls
-            playsinline
-            preload="auto"
-            class="aspect-video w-full rounded-xl bg-black"
-          >Tu navegador no admite la reproducción de vídeo.</video>
-          <div :if={@compatible_session.duration_ms} class="space-y-1 text-sm text-stone-200">
-            <label for={"movie-seek-#{@compatible_session.id}"}>Posición</label>
-            <input
-              id={"movie-seek-#{@compatible_session.id}"}
-              type="range"
-              min="0"
-              max={@compatible_session.duration_ms}
-              value={@compatible_session.offset_ms}
-              data-compatible-seek={@compatible_session.id}
-              aria-label="Ir a una posición de la película"
-              class="w-full accent-amber-300"
-            />
-            <span data-compatible-position={@compatible_session.id}></span>
-          </div>
-        </div>
-      </section>
-      <p
-        :if={@playback_error}
-        id="movie-playback-error"
-        role="alert"
-        data-reason={@playback_error_reason}
-        class="mt-4 rounded-xl border border-red-300/30 bg-red-950/30 p-4 text-sm text-red-100"
-      >
-        {@playback_error}
-      </p>
-      <button
-        :if={@selected_file_id && @playback_error_reason == "browser_error"}
-        id={"movie-compatible-#{@selected_file_id}"}
-        type="button"
-        phx-click="compatible"
-        phx-value-file_id={@selected_file_id}
-        class="min-h-11 rounded-xl bg-amber-300 px-5 py-3 font-semibold text-stone-950"
-      >
-        Probar modo compatible
-      </button>
+      <BolognesaWeb.Player.player
+        prefix="movie"
+        kind={:movie}
+        entry_id={@catalog_entry_id}
+        selected_file_id={@selected_file_id}
+        compatible_session={@compatible_session}
+        compatible_ready?={@compatible_ready?}
+        compatible_paused?={@compatible_paused?}
+        compatible_autoplay?={@compatible_autoplay?}
+        playback_error={@playback_error}
+        playback_error_reason={@playback_error_reason}
+      />
       <h2 class="mt-10 text-xl font-semibold text-stone-50">Versiones en tu biblioteca</h2>
       <div id="movie-versions" phx-update="stream" class="mt-4 space-y-3">
         <div

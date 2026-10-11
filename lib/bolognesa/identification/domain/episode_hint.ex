@@ -3,7 +3,7 @@ defmodule Bolognesa.Identification.Domain.EpisodeHint do
   alias Bolognesa.Identification.Domain.TitleHint
 
   @marker ~r/(?<![a-z0-9])(?:s\d+e\d+|\d+x\d+)/iu
-  @parts ~r/\A(?:s(?<season>\d+)e|(?<alternate>\d+)x)(?<episodes>\d+(?:(?:e|x)\d+|-(?:e)?\d+)*)/iu
+  @parts ~r/\A(?:s(?<season>\d+)e|(?<alternate>\d+)x)(?<episodes>\d+(?:(?:e|x)\d+|-(?:e)?\d+)*)(?<remainder>.*)\z/iu
   @folder ~r/\A(?:season[ ._-]*|temporada[ ._-]*|s)(\d+)\z/iu
   defstruct [:title, :year, :season_number, :episode_numbers]
 
@@ -53,13 +53,29 @@ defmodule Bolognesa.Identification.Domain.EpisodeHint do
 
   defp parse_parts(suffix) do
     case Regex.named_captures(@parts, suffix) do
-      %{"season" => season, "alternate" => alternate, "episodes" => episodes} ->
+      %{
+        "season" => season,
+        "alternate" => alternate,
+        "episodes" => episodes,
+        "remainder" => remainder
+      } ->
         season_number = String.to_integer(if(season == "", do: alternate, else: season))
-        with {:ok, numbers} <- episode_numbers(episodes), do: {:ok, season_number, numbers}
+
+        with :ok <- valid_remainder(remainder),
+             {:ok, numbers} <- episode_numbers(episodes),
+             do: {:ok, season_number, numbers}
 
       _ ->
         {:error, :unusable_name}
     end
+  end
+
+  defp valid_remainder(""), do: :ok
+
+  defp valid_remainder(remainder) do
+    if Regex.match?(~r/\A(?:[\s._\[]|-(?![exs\d]))/iu, remainder),
+      do: :ok,
+      else: {:error, :ambiguous_name}
   end
 
   defp episode_numbers(text) do

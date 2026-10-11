@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Movie.Show.Reducer.SelectVersion do
+defmodule BolognesaWeb.LiveSupport.SelectVersion do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
   alias Bolognesa.Playback
@@ -16,7 +16,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.SelectVersion do
 
   defp prepare(socket, file_id) do
     actor = socket.assigns.current_scope.actor
-    catalog_entry_id = socket.assigns.detail.movie.id
+    catalog_entry_id = socket.assigns.catalog_entry_id
     stop_previous(socket)
 
     case Playback.delivery(actor, catalog_entry_id, file_id) do

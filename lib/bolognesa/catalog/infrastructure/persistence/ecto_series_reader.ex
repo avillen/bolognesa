@@ -10,6 +10,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoSeriesReader do
     EpisodeSchema,
     IdentificationEntrySchema,
     IdentificationSchema,
+    InspectionSchema,
     MediaFileSchema,
     SeasonSchema,
     SeriesSchema
@@ -175,14 +176,18 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoSeriesReader do
           on: decision.id == relation.identification_id,
           join: file in MediaFileSchema,
           on: file.id == decision.media_file_id,
+          left_join: inspection in InspectionSchema,
+          on:
+            inspection.media_file_id == file.id and inspection.state == :succeeded and
+              inspection.observed_revision == file.revision,
           where: relation.catalog_entry_id == ^id and decision.state in [:automatic, :manual],
           order_by: file.id,
-          select: {decision, file}
+          select: {decision, file, inspection}
         ),
         log: false
       )
 
-    Enum.map(rows, fn {decision, file} ->
+    Enum.map(rows, fn {decision, file, inspection} ->
       numbers =
         Repo.all(
           from(relation in IdentificationEntrySchema,
@@ -201,10 +206,24 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoSeriesReader do
         size_bytes: file.size_bytes,
         origin: decision.origin,
         needs_review?: decision.needs_review,
-        episode_numbers: numbers
+        episode_numbers: numbers,
+        format: if(inspection, do: inspection.format),
+        duration_ms: if(inspection, do: inspection.duration_ms),
+        codecs: if(inspection, do: codecs(inspection.tracks), else: [])
       }
     end)
   end
+
+  defp codecs(%{"items" => items}) when is_list(items) do
+    items
+    |> Enum.flat_map(fn
+      %{"codec" => codec} when is_binary(codec) -> [codec]
+      _ -> []
+    end)
+    |> Enum.uniq()
+  end
+
+  defp codecs(_), do: []
 
   defp series_row(id),
     do:

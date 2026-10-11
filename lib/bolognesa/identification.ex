@@ -4,7 +4,9 @@ defmodule Bolognesa.Identification do
   alias Bolognesa.Identification.Application.CorrectIdentification
   alias Bolognesa.Identification.Application.CorrectSeriesIdentification
   alias Bolognesa.Identification.Application.Dto.ReviewPage
+  alias Bolognesa.Identification.Application.Dto.SeriesReviewItem
   alias Bolognesa.Identification.Application.Dto.SeriesReviewPage
+  alias Bolognesa.Identification.Application.GetSeriesReviewItem
   alias Bolognesa.Identification.Application.GetSeriesSeason
   alias Bolognesa.Identification.Application.ListReviewItems
   alias Bolognesa.Identification.Application.ListSeriesReviewItems
@@ -22,6 +24,11 @@ defmodule Bolognesa.Identification do
   alias Bolognesa.Identification.Infrastructure.TmdbMovieProvider
   alias Bolognesa.Identification.Infrastructure.TmdbSeriesProvider
   alias Bolognesa.Identity.Domain.Actor
+
+  @spec get_series_review_item(Actor.t(), pos_integer()) ::
+          {:ok, SeriesReviewItem.t()} | {:error, :forbidden | :not_found | :unavailable}
+  def get_series_review_item(actor, id),
+    do: GetSeriesReviewItem.call(actor, id, EctoSeriesReviewReader)
 
   @spec list_series_review_items(Actor.t(), pos_integer()) ::
           {:ok, SeriesReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}

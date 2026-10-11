@@ -46,7 +46,9 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
     Repo.update_all(
       from(r in Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema,
         where: r.identification_id == ^identification.id
-      ), set: [catalog_entry_id: other.id])
+      ),
+      set: [catalog_entry_id: other.id]
+    )
 
     assert {:error, :not_found} = Playback.start(actor, movie.id, file.id)
     assert {:ok, %{relative_path: "film.mp4"}} = Playback.start(actor, other.id, file.id)

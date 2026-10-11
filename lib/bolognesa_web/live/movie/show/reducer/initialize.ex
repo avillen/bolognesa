@@ -10,6 +10,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
     request_id = make_ref()
 
     socket
+    |> assign(:catalog_entry_id, id)
     |> assign(:detail, nil)
     |> assign(:loading?, true)
     |> assign(:error, nil)

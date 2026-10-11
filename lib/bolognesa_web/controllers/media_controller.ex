@@ -20,10 +20,17 @@ defmodule BolognesaWeb.MediaController do
   }
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"movie_id" => movie_text, "file_id" => file_text}) do
+  def show(conn, %{"movie_id" => entry_text, "file_id" => file_text}),
+    do: serve_entry(conn, entry_text, file_text)
+
+  @spec episode(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def episode(conn, %{"episode_id" => entry_text, "file_id" => file_text}),
+    do: serve_entry(conn, entry_text, file_text)
+
+  defp serve_entry(conn, entry_text, file_text) do
     actor = conn.assigns.current_scope.actor
 
-    with {:ok, catalog_entry_id} <- positive_id(movie_text),
+    with {:ok, catalog_entry_id} <- positive_id(entry_text),
          {:ok, file_id} <- positive_id(file_text),
          {:ok, source} <- Playback.start(actor, catalog_entry_id, file_id),
          {:ok, mime_type} <- mime_type(source.relative_path),

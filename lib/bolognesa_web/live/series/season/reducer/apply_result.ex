@@ -1,0 +1,26 @@
+defmodule BolognesaWeb.Series.Season.Reducer.ApplyResult do
+  @moduledoc false
+  import Phoenix.Component, only: [assign: 2]
+  import Phoenix.LiveView, only: [stream: 4]
+  alias Bolognesa.Catalog.Application.Dto.EpisodePage
+
+  @type result ::
+          {:ok,
+           {:ok, EpisodePage.t()}
+           | {:error, :forbidden | :not_found | :invalid_page | :unavailable}}
+          | {:exit, term()}
+  @spec call(Phoenix.LiveView.Socket.t(), reference(), result()) :: Phoenix.LiveView.Socket.t()
+  def call(socket, request, result) do
+    if socket.assigns.request_id == request, do: apply_result(socket, result), else: socket
+  end
+
+  defp apply_result(socket, {:ok, {:ok, detail}}),
+    do:
+      socket
+      |> assign(detail: detail, loading?: false, total: detail.total)
+      |> stream(:episodes, detail.items, reset: true)
+
+  defp apply_result(socket, _),
+    do:
+      assign(socket, loading?: false, error: "No se pudo cargar esta ficha. Vuelve a intentarlo.")
+end

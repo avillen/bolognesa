@@ -1,0 +1,52 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <section class="mx-auto max-w-5xl space-y-7">
+    <.link navigate={~p"/series"} class="inline-flex min-h-11 items-center text-amber-200">← Series</.link>
+    <p :if={@loading?} id="episodes-loading" role="status" class="text-stone-300">
+      Cargando episodios…
+    </p>
+    <p :if={@error} id="episodes-error" role="alert" class="text-red-200">
+      {@error} <button phx-click="retry" class="min-h-11 px-4">Reintentar</button>
+    </p>
+    <div :if={@detail}>
+      <.link
+        navigate={~p"/series/#{@detail.series.id}"}
+        class="inline-flex min-h-11 items-center text-amber-200"
+      >{@detail.series.title}</.link>
+      <h1 id="season-title" class="mt-3 text-3xl font-semibold text-stone-50">
+        {if @detail.season.number == 0,
+          do: "Especiales",
+          else: "Temporada #{@detail.season.number}"}
+      </h1>
+      <p :if={@total == 0} id="episodes-empty" class="mt-5 text-stone-400">
+        No hay episodios identificados.
+      </p>
+    </div>
+    <div id="episode-list" phx-update="stream" class="space-y-3">
+      <article
+        :for={{id, episode} <- @streams.episodes}
+        id={id}
+        class="rounded-xl border border-stone-700 bg-zinc-900 p-5"
+      >
+        <.link
+          navigate={~p"/episodes/#{episode.id}"}
+          class="inline-flex min-h-11 items-center font-semibold text-amber-200"
+        >{episode.number}. {episode.title}</.link>
+        <p class="text-sm text-stone-400">
+          {episode.available_version_count} de {episode.version_count} versiones disponibles
+        </p>
+      </article>
+    </div>
+    <nav aria-label="Páginas de episodios" class="flex gap-5 text-amber-200">
+      <.link
+        :if={@page > 1}
+        patch={~p"/series/seasons/#{@content_id}?#{%{page: @page - 1}}"}
+        class="min-h-11 py-3"
+      >Anterior</.link>
+      <.link
+        :if={@page * 24 < @total}
+        patch={~p"/series/seasons/#{@content_id}?#{%{page: @page + 1}}"}
+        class="min-h-11 py-3"
+      >Siguiente</.link>
+    </nav>
+  </section>
+</Layouts.app>

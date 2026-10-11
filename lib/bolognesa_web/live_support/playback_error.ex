@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Movie.Show.Reducer.PlaybackError do
+defmodule BolognesaWeb.LiveSupport.PlaybackError do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
 
