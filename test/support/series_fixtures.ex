@@ -2,7 +2,7 @@ defmodule Bolognesa.SeriesFixtures do
   @moduledoc false
   alias Bolognesa.Identification.Application.CorrectSeriesIdentification
   alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Infrastructure.Persistence.{LibrarySchema, MediaFileSchema}
   alias Bolognesa.Repo

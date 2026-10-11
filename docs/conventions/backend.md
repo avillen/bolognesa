@@ -46,19 +46,26 @@ lib/bolognesa/
       create_library.ex
       scan_library.ex
       ports/
-        library_repository.ex
-        file_source.ex
+        repositories/
+          library_repository.ex
+        services/
+          file_source.ex
     infrastructure/
-      persistence/
+      repositories/
         ecto_library_repository.ex
         ecto_library_repository/
           library_mapper.ex
-      local_file_source.ex
+      services/
+        local_file_source.ex
 ```
 
 El cableado de adaptadores se realiza fuera del dominio. Se inyectan dependencias en los casos de uso con un mecanismo uniforme que se concretará en el primer plan de implementación. Las pruebas no deben modificar configuración global mientras se ejecutan concurrentemente.
 
 Los puertos se nombran por su responsabilidad, como `UserRepository` o `LibraryRepository`, en lugar de `Repository` sin contexto. El adaptador añade la tecnología al nombre del puerto, como `EctoUserRepository`. Un puerto puede incluir las operaciones de sesión necesarias para autenticar a sus usuarios; el nombre no tiene que reproducir cada tabla.
+
+Dentro de cada contexto, `Application.Ports` y `Infrastructure` usan categorías paralelas: `Repositories`, `Readers`, `Providers` y `Services`. Los behaviours se ubican bajo `Application.Ports.<Category>` y sus adaptadores bajo `Infrastructure.<Category>`, por ejemplo `Application.Ports.Readers.CatalogReader` e `Infrastructure.Readers.EctoCatalogReader`. La categoría depende de la responsabilidad del contrato, no de la tecnología: un reader Ecto va en `Readers` y un repositorio Ecto en `Repositories`. `Services` agrupa dependencias técnicas que no son consultas, almacenamiento o proveedores de datos externos.
+
+Los colaboradores internos y mappers permanecen con el repositorio, reader, provider o service al que pertenecen. Los schemas Ecto globales siguen en `Bolognesa.Infrastructure.Persistence`; `Infrastructure.Jobs` conserva workers, reconciliadores y políticas. Las utilidades de infraestructura sin port directo no se mueven para crear simetría artificial.
 
 ## Convenciones del dominio y persistencia
 

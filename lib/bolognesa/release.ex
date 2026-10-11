@@ -7,7 +7,7 @@ defmodule Bolognesa.Release do
   import Ecto.Query
 
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository.UserMapper
+  alias Bolognesa.Identity.Infrastructure.Repositories.EctoUserRepository.UserMapper
   alias Bolognesa.Infrastructure.Persistence.UserSchema
   alias Bolognesa.Repo
 

@@ -1,7 +1,7 @@
 defmodule Bolognesa.Catalog.Application.GetEpisode do
   @moduledoc "Authorize an episode detail and physical versions."
   alias Bolognesa.Catalog.Application.Dto.EpisodeDetail
-  alias Bolognesa.Catalog.Application.Ports.SeriesReader
+  alias Bolognesa.Catalog.Application.Ports.Readers.SeriesReader
   alias Bolognesa.Catalog.Domain.Episode
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor

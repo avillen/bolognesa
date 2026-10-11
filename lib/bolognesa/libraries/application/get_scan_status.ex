@@ -2,7 +2,7 @@ defmodule Bolognesa.Libraries.Application.GetScanStatus do
   @moduledoc "Authorize a library scan status query."
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Libraries.Application.Ports.ScanRepository
+  alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
   alias Bolognesa.Libraries.Domain.{Library, ScanStatus}
 
   @spec call(Actor.t(), Library.id(), ScanRepository.adapter()) ::

@@ -6,7 +6,7 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
   alias Bolognesa.Identification.Domain.Identification
   alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository
 
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema

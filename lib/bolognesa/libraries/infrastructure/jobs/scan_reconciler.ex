@@ -3,9 +3,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler do
   use GenServer
   require Logger
 
-  alias Bolognesa.Libraries.Application.Ports.ScanRepository
+  alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
 
   @type option ::
           {:repository, ScanRepository.adapter()}

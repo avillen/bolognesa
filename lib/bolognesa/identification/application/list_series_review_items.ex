@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.Application.ListSeriesReviewItems do
   @moduledoc "Authorize the paginated series review queue."
   alias Bolognesa.Identification.Application.Dto.{SeriesReviewItem, SeriesReviewPage}
-  alias Bolognesa.Identification.Application.Ports.SeriesReviewReader
+  alias Bolognesa.Identification.Application.Ports.Readers.SeriesReviewReader
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
 

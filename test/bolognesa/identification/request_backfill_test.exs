@@ -1,9 +1,9 @@
 defmodule Bolognesa.Identification.RequestBackfillTest do
   use Bolognesa.DataCase, async: true
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoRequestWriter
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository
 
   alias Bolognesa.Identification.Domain.MovieDetails

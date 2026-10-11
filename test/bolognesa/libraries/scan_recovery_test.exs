@@ -4,7 +4,7 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
   alias Bolognesa.Libraries.Application.DiscoverFiles
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.{ScanPolicy, ScanReconciler, ScanWorker}
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
 
   alias Bolognesa.Libraries.Support.{
     BlockingScanWorker,

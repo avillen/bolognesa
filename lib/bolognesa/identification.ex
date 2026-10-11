@@ -10,19 +10,19 @@ defmodule Bolognesa.Identification do
   alias Bolognesa.Identification.Application.GetSeriesSeason
   alias Bolognesa.Identification.Application.ListReviewItems
   alias Bolognesa.Identification.Application.ListSeriesReviewItems
-  alias Bolognesa.Identification.Application.Ports.SeriesProvider
+  alias Bolognesa.Identification.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Identification.Application.RetryIdentification
   alias Bolognesa.Identification.Application.SearchCandidates
   alias Bolognesa.Identification.Application.SearchSeriesCandidates
   alias Bolognesa.Identification.Domain.Identification, as: IdentificationDecision
   alias Bolognesa.Identification.Domain.SeasonDetails
   alias Bolognesa.Identification.Domain.SeriesCandidate
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoSeriesReviewReader
-  alias Bolognesa.Identification.Infrastructure.TmdbMovieProvider
-  alias Bolognesa.Identification.Infrastructure.TmdbSeriesProvider
+  alias Bolognesa.Identification.Infrastructure.Providers.TmdbMovieProvider
+  alias Bolognesa.Identification.Infrastructure.Providers.TmdbSeriesProvider
+  alias Bolognesa.Identification.Infrastructure.Readers.EctoReviewReader
+  alias Bolognesa.Identification.Infrastructure.Readers.EctoSeriesReviewReader
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoRequestWriter
   alias Bolognesa.Identity.Domain.Actor
 
   @spec get_series_review_item(Actor.t(), pos_integer()) ::

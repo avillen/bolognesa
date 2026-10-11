@@ -5,8 +5,8 @@ defmodule Bolognesa.Identity do
   alias Bolognesa.Identity.Domain.NewAdmin
   alias Bolognesa.Identity.Domain.Session
   alias Bolognesa.Identity.Domain.User
-  alias Bolognesa.Identity.Infrastructure.BcryptHasher
-  alias Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository
+  alias Bolognesa.Identity.Infrastructure.Repositories.EctoUserRepository
+  alias Bolognesa.Identity.Infrastructure.Services.BcryptHasher
 
   @spec setup_status() :: {:ok, :open | :closed} | {:error, :unavailable}
   def setup_status do

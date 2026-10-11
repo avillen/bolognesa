@@ -3,7 +3,7 @@ defmodule Bolognesa.Playback.Application.StartPlayback do
 
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Playback.Application.Ports.PlaybackRepository
+  alias Bolognesa.Playback.Application.Ports.Repositories.PlaybackRepository
   alias Bolognesa.Playback.Domain.Source
 
   @spec call(Actor.t(), integer(), integer(), PlaybackRepository.adapter()) ::

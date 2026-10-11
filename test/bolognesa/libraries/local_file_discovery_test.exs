@@ -2,7 +2,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
   use ExUnit.Case, async: true
 
   alias Bolognesa.Infrastructure.LocalSourcePath
-  alias Bolognesa.Libraries.Infrastructure.{LocalFileDiscovery, LocalFileSource}
+  alias Bolognesa.Libraries.Infrastructure.Services.{LocalFileDiscovery, LocalFileSource}
 
   setup do
     root = Application.fetch_env!(:bolognesa, :library_roots) |> hd()

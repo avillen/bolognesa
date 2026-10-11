@@ -8,7 +8,7 @@ defmodule Bolognesa.Identification.IdentifiedSeriesWriterTest do
     SeriesDetails
   }
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedSeriesWriter
+  alias Bolognesa.Identification.Infrastructure.Repositories.IdentifiedSeriesWriter
 
   alias Bolognesa.Infrastructure.Persistence.{
     CatalogEntrySchema,

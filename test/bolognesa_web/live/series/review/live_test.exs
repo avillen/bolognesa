@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Series.Review.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository
 
   alias Bolognesa.Test.DelayedSearchSeriesProvider

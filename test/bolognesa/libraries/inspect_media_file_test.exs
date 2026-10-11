@@ -5,8 +5,8 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
   alias Bolognesa.Libraries.Domain.Inspection
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Domain.TechnicalTrack
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
 
   alias Bolognesa.Libraries.Support.{
     BlockingMediaProbe,

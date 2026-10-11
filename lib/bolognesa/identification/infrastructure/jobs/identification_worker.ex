@@ -5,9 +5,9 @@ defmodule Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker do
 
   alias Bolognesa.Identification.Application.IdentifyMediaFile
   alias Bolognesa.Identification.Application.IdentifySeriesFile
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository
-  alias Bolognesa.Identification.Infrastructure.TmdbMovieProvider
-  alias Bolognesa.Identification.Infrastructure.TmdbSeriesProvider
+  alias Bolognesa.Identification.Infrastructure.Providers.TmdbMovieProvider
+  alias Bolognesa.Identification.Infrastructure.Providers.TmdbSeriesProvider
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository
 
   @impl Oban.Worker
   def timeout(_job), do: 30_000

@@ -1,7 +1,7 @@
 defmodule Bolognesa.Catalog.Application.ListEpisodes do
   @moduledoc "Authorize a bounded season episode page."
   alias Bolognesa.Catalog.Application.Dto.EpisodePage
-  alias Bolognesa.Catalog.Application.Ports.SeriesReader
+  alias Bolognesa.Catalog.Application.Ports.Readers.SeriesReader
   alias Bolognesa.Catalog.Domain.Season
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor

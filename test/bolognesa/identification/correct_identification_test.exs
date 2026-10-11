@@ -6,7 +6,7 @@ defmodule Bolognesa.Identification.CorrectIdentificationTest do
   alias Bolognesa.Identification.Domain.MovieDetails
   alias Bolognesa.Identity.Domain.Actor
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository
 
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema

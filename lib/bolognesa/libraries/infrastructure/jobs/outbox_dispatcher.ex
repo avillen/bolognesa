@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.OutboxDispatcher do
   use GenServer
   require Logger
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoOutboxRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoOutboxRepository
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do

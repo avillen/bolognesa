@@ -1,7 +1,7 @@
 defmodule Bolognesa.Catalog.Application.SearchSeries do
   @moduledoc "Authorize and bound the series catalog search."
   alias Bolognesa.Catalog.Application.Dto.SeriesPage
-  alias Bolognesa.Catalog.Application.Ports.SeriesReader
+  alias Bolognesa.Catalog.Application.Ports.Readers.SeriesReader
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
 

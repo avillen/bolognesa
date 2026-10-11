@@ -6,7 +6,7 @@ defmodule Bolognesa.Playback do
   alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Playback.Domain.TranscodeProfile
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
-  alias Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository
+  alias Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
 
   @spec start(Actor.t(), integer(), integer()) ::

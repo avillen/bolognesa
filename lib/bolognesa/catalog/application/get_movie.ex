@@ -1,7 +1,7 @@
 defmodule Bolognesa.Catalog.Application.GetMovie do
   @moduledoc "Authorize a movie detail read."
   alias Bolognesa.Catalog.Application.Dto.MovieDetail
-  alias Bolognesa.Catalog.Application.Ports.CatalogReader
+  alias Bolognesa.Catalog.Application.Ports.Readers.CatalogReader
   alias Bolognesa.Identity
 
   @spec call(Bolognesa.Identity.Domain.Actor.t(), pos_integer(), CatalogReader.adapter()) ::

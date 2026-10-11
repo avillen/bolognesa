@@ -7,8 +7,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker do
   require Logger
 
   alias Bolognesa.Libraries.Application.InspectMediaFile
-  alias Bolognesa.Libraries.Infrastructure.FfprobeMediaProbe
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
+  alias Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe
 
   @impl Oban.Worker
   def timeout(_job), do: InspectionPolicy.timeout_ms()

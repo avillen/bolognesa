@@ -4,7 +4,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionReconciler do
   require Logger
 
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do

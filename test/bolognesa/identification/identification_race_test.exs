@@ -4,7 +4,7 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
   alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
   alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository
 
   alias Bolognesa.Identity.Domain.Actor

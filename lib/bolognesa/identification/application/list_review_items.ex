@@ -3,7 +3,7 @@ defmodule Bolognesa.Identification.Application.ListReviewItems do
 
   alias Bolognesa.Identification.Application.Dto.ReviewItem
   alias Bolognesa.Identification.Application.Dto.ReviewPage
-  alias Bolognesa.Identification.Application.Ports.ReviewReader
+  alias Bolognesa.Identification.Application.Ports.Readers.ReviewReader
   alias Bolognesa.Identity
 
   @spec call(Bolognesa.Identity.Domain.Actor.t(), pos_integer(), ReviewReader.adapter()) ::

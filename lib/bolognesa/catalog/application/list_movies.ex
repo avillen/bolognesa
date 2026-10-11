@@ -1,7 +1,7 @@
 defmodule Bolognesa.Catalog.Application.ListMovies do
   @moduledoc "Authorize and bound a movie catalog search."
   alias Bolognesa.Catalog.Application.Dto.MoviePage
-  alias Bolognesa.Catalog.Application.Ports.CatalogReader
+  alias Bolognesa.Catalog.Application.Ports.Readers.CatalogReader
   alias Bolognesa.Identity
 
   @spec call(

@@ -1,6 +1,6 @@
 defmodule Bolognesa.Libraries.Support.BlockingMediaProbe do
   @moduledoc false
-  @behaviour Bolognesa.Libraries.Application.Ports.MediaProbe
+  @behaviour Bolognesa.Libraries.Application.Ports.Services.MediaProbe
 
   alias Bolognesa.Libraries.Support.SuccessfulMediaProbe
 

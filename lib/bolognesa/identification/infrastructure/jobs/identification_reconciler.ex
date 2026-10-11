@@ -3,7 +3,7 @@ defmodule Bolognesa.Identification.Infrastructure.Jobs.IdentificationReconciler 
   use GenServer
   require Logger
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do

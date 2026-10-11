@@ -1,6 +1,6 @@
 defmodule Bolognesa.Identification.TmdbSeriesProviderTest do
   use ExUnit.Case, async: true
-  alias Bolognesa.Identification.Infrastructure.TmdbSeriesProvider
+  alias Bolognesa.Identification.Infrastructure.Providers.TmdbSeriesProvider
 
   test "search sends initial year and limits safe candidates" do
     parent = self()

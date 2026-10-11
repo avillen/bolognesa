@@ -2,7 +2,7 @@ defmodule Bolognesa.Libraries.Application.ListLibraries do
   @moduledoc "Authorize and list configured libraries."
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Libraries.Application.Ports.LibraryRepository
+  alias Bolognesa.Libraries.Application.Ports.Repositories.LibraryRepository
   alias Bolognesa.Libraries.Domain.Library
 
   @spec call(Actor.t(), LibraryRepository.adapter()) ::

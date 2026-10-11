@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.TmdbMovieProviderTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Identification.Infrastructure.TmdbMovieProvider
+  alias Bolognesa.Identification.Infrastructure.Providers.TmdbMovieProvider
 
   test "search sends only inferred title and returns bounded non-adult candidates" do
     parent = self()

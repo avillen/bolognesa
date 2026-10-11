@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.Support.ControlledScanRepository do
   @moduledoc false
-  @behaviour Bolognesa.Libraries.Application.Ports.ScanRepository
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
+  @behaviour Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
 
   @impl true
   defdelegate request(id), to: EctoScanRepository

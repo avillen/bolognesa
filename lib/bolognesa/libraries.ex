@@ -9,9 +9,9 @@ defmodule Bolognesa.Libraries do
   }
 
   alias Bolognesa.Libraries.Domain.{InspectionCounts, Library, NewLibrary, Scan, ScanStatus}
-  alias Bolognesa.Libraries.Infrastructure.LocalFileSource
+  alias Bolognesa.Libraries.Infrastructure.Services.LocalFileSource
 
-  alias Bolognesa.Libraries.Infrastructure.Persistence.{
+  alias Bolognesa.Libraries.Infrastructure.Repositories.{
     EctoInspectionRepository,
     EctoLibraryRepository,
     EctoScanRepository

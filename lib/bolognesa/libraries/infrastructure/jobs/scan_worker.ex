@@ -7,8 +7,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker do
   require Logger
   alias Bolognesa.Libraries.Application.DiscoverFiles
   alias Bolognesa.Libraries.Application.Ports.{FileDiscovery, ScanRepository}
-  alias Bolognesa.Libraries.Infrastructure.LocalFileDiscovery
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery
 
   @impl Oban.Worker
   def timeout(_job), do: ScanPolicy.timeout_ms()

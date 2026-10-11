@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.IdentifiedMovieWriterTest do
   use Bolognesa.DataCase, async: true
   alias Bolognesa.Identification.Domain.MovieDetails
-  alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedMovieWriter
+  alias Bolognesa.Identification.Infrastructure.Repositories.IdentifiedMovieWriter
   alias Bolognesa.Infrastructure.Persistence.{CatalogEntrySchema, MovieSchema}
   import Ecto.Query
 

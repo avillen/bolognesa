@@ -8,14 +8,14 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
   alias Bolognesa.Identification.Domain.MovieDetails
   alias Bolognesa.Identification.Infrastructure.Jobs.OutboxDispatcher
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoOutboxRepository
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoOutboxRepository
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoRequestWriter
 
   alias Bolognesa.Libraries.Domain.NewMediaFile
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
 
   alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
   alias Bolognesa.Infrastructure.Persistence.IdentificationEventSchema

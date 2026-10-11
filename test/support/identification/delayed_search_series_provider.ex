@@ -1,6 +1,6 @@
 defmodule Bolognesa.Test.DelayedSearchSeriesProvider do
   @moduledoc false
-  @behaviour Bolognesa.Identification.Application.Ports.SeriesProvider
+  @behaviour Bolognesa.Identification.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Test.SyntheticSeriesProvider
   @impl true
   def search("Slow", _) do

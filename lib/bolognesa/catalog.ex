@@ -18,9 +18,9 @@ defmodule Bolognesa.Catalog do
     SeriesPage
   }
 
-  alias Bolognesa.Catalog.Application.Ports.SeriesReader
+  alias Bolognesa.Catalog.Application.Ports.Readers.SeriesReader
   alias Bolognesa.Catalog.Domain.{Episode, Season, Series}
-  alias Bolognesa.Catalog.Infrastructure.Persistence.{EctoCatalogReader, EctoSeriesReader}
+  alias Bolognesa.Catalog.Infrastructure.Readers.{EctoCatalogReader, EctoSeriesReader}
   alias Bolognesa.Identity.Domain.Actor
 
   @spec search_series(Actor.t(), binary(), SeriesReader.page_number()) ::

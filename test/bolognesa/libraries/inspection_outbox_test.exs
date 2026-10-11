@@ -5,7 +5,7 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.OutboxDispatcher
-  alias Bolognesa.Libraries.Infrastructure.Persistence.{EctoOutboxRepository, EctoScanRepository}
+  alias Bolognesa.Libraries.Infrastructure.Repositories.{EctoOutboxRepository, EctoScanRepository}
   alias Ecto.Adapters.SQL
   alias SQL.Sandbox
   use Oban.Testing, repo: Bolognesa.Repo

@@ -4,7 +4,7 @@ defmodule Bolognesa.Identification.IdentifySeriesFileTest do
   alias Bolognesa.Identification.Domain.EpisodeSelection
   alias Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository
 
   alias Bolognesa.Infrastructure.Persistence.{

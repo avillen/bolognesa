@@ -6,7 +6,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Application.{GetInspectionCounts, GetScanStatus, StartScan}
   alias Bolognesa.Libraries.Domain.InspectionCounts
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Ecto.Adapters.SQL
   alias EctoScanRepository.MediaFileMapper
   alias SQL.Sandbox

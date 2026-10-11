@@ -1,6 +1,6 @@
 defmodule Bolognesa.Libraries.Support.ControlledFileDiscovery do
   @moduledoc false
-  @behaviour Bolognesa.Libraries.Application.Ports.FileDiscovery
+  @behaviour Bolognesa.Libraries.Application.Ports.Services.FileDiscovery
 
   @spec configure(pid()) :: :ok
   def configure(owner) do

@@ -5,7 +5,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
   alias Bolognesa.Libraries.Application.DiscoverFiles
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Libraries.Support.{ControlledFileDiscovery, UnavailableScanRepository}
   alias Ecto.Adapters.SQL.Sandbox
   @moduletag capture_log: true

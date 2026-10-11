@@ -8,8 +8,8 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Domain.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoOutboxRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoOutboxRepository
   alias Bolognesa.Libraries.Support.SuccessfulMediaProbe
 
   @admin %Actor{id: 1, name: "Admin", email: "admin@example.com", role: :admin}

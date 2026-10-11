@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.FfprobeJsonTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Libraries.Infrastructure.FfprobeJson
+  alias Bolognesa.Libraries.Infrastructure.Services.FfprobeJson
 
   test "normalizes format, duration and ordered tracks while discarding private tags" do
     json =

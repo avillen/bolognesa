@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
   alias Bolognesa.Infrastructure.LocalSourcePath
 
   alias Bolognesa.Libraries.Domain.{Library, MediaFile}
-  alias Bolognesa.Libraries.Infrastructure.{BoundedCommand, FfprobeMediaProbe}
+  alias Bolognesa.Libraries.Infrastructure.Services.{BoundedCommand, FfprobeMediaProbe}
 
   setup do
     root = Path.join(System.tmp_dir!(), "probe-#{System.unique_integer([:positive])}")

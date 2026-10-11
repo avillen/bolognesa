@@ -9,7 +9,7 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
   alias Bolognesa.Catalog.Application.Dto.MovieVersion
   alias Bolognesa.Catalog.Domain.Movie
   alias Bolognesa.Catalog.Domain.MovieVersion, as: DomainMovieVersion
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader
+  alias Bolognesa.Catalog.Infrastructure.Readers.EctoCatalogReader
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
 

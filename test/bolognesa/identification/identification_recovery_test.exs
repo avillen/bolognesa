@@ -4,7 +4,7 @@ defmodule Bolognesa.Identification.IdentificationRecoveryTest do
   alias Bolognesa.Identification.Application.IdentifyMediaFile
   alias Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository
 
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
