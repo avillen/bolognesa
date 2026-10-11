@@ -1,9 +1,9 @@
 defmodule Bolognesa.Libraries.LibraryTest do
   use Bolognesa.DataCase, async: false
-
-  alias Bolognesa.Libraries
   alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Libraries
   alias Bolognesa.Persistence.LibrarySchema
+  alias Ecto.Adapters.SQL.Sandbox
 
   @admin %Actor{id: 1, name: "Ada", email: "ada@example.com", role: :admin}
   @member %Actor{id: 2, name: "Joe", email: "joe@example.com", role: :member}
@@ -94,7 +94,7 @@ defmodule Bolognesa.Libraries.LibraryTest do
       tasks =
         for name <- ["One", "Two"] do
           Task.Supervisor.async_nolink(supervisor, fn ->
-            Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+            Sandbox.unboxed_run(Repo, fn ->
               send(parent, {:ready, self()})
 
               receive do
@@ -115,11 +115,11 @@ defmodule Bolognesa.Libraries.LibraryTest do
       assert Enum.count(results, &match?({:ok, _}, &1)) == 1
       assert Enum.count(results, &(&1 == {:error, :duplicate_source})) == 1
 
-      assert Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+      assert Sandbox.unboxed_run(Repo, fn ->
                Repo.aggregate(LibrarySchema, :count)
              end) == 1
     after
-      Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn -> Repo.delete_all(LibrarySchema) end)
+      Sandbox.unboxed_run(Repo, fn -> Repo.delete_all(LibrarySchema) end)
     end
   end
 

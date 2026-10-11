@@ -9,11 +9,11 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     InspectionWorker
   }
 
-  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
-  alias Bolognesa.Persistence.InspectionSchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.{EctoOutboxRepository, EctoScanRepository}
   alias Bolognesa.Libraries.Support.{BlockingMediaProbe, RaisingMediaProbe, SuccessfulMediaProbe}
+  alias Bolognesa.Persistence.InspectionSchema
+  alias Bolognesa.Persistence.LibrarySchema
 
   setup do
     library =

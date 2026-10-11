@@ -3,18 +3,17 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   import Ecto.Query
 
   @behaviour Bolognesa.Identification.Application.Ports.IdentificationRepository
-  alias Bolognesa.Catalog
-  alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
-  alias Bolognesa.Persistence.MediaFileSchema
-  alias Bolognesa.Persistence.IdentificationSchema
 
-  alias Bolognesa.Identification.Domain.{
-    FileToIdentify,
-    Identification,
-    MovieCandidate,
-    MovieDetails
-  }
+  alias Bolognesa.Catalog
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
+  alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
+  alias Bolognesa.Persistence.IdentificationSchema
+  alias Bolognesa.Persistence.MediaFileSchema
+
+  alias Bolognesa.Identification.Domain.FileToIdentify
+  alias Bolognesa.Identification.Domain.Identification
+  alias Bolognesa.Identification.Domain.MovieCandidate
+  alias Bolognesa.Identification.Domain.MovieDetails
 
   alias Bolognesa.Repo
 

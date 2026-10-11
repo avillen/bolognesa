@@ -1,13 +1,11 @@
 defmodule Bolognesa.Identification.IdentificationStorageTest do
   use Bolognesa.DataCase, async: true
 
-  alias Bolognesa.Persistence.MovieSchema
   alias Bolognesa.Identification.Domain.Identification
-
   alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
-
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Persistence.MovieSchema
 
   test "manual choice rejects later automatic request" do
     identification = %Identification{

@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.Application.CorrectIdentification do
   @moduledoc "Resolve an identification by an administrator's explicit choice."
-  alias Bolognesa.Identity
   alias Bolognesa.Identification.Domain.Identification
+  alias Bolognesa.Identity
 
   @spec call(
           Bolognesa.Identity.Domain.Actor.t(),

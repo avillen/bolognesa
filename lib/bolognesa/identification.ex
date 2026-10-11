@@ -1,6 +1,5 @@
 defmodule Bolognesa.Identification do
   @moduledoc "Public identification and manual correction API."
-  alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Identification.Application.CorrectIdentification
   alias Bolognesa.Identification.Application.Dto.ReviewPage
   alias Bolognesa.Identification.Application.ListReviewItems
@@ -11,6 +10,7 @@ defmodule Bolognesa.Identification do
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader
   alias Bolognesa.Identification.Infrastructure.TmdbMovieProvider
+  alias Bolognesa.Identity.Domain.Actor
 
   @spec correct(Actor.t(), pos_integer(), :unidentified | {:tmdb, pos_integer()}) ::
           {:ok, IdentificationDecision.t()} | {:error, atom()}

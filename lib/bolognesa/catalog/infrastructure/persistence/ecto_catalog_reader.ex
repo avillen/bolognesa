@@ -4,13 +4,11 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
 
   import Ecto.Query
 
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieMapper
   alias Bolognesa.Catalog.Domain.MovieVersion
-  alias Bolognesa.Persistence.MovieSchema
-
+  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieMapper
   alias Bolognesa.Persistence.IdentificationSchema
-
   alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Persistence.MovieSchema
   alias Bolognesa.Repo
 
   @page_size 24

@@ -1,9 +1,10 @@
 defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository do
   @moduledoc false
   @behaviour Bolognesa.Libraries.Application.Ports.LibraryRepository
-  alias Bolognesa.Repo
-  alias __MODULE__.LibraryMapper
+
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibraryMapper
   alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Repo
 
   @impl true
   def insert(details) do

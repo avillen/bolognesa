@@ -1,9 +1,10 @@
 defmodule Bolognesa.Libraries.ScanRecoveryTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Libraries.Infrastructure.Jobs.{ScanPolicy, ScanWorker, ScanReconciler}
   alias Bolognesa.Libraries.Application.DiscoverFiles
   alias Bolognesa.Libraries.Domain.NewMediaFile
+  alias Bolognesa.Libraries.Infrastructure.Jobs.{ScanPolicy, ScanReconciler, ScanWorker}
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
 
   alias Bolognesa.Libraries.Support.{
     BlockingScanWorker,
@@ -12,7 +13,6 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
   }
 
   alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
   alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
 
   setup do

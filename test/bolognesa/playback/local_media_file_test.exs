@@ -1,9 +1,9 @@
 defmodule Bolognesa.Playback.LocalMediaFileTest do
   use ExUnit.Case, async: false
 
-  alias Bolognesa.Playback.Infrastructure.LocalMediaFile
-  alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Infrastructure.LocalSourcePath
+  alias Bolognesa.Playback.Domain.Source
+  alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   alias Bolognesa.Test.SwitchingFileAccess
 
   setup do

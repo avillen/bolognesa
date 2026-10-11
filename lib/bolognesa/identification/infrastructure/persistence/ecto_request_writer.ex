@@ -3,7 +3,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter 
 
   import Ecto.Query
 
-  alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
+  alias Bolognesa.Persistence.IdentificationEventSchema
+  alias Bolognesa.Persistence.IdentificationSchema
 
   alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Repo

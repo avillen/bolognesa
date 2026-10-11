@@ -3,8 +3,8 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
-  alias Bolognesa.Repo
   alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Repo
 
   setup do
     {:ok, _} =

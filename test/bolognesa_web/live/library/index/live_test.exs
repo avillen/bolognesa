@@ -1,12 +1,13 @@
 defmodule BolognesaWeb.Library.Index.LiveTest do
   use BolognesaWeb.ConnCase, async: false
+  alias BolognesaWeb.Library.Index.Live
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
   alias Bolognesa.Libraries
-  alias Bolognesa.Repo
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
   alias Bolognesa.Persistence.InspectionSchema
+  alias Bolognesa.Repo
   use Oban.Testing, repo: Bolognesa.Repo
 
   setup do
@@ -243,8 +244,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path: path,
     actor: actor
   } do
-    alias BolognesaWeb.Library.Index.Reducers.{Initialize, ApplyScanStatuses}
-    alias BolognesaWeb.Library.Index.Live
+    alias BolognesaWeb.Library.Index.Reducers.{ApplyScanStatuses, Initialize}
+    alias Live
     {:ok, library} = Libraries.create_library(actor, %{name: "Retained", path: path})
     {:ok, _scan} = Libraries.start_scan(actor, library.id)
     {:ok, status} = Libraries.get_scan_status(actor, library.id)
@@ -293,7 +294,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
 
     html =
       render_component(
-        &BolognesaWeb.Library.Index.Live.render/1,
+        &Live.render/1,
         Map.put(socket.assigns, :__changed__, nil)
       )
 
@@ -305,7 +306,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   end
 
   test "saving a new source invalidates an older status response", %{path: path, actor: actor} do
-    alias BolognesaWeb.Library.Index.Reducers.{Initialize, Save, ApplyScanStatuses}
+    alias BolognesaWeb.Library.Index.Reducers.{ApplyScanStatuses, Initialize, Save}
 
     socket =
       %Phoenix.LiveView.Socket{
@@ -323,7 +324,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
 
     html =
       render_component(
-        &BolognesaWeb.Library.Index.Live.render/1,
+        &Live.render/1,
         Map.put(socket.assigns, :__changed__, nil)
       )
 

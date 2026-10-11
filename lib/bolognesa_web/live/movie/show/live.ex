@@ -1,8 +1,8 @@
 defmodule BolognesaWeb.Movie.Show.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
-  alias BolognesaWeb.Movie.Show.Reducer
   alias Bolognesa.Playback
+  alias BolognesaWeb.Movie.Show.Reducer
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do

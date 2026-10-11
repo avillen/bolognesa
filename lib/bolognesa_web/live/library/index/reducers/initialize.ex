@@ -2,11 +2,13 @@ defmodule BolognesaWeb.Library.Index.Reducers.Initialize do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [stream: 4]
+
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Domain.ScanStatus
-  alias BolognesaWeb.Library.Index.State.Library, as: LibraryState
-  alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
+
   alias BolognesaWeb.Library.Index.Forms.Library
+  alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
+  alias BolognesaWeb.Library.Index.State.Library, as: LibraryState
 
   @spec call(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def call(socket) do

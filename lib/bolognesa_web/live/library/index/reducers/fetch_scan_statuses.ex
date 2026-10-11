@@ -2,6 +2,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.FetchScanStatuses do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [start_async: 3, connected?: 1]
+
   alias Bolognesa.Libraries
 
   @spec call(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()

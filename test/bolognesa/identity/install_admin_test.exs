@@ -1,5 +1,6 @@
 defmodule Bolognesa.Identity.InstallAdminTest do
   use Bolognesa.DataCase, async: false
+  alias Ecto.Adapters.SQL.Sandbox
 
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
@@ -93,13 +94,13 @@ defmodule Bolognesa.Identity.InstallAdminTest do
 
     # Each unboxed task gets a separate committed database connection. Shared
     # sandbox ownership would serialize both attempts on a single connection.
-    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn -> Repo.delete_all(UserSchema) end)
+    Sandbox.unboxed_run(Repo, fn -> Repo.delete_all(UserSchema) end)
 
     try do
       tasks =
         for email <- ["one@example.com", "two@example.com"] do
           Task.Supervisor.async_nolink(supervisor, fn ->
-            Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+            Sandbox.unboxed_run(Repo, fn ->
               send(parent, {:ready, self()})
 
               receive do
@@ -127,11 +128,11 @@ defmodule Bolognesa.Identity.InstallAdminTest do
 
       assert Enum.sort(results) == [:ok, :setup_closed]
 
-      assert Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+      assert Sandbox.unboxed_run(Repo, fn ->
                Repo.aggregate(UserSchema, :count)
              end) == 1
     after
-      Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn -> Repo.delete_all(UserSchema) end)
+      Sandbox.unboxed_run(Repo, fn -> Repo.delete_all(UserSchema) end)
     end
   end
 

@@ -2,11 +2,14 @@ defmodule BolognesaWeb.Library.Index.Reducers.Save do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [stream_insert: 3]
+
   alias Bolognesa.Libraries
-  alias BolognesaWeb.Library.Index.Reducers.{CancelScanStatuses, FetchScanStatuses}
   alias Bolognesa.Libraries.Domain.ScanStatus
-  alias BolognesaWeb.Library.Index.State.Library, as: LibraryState
+
   alias BolognesaWeb.Library.Index.Forms.Library
+  alias BolognesaWeb.Library.Index.Reducers.CancelScanStatuses
+  alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
+  alias BolognesaWeb.Library.Index.State.Library, as: LibraryState
 
   @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
   def call(socket, params) do

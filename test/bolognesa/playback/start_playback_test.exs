@@ -1,16 +1,14 @@
 defmodule Bolognesa.Playback.StartPlaybackTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Playback
-  alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Persistence.MovieSchema
-
   alias Bolognesa.Persistence.IdentificationSchema
-
+  alias Bolognesa.Persistence.InspectionSchema
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
-  alias Bolognesa.Persistence.InspectionSchema
+  alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Playback
+  alias Bolognesa.Playback.Domain.Source
 
   test "authorizes only a currently linked available version" do
     actor = %Actor{id: 1, role: :admin}

@@ -1,17 +1,16 @@
 defmodule Bolognesa.Libraries.ScanInventoryTest do
   use Bolognesa.DataCase, async: false
-
   alias Bolognesa.Libraries.Domain.NewMediaFile
-  alias Bolognesa.Persistence.LibrarySchema
-
-  alias Bolognesa.Persistence.{InspectionEventSchema, InspectionSchema}
-
-  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
+  alias Bolognesa.Libraries.Domain.TechnicalMedia
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
-  alias EctoScanRepository.{MediaFileMapper, ScanMapper}
-  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
-
+  alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
   alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
+  alias Bolognesa.Persistence.{InspectionEventSchema, InspectionSchema}
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
+  alias Ecto.Adapters.SQL
+  alias EctoScanRepository.{MediaFileMapper, ScanMapper}
+  alias SQL.Sandbox
 
   @modified ~U[2026-10-03 00:00:00Z]
 
@@ -97,7 +96,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       [file] = files(scan.library_id)
       before = stored_scan(scan.id)
 
-      Ecto.Adapters.SQL.query!(Repo, """
+      SQL.query!(Repo, """
       ALTER TABLE media_identification_events ADD CONSTRAINT inventory_test_reject_identification
       CHECK (media_file_id <> #{file.id}) NOT VALID
       """)
@@ -114,7 +113,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
         assert stored_scan(scan.id) == before
         assert length(identification_events(file.id)) == 1
       after
-        Ecto.Adapters.SQL.query!(
+        SQL.query!(
           Repo,
           "ALTER TABLE media_identification_events DROP CONSTRAINT inventory_test_reject_identification"
         )
@@ -444,7 +443,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       tasks =
         for path <- ["same.mp4", "same.mp4", "other.mp4"] do
           Task.Supervisor.async_nolink(supervisor, fn ->
-            Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+            Sandbox.unboxed_run(Repo, fn ->
               send(parent, {:ready, self()})
 
               receive do
@@ -488,11 +487,11 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       assert {:ok, _file, _library} =
                EctoInspectionRepository.begin_inspection(file.id, token, nil)
 
-      {:ok, media} = Bolognesa.Libraries.Domain.TechnicalMedia.new(%{tracks: []})
+      {:ok, media} = TechnicalMedia.new(%{tracks: []})
 
       absent =
         Task.Supervisor.async_nolink(supervisor, fn ->
-          Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+          Sandbox.unboxed_run(Repo, fn ->
             Repo.transaction(fn ->
               Repo.update_all(from(row in MediaFileSchema, where: row.id == ^file.id),
                 set: [availability: :missing]
@@ -511,7 +510,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
       completion =
         Task.Supervisor.async_nolink(supervisor, fn ->
-          Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+          Sandbox.unboxed_run(Repo, fn ->
             send(parent, :completion_started)
             result = EctoInspectionRepository.complete_inspection(file.id, token, media)
             send(parent, {:completion_result, result})
@@ -541,7 +540,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       before_scan = stored_scan(scan.id)
       before_files = files(scan.library_id)
 
-      Ecto.Adapters.SQL.query!(Repo, """
+      SQL.query!(Repo, """
       ALTER TABLE library_scans ADD CONSTRAINT inventory_test_reject_count
       CHECK (id <> #{scan.id} OR files_discovered <= 1) NOT VALID
       """)
@@ -556,7 +555,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
         assert files(scan.library_id) == before_files
         assert stored_scan(scan.id) == before_scan
       after
-        Ecto.Adapters.SQL.query!(
+        SQL.query!(
           Repo,
           "ALTER TABLE library_scans DROP CONSTRAINT inventory_test_reject_count"
         )
@@ -574,7 +573,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       before_inspection = inspection(existing.id)
       before_events = events(existing.id)
 
-      Ecto.Adapters.SQL.query!(Repo, """
+      SQL.query!(Repo, """
       ALTER TABLE media_inspection_events ADD CONSTRAINT inventory_test_reject_event
       CHECK (media_file_id <> #{existing.id}) NOT VALID
       """)
@@ -592,7 +591,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
         assert events(existing.id) == before_events
         assert stored_scan(scan.id) == before_scan
       after
-        Ecto.Adapters.SQL.query!(
+        SQL.query!(
           Repo,
           "ALTER TABLE media_inspection_events DROP CONSTRAINT inventory_test_reject_event"
         )
@@ -609,7 +608,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       current = next_scan(scan.library_id)
       before = stored_scan(current.id)
 
-      Ecto.Adapters.SQL.query!(Repo, """
+      SQL.query!(Repo, """
       ALTER TABLE library_scans ADD CONSTRAINT inventory_test_reject_completion
       CHECK (id <> #{current.id} OR state <> 'completed') NOT VALID
       """)
@@ -621,7 +620,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
         assert [%{availability: :available}] = files(scan.library_id)
         assert stored_scan(current.id) == before
       after
-        Ecto.Adapters.SQL.query!(
+        SQL.query!(
           Repo,
           "ALTER TABLE library_scans DROP CONSTRAINT inventory_test_reject_completion"
         )
@@ -687,7 +686,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   end
 
   defp with_committed_scan(callback) do
-    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+    Sandbox.unboxed_run(Repo, fn ->
       library = library_fixture()
       {:ok, scan} = EctoScanRepository.request(library.id)
 

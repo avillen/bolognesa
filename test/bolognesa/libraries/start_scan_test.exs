@@ -1,16 +1,17 @@
 defmodule Bolognesa.Libraries.StartScanTest do
   use Bolognesa.DataCase, async: false
-
-  use Oban.Testing, repo: Bolognesa.Repo
-
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Libraries
-  alias Bolognesa.Libraries.Domain.InspectionCounts
   alias Bolognesa.Libraries.Application.{GetInspectionCounts, GetScanStatus, StartScan}
-  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Libraries.Domain.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
-  alias EctoScanRepository.MediaFileMapper
+  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
+  alias Ecto.Adapters.SQL
+  alias EctoScanRepository.MediaFileMapper
+  alias SQL.Sandbox
+
+  use Oban.Testing, repo: Bolognesa.Repo
 
   @admin %Actor{id: 1, name: "Ada", email: "ada@example.com", role: :admin}
   @member %Actor{id: 2, name: "Joe", email: "joe@example.com", role: :member}
@@ -132,7 +133,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
 
   test "rolls back the scan when PostgreSQL rejects the job insertion", %{path: path} do
     with_committed_library(path, fn library ->
-      Ecto.Adapters.SQL.query!(Repo, """
+      SQL.query!(Repo, """
       ALTER TABLE oban_jobs ADD CONSTRAINT scan_test_reject_job
       CHECK (queue <> 'library_scans') NOT VALID
       """)
@@ -147,7 +148,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
 
         assert Repo.aggregate(Oban.Job, :count) == 0
       after
-        Ecto.Adapters.SQL.query!(
+        SQL.query!(
           Repo,
           "ALTER TABLE oban_jobs DROP CONSTRAINT scan_test_reject_job"
         )
@@ -163,7 +164,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
       tasks =
         for _ <- 1..2 do
           Task.Supervisor.async_nolink(supervisor, fn ->
-            Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+            Sandbox.unboxed_run(Repo, fn ->
               send(parent, {:ready, self()})
 
               receive do
@@ -232,7 +233,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
           {"UPDATE media_files SET revision = 0 WHERE id = $1", file.id}
         ] do
       assert_raise Postgrex.Error, fn ->
-        Ecto.Adapters.SQL.query!(Repo, query, [id], mode: :savepoint)
+        SQL.query!(Repo, query, [id], mode: :savepoint)
       end
     end
 
@@ -254,7 +255,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
   end
 
   defp with_committed_library(path, callback) do
-    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+    Sandbox.unboxed_run(Repo, fn ->
       committed_path = path <> "-committed"
       File.mkdir_p!(committed_path)
 

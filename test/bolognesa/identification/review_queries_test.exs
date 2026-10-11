@@ -1,16 +1,14 @@
 defmodule Bolognesa.Identification.ReviewQueriesTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Identification
   alias Bolognesa.Identification.Application.Dto.{ReviewItem, ReviewPage}
   alias Bolognesa.Identification.Domain.Identification, as: IdentificationDecision
+  alias Bolognesa.Identification.Domain.ReviewFile
   alias Bolognesa.Identification.Domain.ReviewMovie
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader
-  alias Bolognesa.Identification.Domain.ReviewFile
-
+  alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Persistence.IdentificationSchema
-
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Persistence.MovieSchema

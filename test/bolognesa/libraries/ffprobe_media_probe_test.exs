@@ -1,5 +1,6 @@
 defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
   use ExUnit.Case, async: false
+  alias Bolognesa.Infrastructure.LocalSourcePath
 
   alias Bolognesa.Libraries.Domain.{Library, MediaFile}
   alias Bolognesa.Libraries.Infrastructure.{BoundedCommand, FfprobeMediaProbe}
@@ -11,7 +12,7 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
     Application.put_env(:bolognesa, :library_roots, [root])
 
     {:ok, canonical_root} =
-      Bolognesa.Infrastructure.LocalSourcePath.canonical_directory(root)
+      LocalSourcePath.canonical_directory(root)
 
     on_exit(fn ->
       Application.put_env(:bolognesa, :library_roots, previous)

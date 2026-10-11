@@ -1,13 +1,14 @@
 defmodule Bolognesa.Libraries.InspectionOutboxTest do
   use Bolognesa.DataCase, async: false
-  use Oban.Testing, repo: Bolognesa.Repo
-
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.OutboxDispatcher
-  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Libraries.Infrastructure.Persistence.{EctoOutboxRepository, EctoScanRepository}
   alias Bolognesa.Persistence.InspectionEventSchema
   alias Bolognesa.Persistence.InspectionSchema
-  alias Bolognesa.Libraries.Infrastructure.Persistence.{EctoOutboxRepository, EctoScanRepository}
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Ecto.Adapters.SQL
+  alias SQL.Sandbox
+  use Oban.Testing, repo: Bolognesa.Repo
 
   test "dispatches a committed event once and recovers an event created while stopped" do
     {event, _scan} = pending_event()
@@ -36,10 +37,10 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
 
   @tag committed: true
   test "a failed Oban insert keeps the event pending" do
-    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+    Sandbox.unboxed_run(Repo, fn ->
       {event, scan} = pending_event()
 
-      Ecto.Adapters.SQL.query!(Repo, """
+      SQL.query!(Repo, """
       ALTER TABLE oban_jobs ADD CONSTRAINT inspection_test_reject_worker
       CHECK (worker <> 'Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker') NOT VALID
       """)
@@ -48,7 +49,7 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
         assert {:error, :unavailable} = EctoOutboxRepository.dispatch_batch(25)
         assert is_nil(Repo.get!(InspectionEventSchema, event.id).delivered_at)
       after
-        Ecto.Adapters.SQL.query!(
+        SQL.query!(
           Repo,
           "ALTER TABLE oban_jobs DROP CONSTRAINT inspection_test_reject_worker"
         )
@@ -60,7 +61,7 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
 
   @tag committed: true
   test "concurrent dispatchers do not duplicate jobs" do
-    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+    Sandbox.unboxed_run(Repo, fn ->
       {event, scan} = pending_event()
       supervisor = start_supervised!(Task.Supervisor)
 
@@ -68,7 +69,7 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
         tasks =
           for _ <- 1..2 do
             Task.Supervisor.async_nolink(supervisor, fn ->
-              Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+              Sandbox.unboxed_run(Repo, fn ->
                 EctoOutboxRepository.dispatch_batch(25)
               end)
             end)

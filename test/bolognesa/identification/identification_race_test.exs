@@ -1,18 +1,17 @@
 defmodule Bolognesa.Identification.IdentificationRaceTest do
   use Bolognesa.DataCase, async: false
-
-  alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Identification.Application.{CorrectIdentification, IdentifyMediaFile}
   alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
     as: Repository
 
+  alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Persistence.IdentificationSchema
-  alias Bolognesa.Persistence.MovieSchema
-
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Persistence.MovieSchema
+  alias Ecto.Adapters.SQL.Sandbox
 
   defmodule BlockedProvider do
     def search(_title, _year) do
@@ -31,7 +30,7 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
   end
 
   test "manual movie and manual unidentified survive an in-flight result" do
-    Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+    Sandbox.mode(Repo, {:shared, self()})
     supervisor = start_supervised!(Task.Supervisor)
 
     for choice <- [{:tmdb, 72}, :unidentified] do
@@ -68,7 +67,7 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
 
   @tag committed: true
   test "concurrent versions reuse one TMDb movie" do
-    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+    Sandbox.unboxed_run(Repo, fn ->
       {first, _} = fixture()
       {second, _} = fixture()
       supervisor = start_supervised!(Task.Supervisor)
@@ -78,7 +77,7 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
         tasks =
           for file <- [first, second] do
             Task.Supervisor.async_nolink(supervisor, fn ->
-              Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+              Sandbox.unboxed_run(Repo, fn ->
                 Repository.correct(file.id, details)
               end)
             end)

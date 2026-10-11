@@ -6,9 +6,9 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader d
 
   alias Bolognesa.Identification.Domain.{ReviewFile, ReviewMovie}
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
-  alias Bolognesa.Persistence.MovieSchema
   alias Bolognesa.Persistence.IdentificationSchema
   alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Persistence.MovieSchema
   alias Bolognesa.Repo
 
   @page_size 24

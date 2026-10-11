@@ -3,7 +3,8 @@ defmodule Bolognesa.Libraries.Infrastructure.FfprobeMediaProbe do
   @behaviour Bolognesa.Libraries.Application.Ports.MediaProbe
 
   alias Bolognesa.Infrastructure.LocalSourcePath
-  alias Bolognesa.Libraries.Infrastructure.{BoundedCommand, FfprobeJson}
+  alias Bolognesa.Libraries.Infrastructure.BoundedCommand
+  alias Bolognesa.Libraries.Infrastructure.FfprobeJson
 
   @timeout_ms 30_000
   @max_bytes 262_144

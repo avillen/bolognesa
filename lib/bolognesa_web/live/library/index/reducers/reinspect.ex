@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Library.Index.Reducers.Reinspect do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
+
   alias BolognesaWeb.Library.Index.Reducers.StartScan
 
   @spec prepare(Phoenix.LiveView.Socket.t(), String.t()) :: Phoenix.LiveView.Socket.t()

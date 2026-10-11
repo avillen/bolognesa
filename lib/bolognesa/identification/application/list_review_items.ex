@@ -1,10 +1,13 @@
 defmodule Bolognesa.Identification.Application.ListReviewItems do
   @moduledoc "Authorize paginated identification review."
 
-  alias Bolognesa.Identity
-  alias Bolognesa.Identification.Application.Dto.{ReviewItem, ReviewPage}
+  alias Bolognesa.Identification.Application.Dto.ReviewItem
+  alias Bolognesa.Identification.Application.Dto.ReviewPage
   alias Bolognesa.Identification.Application.Ports.ReviewReader
-  alias Bolognesa.Identification.Domain.{Identification, ReviewFile, ReviewMovie}
+  alias Bolognesa.Identification.Domain.Identification
+  alias Bolognesa.Identification.Domain.ReviewFile
+  alias Bolognesa.Identification.Domain.ReviewMovie
+  alias Bolognesa.Identity
 
   @spec call(Bolognesa.Identity.Domain.Actor.t(), pos_integer(), ReviewReader.adapter()) ::
           {:ok, ReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}

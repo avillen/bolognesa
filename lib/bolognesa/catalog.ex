@@ -1,10 +1,13 @@
 defmodule Bolognesa.Catalog do
   @moduledoc "Movie catalog queries and the controlled shared-transaction writer."
-  alias Bolognesa.Catalog.Application.{GetMovie, ListMovies}
-  alias Bolognesa.Catalog.Application.Dto.{MovieDetail, MoviePage}
+  alias Bolognesa.Catalog.Application.Dto.MovieDetail
+  alias Bolognesa.Catalog.Application.Dto.MoviePage
+  alias Bolognesa.Catalog.Application.GetMovie
+  alias Bolognesa.Catalog.Application.ListMovies
+  alias Bolognesa.Catalog.Domain.Movie
+  alias Bolognesa.Catalog.Domain.NewMovie
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository
-  alias Bolognesa.Catalog.Domain.{Movie, NewMovie}
   alias Bolognesa.Identity.Domain.Actor
 
   @spec list_movies(Actor.t(), binary(), pos_integer()) ::

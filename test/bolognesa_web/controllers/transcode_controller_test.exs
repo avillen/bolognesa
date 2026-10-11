@@ -2,10 +2,10 @@ defmodule BolognesaWeb.TranscodeControllerTest do
   use BolognesaWeb.ConnCase, async: false
 
   alias Bolognesa.Identity
+  alias Bolognesa.Infrastructure.LocalSourcePath
+  alias Bolognesa.Persistence.{IdentificationSchema, LibrarySchema, MediaFileSchema, MovieSchema}
   alias Bolognesa.Playback
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
-  alias Bolognesa.Infrastructure.LocalSourcePath
-  alias Bolognesa.Persistence.{MovieSchema, LibrarySchema, MediaFileSchema, IdentificationSchema}
   alias Bolognesa.Repo
 
   test "a manifest requires an authenticated session", %{conn: conn} do

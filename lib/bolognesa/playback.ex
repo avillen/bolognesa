@@ -2,12 +2,13 @@ defmodule Bolognesa.Playback do
   @moduledoc "Authorize a movie version for direct or compatible playback."
 
   alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Playback.Application.StartPlayback
   alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Playback.Domain.TranscodeProfile
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
-  alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager
 
   @spec start(Actor.t(), integer(), integer()) ::
           {:ok, Source.t()} | {:error, :forbidden | :not_found | :missing | :unavailable}

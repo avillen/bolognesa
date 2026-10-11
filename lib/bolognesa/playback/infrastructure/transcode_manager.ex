@@ -4,9 +4,9 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   require Logger
 
+  alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Playback.Domain.{Source, TranscodeSession}
   alias Bolognesa.Playback.Infrastructure.{FfmpegArgs, LocalMediaFile}
-  alias Bolognesa.Infrastructure.LocalSourcePath
 
   @idle_ms 300_000
   @tick_ms 5_000
@@ -202,38 +202,48 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   defp valid_offset(_, _), do: {:error, :invalid_offset}
 
   defp root do
-    path =
-      Application.get_env(
-        :bolognesa,
-        :transcode_root,
-        Path.join(System.tmp_dir!(), "bolognesa-transcode")
-      )
-
+    path = configured_transcode_path()
     expanded = Path.expand(path)
-
-    libraries =
-      Application.fetch_env!(:bolognesa, :library_roots)
-      |> Enum.map(fn library ->
-        case LocalSourcePath.canonical_directory(library) do
-          {:ok, physical} -> physical
-          _ -> Path.expand(library)
-        end
-      end)
+    libraries = configured_library_directories()
 
     if Path.type(path) != :absolute or inside_library?(expanded, libraries) do
       {:error, :unsafe_root}
     else
-      case File.mkdir_p(expanded) do
-        :ok ->
-          case LocalSourcePath.canonical_directory(expanded) do
-            {:ok, _} -> {:error, :unsafe_root}
-            {:error, :source_outside_roots} -> {:ok, expanded}
-            _ -> {:error, :unsafe_root}
-          end
+      ensure_transcode_directory(expanded)
+    end
+  end
 
-        {:error, _} ->
-          {:error, :storage_unavailable}
-      end
+  defp configured_transcode_path do
+    Application.get_env(
+      :bolognesa,
+      :transcode_root,
+      Path.join(System.tmp_dir!(), "bolognesa-transcode")
+    )
+  end
+
+  defp configured_library_directories do
+    Application.fetch_env!(:bolognesa, :library_roots)
+    |> Enum.map(&resolve_library_directory/1)
+  end
+
+  defp resolve_library_directory(library) do
+    case LocalSourcePath.canonical_directory(library) do
+      {:ok, physical} -> physical
+      _ -> Path.expand(library)
+    end
+  end
+
+  defp ensure_transcode_directory(expanded) do
+    case File.mkdir_p(expanded) do
+      :ok -> verify_outside_libraries(expanded)
+      {:error, _} -> {:error, :storage_unavailable}
+    end
+  end
+
+  defp verify_outside_libraries(expanded) do
+    case LocalSourcePath.canonical_directory(expanded) do
+      {:error, :source_outside_roots} -> {:ok, expanded}
+      _ -> {:error, :unsafe_root}
     end
   end
 
@@ -246,13 +256,16 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   defp remove_abandoned(root) do
     case File.ls(root) do
       {:ok, names} ->
-        Enum.each(names, fn name ->
-          if Regex.match?(~r/\Asession-[0-9a-f-]{36}\z/, name),
-            do: File.rm_rf(Path.join(root, name))
-        end)
+        Enum.each(names, &remove_if_session(root, &1))
 
       _ ->
         :ok
+    end
+  end
+
+  defp remove_if_session(root, name) do
+    if Regex.match?(~r/\Asession-[0-9a-f-]{36}\z/, name) do
+      File.rm_rf(Path.join(root, name))
     end
   end
 

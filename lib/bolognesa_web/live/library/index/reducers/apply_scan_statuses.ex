@@ -2,7 +2,9 @@ defmodule BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream: 4, connected?: 1]
-  alias Bolognesa.Libraries.Domain.{Library, ScanStatus}
+
+  alias Bolognesa.Libraries.Domain.Library
+  alias Bolognesa.Libraries.Domain.ScanStatus
 
   @refresh_failure "No se pudo actualizar el escaneo. Vuelve a intentarlo."
 

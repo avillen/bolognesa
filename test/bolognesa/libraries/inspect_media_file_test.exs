@@ -2,12 +2,10 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Libraries.Application.InspectMediaFile
-  alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Domain.Inspection
+  alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Domain.TechnicalTrack
-  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
-  alias Bolognesa.Persistence.InspectionSchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
 
   alias Bolognesa.Libraries.Support.{
@@ -16,6 +14,9 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
     SuccessfulMediaProbe,
     TimeoutMediaProbe
   }
+
+  alias Bolognesa.Persistence.InspectionSchema
+  alias Bolognesa.Persistence.LibrarySchema
 
   setup do
     library =

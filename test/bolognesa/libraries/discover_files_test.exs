@@ -1,15 +1,15 @@
 defmodule Bolognesa.Libraries.DiscoverFilesTest do
   use Bolognesa.DataCase, async: false
-  @moduletag capture_log: true
-  require Logger
-
   alias Bolognesa.Libraries.Application.DiscoverFiles
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
-  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
-  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
   alias Bolognesa.Libraries.Support.{ControlledFileDiscovery, UnavailableScanRepository}
+  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
+  alias Ecto.Adapters.SQL.Sandbox
+  @moduletag capture_log: true
+  require Logger
 
   setup do
     library =
@@ -184,7 +184,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
         callback.()
       end)
 
-    Ecto.Adapters.SQL.Sandbox.allow(Repo, self(), task.pid)
+    Sandbox.allow(Repo, self(), task.pid)
     assert_receive {:walking, pid}, 1_000
     assert pid == task.pid
     task

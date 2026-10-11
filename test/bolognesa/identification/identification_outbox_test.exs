@@ -1,15 +1,17 @@
 defmodule Bolognesa.Identification.IdentificationOutboxTest do
   use Bolognesa.DataCase, async: false
+  alias Ecto.Adapters.SQL
+  alias SQL.Sandbox
   use Oban.Testing, repo: Bolognesa.Repo
 
   alias Bolognesa.Identification.Infrastructure.Jobs.OutboxDispatcher
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoOutboxRepository
 
-  alias Bolognesa.Persistence.IdentificationEventSchema
-
   alias Bolognesa.Libraries.Domain.NewMediaFile
-  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
+
+  alias Bolognesa.Persistence.IdentificationEventSchema
+  alias Bolognesa.Persistence.LibrarySchema
 
   test "delivers one committed event and leaves none pending" do
     {event, _scan} = pending_event()
@@ -40,10 +42,10 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
 
   @tag committed: true
   test "failed Oban insert leaves event pending" do
-    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+    Sandbox.unboxed_run(Repo, fn ->
       {event, scan} = pending_event()
 
-      Ecto.Adapters.SQL.query!(Repo, """
+      SQL.query!(Repo, """
       ALTER TABLE oban_jobs ADD CONSTRAINT identification_test_reject_worker
       CHECK (worker <> 'Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker') NOT VALID
       """)
@@ -52,7 +54,7 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
         assert {:error, :unavailable} = EctoOutboxRepository.dispatch_batch(25)
         assert is_nil(Repo.get!(IdentificationEventSchema, event.id).delivered_at)
       after
-        Ecto.Adapters.SQL.query!(
+        SQL.query!(
           Repo,
           "ALTER TABLE oban_jobs DROP CONSTRAINT identification_test_reject_worker"
         )
@@ -64,10 +66,10 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
 
   @tag committed: true
   test "failure after Oban insert rolls back the job and leaves the event pending" do
-    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+    Sandbox.unboxed_run(Repo, fn ->
       {event, scan} = pending_event()
 
-      Ecto.Adapters.SQL.query!(Repo, """
+      SQL.query!(Repo, """
       ALTER TABLE media_identifications ADD CONSTRAINT identification_test_reject_job_link
       CHECK (job_id IS NULL) NOT VALID
       """)
@@ -81,7 +83,7 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
                  :count
                ) == 0
       after
-        Ecto.Adapters.SQL.query!(
+        SQL.query!(
           Repo,
           "ALTER TABLE media_identifications DROP CONSTRAINT identification_test_reject_job_link"
         )
@@ -93,7 +95,7 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
 
   @tag committed: true
   test "two dispatchers cannot enqueue the same event" do
-    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+    Sandbox.unboxed_run(Repo, fn ->
       {event, scan} = pending_event()
       supervisor = start_supervised!(Task.Supervisor)
 
@@ -101,7 +103,7 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
         tasks =
           for _ <- 1..2 do
             Task.Supervisor.async_nolink(supervisor, fn ->
-              Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+              Sandbox.unboxed_run(Repo, fn ->
                 EctoOutboxRepository.dispatch_batch(25)
               end)
             end)

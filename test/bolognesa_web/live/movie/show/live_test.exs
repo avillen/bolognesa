@@ -3,16 +3,14 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
-  alias Bolognesa.Persistence.MovieSchema
-  alias Bolognesa.Repo
-
+  alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Persistence.IdentificationSchema
-
+  alias Bolognesa.Persistence.InspectionSchema
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
-  alias Bolognesa.Persistence.InspectionSchema
+  alias Bolognesa.Persistence.MovieSchema
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
-  alias Bolognesa.Infrastructure.LocalSourcePath
+  alias Bolognesa.Repo
 
   test "shows movie details and versions container", %{conn: conn} do
     {:ok, _} =

@@ -1,5 +1,6 @@
 defmodule Bolognesa.Playback.TranscodeManagerTest do
   use ExUnit.Case, async: false
+  alias Bolognesa.Infrastructure.LocalSourcePath
 
   alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
@@ -12,7 +13,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
       )
 
     File.mkdir_p!(base)
-    {:ok, root} = Bolognesa.Infrastructure.LocalSourcePath.canonical_directory(base)
+    {:ok, root} = LocalSourcePath.canonical_directory(base)
     source_path = Path.join(root, "original.avi")
     File.write!(source_path, "controlled source")
     {:ok, stat} = File.stat(source_path, time: :posix)

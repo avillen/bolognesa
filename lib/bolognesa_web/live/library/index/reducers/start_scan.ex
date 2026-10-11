@@ -2,9 +2,12 @@ defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream_insert: 3]
+
   alias Bolognesa.Libraries
+
+  alias BolognesaWeb.Library.Index.Reducers.CancelScanStatuses
+  alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
   alias BolognesaWeb.Library.Index.State.Library
-  alias BolognesaWeb.Library.Index.Reducers.{FetchScanStatuses, CancelScanStatuses}
 
   @spec call(Phoenix.LiveView.Socket.t(), String.t(), keyword()) :: Phoenix.LiveView.Socket.t()
   def call(socket, web_id, opts \\ []) do

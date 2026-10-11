@@ -2,17 +2,16 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Identification.Application.IdentifyMediaFile
+  alias Bolognesa.Identification.Domain.FileToIdentify
+  alias Bolognesa.Identification.Domain.Identification
+  alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
     as: Repository
 
-  alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
-  alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Identification.Domain.FileToIdentify
+  alias Bolognesa.Persistence.IdentificationSchema
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
-
-  alias Bolognesa.Persistence.IdentificationSchema
 
   defmodule Provider do
     def search("Mi pelicula", 2001),

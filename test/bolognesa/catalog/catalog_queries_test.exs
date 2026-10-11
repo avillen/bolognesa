@@ -2,12 +2,15 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Catalog
-  alias Bolognesa.Catalog.Application.Dto.{MovieDetail, MovieListItem, MoviePage, MovieVersion}
+  alias Bolognesa.Catalog.Application.Dto.MovieDetail
+  alias Bolognesa.Catalog.Application.Dto.MovieListItem
+  alias Bolognesa.Catalog.Application.Dto.MoviePage
+  alias Bolognesa.Catalog.Application.Dto.MovieVersion
   alias Bolognesa.Catalog.Domain.Movie
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader
-  alias Bolognesa.Persistence.MovieSchema
-  alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Catalog.Domain.MovieVersion, as: DomainMovieVersion
+  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader
+  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Persistence.MovieSchema
 
   alias Bolognesa.Persistence.IdentificationSchema
 
