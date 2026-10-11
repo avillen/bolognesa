@@ -31,6 +31,17 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
     def details(72), do: {:ok, %MovieDetails{provider_id: 72, title: "Manual result"}}
   end
 
+  test "stale movie completion does not create a catalog identity" do
+    {file, token} = fixture()
+    assert {:ok, fresh} = Repository.retry(file.id)
+    count = Repo.aggregate(CatalogEntrySchema, :count)
+    details = %MovieDetails{provider_id: 9183, title: "Old result"}
+
+    assert {:ok, :stale} = Repository.complete(file.id, token, [], details, false)
+    assert {:ok, ^fresh} = Repository.get(file.id)
+    assert Repo.aggregate(CatalogEntrySchema, :count) == count
+  end
+
   test "manual movie and manual unidentified survive an in-flight result" do
     Sandbox.mode(Repo, {:shared, self()})
     supervisor = start_supervised!(Task.Supervisor)

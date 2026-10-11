@@ -1,18 +1,80 @@
 defmodule Bolognesa.Identification.IdentifySeriesFileTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Identification.Application.IdentifySeriesFile
+  alias Bolognesa.Identification.Domain.EpisodeSelection
   alias Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
     as: Repository
 
   alias Bolognesa.Infrastructure.Persistence.{
+    CatalogEntrySchema,
+    IdentificationEntrySchema,
     IdentificationSchema,
     LibrarySchema,
     MediaFileSchema
   }
 
   alias Bolognesa.Test.SyntheticSeriesProvider, as: Provider
+  alias Ecto.Adapters.SQL
+  alias Ecto.Adapters.SQL.Sandbox
+
+  test "begin without a job id preserves the outbox link" do
+    {file, token} = pending("Serie S01E01.mkv")
+
+    Repo.update_all(from(row in IdentificationSchema, where: row.media_file_id == ^file.id),
+      set: [job_id: 7]
+    )
+
+    assert {:ok, _} = Repository.begin_identification(file.id, token, nil)
+    assert {:ok, %{job_id: 7, started_at: %DateTime{}}} = Repository.get(file.id)
+  end
+
+  test "an old token cannot create catalog identities after a retry" do
+    {file, token} = pending("Serie S01E01.mkv")
+    assert {:ok, fresh} = Repository.retry(file.id)
+    {:ok, series} = Provider.details(201)
+    {:ok, season} = Provider.season(201, 1)
+    {:ok, selection} = EpisodeSelection.new(series, season, [1])
+    count = Repo.aggregate(CatalogEntrySchema, :count)
+
+    assert {:ok, :stale} = Repository.complete_series(file.id, token, [], selection, nil)
+    assert {:ok, ^fresh} = Repository.get(file.id)
+    assert Repo.aggregate(CatalogEntrySchema, :count) == count
+  end
+
+  @tag committed: true
+  test "a rejected second entry rolls back catalog decision and the first entry" do
+    Sandbox.unboxed_run(Repo, fn ->
+      {file, token} = pending("Serie S00E01E02.mkv")
+      catalog_count = Repo.aggregate(CatalogEntrySchema, :count)
+      entry_count = Repo.aggregate(IdentificationEntrySchema, :count)
+
+      SQL.query!(Repo, """
+      ALTER TABLE identification_entries ADD CONSTRAINT identification_refactor_reject_second
+      CHECK (position <> 2) NOT VALID
+      """)
+
+      try do
+        assert {:error, :unavailable} =
+                 IdentifySeriesFile.call(file.id, token, 1, Repository, Provider)
+
+        assert {:ok, %{state: :pending, token: ^token, catalog_entry_ids: []}} =
+                 Repository.get(file.id)
+
+        assert Repo.aggregate(CatalogEntrySchema, :count) == catalog_count
+        assert Repo.aggregate(IdentificationEntrySchema, :count) == entry_count
+      after
+        SQL.query!(
+          Repo,
+          "ALTER TABLE identification_entries DROP CONSTRAINT identification_refactor_reject_second"
+        )
+
+        Repo.delete!(Repo.get!(MediaFileSchema, file.id))
+        Repo.delete!(Repo.get!(LibrarySchema, file.library_id))
+      end
+    end)
+  end
 
   test "identifies a special double file atomically and repeats harmlessly" do
     {file, token} = pending("Serie S00E01E02.mkv")

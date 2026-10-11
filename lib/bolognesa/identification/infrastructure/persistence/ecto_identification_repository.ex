@@ -8,11 +8,15 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   alias Bolognesa.Identification.Domain.Identification
   alias Bolognesa.Identification.Domain.MovieCandidate
   alias Bolognesa.Identification.Domain.MovieDetails
+
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.DecisionStore
+
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.EntryStore
+
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedMovieWriter
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedSeriesWriter
-  alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -54,19 +58,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     if file_projection(file).content_type == :series do
       ids = if selection, do: IdentifiedSeriesWriter.upsert!(selection), else: []
 
-      Repo.update!(
-        IdentificationSchema.changeset(identification, %{
-          state: if(ids == [], do: :unmatched, else: :automatic),
-          origin: :automatic,
-          needs_review: ids == [],
-          failure_reason: if(reason, do: Atom.to_string(reason), else: nil),
-          candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
-          finished_at: DateTime.utc_now()
-        }),
-        log: false
-      )
-
-      replace_entries!(identification.id, ids)
+      complete_decision!(identification, ids, candidates, ids == [], reason)
       :ok
     else
       {:ok, :stale}
@@ -85,33 +77,9 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   end
 
   defp save_series_correction(file, choice) do
-    existing =
-      Repo.one(
-        from row in IdentificationSchema, where: row.media_file_id == ^file.id, lock: "FOR UPDATE"
-      )
-
+    existing = DecisionStore.lock(Repo, file.id)
     ids = if choice == :unidentified, do: [], else: IdentifiedSeriesWriter.upsert!(choice)
-
-    row =
-      Repo.insert_or_update!(
-        IdentificationSchema.changeset(existing || %IdentificationSchema{}, %{
-          media_file_id: file.id,
-          observed_revision: file.revision,
-          token: Ecto.UUID.generate(),
-          state: if(ids == [], do: :manual_unidentified, else: :manual),
-          origin: :manual,
-          needs_review: false,
-          failure_reason: nil,
-          candidate_data: %{"items" => []},
-          job_id: nil,
-          started_at: nil,
-          finished_at: DateTime.utc_now()
-        }),
-        log: false
-      )
-
-    replace_entries!(row.id, ids)
-    {:ok, IdentificationMapper.to_domain(row, ids)}
+    save_correction(existing, file, ids)
   end
 
   defp file_projection(file) do
@@ -127,9 +95,9 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   @spec get(pos_integer()) ::
           {:ok, Identification.t()} | {:error, :not_found | :unavailable}
   def get(file_id) do
-    case Repo.get_by(IdentificationSchema, media_file_id: file_id) do
+    case DecisionStore.get(Repo, file_id) do
       nil -> {:error, :not_found}
-      row -> {:ok, IdentificationMapper.to_domain(row, entry_ids(row.id))}
+      row -> {:ok, decision(row)}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -172,14 +140,14 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     transaction(fn ->
       case current(file_id, token) do
         {:ok, identification, _file} when identification.state == :pending ->
-          Repo.update!(
-            IdentificationSchema.changeset(identification, %{
-              state: :failed,
-              failure_reason: Atom.to_string(reason),
-              needs_review: true,
-              finished_at: DateTime.utc_now()
-            })
-          )
+          {:ok, failed} =
+            Identification.fail(
+              decision(identification),
+              Atom.to_string(reason),
+              DateTime.utc_now()
+            )
+
+          DecisionStore.save!(Repo, identification, failed)
 
           :ok
 
@@ -217,12 +185,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
           log: false
         )
 
-      identification =
-        Repo.one(
-          from row in IdentificationSchema,
-            where: row.media_file_id == ^file_id,
-            lock: "FOR UPDATE"
-        )
+      identification = DecisionStore.lock(Repo, file_id)
 
       cond do
         is_nil(file) ->
@@ -271,9 +234,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   end
 
   defp start_pending_identification(identification, file, job_id) do
-    attrs = %{started_at: DateTime.utc_now()}
-    attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
-    Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
+    {:ok, started} = Identification.start(decision(identification), job_id, DateTime.utc_now())
+    DecisionStore.save!(Repo, identification, started)
     {:ok, file_projection(file)}
   end
 
@@ -285,19 +247,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
 
   defp complete_pending_identification(identification, candidates, details, needs_review) do
     catalog_entry_id = if details, do: upsert_catalog_entry_id(details), else: nil
-    state = if catalog_entry_id, do: :automatic, else: :unmatched
-
-    attrs = %{
-      state: state,
-      origin: :automatic,
-      needs_review: needs_review,
-      failure_reason: nil,
-      candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
-      finished_at: DateTime.utc_now()
-    }
-
-    Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
-    replace_entries!(identification.id, if(catalog_entry_id, do: [catalog_entry_id], else: []))
+    ids = if catalog_entry_id, do: [catalog_entry_id], else: []
+    complete_decision!(identification, ids, candidates, needs_review, nil)
     :ok
   end
 
@@ -312,38 +263,12 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   end
 
   defp correct_movie_file(file, file_id, choice) do
-    identification =
-      Repo.one(
-        from row in IdentificationSchema,
-          where: row.media_file_id == ^file_id,
-          lock: "FOR UPDATE"
-      )
+    identification = DecisionStore.lock(Repo, file_id)
 
     catalog_entry_id =
       if choice == :unidentified, do: nil, else: upsert_catalog_entry_id(choice)
 
-    attrs = %{
-      media_file_id: file_id,
-      observed_revision: file.revision,
-      token: Ecto.UUID.generate(),
-      state: if(catalog_entry_id, do: :manual, else: :manual_unidentified),
-      origin: :manual,
-      needs_review: false,
-      failure_reason: nil,
-      candidate_data: %{"items" => []},
-      job_id: nil,
-      started_at: nil,
-      finished_at: DateTime.utc_now()
-    }
-
-    row =
-      Repo.insert_or_update!(
-        IdentificationSchema.changeset(identification || %IdentificationSchema{}, attrs),
-        log: false
-      )
-
-    replace_entries!(row.id, if(catalog_entry_id, do: [catalog_entry_id], else: []))
-    {:ok, IdentificationMapper.to_domain(row, entry_ids(row.id))}
+    save_correction(identification, file, if(catalog_entry_id, do: [catalog_entry_id], else: []))
   end
 
   defp request_retry(file) do
@@ -363,10 +288,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
         log: false
       )
 
-    identification =
-      Repo.one(
-        from row in IdentificationSchema, where: row.media_file_id == ^file_id, lock: "FOR UPDATE"
-      )
+    identification = DecisionStore.lock(Repo, file_id)
 
     if file && identification && identification.token == token &&
          identification.origin != :manual && file.availability == :available &&
@@ -379,33 +301,37 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     candidate |> Map.from_struct() |> Map.new(fn {key, value} -> {Atom.to_string(key), value} end)
   end
 
-  defp entry_ids(identification_id) do
-    Repo.all(
-      from row in IdentificationEntrySchema,
-        where: row.identification_id == ^identification_id,
-        order_by: row.position,
-        select: row.catalog_entry_id
-    )
+  defp decision(row) do
+    IdentificationMapper.to_domain(row, EntryStore.ids(Repo, row.id))
   end
 
-  defp replace_entries!(identification_id, ids) do
-    Repo.delete_all(
-      from row in IdentificationEntrySchema, where: row.identification_id == ^identification_id
-    )
+  defp complete_decision!(row, ids, candidates, needs_review, reason) do
+    result = %{
+      candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
+      needs_review?: needs_review,
+      failure_reason: if(reason, do: Atom.to_string(reason), else: nil)
+    }
 
-    ids
-    |> Enum.with_index(1)
-    |> Enum.each(fn {id, position} ->
-      Repo.insert!(
-        %IdentificationEntrySchema{
-          identification_id: identification_id,
-          catalog_entry_id: id,
-          position: position
-        },
-        log: false
-      )
-    end)
+    {:ok, completed} = Identification.complete(decision(row), ids, result, DateTime.utc_now())
+    saved = DecisionStore.save!(Repo, row, completed)
+    EntryStore.replace!(Repo, saved.id, completed.catalog_entry_ids)
   end
+
+  defp save_correction(existing, file, ids) do
+    token = Ecto.UUID.generate()
+    base = correction_base(existing, file, token)
+    {:ok, corrected} = Identification.correct(base, file.revision, token, ids, DateTime.utc_now())
+    saved = DecisionStore.save!(Repo, existing, corrected)
+    EntryStore.replace!(Repo, saved.id, corrected.catalog_entry_ids)
+    {:ok, IdentificationMapper.to_domain(saved, ids)}
+  end
+
+  defp correction_base(nil, file, token) do
+    {:ok, pending} = Identification.new(file.id, file.revision, token)
+    pending
+  end
+
+  defp correction_base(existing, _file, _token), do: decision(existing)
 
   defp transaction(fun) do
     case Repo.transaction(fun) do
