@@ -124,6 +124,8 @@ Catálogo consulta obras con modelos propios. Identificación controla la creaci
 
 Relaciona archivos con obras. `Identification` conserva el estado, los candidatos, la decisión y su procedencia automática o manual.
 
+Las transiciones de solicitud, inicio, confirmación, fallo y corrección pertenecen al dominio y reciben tiempo y token explícitos. El repositorio coordina la transacción y comprueba vigencia, disponibilidad y tipo con datos bloqueados antes de escribir catálogo. Sus colaboradores privados de almacenamiento de decisiones y asociaciones reciben el Repo del llamador, no abren transacciones propias ni capturan fallos de escritura: estos deben llegar a la frontera transaccional para revertir el conjunto. La consulta de recuperación de jobs queda separada de la aplicación de sus fallos protegidos por token. Inventario reutiliza estas transiciones y almacenamiento mediante la fachada, conservando decisión y outbox en su misma transacción.
+
 Una coincidencia dudosa requiere revisión. Una corrección manual queda protegida ante posteriores identificaciones automáticas. Esta protección debe comprobarse al guardar, incluso si un trabajo automático comenzó antes de la corrección.
 
 Cada archivo tiene una decisión. Sus relaciones confirmadas viven en `identification_entries`, ordenadas por posición positiva y sin repetir elemento ni posición. Una película tiene una relación; una serie selecciona entre uno y cien episodios de una sola temporada. La corrección sustituye el conjunto completo de forma atómica; los estados sin confirmar no exponen relaciones vigentes. Identificación controla esas relaciones; no se mantienen dos fuentes de verdad independientes en Bibliotecas y Catálogo.
