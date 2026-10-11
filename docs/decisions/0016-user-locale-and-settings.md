@@ -1,6 +1,6 @@
 # 0016. Idioma por cuenta y pantalla de Ajustes
 
-Estado: implementada y verificada localmente sobre `main`. Sin publicación ni despliegue; validación visual pendiente.
+Estado: implementada, verificada localmente y desplegada mediante `bf6447a`. Guardado autenticado en QNAP y validación visual pendientes. [Evidencia](../validation/qnap.md#despliegue-de-ajustes-e-idioma).
 
 ## Contexto
 
