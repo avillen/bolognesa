@@ -312,9 +312,12 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificatio
   defp save_correction(existing, file, ids) do
     token = Ecto.UUID.generate()
     base = correction_base(existing, file, token)
+    removed_ids = base.catalog_entry_ids -- ids
     {:ok, corrected} = Identification.correct(base, file.revision, token, ids, DateTime.utc_now())
     saved = DecisionStore.save!(Repo, existing, corrected)
     EntryStore.replace!(Repo, saved.id, corrected.catalog_entry_ids)
+    IdentifiedMovieWriter.delete_orphaned!(removed_ids)
+    IdentifiedSeriesWriter.delete_orphaned!(removed_ids)
     {:ok, IdentificationMapper.to_domain(saved, ids)}
   end
 

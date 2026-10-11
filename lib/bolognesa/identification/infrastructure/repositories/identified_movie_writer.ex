@@ -1,8 +1,10 @@
 defmodule Bolognesa.Identification.Infrastructure.Repositories.IdentifiedMovieWriter do
   @moduledoc false
+  import Ecto.Query
   alias Bolognesa.Identification.Domain.ValueObjects.Movies.MovieDetails
   alias Bolognesa.Identification.Domain.ValueObjects.Movies.NewMovie
   alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Repo
 
@@ -16,6 +18,36 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.IdentifiedMovieWr
     end
   end
 
+  @spec delete_orphaned!([pos_integer()]) :: :ok
+  def delete_orphaned!(ids) do
+    ids
+    |> Enum.sort()
+    |> Enum.each(&delete_orphaned_movie!/1)
+
+    :ok
+  end
+
+  defp delete_orphaned_movie!(id) do
+    entry =
+      Repo.one(
+        from(entry in CatalogEntrySchema,
+          where: entry.id == ^id and entry.kind == :movie,
+          lock: "FOR UPDATE"
+        ),
+        log: false
+      )
+
+    referenced? =
+      Repo.exists?(from(row in IdentificationEntrySchema, where: row.catalog_entry_id == ^id),
+        log: false
+      )
+
+    if entry && !referenced? do
+      Repo.delete_all(from(movie in MovieSchema, where: movie.id == ^id), log: false)
+      Repo.delete!(entry, log: false)
+    end
+  end
+
   defp persist!(movie) do
     identity = %{
       kind: :movie,
@@ -24,18 +56,13 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.IdentifiedMovieWr
       provider_id: movie.provider_id
     }
 
-    %CatalogEntrySchema{}
-    |> CatalogEntrySchema.changeset(identity)
-    |> Repo.insert!(
-      on_conflict: :nothing,
-      conflict_target: [:provider, :resource_type, :provider_id],
-      log: false
-    )
-
     entry =
-      Repo.get_by!(
-        CatalogEntrySchema,
-        Map.take(identity, [:provider, :resource_type, :provider_id]),
+      %CatalogEntrySchema{}
+      |> CatalogEntrySchema.changeset(identity)
+      |> Repo.insert!(
+        on_conflict: [set: [provider_id: movie.provider_id]],
+        conflict_target: [:provider, :resource_type, :provider_id],
+        returning: true,
         log: false
       )
 

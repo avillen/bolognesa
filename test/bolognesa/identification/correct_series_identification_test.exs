@@ -17,9 +17,13 @@ defmodule Bolognesa.Identification.CorrectSeriesIdentificationTest do
   alias Bolognesa.Identity.Domain.Entities.Actor
 
   alias Bolognesa.Infrastructure.Persistence.{
+    CatalogEntrySchema,
+    EpisodeSchema,
     IdentificationSchema,
     LibrarySchema,
-    MediaFileSchema
+    MediaFileSchema,
+    SeasonSchema,
+    SeriesSchema
   }
 
   alias Bolognesa.Test.{BlockingSeriesProvider, SyntheticSeriesProvider}
@@ -41,6 +45,11 @@ defmodule Bolognesa.Identification.CorrectSeriesIdentificationTest do
     assert {:ok, %{state: :manual_unidentified, catalog_entry_ids: []}} =
              correct(@actor, file.id, :unidentified)
 
+    assert Repo.all(EpisodeSchema) == []
+    assert Repo.all(SeasonSchema) == []
+    assert Repo.all(SeriesSchema) == []
+    assert Repo.all(CatalogEntrySchema) == []
+
     {movie_file, _} = pending(:movie)
     assert {:error, :wrong_content_type} = correct(@actor, movie_file.id, choice)
 
@@ -52,6 +61,77 @@ defmodule Bolognesa.Identification.CorrectSeriesIdentificationTest do
                Repository,
                SyntheticSeriesProvider
              )
+  end
+
+  test "shrinking a multiple episode selection preserves the remaining episode and hierarchy" do
+    {file, _} = pending(:series)
+    assert {:ok, original} = correct(@actor, file.id, {:tmdb, 201, 1, [1, 2]})
+    [first_id, second_id] = original.catalog_entry_ids
+
+    assert {:ok, %{catalog_entry_ids: [^second_id]}} =
+             correct(@actor, file.id, {:tmdb, 201, 1, [2]})
+
+    refute Repo.get(EpisodeSchema, first_id)
+    refute Repo.get(CatalogEntrySchema, first_id)
+    assert Repo.get(EpisodeSchema, second_id)
+    assert length(Repo.all(SeasonSchema)) == 1
+    assert length(Repo.all(SeriesSchema)) == 1
+  end
+
+  test "moving to another season removes the empty season and preserves the series" do
+    {file, _} = pending(:series)
+    assert {:ok, original} = correct(@actor, file.id, {:tmdb, 201, 0, [1]})
+    [id] = original.catalog_entry_ids
+    season = Repo.get!(SeasonSchema, Repo.get!(EpisodeSchema, id).season_id)
+
+    assert {:ok, _} = correct(@actor, file.id, {:tmdb, 201, 1, [2]})
+
+    refute Repo.get(EpisodeSchema, id)
+    refute Repo.get(SeasonSchema, season.id)
+    refute Repo.get(CatalogEntrySchema, season.id)
+    assert Repo.get(SeriesSchema, season.series_id)
+    assert length(Repo.all(SeasonSchema)) == 1
+  end
+
+  test "another missing version preserves the episode season and series" do
+    {first, _} = pending(:series)
+    {second, _} = pending(:series)
+    choice = {:tmdb, 201, 1, [1]}
+    assert {:ok, original} = correct(@actor, first.id, choice)
+    [id] = original.catalog_entry_ids
+    assert {:ok, %{catalog_entry_ids: [^id]}} = correct(@actor, first.id, choice)
+    assert {:ok, %{catalog_entry_ids: [^id]}} = correct(@actor, second.id, choice)
+    second |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+
+    assert {:ok, _} = correct(@actor, first.id, :unidentified)
+    episode = Repo.get!(EpisodeSchema, id)
+    season = Repo.get!(SeasonSchema, episode.season_id)
+    assert Repo.get(SeriesSchema, season.series_id)
+    assert Repo.get(CatalogEntrySchema, id)
+    assert Repo.get(CatalogEntrySchema, season.id)
+    assert Repo.get(CatalogEntrySchema, season.series_id)
+  end
+
+  test "reassignment to another series removes the old hierarchy and preserves the new one" do
+    {file, _} = pending(:series)
+    assert {:ok, original} = correct(@actor, file.id, {:tmdb, 201, 1, [1, 2]})
+    [first_id, second_id] = original.catalog_entry_ids
+    season = Repo.get!(SeasonSchema, Repo.get!(EpisodeSchema, first_id).season_id)
+
+    assert {:ok, replacement} = correct(@actor, file.id, {:tmdb, 202, 1, [1]})
+    [new_id] = replacement.catalog_entry_ids
+
+    for id <- [first_id, second_id, season.id, season.series_id] do
+      refute Repo.get(CatalogEntrySchema, id)
+    end
+
+    refute Repo.get(EpisodeSchema, first_id)
+    refute Repo.get(EpisodeSchema, second_id)
+    refute Repo.get(SeasonSchema, season.id)
+    refute Repo.get(SeriesSchema, season.series_id)
+    episode = Repo.get!(EpisodeSchema, new_id)
+    new_season = Repo.get!(SeasonSchema, episode.season_id)
+    assert Repo.get(SeriesSchema, new_season.series_id)
   end
 
   test "manual set survives an older automatic completion" do

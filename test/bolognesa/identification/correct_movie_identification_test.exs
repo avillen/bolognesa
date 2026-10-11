@@ -9,10 +9,11 @@ defmodule Bolognesa.Identification.CorrectIdentificationTest do
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository
 
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
-
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
 
   defmodule Provider do
     def details(id), do: {:ok, %MovieDetails{provider_id: id, title: "Elegida"}}
@@ -35,8 +36,45 @@ defmodule Bolognesa.Identification.CorrectIdentificationTest do
     assert {:ok, %Identification{state: :manual_unidentified, catalog_entry_ids: []}} =
              CorrectMovieIdentification.call(actor, file.id, :unidentified, Repository, Provider)
 
+    refute Repo.get(MovieSchema, catalog_entry_id)
+    refute Repo.get(CatalogEntrySchema, catalog_entry_id)
+
     assert {:error, :invalid_choice} =
              CorrectMovieIdentification.call(actor, file.id, {:tmdb, 0}, Repository, Provider)
+  end
+
+  test "reassignment removes the previous movie after its last version leaves" do
+    file = fixture()
+
+    assert {:ok, old} =
+             Repository.correct(file.id, %MovieDetails{provider_id: 51, title: "Anterior"})
+
+    [old_id] = old.catalog_entry_ids
+
+    assert {:ok, new} =
+             Repository.correct(file.id, %MovieDetails{provider_id: 52, title: "Nueva"})
+
+    [new_id] = new.catalog_entry_ids
+
+    refute Repo.get(MovieSchema, old_id)
+    refute Repo.get(CatalogEntrySchema, old_id)
+    assert Repo.get(MovieSchema, new_id)
+    assert Repo.get(CatalogEntrySchema, new_id)
+  end
+
+  test "correction preserves the same movie and movies with another missing version" do
+    first = fixture()
+    second = fixture()
+    details = %MovieDetails{provider_id: 51, title: "Compartida"}
+    assert {:ok, original} = Repository.correct(first.id, details)
+    [id] = original.catalog_entry_ids
+    assert {:ok, %{catalog_entry_ids: [^id]}} = Repository.correct(first.id, details)
+    assert {:ok, %{catalog_entry_ids: [^id]}} = Repository.correct(second.id, details)
+
+    second |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+    assert {:ok, _} = Repository.correct(first.id, :unidentified)
+    assert Repo.get(MovieSchema, id)
+    assert Repo.get(CatalogEntrySchema, id)
   end
 
   defp fixture do
