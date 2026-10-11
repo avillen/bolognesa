@@ -9,7 +9,8 @@ defmodule Bolognesa.Identity.Infrastructure.Repositories.EctoUserRepository.User
       id: schema.id,
       name: schema.name,
       email: schema.email,
-      role: String.to_existing_atom(schema.role)
+      role: String.to_existing_atom(schema.role),
+      locale: schema.locale
     }
   end
 end

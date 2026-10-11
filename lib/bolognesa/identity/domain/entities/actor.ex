@@ -1,6 +1,7 @@
 defmodule Bolognesa.Identity.Domain.Entities.Actor do
   @moduledoc "The verified identity passed to protected use cases."
-  defstruct [:id, :name, :email, :role]
+  defstruct [:id, :name, :email, :role, :locale]
+  alias Bolognesa.Identity.Domain.ValueObjects.Locale
 
   alias Bolognesa.Identity.Domain.Entities.User
 
@@ -8,7 +9,8 @@ defmodule Bolognesa.Identity.Domain.Entities.Actor do
           id: User.id(),
           name: User.name(),
           email: User.email(),
-          role: :admin | :member
+          role: :admin | :member,
+          locale: Locale.t()
         }
 
   @spec from_user(User.t()) :: t()
@@ -17,7 +19,8 @@ defmodule Bolognesa.Identity.Domain.Entities.Actor do
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      locale: user.locale
     }
   end
 end

@@ -4,13 +4,15 @@ defmodule Bolognesa.Identity do
     EndSession,
     InstallAdmin,
     ResolveSession,
-    StartSession
+    StartSession,
+    UpdateLocale
   }
 
   alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Identity.Domain.Entities.User
   alias Bolognesa.Identity.Domain.ReadModels.Session
   alias Bolognesa.Identity.Domain.ValueObjects.Sessions.NewAdmin
+  alias Bolognesa.Identity.Domain.ValueObjects.Locale
   alias Bolognesa.Identity.Infrastructure.Repositories.EctoUserRepository
   alias Bolognesa.Identity.Infrastructure.Services.BcryptHasher
 
@@ -44,6 +46,10 @@ defmodule Bolognesa.Identity do
   @spec fetch_actor(Session.token() | nil) ::
           {:ok, Actor.t()} | {:error, :unauthenticated | :unavailable}
   def fetch_actor(token), do: ResolveSession.call(token, EctoUserRepository)
+
+  @spec update_locale(Actor.t() | nil, Locale.t()) ::
+          {:ok, Actor.t()} | {:error, :forbidden | :invalid_locale | :unavailable}
+  def update_locale(actor, locale), do: UpdateLocale.call(actor, locale, EctoUserRepository)
 
   @spec end_session(Session.token() | nil) :: :ok | {:error, :unavailable}
   def end_session(token), do: EndSession.call(token, EctoUserRepository)

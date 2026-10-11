@@ -4,10 +4,12 @@ defmodule Bolognesa.Identity.Application.Ports.Repositories.UserRepository do
   alias Bolognesa.Identity.Domain.Entities.User
   alias Bolognesa.Identity.Domain.ReadModels.Session
   alias Bolognesa.Identity.Domain.ValueObjects.Sessions.NewAdmin
+  alias Bolognesa.Identity.Domain.ValueObjects.Locale
 
   @typedoc "Module implementing the repository behaviour."
   @type adapter :: atom()
 
+  @callback update_locale(User.id(), Locale.t()) :: {:ok, User.t()} | {:error, :unavailable}
   @callback admin_exists?() :: {:ok, boolean()} | {:error, :unavailable}
   @callback insert_initial_admin(NewAdmin.t(), PasswordHasher.hash()) ::
               {:ok, User.t()} | {:error, :setup_closed | :unavailable}

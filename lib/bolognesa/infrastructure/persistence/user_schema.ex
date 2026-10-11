@@ -8,13 +8,15 @@ defmodule Bolognesa.Infrastructure.Persistence.UserSchema do
           name: String.t() | nil,
           email: String.t() | nil,
           role: String.t() | nil,
-          hashed_password: String.t() | nil
+          hashed_password: String.t() | nil,
+          locale: String.t() | nil
         }
 
   schema "identity_users" do
     field :name, :string
     field :email, :string
     field :role, :string
+    field :locale, :string
     field :hashed_password, :string, redact: true
     timestamps(type: :utc_datetime_usec)
   end

@@ -13,6 +13,20 @@ defmodule Bolognesa.Identity.Infrastructure.Repositories.EctoUserRepository do
   alias Bolognesa.Infrastructure.Persistence.{SessionSchema, UserSchema}
 
   @impl true
+  def update_locale(user_id, locale) do
+    query = from u in UserSchema, where: u.id == ^user_id, select: u
+
+    case Repo.update_all(query, [set: [locale: locale, updated_at: DateTime.utc_now()]],
+           log: false
+         ) do
+      {1, [stored]} -> {:ok, UserMapper.to_user(stored)}
+      _ -> {:error, :unavailable}
+    end
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+  end
+
+  @impl true
   def admin_exists? do
     {:ok, Repo.exists?(from u in UserSchema, where: u.role == "admin")}
   rescue
