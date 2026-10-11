@@ -99,6 +99,7 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "example.com"
   lan_http? = System.get_env("BOLOGNESA_LAN_HTTP") == "true"
+  check_origin = BolognesaWeb.EndpointOriginPolicy.from_env(System.get_env("PHX_CHECK_ORIGIN"))
   public_scheme = if lan_http?, do: "http", else: "https"
 
   public_port =
@@ -125,7 +126,8 @@ if config_env() == :prod do
   config :bolognesa, BolognesaWeb.Endpoint,
     url: [host: host, port: public_port, scheme: public_scheme],
     http: http_options,
-    secret_key_base: secret_key_base
+    secret_key_base: secret_key_base,
+    check_origin: check_origin
 
   # ## SSL Support
   #
