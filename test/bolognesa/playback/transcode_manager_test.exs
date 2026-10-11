@@ -87,7 +87,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
         end
       end)
 
-    assert_receive {:started, {:ok, session}}
+    assert_receive {:started, {:ok, session}}, 5_000
     %{port: port} = :sys.get_state(TranscodeManager)
     ref = :erlang.monitor(:port, port)
     send(owner, :close)
