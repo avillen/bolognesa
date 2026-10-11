@@ -15,14 +15,14 @@
 
 /* Shared palette from the approved Bolognesa visual reference. */
 @theme {
-  --color-canvas: #17191b;
+  --color-canvas: #17191d;
   --color-surface: #202225;
-  --color-raised: #272a2e;
+  --color-raised: #282b30;
   --color-border: #383b40;
   --color-border-strong: #64676d;
   --color-ink: #f4f1ed;
-  --color-muted: #aaa9ad;
-  --color-accent: #be6d52;
+  --color-muted: #96989f;
+  --color-accent: #c26e54;
   --color-accent-hover: #ce8065;
   --color-accent-soft: #df9d85;
 }

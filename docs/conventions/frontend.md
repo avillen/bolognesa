@@ -132,11 +132,11 @@ La interfaz debe contemplar ratón, pantalla táctil, teclado y mando: acciones 
 
 ## Identidad visual
 
-La referencia acordada utiliza carbón (`#17191b`) para el fondo, grafito (`#272a2e`) para superficies elevadas, blanco cálido (`#f4f1ed`) para texto y gris secundario para información auxiliar. El terracota (`#be6d52`) destaca acciones principales, selecciones, foco y progreso de reproducción; los enlaces usan una variante clara para conservar contraste sobre las tarjetas.
+La referencia acordada utiliza carbón (`#17191d`) para el fondo, grafito (`#282b30`) para superficies elevadas, blanco cálido (`#f4f1ed`) para texto y gris secundario (`#96989f`) para información auxiliar. El terracota (`#c26e54`) destaca acciones principales, selecciones, foco y progreso de reproducción; los enlaces usan una variante clara para conservar contraste sobre las tarjetas.
 
 Los colores se declaran como tokens semánticos en `assets/css/app.css` mediante `@theme`: `canvas`, `surface`, `raised`, `border`, `border-strong`, `ink`, `muted`, `accent`, `accent-hover` y `accent-soft`. Los templates consumen esas utilidades en lugar de paletas genéricas. Los botones terracota llevan texto carbón. Se conservan colores semánticos puntuales para errores y éxito.
 
-La marca visible es «boloñesa», acompañada del gato vectorial en `priv/static/images/bolognesa-cat.svg`; el nombre técnico del proyecto sigue siendo Bolognesa. El icono es decorativo cuando acompaña al nombre. Se evitan degradados llamativos y animaciones excesivas; los pósteres aportan la variedad visual.
+La marca visible es «boloñesa», acompañada del gato vectorial en `priv/static/images/bolognesa-cat.svg`; el nombre técnico del proyecto sigue siendo Bolognesa. El SVG reproduce la silueta vectorizada de la referencia, con trazo blanco y fondo terracota redondeado, y se usa también como favicon explícito. El icono es decorativo cuando acompaña al nombre. Se evitan degradados llamativos y animaciones excesivas; los pósteres aportan la variedad visual.
 
 ## Verificación
 

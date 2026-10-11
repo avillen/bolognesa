@@ -41,8 +41,8 @@ defmodule BolognesaWeb.Layouts do
         href={~p"/"}
         class="inline-flex min-h-11 items-center gap-3 rounded-xl text-ink transition hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
-        <span class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent">
-          <img src={~p"/images/bolognesa-cat.svg"} width="28" height="28" alt="" />
+        <span class="flex size-12 shrink-0 items-center justify-center">
+          <img src={~p"/images/bolognesa-cat.svg"} width="48" height="48" alt="" />
         </span>
         <span class="text-lg font-semibold tracking-tight">boloñesa</span>
       </a>
