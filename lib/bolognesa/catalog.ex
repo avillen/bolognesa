@@ -6,7 +6,7 @@ defmodule Bolognesa.Catalog do
     GetSeries,
     ListEpisodes,
     ListMovies,
-    ListSeries
+    SearchSeries
   }
 
   alias Bolognesa.Catalog.Application.Dto.{
@@ -23,10 +23,11 @@ defmodule Bolognesa.Catalog do
   alias Bolognesa.Catalog.Infrastructure.Persistence.{EctoCatalogReader, EctoSeriesReader}
   alias Bolognesa.Identity.Domain.Actor
 
-  @spec list_series(Actor.t(), binary(), SeriesReader.page_number()) ::
+  @spec search_series(Actor.t(), binary(), SeriesReader.page_number()) ::
           {:ok, SeriesPage.t()}
           | {:error, :forbidden | :invalid_query | :invalid_page | :unavailable}
-  def list_series(actor, query, page), do: ListSeries.call(actor, query, page, EctoSeriesReader)
+  def search_series(actor, query, page),
+    do: SearchSeries.call(actor, query, page, EctoSeriesReader)
 
   @spec get_series(Actor.t(), Series.id()) ::
           {:ok, SeriesDetail.t()} | {:error, :forbidden | :not_found | :unavailable}

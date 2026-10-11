@@ -1,6 +1,6 @@
 defmodule Bolognesa.Catalog.Application.GetEpisode do
   @moduledoc "Authorize an episode detail and physical versions."
-  alias Bolognesa.Catalog.Application.Dto.{EpisodeDetail, EpisodeVersion}
+  alias Bolognesa.Catalog.Application.Dto.EpisodeDetail
   alias Bolognesa.Catalog.Application.Ports.SeriesReader
   alias Bolognesa.Catalog.Domain.Episode
   alias Bolognesa.Identity
@@ -11,14 +11,8 @@ defmodule Bolognesa.Catalog.Application.GetEpisode do
   def call(actor, id, reader) do
     with :ok <- Identity.authorize(actor, :admin),
          :ok <- valid_id(id),
-         {:ok, {episode, season, series, versions}} <- reader.get_episode(id) do
-      {:ok,
-       %EpisodeDetail{
-         episode: episode,
-         season: season,
-         series: series,
-         versions: Enum.map(versions, &EpisodeVersion.from_domain/1)
-       }}
+         {:ok, result} <- reader.get_episode(id) do
+      {:ok, EpisodeDetail.from_domain(result)}
     end
   end
 

@@ -1,6 +1,6 @@
 defmodule Bolognesa.Catalog.Application.ListMovies do
   @moduledoc "Authorize and bound a movie catalog search."
-  alias Bolognesa.Catalog.Application.Dto.{MovieListItem, MoviePage}
+  alias Bolognesa.Catalog.Application.Dto.MoviePage
   alias Bolognesa.Catalog.Application.Ports.CatalogReader
   alias Bolognesa.Identity
 
@@ -14,8 +14,8 @@ defmodule Bolognesa.Catalog.Application.ListMovies do
   def call(actor, query, page, reader) do
     with :ok <- Identity.authorize(actor, :admin),
          :ok <- validate(query, page),
-         {:ok, {rows, total}} <- reader.list_movies(String.trim(query), page) do
-      {:ok, %MoviePage{items: Enum.map(rows, &MovieListItem.from_domain/1), total: total}}
+         {:ok, result} <- reader.list_movies(String.trim(query), page) do
+      {:ok, MoviePage.from_domain(result)}
     end
   end
 

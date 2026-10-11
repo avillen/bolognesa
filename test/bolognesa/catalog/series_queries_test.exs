@@ -12,7 +12,7 @@ defmodule Bolognesa.Catalog.SeriesQueriesTest do
     decision = SeriesFixtures.identify(double, 0, [1, 2])
     single = SeriesFixtures.file(library.id, "Serie S00E01.mp4")
     SeriesFixtures.identify(single, 0, [1])
-    assert {:ok, page} = Catalog.list_series(@actor, "Serie", 1)
+    assert {:ok, page} = Catalog.search_series(@actor, "Serie", 1)
     assert page.total == 1
     assert [item] = page.items
     assert item.episode_count == 2
@@ -45,15 +45,15 @@ defmodule Bolognesa.Catalog.SeriesQueriesTest do
       })
 
     Repo.insert!(%MovieSchema{id: identity.id, title: "Movie"})
-    assert {:ok, %{total: 1}} = Catalog.list_series(@actor, "", 1)
+    assert {:ok, %{total: 1}} = Catalog.search_series(@actor, "", 1)
     assert {:ok, %{total: 1}} = Catalog.list_movies(@actor, "", 1)
   end
 
   test "queries authorize validate and distinguish empty pages from missing parents" do
-    assert {:error, :forbidden} = Catalog.list_series(nil, "", 1)
-    assert {:error, :invalid_query} = Catalog.list_series(@actor, String.duplicate("x", 257), 1)
-    assert {:error, :invalid_page} = Catalog.list_series(@actor, "", 0)
-    assert {:ok, %{items: [], total: 0}} = Catalog.list_series(@actor, "", 1)
+    assert {:error, :forbidden} = Catalog.search_series(nil, "", 1)
+    assert {:error, :invalid_query} = Catalog.search_series(@actor, String.duplicate("x", 257), 1)
+    assert {:error, :invalid_page} = Catalog.search_series(@actor, "", 0)
+    assert {:ok, %{items: [], total: 0}} = Catalog.search_series(@actor, "", 1)
     assert {:error, :not_found} = Catalog.get_series(@actor, 9_999_999)
     assert {:error, :not_found} = Catalog.get_episode(@actor, 9_999_999)
     assert {:error, :not_found} = Catalog.list_episodes(@actor, 9_999_999, 1)

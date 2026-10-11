@@ -1,6 +1,6 @@
 defmodule Bolognesa.Catalog.Application.GetSeries do
   @moduledoc "Authorize one series and its identified seasons."
-  alias Bolognesa.Catalog.Application.Dto.{SeasonListItem, SeriesDetail}
+  alias Bolognesa.Catalog.Application.Dto.SeriesDetail
   alias Bolognesa.Catalog.Application.Ports.SeriesReader
   alias Bolognesa.Catalog.Domain.Series
   alias Bolognesa.Identity
@@ -11,9 +11,8 @@ defmodule Bolognesa.Catalog.Application.GetSeries do
   def call(actor, id, reader) do
     with :ok <- Identity.authorize(actor, :admin),
          :ok <- valid_id(id),
-         {:ok, {series, seasons}} <- reader.get_series(id) do
-      {:ok,
-       %SeriesDetail{series: series, seasons: Enum.map(seasons, &SeasonListItem.from_domain/1)}}
+         {:ok, result} <- reader.get_series(id) do
+      {:ok, SeriesDetail.from_domain(result)}
     end
   end
 

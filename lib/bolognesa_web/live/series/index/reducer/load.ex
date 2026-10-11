@@ -17,6 +17,6 @@ defmodule BolognesaWeb.Series.Index.Reducer.Load do
     |> assign(:error, nil)
     |> assign(:request_id, request_id)
     |> assign(:form, to_form(%{"query" => query}, as: :search))
-    |> start_async({:series, request_id}, fn -> Catalog.list_series(actor, query, page) end)
+    |> start_async({:series, request_id}, fn -> Catalog.search_series(actor, query, page) end)
   end
 end

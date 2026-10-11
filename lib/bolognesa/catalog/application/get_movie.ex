@@ -1,6 +1,6 @@
 defmodule Bolognesa.Catalog.Application.GetMovie do
   @moduledoc "Authorize a movie detail read."
-  alias Bolognesa.Catalog.Application.Dto.{MovieDetail, MovieVersion}
+  alias Bolognesa.Catalog.Application.Dto.MovieDetail
   alias Bolognesa.Catalog.Application.Ports.CatalogReader
   alias Bolognesa.Identity
 
@@ -9,8 +9,8 @@ defmodule Bolognesa.Catalog.Application.GetMovie do
   def call(actor, id, reader) do
     with :ok <- Identity.authorize(actor, :admin),
          :ok <- validate_id(id),
-         {:ok, {movie, versions}} <- reader.get_movie(id) do
-      {:ok, %MovieDetail{movie: movie, versions: Enum.map(versions, &MovieVersion.from_domain/1)}}
+         {:ok, result} <- reader.get_movie(id) do
+      {:ok, MovieDetail.from_domain(result)}
     end
   end
 

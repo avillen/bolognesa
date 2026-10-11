@@ -1,9 +1,7 @@
 defmodule Bolognesa.Catalog.Application.Dto.EpisodeDetail do
   @moduledoc "Public episode detail result."
-  alias Bolognesa.Catalog.Application.Dto.EpisodeVersion
-  alias Bolognesa.Catalog.Domain.Episode
-  alias Bolognesa.Catalog.Domain.Season
-  alias Bolognesa.Catalog.Domain.Series
+  alias Bolognesa.Catalog.Application.Dto.EpisodeVersion, as: EpisodeVersionDto
+  alias Bolognesa.Catalog.Domain.{Episode, EpisodeVersion, Season, Series}
 
   defstruct [:episode, :season, :series, :versions]
 
@@ -11,6 +9,15 @@ defmodule Bolognesa.Catalog.Application.Dto.EpisodeDetail do
           episode: Episode.t(),
           season: Season.t(),
           series: Series.t(),
-          versions: [EpisodeVersion.t()]
+          versions: [EpisodeVersionDto.t()]
         }
+
+  @spec from_domain({Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()]}) :: t()
+  def from_domain({episode, season, series, versions}),
+    do: %__MODULE__{
+      episode: episode,
+      season: season,
+      series: series,
+      versions: Enum.map(versions, &EpisodeVersionDto.from_domain/1)
+    }
 end

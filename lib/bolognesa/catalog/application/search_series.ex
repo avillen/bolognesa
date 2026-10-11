@@ -1,6 +1,6 @@
-defmodule Bolognesa.Catalog.Application.ListSeries do
+defmodule Bolognesa.Catalog.Application.SearchSeries do
   @moduledoc "Authorize and bound the series catalog search."
-  alias Bolognesa.Catalog.Application.Dto.{SeriesListItem, SeriesPage}
+  alias Bolognesa.Catalog.Application.Dto.SeriesPage
   alias Bolognesa.Catalog.Application.Ports.SeriesReader
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
@@ -12,8 +12,8 @@ defmodule Bolognesa.Catalog.Application.ListSeries do
     with :ok <- Identity.authorize(actor, :admin),
          :ok <- query_valid(query),
          :ok <- page_valid(page),
-         {:ok, {rows, total}} <- reader.list_series(String.trim(query), page) do
-      {:ok, %SeriesPage{items: Enum.map(rows, &SeriesListItem.from_domain/1), total: total}}
+         {:ok, result} <- reader.list_series(String.trim(query), page) do
+      {:ok, SeriesPage.from_domain(result)}
     end
   end
 
