@@ -4,14 +4,14 @@
       <h1 class="text-3xl font-bold">Revisión de series</h1>
       <.link
         navigate={~p"/series"}
-        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 text-amber-200 hover:bg-stone-800"
+        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 text-accent-soft hover:bg-raised"
       >Volver a series</.link>
     </div>
     <p :if={@loading?} role="status">Cargando archivos…</p>
     <div :if={@error} role="alert" class="rounded-xl border border-red-300/30 p-4 text-red-200">
       {@error}<.link
         patch={~p"/series/review?page=#{@page}&file_id=#{@selected_file_id}"}
-        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 border border-stone-600 text-amber-200"
+        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 border border-border-strong text-accent-soft"
       >Reintentar</.link>
     </div>
     <p :if={!@loading? && @total == 0}>No hay archivos pendientes de revisión.</p>
@@ -19,7 +19,7 @@
       <article
         :for={{dom_id, item} <- @streams.reviews}
         id={dom_id}
-        class="rounded-2xl border border-stone-700 bg-zinc-900 p-4"
+        class="rounded-2xl border border-border bg-surface p-4"
       >
         <p class="font-semibold break-all">{item.filename}</p>
         <p>{state_label(item.state)} · {failure_label(item.failure_reason)}</p>
@@ -33,14 +33,14 @@
         <.link
           :if={!@saving?}
           patch={~p"/series/review?page=#{@page}&file_id=#{item.file_id}"}
-          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 border border-stone-600 text-amber-200"
+          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 border border-border-strong text-accent-soft"
           aria-disabled={@saving?}
         >Corregir</.link>
         <button
           phx-click="retry"
           phx-value-file_id={item.file_id}
           disabled={@saving?}
-          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 text-amber-200 hover:bg-stone-800"
+          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 text-accent-soft hover:bg-raised"
         >Reintentar identificación</button>
       </article>
     </div>
@@ -52,7 +52,7 @@
     <section
       :if={@selected_item}
       id="series-file-correction"
-      class="space-y-4 rounded-2xl border border-stone-700 bg-zinc-900 p-5"
+      class="space-y-4 rounded-2xl border border-border bg-surface p-5"
     >
       <h2 class="text-xl font-semibold break-all">Corregir {@selected_item.filename}</h2>
       <p :if={@selected_item.episode_numbers != []}>
@@ -72,7 +72,7 @@
       >
         <.input field={@search_form[:query]} label="Buscar serie en TMDb" disabled={@saving?} />
         <button
-          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 bg-amber-300 text-stone-950 hover:bg-amber-200"
+          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 bg-accent text-canvas hover:bg-accent-hover"
           disabled={@saving? || @searching?}
         >Buscar</button>
       </.form>
@@ -84,7 +84,7 @@
           phx-click="choose"
           phx-value-id={candidate.provider_id}
           disabled={@saving?}
-          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 border border-stone-600 text-amber-200 hover:border-amber-300"
+          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 border border-border-strong text-accent-soft hover:border-accent"
         >{candidate.title} {candidate.year}</button>
       </div>
       <div :if={@series_id} class="space-y-4">
@@ -103,7 +103,7 @@
             disabled={@saving?}
           />
           <button
-            class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 border border-stone-600 text-amber-200"
+            class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 border border-border-strong text-accent-soft"
             disabled={@saving? || @season_loading?}
           >Cargar episodios</button>
         </.form>
@@ -126,13 +126,13 @@
                 name="selection[episode_numbers][]"
                 value={episode.number}
                 disabled={@saving?}
-                class="size-5 shrink-0 accent-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+                class="size-5 shrink-0 accent-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               />
               <span>{episode.number}. {episode.title}</span>
             </label>
           </div>
           <button
-            class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 bg-amber-300 text-stone-950 hover:bg-amber-200"
+            class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 bg-accent text-canvas hover:bg-accent-hover"
             disabled={@saving? || @season_number == nil || @episode_numbers == []}
           >{if @saving?, do: "Guardando…", else: "Guardar selección completa"}</button>
         </.form>
@@ -140,14 +140,14 @@
       <button
         phx-click="unidentified"
         disabled={@saving?}
-        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 text-amber-200 hover:bg-stone-800"
+        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 text-accent-soft hover:bg-raised"
       >Marcar sin identificar</button>
     </section>
     <p
       :if={@feedback}
       id="series-review-feedback"
       role="status"
-      class="rounded-xl border border-amber-300/30 p-4 text-amber-100"
+      class="rounded-xl border border-accent/30 p-4 text-accent-soft"
     >
       {@feedback}
     </p>

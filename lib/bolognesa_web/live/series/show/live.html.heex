@@ -1,35 +1,35 @@
 <Layouts.app flash={@flash} current_scope={@current_scope}>
   <section class="mx-auto max-w-5xl space-y-7">
-    <.link navigate={~p"/series"} class="inline-flex min-h-11 items-center text-amber-200">← Todas las series</.link>
-    <p :if={@loading?} id="series-loading" role="status" class="text-stone-300">
+    <.link navigate={~p"/series"} class="inline-flex min-h-11 items-center text-accent-soft">← Todas las series</.link>
+    <p :if={@loading?} id="series-loading" role="status" class="text-muted">
       Cargando serie…
     </p>
     <p :if={@error} id="series-error" role="alert" class="text-red-200">
       {@error} <button phx-click="retry" class="min-h-11 px-4">Reintentar</button>
     </p>
-    <div :if={@detail} class="rounded-3xl border border-stone-700 bg-zinc-900 p-7 sm:p-10">
-      <h1 id="series-title" class="text-4xl font-semibold text-stone-50">
+    <div :if={@detail} class="rounded-3xl border border-border bg-surface p-7 sm:p-10">
+      <h1 id="series-title" class="text-4xl font-semibold text-ink">
         {@detail.series.title}
       </h1>
-      <p class="mt-3 text-stone-400">{@detail.series.year || "Año desconocido"}</p>
-      <p :if={@detail.series.overview} class="mt-6 max-w-3xl leading-7 text-stone-300">
+      <p class="mt-3 text-muted">{@detail.series.year || "Año desconocido"}</p>
+      <p :if={@detail.series.overview} class="mt-6 max-w-3xl leading-7 text-muted">
         {@detail.series.overview}
       </p>
-      <h2 class="mt-8 text-xl font-semibold text-stone-100">Temporadas en tu biblioteca</h2>
-      <p :if={@total == 0} id="seasons-empty" class="mt-4 text-stone-400">
+      <h2 class="mt-8 text-xl font-semibold text-ink">Temporadas en tu biblioteca</h2>
+      <p :if={@total == 0} id="seasons-empty" class="mt-4 text-muted">
         No hay temporadas identificadas.
       </p>
       <div id="season-list" phx-update="stream" class="mt-4 grid gap-4 sm:grid-cols-2">
         <article
           :for={{id, season} <- @streams.seasons}
           id={id}
-          class="rounded-xl border border-stone-700 p-5"
+          class="rounded-xl border border-border p-5"
         >
           <.link
             navigate={~p"/series/seasons/#{season.id}"}
-            class="inline-flex min-h-11 items-center text-lg font-semibold text-amber-200"
+            class="inline-flex min-h-11 items-center text-lg font-semibold text-accent-soft"
           >{if season.number == 0, do: "Especiales", else: "Temporada #{season.number}"}</.link>
-          <p class="text-sm text-stone-400">{season.episode_count} episodios identificados</p>
+          <p class="text-sm text-muted">{season.episode_count} episodios identificados</p>
         </article>
       </div>
     </div>

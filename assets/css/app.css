@@ -13,6 +13,30 @@
 
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
+/* Shared palette from the approved Bolognesa visual reference. */
+@theme {
+  --color-canvas: #17191b;
+  --color-surface: #202225;
+  --color-raised: #272a2e;
+  --color-border: #383b40;
+  --color-border-strong: #64676d;
+  --color-ink: #f4f1ed;
+  --color-muted: #aaa9ad;
+  --color-accent: #be6d52;
+  --color-accent-hover: #ce8065;
+  --color-accent-soft: #df9d85;
+}
+
 body {
-  background-image: radial-gradient(circle at 50% -20%, rgba(245, 158, 11, 0.12), transparent 42%);
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+input, select, video {
+  accent-color: var(--color-accent);
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-canvas);
 }

@@ -2,14 +2,16 @@
   <section id="movies-screen" class="mx-auto max-w-6xl space-y-8">
     <header class="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">Colección</p>
-        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-stone-50">Películas</h1>
-        <p class="mt-3 text-sm text-stone-400">Obras identificadas de tus bibliotecas.</p>
+        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">
+          Colección
+        </p>
+        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-ink">Películas</h1>
+        <p class="mt-3 text-sm text-muted">Obras identificadas de tus bibliotecas.</p>
       </div>
       <.link
         navigate={~p"/movies/review"}
         id="movies-review-link"
-        class="min-h-11 rounded-xl border border-amber-300/50 px-5 py-3 text-sm font-semibold text-amber-200 transition hover:bg-amber-300/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+        class="min-h-11 rounded-xl border border-accent/50 px-5 py-3 text-sm font-semibold text-accent-soft transition hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >Revisar identificaciones</.link>
     </header>
 
@@ -24,16 +26,16 @@
         id="movie-search-query"
         type="search"
         label="Buscar película"
-        class="w-full rounded-xl border border-stone-600 bg-zinc-900 px-4 py-3 text-stone-50 outline-none focus:border-amber-300"
+        class="w-full rounded-xl border border-border-strong bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
       />
       <button
         id="movie-search-button"
         type="submit"
-        class="min-h-12 rounded-xl bg-amber-300 px-6 font-semibold text-stone-950 transition hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+        class="min-h-12 rounded-xl bg-accent px-6 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >Buscar</button>
     </.form>
 
-    <p :if={@loading?} id="movies-loading" role="status" class="text-sm text-stone-300">
+    <p :if={@loading?} id="movies-loading" role="status" class="text-sm text-muted">
       Cargando películas…
     </p>
     <p
@@ -44,7 +46,7 @@
     >
       {@error}
     </p>
-    <p :if={!@loading? && !@error} id="movies-count" class="text-sm text-stone-400">
+    <p :if={!@loading? && !@error} id="movies-count" class="text-sm text-muted">
       {@total} películas
     </p>
 
@@ -52,14 +54,14 @@
       <div
         :for={{dom_id, movie} <- @streams.movies}
         id={dom_id}
-        class="group overflow-hidden rounded-2xl border border-stone-700 bg-zinc-900 transition hover:border-amber-300/50 hover:shadow-xl"
+        class="group overflow-hidden rounded-2xl border border-border bg-surface transition hover:border-accent/50 hover:shadow-xl"
       >
         <.link
           navigate={~p"/movies/#{movie.id}"}
           id={"movie-link-#{movie.id}"}
-          class="block h-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+          class="block h-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-          <div class="relative flex aspect-[16/9] items-center justify-center overflow-hidden bg-gradient-to-br from-stone-800 to-stone-950 text-4xl font-bold text-amber-200/50">
+          <div class="relative flex aspect-[16/9] items-center justify-center overflow-hidden bg-raised text-4xl font-bold text-accent-soft/50">
             <span aria-hidden="true">{String.first(movie.title)}</span>
             <img
               :if={movie.poster_path}
@@ -73,11 +75,11 @@
             />
           </div>
           <div class="p-5">
-            <h2 class="text-lg font-semibold text-stone-50">{movie.title}</h2>
-            <p class="mt-2 text-sm text-stone-400">
+            <h2 class="text-lg font-semibold text-ink">{movie.title}</h2>
+            <p class="mt-2 text-sm text-muted">
               {movie.year || "Año desconocido"} · {movie.version_count} versiones
             </p>
-            <p class="mt-3 text-xs font-medium text-amber-200">
+            <p class="mt-3 text-xs font-medium text-accent-soft">
               {movie.available_count} disponibles
             </p>
           </div>
@@ -87,7 +89,7 @@
     <p
       :if={!@loading? && !@error && @total == 0}
       id="movies-empty"
-      class="rounded-2xl border border-dashed border-stone-700 p-8 text-center text-stone-400"
+      class="rounded-2xl border border-dashed border-border p-8 text-center text-muted"
     >
       Aún no hay películas con ese nombre. Escanea una biblioteca o revisa las identificaciones.
     </p>
@@ -100,13 +102,13 @@
       <.link
         :if={@page > 1}
         patch={~p"/movies?#{%{query: @query, page: @page - 1}}"}
-        class="rounded-xl border border-stone-600 px-4 py-3 text-stone-200"
+        class="rounded-xl border border-border-strong px-4 py-3 text-ink"
       >Anterior</.link>
-      <span class="text-sm text-stone-400">Página {@page}</span>
+      <span class="text-sm text-muted">Página {@page}</span>
       <.link
         :if={@page * 24 < @total}
         patch={~p"/movies?#{%{query: @query, page: @page + 1}}"}
-        class="rounded-xl border border-stone-600 px-4 py-3 text-stone-200"
+        class="rounded-xl border border-border-strong px-4 py-3 text-ink"
       >Siguiente</.link>
     </nav>
   </section>

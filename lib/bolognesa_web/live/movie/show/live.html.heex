@@ -2,9 +2,9 @@
   <section id="movie-detail" class="mx-auto max-w-5xl space-y-8">
     <.link
       navigate={~p"/movies"}
-      class="inline-flex min-h-11 items-center text-sm font-medium text-amber-200 hover:text-amber-100"
+      class="inline-flex min-h-11 items-center text-sm font-medium text-accent-soft hover:text-accent-soft"
     >← Todas las películas</.link>
-    <p :if={@loading?} id="movie-loading" role="status" class="text-stone-300">Cargando ficha…</p>
+    <p :if={@loading?} id="movie-loading" role="status" class="text-muted">Cargando ficha…</p>
     <p
       :if={@error}
       id="movie-error"
@@ -13,10 +13,10 @@
     >
       {@error}
     </p>
-    <div :if={@detail} class="rounded-3xl border border-stone-700 bg-zinc-900 p-7 sm:p-10">
+    <div :if={@detail} class="rounded-3xl border border-border bg-surface p-7 sm:p-10">
       <div
         :if={@detail.movie.backdrop_path}
-        class="mb-8 aspect-[21/9] overflow-hidden rounded-2xl bg-stone-800"
+        class="mb-8 aspect-[21/9] overflow-hidden rounded-2xl bg-raised"
       >
         <img
           id={"movie-backdrop-#{@detail.movie.id}"}
@@ -27,17 +27,17 @@
           class="size-full object-cover"
         />
       </div>
-      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">
+      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">
         Ficha de película
       </p>
-      <h1 id="movie-title" class="mt-4 text-4xl font-semibold tracking-tight text-stone-50">
+      <h1 id="movie-title" class="mt-4 text-4xl font-semibold tracking-tight text-ink">
         {@detail.movie.title}
       </h1>
-      <p class="mt-3 text-sm text-stone-400">{@detail.movie.year || "Año desconocido"}</p>
-      <p :if={@detail.movie.overview} class="mt-7 max-w-3xl text-base leading-7 text-stone-300">
+      <p class="mt-3 text-sm text-muted">{@detail.movie.year || "Año desconocido"}</p>
+      <p :if={@detail.movie.overview} class="mt-7 max-w-3xl text-base leading-7 text-muted">
         {@detail.movie.overview}
       </p>
-      <p :if={!@detail.movie.overview} class="mt-7 text-sm text-stone-400">
+      <p :if={!@detail.movie.overview} class="mt-7 text-sm text-muted">
         Todavía no hay sinopsis.
       </p>
       <BolognesaWeb.Player.player
@@ -52,16 +52,16 @@
         playback_error={@playback_error}
         playback_error_reason={@playback_error_reason}
       />
-      <h2 class="mt-10 text-xl font-semibold text-stone-50">Versiones en tu biblioteca</h2>
+      <h2 class="mt-10 text-xl font-semibold text-ink">Versiones en tu biblioteca</h2>
       <div id="movie-versions" phx-update="stream" class="mt-4 space-y-3">
         <div
           :for={{dom_id, version} <- @streams.versions}
           id={dom_id}
-          class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-700 bg-stone-800/50 p-4"
+          class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-raised/50 p-4"
         >
           <div>
-            <p class="text-sm text-stone-200">Versión {version.id}</p>
-            <p class="mt-1 text-xs text-stone-400">
+            <p class="text-sm text-ink">Versión {version.id}</p>
+            <p class="mt-1 text-xs text-muted">
               {if version.origin == :manual,
                 do: "Identificación manual",
                 else: "Identificación automática"}{if version.needs_review,
@@ -69,28 +69,28 @@
                 else: ""}
             </p>
           </div>
-          <span class="text-xs font-semibold text-amber-200">{if version.availability ==
-                                                                   :available,
-                                                                 do: "Disponible",
-                                                                 else: "No disponible"}</span>
+          <span class="text-xs font-semibold text-accent-soft">{if version.availability ==
+                                                                     :available,
+                                                                   do: "Disponible",
+                                                                   else: "No disponible"}</span>
           <button
             :if={version.availability == :available}
             id={"movie-play-#{version.id}"}
             type="button"
             phx-click="play"
             phx-value-file_id={version.id}
-            class="min-h-11 rounded-xl bg-amber-300 px-5 py-3 text-sm font-semibold text-stone-950 transition hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+            class="min-h-11 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             Reproducir
           </button>
           <.link
             navigate={~p"/movies/review?#{%{file_id: version.id}}"}
             id={"movie-correct-#{version.id}"}
-            class="min-h-11 rounded-xl border border-stone-600 px-4 py-3 text-sm text-stone-200 transition hover:border-amber-300 hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+            class="min-h-11 rounded-xl border border-border-strong px-4 py-3 text-sm text-ink transition hover:border-accent hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >Corregir</.link>
         </div>
       </div>
-      <p :if={@detail.versions == []} id="movie-no-versions" class="mt-4 text-sm text-stone-400">
+      <p :if={@detail.versions == []} id="movie-no-versions" class="mt-4 text-sm text-muted">
         No hay versiones vinculadas.
       </p>
     </div>

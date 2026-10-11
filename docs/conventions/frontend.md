@@ -130,6 +130,14 @@ El navegador controla el estado inmediato del reproductor, como posición instan
 
 La interfaz debe contemplar ratón, pantalla táctil, teclado y mando: acciones esenciales sin depender de hover, foco visible y orden predecible. Los diálogos y actualizaciones dinámicas deben conservar o restaurar el foco de forma coherente. La navegación con el mando y la reproducción se validarán temprano en la televisión real; no se presupone compatibilidad por usar un navegador. Solo se añadirá navegación personalizada mediante hooks si la nativa resulta insuficiente.
 
+## Identidad visual
+
+La referencia acordada utiliza carbón (`#17191b`) para el fondo, grafito (`#272a2e`) para superficies elevadas, blanco cálido (`#f4f1ed`) para texto y gris secundario para información auxiliar. El terracota (`#be6d52`) destaca acciones principales, selecciones, foco y progreso de reproducción; los enlaces usan una variante clara para conservar contraste sobre las tarjetas.
+
+Los colores se declaran como tokens semánticos en `assets/css/app.css` mediante `@theme`: `canvas`, `surface`, `raised`, `border`, `border-strong`, `ink`, `muted`, `accent`, `accent-hover` y `accent-soft`. Los templates consumen esas utilidades en lugar de paletas genéricas. Los botones terracota llevan texto carbón. Se conservan colores semánticos puntuales para errores y éxito.
+
+La marca visible es «boloñesa», acompañada del gato vectorial en `priv/static/images/bolognesa-cat.svg`; el nombre técnico del proyecto sigue siendo Bolognesa. El icono es decorativo cuando acompaña al nombre. Se evitan degradados llamativos y animaciones excesivas; los pósteres aportan la variedad visual.
+
 ## Verificación
 
 Las pruebas de interacción con LiveViewTest se organizan por pantalla, por ejemplo `test/bolognesa_web/live/movie/index/live_test.exs`. Se utilizan IDs y selectores estables y se comprueban resultados observables.

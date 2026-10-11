@@ -1,13 +1,13 @@
 <Layouts.app flash={@flash} current_scope={@current_scope}>
   <section
     id="login-screen"
-    class="mx-auto max-w-md rounded-3xl border border-amber-200/10 bg-zinc-900 p-6 shadow-2xl sm:p-10"
+    class="mx-auto max-w-md rounded-3xl border border-accent/10 bg-surface p-6 shadow-2xl sm:p-10"
   >
-    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">
+    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">
       Tu biblioteca, en casa
     </p>
-    <h1 class="mt-3 text-3xl font-semibold tracking-tight text-stone-50">Bienvenido de nuevo</h1>
-    <p class="mt-3 text-sm leading-6 text-stone-300">Entra con tu cuenta para continuar.</p>
+    <h1 class="mt-3 text-3xl font-semibold tracking-tight text-ink">Bienvenido de nuevo</h1>
+    <p class="mt-3 text-sm leading-6 text-muted">Entra con tu cuenta para continuar.</p>
 
     <.form for={@form} action={~p"/login"} method="post" id="login-form" class="mt-8 space-y-4">
       <.input
@@ -17,7 +17,7 @@
         label="Correo electrónico"
         autocomplete="email"
         required
-        class="w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+        class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
       />
       <.input
         field={@form[:password]}
@@ -26,12 +26,12 @@
         label="Contraseña"
         autocomplete="current-password"
         required
-        class="w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+        class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
       />
       <button
         id="login-submit"
         type="submit"
-        class="mt-3 min-h-12 w-full rounded-xl bg-amber-300 px-5 py-3 font-semibold text-stone-950 transition hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+        class="mt-3 min-h-12 w-full rounded-xl bg-accent px-5 py-3 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >Entrar</button>
     </.form>
   </section>

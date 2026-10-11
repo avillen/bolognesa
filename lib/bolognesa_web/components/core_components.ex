@@ -67,7 +67,7 @@ defmodule BolognesaWeb.CoreComponents do
     >
       <div class={[
         "flex w-80 max-w-full items-start gap-3 rounded-2xl border p-4 text-sm shadow-2xl sm:w-96",
-        @kind == :info && "border-amber-300/30 bg-stone-800 text-stone-50",
+        @kind == :info && "border-accent/30 bg-raised text-ink",
         @kind == :error && "border-red-300/30 bg-red-950 text-red-50"
       ]}>
         <.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
@@ -79,7 +79,7 @@ defmodule BolognesaWeb.CoreComponents do
         <div class="flex-1" />
         <button
           type="button"
-          class="group self-start cursor-pointer rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+          class="group self-start cursor-pointer rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           aria-label={gettext("close")}
         >
           <.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
@@ -106,14 +106,14 @@ defmodule BolognesaWeb.CoreComponents do
   @spec button(map()) :: Phoenix.LiveView.Rendered.t()
   def button(%{rest: rest} = assigns) do
     variants = %{
-      "primary" => "bg-amber-300 text-stone-950 hover:bg-amber-200",
-      nil => "border border-stone-600 bg-stone-800 text-stone-50 hover:border-amber-300"
+      "primary" => "bg-accent text-canvas hover:bg-accent-hover",
+      nil => "border border-border-strong bg-raised text-ink hover:border-accent"
     }
 
     assigns =
       assign_new(assigns, :class, fn ->
         [
-          "inline-flex min-h-11 items-center justify-center rounded-xl px-5 py-2 font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200",
+          "inline-flex min-h-11 items-center justify-center rounded-xl px-5 py-2 font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
           Map.fetch!(variants, assigns[:variant])
         ]
       end)
@@ -232,7 +232,7 @@ defmodule BolognesaWeb.CoreComponents do
           disabled={@rest[:disabled]}
           form={@rest[:form]}
         />
-        <span class="inline-flex items-center gap-2 text-sm text-stone-200">
+        <span class="inline-flex items-center gap-2 text-sm text-ink">
           <input
             type="checkbox"
             id={@id}
@@ -241,7 +241,7 @@ defmodule BolognesaWeb.CoreComponents do
             checked={@checked}
             class={
               @class ||
-                "size-4 rounded border-stone-500 bg-stone-800 text-amber-300 focus:ring-amber-300"
+                "size-4 rounded border-border-strong bg-raised text-accent-soft focus:ring-accent"
             }
             {@rest}
           />{@label}
@@ -256,12 +256,12 @@ defmodule BolognesaWeb.CoreComponents do
     ~H"""
     <div class="mb-2">
       <label for={@id}>
-        <span :if={@label} class="mb-1 block text-sm font-medium text-stone-200">{@label}</span>
+        <span :if={@label} class="mb-1 block text-sm font-medium text-ink">{@label}</span>
         <select
           id={@id}
           name={@name}
           class={[
-            @class || "w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50",
+            @class || "w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink",
             @errors != [] && (@error_class || "border-red-400")
           ]}
           multiple={@multiple}
@@ -280,12 +280,12 @@ defmodule BolognesaWeb.CoreComponents do
     ~H"""
     <div class="mb-2">
       <label for={@id}>
-        <span :if={@label} class="mb-1 block text-sm font-medium text-stone-200">{@label}</span>
+        <span :if={@label} class="mb-1 block text-sm font-medium text-ink">{@label}</span>
         <textarea
           id={@id}
           name={@name}
           class={[
-            @class || "w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50",
+            @class || "w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink",
             @errors != [] && (@error_class || "border-red-400")
           ]}
           {@rest}
@@ -301,14 +301,14 @@ defmodule BolognesaWeb.CoreComponents do
     ~H"""
     <div class="mb-2">
       <label for={@id}>
-        <span :if={@label} class="mb-1 block text-sm font-medium text-stone-200">{@label}</span>
+        <span :if={@label} class="mb-1 block text-sm font-medium text-ink">{@label}</span>
         <input
           type={@type}
           name={@name}
           id={@id}
           value={Form.normalize_value(@type, @value)}
           class={[
-            @class || "w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50",
+            @class || "w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink",
             @errors != [] && (@error_class || "border-red-400")
           ]}
           {@rest}
@@ -386,7 +386,7 @@ defmodule BolognesaWeb.CoreComponents do
       end
 
     ~H"""
-    <table class="w-full border-collapse text-left text-sm [&_td]:border-b [&_td]:border-stone-700 [&_td]:p-3 [&_th]:border-b [&_th]:border-stone-600 [&_th]:p-3">
+    <table class="w-full border-collapse text-left text-sm [&_td]:border-b [&_td]:border-border [&_td]:p-3 [&_th]:border-b [&_th]:border-border-strong [&_th]:p-3">
       <thead>
         <tr>
           <th :for={col <- @col}>{col[:label]}</th>

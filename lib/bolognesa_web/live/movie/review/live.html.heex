@@ -3,12 +3,12 @@
     <header>
       <.link
         navigate={~p"/movies"}
-        class="inline-flex min-h-11 items-center text-sm font-medium text-amber-200 hover:text-amber-100"
+        class="inline-flex min-h-11 items-center text-sm font-medium text-accent-soft hover:text-accent-soft"
       >← Películas</.link>
-      <h1 class="mt-3 text-4xl font-semibold tracking-tight text-stone-50">
+      <h1 class="mt-3 text-4xl font-semibold tracking-tight text-ink">
         Revisar identificaciones
       </h1>
-      <p class="mt-3 max-w-2xl text-sm leading-6 text-stone-400">
+      <p class="mt-3 max-w-2xl text-sm leading-6 text-muted">
         Elige otra película, marca el archivo sin identificar o vuelve a solicitar la búsqueda automática.
       </p>
     </header>
@@ -16,14 +16,14 @@
       :if={@feedback}
       id="review-feedback"
       role="status"
-      class="rounded-xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-100"
+      class="rounded-xl border border-accent/30 bg-accent/10 p-4 text-sm text-accent-soft"
     >
       {@feedback}
     </p>
-    <p :if={@loading?} id="review-loading" role="status" class="text-sm text-stone-300">
+    <p :if={@loading?} id="review-loading" role="status" class="text-sm text-muted">
       Cargando archivos…
     </p>
-    <p :if={@saving?} id="correction-saving" role="status" class="text-sm text-stone-300">
+    <p :if={@saving?} id="correction-saving" role="status" class="text-sm text-muted">
       Guardando corrección…
     </p>
     <p
@@ -39,15 +39,15 @@
         <article
           :for={{dom_id, item} <- @streams.reviews}
           id={dom_id}
-          class="rounded-2xl border border-stone-700 bg-zinc-900 p-5"
+          class="rounded-2xl border border-border bg-surface p-5"
         >
-          <h2 class="break-words font-semibold text-stone-50">{item.filename}</h2>
-          <p class="mt-2 text-xs text-stone-400">
+          <h2 class="break-words font-semibold text-ink">{item.filename}</h2>
+          <p class="mt-2 text-xs text-muted">
             {state_label(item.state)} · {if item.availability == :available,
               do: "Disponible",
               else: "Ausente"}
           </p>
-          <p :if={item.movie_title} class="mt-2 text-sm text-amber-200">{item.movie_title}</p>
+          <p :if={item.movie_title} class="mt-2 text-sm text-accent-soft">{item.movie_title}</p>
           <p
             :if={item.failure_reason}
             id={"review-failure-#{item.file_id}"}
@@ -61,7 +61,7 @@
               type="button"
               phx-click="select"
               phx-value-file_id={item.file_id}
-              class="min-h-11 rounded-xl bg-amber-300 px-4 text-sm font-semibold text-stone-950 transition hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+              class="min-h-11 rounded-xl bg-accent px-4 text-sm font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >Corregir</button>
             <button
               :if={item.state != :manual_unidentified}
@@ -69,14 +69,14 @@
               type="button"
               phx-click="retry"
               phx-value-file_id={item.file_id}
-              class="min-h-11 rounded-xl border border-stone-600 px-4 text-sm text-stone-200 transition hover:border-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+              class="min-h-11 rounded-xl border border-border-strong px-4 text-sm text-ink transition hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >Reintentar</button>
           </div>
         </article>
       </div>
-      <div class="rounded-2xl border border-stone-700 bg-zinc-900 p-5 sm:p-7">
-        <h2 class="text-xl font-semibold text-stone-50">Corrección manual</h2>
-        <p class="mt-2 text-sm text-stone-400">
+      <div class="rounded-2xl border border-border bg-surface p-5 sm:p-7">
+        <h2 class="text-xl font-semibold text-ink">Corrección manual</h2>
+        <p class="mt-2 text-sm text-muted">
           {if @selected_file_id,
             do: "Archivo seleccionado: #{@selected_file_id}",
             else: "Selecciona un archivo de la lista."}
@@ -87,13 +87,13 @@
             id="correction-query"
             type="search"
             label="Buscar en TMDb"
-            class="w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50 outline-none focus:border-amber-300"
+            class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none focus:border-accent"
           />
           <button
             id="correction-search"
             type="submit"
             disabled={is_nil(@selected_file_id) || @searching?}
-            class="min-h-11 w-full rounded-xl border border-amber-300/50 px-4 font-semibold text-amber-200 transition hover:bg-amber-300/10 disabled:opacity-50"
+            class="min-h-11 w-full rounded-xl border border-accent/50 px-4 font-semibold text-accent-soft transition hover:bg-accent/10 disabled:opacity-50"
           >{if @searching?, do: "Buscando…", else: "Buscar"}</button>
         </.form>
         <div id="correction-candidates" class="mt-5 space-y-2">
@@ -103,7 +103,7 @@
             type="button"
             phx-click="choose_candidate"
             phx-value-tmdb_id={candidate.provider_id}
-            class="min-h-11 w-full rounded-xl border border-stone-600 p-3 text-left text-sm text-stone-100 transition hover:border-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+            class="min-h-11 w-full rounded-xl border border-border-strong p-3 text-left text-sm text-ink transition hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >{candidate.title} {candidate.year}</button>
         </div>
         <.form for={@form} id="correction-choice-form" phx-submit="correct" class="mt-5 space-y-3">
@@ -113,14 +113,14 @@
             type="number"
             label="ID de TMDb"
             min="1"
-            class="w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50 outline-none focus:border-amber-300"
+            class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none focus:border-accent"
           />
           <button
             id="correction-submit"
             type="submit"
             disabled={is_nil(@selected_file_id) || @saving?}
             phx-disable-with="Guardando…"
-            class="min-h-11 w-full rounded-xl bg-amber-300 px-4 font-semibold text-stone-950 transition hover:bg-amber-200 disabled:opacity-50"
+            class="min-h-11 w-full rounded-xl bg-accent px-4 font-semibold text-canvas transition hover:bg-accent-hover disabled:opacity-50"
           >Confirmar película</button>
         </.form>
         <button
@@ -128,14 +128,14 @@
           type="button"
           phx-click="unidentified"
           disabled={is_nil(@selected_file_id) || @saving?}
-          class="mt-3 min-h-11 w-full rounded-xl border border-stone-600 px-4 text-sm text-stone-200 transition hover:border-stone-400 disabled:opacity-50"
+          class="mt-3 min-h-11 w-full rounded-xl border border-border-strong px-4 text-sm text-ink transition hover:border-border-strong disabled:opacity-50"
         >Dejar sin identificar</button>
       </div>
     </div>
     <p
       :if={!@loading? && @total == 0}
       id="review-empty"
-      class="rounded-2xl border border-dashed border-stone-700 p-8 text-center text-stone-400"
+      class="rounded-2xl border border-dashed border-border p-8 text-center text-muted"
     >
       No hay archivos que revisar.
     </p>
@@ -148,13 +148,13 @@
       <.link
         :if={@page > 1}
         patch={~p"/movies/review?#{%{page: @page - 1}}"}
-        class="rounded-xl border border-stone-600 px-4 py-3 text-stone-200"
+        class="rounded-xl border border-border-strong px-4 py-3 text-ink"
       >Anterior</.link>
-      <span class="text-sm text-stone-400">Página {@page}</span>
+      <span class="text-sm text-muted">Página {@page}</span>
       <.link
         :if={@page * 24 < @total}
         patch={~p"/movies/review?#{%{page: @page + 1}}"}
-        class="rounded-xl border border-stone-600 px-4 py-3 text-stone-200"
+        class="rounded-xl border border-border-strong px-4 py-3 text-ink"
       >Siguiente</.link>
     </nav>
   </section>

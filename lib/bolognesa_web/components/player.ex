@@ -20,7 +20,7 @@ defmodule BolognesaWeb.Player do
       class="mt-10 space-y-3"
       aria-label="Reproductor"
     >
-      <h2 class="text-xl font-semibold text-stone-50">
+      <h2 class="text-xl font-semibold text-ink">
         Reproduciendo versión {@selected_file_id}
       </h2>
       <p
@@ -28,7 +28,7 @@ defmodule BolognesaWeb.Player do
         id={"#{@prefix}-playback-preparing"}
         role="status"
         data-session-id={@compatible_session.id}
-        class="text-stone-300"
+        class="text-muted"
       >
         Preparando reproducción…
       </p>
@@ -60,7 +60,7 @@ defmodule BolognesaWeb.Player do
           preload="auto"
           class="aspect-video w-full rounded-xl bg-black"
         >Tu navegador no admite la reproducción de vídeo.</video>
-        <div :if={@compatible_session.duration_ms} class="space-y-1 text-sm text-stone-200">
+        <div :if={@compatible_session.duration_ms} class="space-y-1 text-sm text-ink">
           <label for={"#{@prefix}-seek-#{@compatible_session.id}"}>Posición</label>
           <input
             id={"#{@prefix}-seek-#{@compatible_session.id}"}
@@ -70,7 +70,7 @@ defmodule BolognesaWeb.Player do
             value={@compatible_session.offset_ms}
             data-compatible-seek={@compatible_session.id}
             aria-label="Ir a una posición del archivo"
-            class="w-full accent-amber-300"
+            class="w-full accent-accent"
           />
           <span data-compatible-position={@compatible_session.id}></span>
         </div>
@@ -91,7 +91,7 @@ defmodule BolognesaWeb.Player do
       type="button"
       phx-click="compatible"
       phx-value-file_id={@selected_file_id}
-      class="min-h-11 rounded-xl bg-amber-300 px-5 py-3 font-semibold text-stone-950"
+      class="min-h-11 rounded-xl bg-accent px-5 py-3 font-semibold text-canvas"
     >
       Probar modo compatible
     </button>
