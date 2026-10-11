@@ -45,6 +45,8 @@ cp .env.example .env
 docker compose up --build
 ```
 
+Or run the equivalent `make local-up`; it also creates `./media` if needed. Follow logs in another terminal with `make local-logs`, and stop the app with `make local-down` (the database volume is preserved).
+
 The app is available at [http://localhost:4000](http://localhost:4000). The first visit opens `/setup`; create the administrator account, then sign in. Compose starts PostgreSQL, waits for it to become healthy, runs database migrations and starts the app. The local database is stored in a named Docker volume.
 
 In Boloñesa, open **Libraries**, add a movie library with the path `/media`, and start a scan. Discovered files are identified in the background and then appear in the movie catalog. Allow identification to finish before opening the movie. The `/media` mount is read-only inside the app container. Change `MEDIA_PATH` in `.env` to use another host folder, or set `BOLOGNESA_PORT` if port 4000 is already taken. Keep `.env` private; it is ignored by Git. The web port is bound to `127.0.0.1`.
