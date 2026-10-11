@@ -3,9 +3,14 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter 
 
   import Ecto.Query
 
-  alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
+  alias Bolognesa.Identification.Domain.Identification
+
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.DecisionStore
+
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.EntryStore
+
+  alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
   alias Bolognesa.Infrastructure.Persistence.IdentificationEventSchema
-  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
 
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Repo
@@ -16,7 +21,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter 
           required(:requested?) => boolean()
         }
 
-  @spec request_batch!(module(), [request_entry()]) :: non_neg_integer()
+  @spec request_batch!(DecisionStore.repo(), [request_entry()]) :: non_neg_integer()
   def request_batch!(repo, entries) do
     Enum.count(entries, fn entry ->
       if entry.requested?, do: request_one!(repo, entry.file_id, entry.revision), else: false
@@ -54,7 +59,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter 
 
     count =
       Enum.count(files, fn file ->
-        case locked_identification(Repo, file.id) do
+        case DecisionStore.lock(Repo, file.id) do
           nil -> insert_request!(Repo, file.id, file.revision)
           _existing -> false
         end
@@ -70,59 +75,27 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter 
   end
 
   defp request_one!(repo, file_id, revision) do
-    case locked_identification(repo, file_id) do
+    case DecisionStore.lock(repo, file_id) do
       nil -> insert_request!(repo, file_id, revision)
       %{origin: :manual} -> false
       existing -> update_request!(repo, existing, revision)
     end
   end
 
-  defp locked_identification(repo, file_id) do
-    repo.one(
-      from(identification in IdentificationSchema,
-        where: identification.media_file_id == ^file_id,
-        lock: "FOR UPDATE"
-      )
-    )
-  end
-
   defp insert_request!(repo, file_id, revision) do
     token = Ecto.UUID.generate()
-
-    repo.insert!(
-      IdentificationSchema.changeset(%IdentificationSchema{}, %{
-        media_file_id: file_id,
-        observed_revision: revision,
-        token: token,
-        state: :pending
-      })
-    )
-
+    {:ok, requested} = Identification.new(file_id, revision, token)
+    DecisionStore.save!(repo, nil, requested)
     insert_event!(repo, file_id, token)
     true
   end
 
   defp update_request!(repo, existing, revision) do
     token = Ecto.UUID.generate()
-
-    repo.update!(
-      IdentificationSchema.changeset(existing, %{
-        observed_revision: revision,
-        token: token,
-        state: :pending,
-        needs_review: false,
-        failure_reason: nil,
-        job_id: nil,
-        started_at: nil,
-        finished_at: nil
-      })
-    )
-
-    repo.delete_all(
-      from relation in IdentificationEntrySchema,
-        where: relation.identification_id == ^existing.id
-    )
-
+    decision = IdentificationMapper.to_domain(existing, EntryStore.ids(repo, existing.id))
+    {:ok, requested} = Identification.request(decision, revision, token)
+    saved = DecisionStore.save!(repo, existing, requested)
+    EntryStore.replace!(repo, saved.id, requested.catalog_entry_ids)
     insert_event!(repo, existing.media_file_id, token)
     true
   end
@@ -132,7 +105,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter 
       IdentificationEventSchema.changeset(%IdentificationEventSchema{}, %{
         media_file_id: file_id,
         token: token
-      })
+      }),
+      log: false
     )
   end
 end

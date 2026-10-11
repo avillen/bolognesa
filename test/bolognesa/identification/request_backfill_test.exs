@@ -3,6 +3,11 @@ defmodule Bolognesa.Identification.RequestBackfillTest do
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
 
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
+    as: Repository
+
+  alias Bolognesa.Identification.Domain.MovieDetails
+
   alias Bolognesa.Infrastructure.Persistence.{IdentificationEventSchema, IdentificationSchema}
 
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
@@ -28,6 +33,24 @@ defmodule Bolognesa.Identification.RequestBackfillTest do
 
     assert {:ok, _cursor, 0} = EctoRequestWriter.backfill_batch(0, 10)
     assert Repo.aggregate(IdentificationSchema, :count, :id) == 0
+  end
+
+  test "backfill and explicit requests preserve an existing manual choice" do
+    file = file_fixture("manual.mp4")
+    details = %MovieDetails{provider_id: 81001, title: "Manual"}
+    assert {:ok, manual} = Repository.correct(file.id, details)
+
+    assert {:ok, _cursor, 0} = EctoRequestWriter.backfill_batch(0, 100)
+
+    assert {:ok, 0} =
+             Repo.transaction(fn ->
+               EctoRequestWriter.request_batch!(Repo, [
+                 %{file_id: file.id, revision: 2, requested?: true}
+               ])
+             end)
+
+    assert {:ok, ^manual} = Repository.get(file.id)
+    assert Repo.aggregate(IdentificationEventSchema, :count) == 0
   end
 
   defp file_fixture(path, library_id \\ nil) do
