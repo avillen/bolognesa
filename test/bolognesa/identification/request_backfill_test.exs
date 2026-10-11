@@ -37,7 +37,7 @@ defmodule Bolognesa.Identification.RequestBackfillTest do
 
   test "backfill and explicit requests preserve an existing manual choice" do
     file = file_fixture("manual.mp4")
-    details = %MovieDetails{provider_id: 81001, title: "Manual"}
+    details = %MovieDetails{provider_id: 81_001, title: "Manual"}
     assert {:ok, manual} = Repository.correct(file.id, details)
 
     assert {:ok, _cursor, 0} = EctoRequestWriter.backfill_batch(0, 100)
