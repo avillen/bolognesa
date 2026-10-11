@@ -6,9 +6,9 @@ defmodule Bolognesa.Catalog.Domain.CatalogEntry do
   @type id :: pos_integer()
   @type t :: %__MODULE__{
           id: id(),
-          kind: :movie,
+          kind: :movie | :series | :season | :episode,
           provider: :tmdb,
-          resource_type: :movie,
+          resource_type: :movie | :series | :season | :episode,
           provider_id: pos_integer()
         }
 end

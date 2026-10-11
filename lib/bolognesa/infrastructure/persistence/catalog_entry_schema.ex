@@ -4,9 +4,9 @@ defmodule Bolognesa.Infrastructure.Persistence.CatalogEntrySchema do
   import Ecto.Changeset
 
   schema "catalog_entries" do
-    field :kind, Ecto.Enum, values: [:movie]
+    field :kind, Ecto.Enum, values: [:movie, :series, :season, :episode]
     field :provider, Ecto.Enum, values: [:tmdb]
-    field :resource_type, Ecto.Enum, values: [:movie]
+    field :resource_type, Ecto.Enum, values: [:movie, :series, :season, :episode]
     field :provider_id, :integer
     timestamps(type: :utc_datetime_usec)
   end

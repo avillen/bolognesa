@@ -5,7 +5,7 @@ defmodule Bolognesa.Catalog.CatalogEntryStorageTest do
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
 
   test "external identity validates kind and positive provider ID" do
-    for attrs <- [%{provider_id: 0}, %{kind: :episode}, %{resource_type: :episode}] do
+    for attrs <- [%{provider_id: 0}, %{kind: :unknown}, %{resource_type: :unknown}] do
       changeset =
         CatalogEntrySchema.changeset(struct(CatalogEntrySchema), Map.merge(identity(), attrs))
 
