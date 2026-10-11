@@ -29,6 +29,7 @@ services:
       BIND_IP: 0.0.0.0
       BOLOGNESA_LAN_HTTP: "true"
       BOLOGNESA_LIBRARY_ROOTS: /media
+      TMDB_READ_TOKEN: ${TMDB_READ_TOKEN:-}
     ports:
       - "127.0.0.1:${BOLOGNESA_PORT:-4000}:4000"
     volumes:
