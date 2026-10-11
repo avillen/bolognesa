@@ -119,7 +119,10 @@ defmodule BolognesaWeb.Library.Index.State.Library do
   defp message(:source_inaccessible), do: "No se puede leer la carpeta de origen."
   defp message(:source_outside_roots), do: "La carpeta está fuera de las ubicaciones permitidas."
   defp message(:source_changed), do: "La carpeta cambió durante el escaneo. Vuelve a intentarlo."
-  defp message(:entry_unreadable), do: "No se pudo leer todo el contenido de la carpeta."
+
+  defp message(:entry_unreadable),
+    do:
+      "No se pudo leer todo el contenido de la carpeta. Comprueba los permisos de lectura y pulsa Reintentar."
 
   defp message(:unsafe_entry),
     do: "La carpeta contiene un enlace o una entrada que no se puede escanear."

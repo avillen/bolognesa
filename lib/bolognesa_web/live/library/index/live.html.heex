@@ -126,14 +126,26 @@
                 >Reanalizar</button>
               </div>
             </div>
-            <p
+            <div
               :if={library.error}
               id={"library-scan-error-#{library.id}"}
               role="alert"
               class="mt-4 rounded-lg border border-red-300/20 bg-red-300/10 p-3 text-sm text-red-200"
             >
-              {library.error}
-            </p>
+              <p class="flex items-center gap-2 font-semibold">
+                <.icon name="hero-exclamation-triangle" class="size-5 shrink-0" />
+                Inventario incompleto
+              </p>
+              <p class="mt-2">{library.error}</p>
+              <p class="mt-2 text-xs leading-5">
+                {library.files_discovered} {if library.files_discovered == 1,
+                  do: "archivo registrado",
+                  else: "archivos registrados"} antes del fallo. El escaneo no ha terminado de recorrer la carpeta.
+              </p>
+              <p :if={library.inspection_active?} class="mt-2 text-xs leading-5">
+                El análisis de los archivos ya registrados continúa. Puedes salir de esta pantalla mientras termina.
+              </p>
+            </div>
           </div>
         </div>
         <div

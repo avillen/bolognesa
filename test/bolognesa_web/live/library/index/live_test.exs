@@ -227,6 +227,41 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   end
 
   @tag capture_log: true
+  test "incomplete scan explains that discovered files can still be analysed", %{
+    conn: conn,
+    token: token,
+    path: path,
+    actor: actor
+  } do
+    alias Bolognesa.Infrastructure.Persistence.ScanSchema
+
+    File.write!(Path.join(path, "episode.mkv"), "video")
+
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Incomplete", path: path, content_type: :series})
+
+    {:ok, scan} = Libraries.start_scan(actor, library.id)
+    assert %{success: 1} = Oban.drain_queue(queue: :library_scans)
+
+    Repo.get!(ScanSchema, scan.id)
+    |> ScanSchema.changeset(%{state: :failed, failure_reason: :entry_unreadable})
+    |> Repo.update!()
+
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+    render_async(view)
+    selector = "#library-scan-error-#{library.id}"
+    assert has_element?(view, selector, "Inventario incompleto")
+    assert has_element?(view, selector, "1 archivo registrado antes del fallo")
+    assert has_element?(view, selector, "Comprueba los permisos de lectura")
+    assert has_element?(view, selector, "El análisis de los archivos ya registrados continúa")
+
+    Repo.update_all(InspectionSchema, set: [state: :succeeded])
+    send(view.pid, :refresh_scan_statuses)
+    render_async(view)
+    refute has_element?(view, selector, "El análisis de los archivos ya registrados continúa")
+    assert has_element?(view, selector, "Inventario incompleto")
+  end
+
   test "failed scan can be retried and leaving the page does not cancel its job", %{
     conn: conn,
     token: token,
