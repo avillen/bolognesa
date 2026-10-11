@@ -4,7 +4,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
   alias Bolognesa.Libraries
-  alias Bolognesa.Libraries.Application.{GetInspectionCounts, GetScanStatus, StartScan}
+  alias Bolognesa.Libraries.Application.UseCases.{GetInspectionCounts, GetScanStatus, StartScan}
   alias Bolognesa.Libraries.Domain.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Ecto.Adapters.SQL

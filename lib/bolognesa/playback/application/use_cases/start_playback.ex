@@ -1,4 +1,4 @@
-defmodule Bolognesa.Playback.Application.StartPlayback do
+defmodule Bolognesa.Playback.Application.UseCases.StartPlayback do
   @moduledoc "Authorize and select a currently linked physical movie version."
 
   alias Bolognesa.Identity

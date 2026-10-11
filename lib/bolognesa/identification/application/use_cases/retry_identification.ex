@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Application.RetryIdentification do
+defmodule Bolognesa.Identification.Application.UseCases.RetryIdentification do
   @moduledoc "Request a new automatic identification unless a manual choice owns the file."
   alias Bolognesa.Identity
 

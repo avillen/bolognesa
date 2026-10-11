@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Application.DiscoverFiles do
+defmodule Bolognesa.Libraries.Application.UseCases.DiscoverFiles do
   @moduledoc "Executes a complete walk under a fresh, persisted generation."
 
   require Logger

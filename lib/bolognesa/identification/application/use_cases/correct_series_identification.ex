@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Application.CorrectSeriesIdentification do
+defmodule Bolognesa.Identification.Application.UseCases.CorrectSeriesIdentification do
   @moduledoc "Replace a file's entire episode selection after validating its current revision."
   alias Bolognesa.Identification.Application.Ports.{IdentificationRepository, SeriesProvider}
   alias Bolognesa.Identification.Domain.{EpisodeSelection, Identification}

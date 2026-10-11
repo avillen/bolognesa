@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Application.GetSeriesReviewItem do
+defmodule Bolognesa.Identification.Application.UseCases.GetSeriesReviewItem do
   @moduledoc "Authorize correction of a series file, including files outside the review queue."
   alias Bolognesa.Identification.Application.Dto.SeriesReviewItem
   alias Bolognesa.Identification.Application.Ports.Readers.SeriesReviewReader

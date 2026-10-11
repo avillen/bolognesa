@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.ScanRecoveryTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Libraries.Application.DiscoverFiles
+  alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.{ScanPolicy, ScanReconciler, ScanWorker}
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository

@@ -3,7 +3,7 @@ defmodule Bolognesa.Identification.CorrectSeriesIdentificationTest do
 
   alias Bolognesa.Identification
 
-  alias Bolognesa.Identification.Application.{
+  alias Bolognesa.Identification.Application.UseCases.{
     CorrectIdentification,
     CorrectSeriesIdentification,
     GetSeriesSeason,

@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.IdentificationRecoveryTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Identification.Application.IdentifyMediaFile
+  alias Bolognesa.Identification.Application.UseCases.IdentifyMediaFile
   alias Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker
 
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,

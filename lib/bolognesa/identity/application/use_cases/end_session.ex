@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identity.Application.EndSession do
+defmodule Bolognesa.Identity.Application.UseCases.EndSession do
   @moduledoc "Revoke the current token only."
   alias Bolognesa.Identity.Application.Ports.Repositories.UserRepository
   alias Bolognesa.Identity.Domain.Session

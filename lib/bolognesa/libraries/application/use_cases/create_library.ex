@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Application.CreateLibrary do
+defmodule Bolognesa.Libraries.Application.UseCases.CreateLibrary do
   @moduledoc "Authorize and register one library source."
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor

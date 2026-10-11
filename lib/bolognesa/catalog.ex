@@ -1,6 +1,6 @@
 defmodule Bolognesa.Catalog do
   @moduledoc "Movie and series catalog queries."
-  alias Bolognesa.Catalog.Application.{
+  alias Bolognesa.Catalog.Application.UseCases.{
     GetEpisode,
     GetMovie,
     GetSeries,

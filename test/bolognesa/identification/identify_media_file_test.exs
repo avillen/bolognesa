@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.IdentifyMediaFileTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Identification.Application.IdentifyMediaFile
+  alias Bolognesa.Identification.Application.UseCases.IdentifyMediaFile
   alias Bolognesa.Identification.Domain.FileToIdentify
   alias Bolognesa.Identification.Domain.Identification
   alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}

@@ -1,4 +1,4 @@
-defmodule Bolognesa.Catalog.Application.ListMovies do
+defmodule Bolognesa.Catalog.Application.UseCases.ListMovies do
   @moduledoc "Authorize and bound a movie catalog search."
   alias Bolognesa.Catalog.Application.Dto.MoviePage
   alias Bolognesa.Catalog.Application.Ports.Readers.CatalogReader

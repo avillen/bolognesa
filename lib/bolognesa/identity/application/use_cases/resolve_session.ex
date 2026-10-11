@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identity.Application.ResolveSession do
+defmodule Bolognesa.Identity.Application.UseCases.ResolveSession do
   @moduledoc "Resolve a cookie token against an active database session."
   alias Bolognesa.Identity.Application.Ports.Repositories.UserRepository
   alias Bolognesa.Identity.Domain.Actor

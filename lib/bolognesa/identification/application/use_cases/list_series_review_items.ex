@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Application.ListSeriesReviewItems do
+defmodule Bolognesa.Identification.Application.UseCases.ListSeriesReviewItems do
   @moduledoc "Authorize the paginated series review queue."
   alias Bolognesa.Identification.Application.Dto.{SeriesReviewItem, SeriesReviewPage}
   alias Bolognesa.Identification.Application.Ports.Readers.SeriesReviewReader

@@ -1,6 +1,6 @@
 defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
   use BolognesaWeb.ConnCase, async: false
-  alias Bolognesa.Identification.Application.CorrectSeriesIdentification
+  alias Bolognesa.Identification.Application.UseCases.CorrectSeriesIdentification
 
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository

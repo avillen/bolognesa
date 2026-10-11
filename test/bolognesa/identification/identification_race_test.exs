@@ -1,6 +1,6 @@
 defmodule Bolognesa.Identification.IdentificationRaceTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Identification.Application.{CorrectIdentification, IdentifyMediaFile}
+  alias Bolognesa.Identification.Application.UseCases.{CorrectIdentification, IdentifyMediaFile}
   alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
   alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 

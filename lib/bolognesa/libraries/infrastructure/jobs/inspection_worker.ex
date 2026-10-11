@@ -6,7 +6,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker do
 
   require Logger
 
-  alias Bolognesa.Libraries.Application.InspectMediaFile
+  alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe
 

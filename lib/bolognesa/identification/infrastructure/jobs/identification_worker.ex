@@ -3,8 +3,8 @@ defmodule Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker do
   use Oban.Worker, queue: :identifications, max_attempts: 3
   require Logger
 
-  alias Bolognesa.Identification.Application.IdentifyMediaFile
-  alias Bolognesa.Identification.Application.IdentifySeriesFile
+  alias Bolognesa.Identification.Application.UseCases.IdentifyMediaFile
+  alias Bolognesa.Identification.Application.UseCases.IdentifySeriesFile
   alias Bolognesa.Identification.Infrastructure.Providers.TmdbMovieProvider
   alias Bolognesa.Identification.Infrastructure.Providers.TmdbSeriesProvider
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository

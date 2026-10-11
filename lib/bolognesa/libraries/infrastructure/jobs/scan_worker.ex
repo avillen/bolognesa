@@ -5,8 +5,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker do
   use Oban.Worker, queue: :library_scans, max_attempts: ScanPolicy.max_attempts()
 
   require Logger
-  alias Bolognesa.Libraries.Application.DiscoverFiles
   alias Bolognesa.Libraries.Application.Ports.{FileDiscovery, ScanRepository}
+  alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery
 

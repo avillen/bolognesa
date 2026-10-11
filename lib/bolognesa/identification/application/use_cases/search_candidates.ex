@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Application.SearchCandidates do
+defmodule Bolognesa.Identification.Application.UseCases.SearchCandidates do
   @moduledoc "Authorize and validate a manual movie search."
   alias Bolognesa.Identity
 

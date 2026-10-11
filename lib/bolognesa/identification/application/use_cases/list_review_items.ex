@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Application.ListReviewItems do
+defmodule Bolognesa.Identification.Application.UseCases.ListReviewItems do
   @moduledoc "Authorize paginated identification review."
 
   alias Bolognesa.Identification.Application.Dto.ReviewItem

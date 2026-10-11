@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Application.GetScanStatus do
+defmodule Bolognesa.Libraries.Application.UseCases.GetScanStatus do
   @moduledoc "Authorize a library scan status query."
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor

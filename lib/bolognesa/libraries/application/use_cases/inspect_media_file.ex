@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Application.InspectMediaFile do
+defmodule Bolognesa.Libraries.Application.UseCases.InspectMediaFile do
   @moduledoc "Runs one token protected inspection outside a database transaction."
 
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy

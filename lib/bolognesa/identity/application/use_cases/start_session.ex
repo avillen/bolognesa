@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identity.Application.StartSession do
+defmodule Bolognesa.Identity.Application.UseCases.StartSession do
   @moduledoc "Authenticate credentials and create a durable session."
   alias Bolognesa.Identity.Application.Ports.Repositories.UserRepository
   alias Bolognesa.Identity.Application.Ports.Services.PasswordHasher

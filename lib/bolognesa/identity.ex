@@ -1,6 +1,12 @@
 defmodule Bolognesa.Identity do
   @moduledoc "Public identity and access facade."
-  alias Bolognesa.Identity.Application.{EndSession, InstallAdmin, ResolveSession, StartSession}
+  alias Bolognesa.Identity.Application.UseCases.{
+    EndSession,
+    InstallAdmin,
+    ResolveSession,
+    StartSession
+  }
+
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Identity.Domain.NewAdmin
   alias Bolognesa.Identity.Domain.Session

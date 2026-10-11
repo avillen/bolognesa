@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Application.ListLibraries do
+defmodule Bolognesa.Libraries.Application.UseCases.ListLibraries do
   @moduledoc "Authorize and list configured libraries."
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor

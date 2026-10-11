@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identity.Application.InstallAdmin do
+defmodule Bolognesa.Identity.Application.UseCases.InstallAdmin do
   @moduledoc "Install the sole initial administrator."
   alias Bolognesa.Identity.Application.Ports.Repositories.UserRepository
   alias Bolognesa.Identity.Application.Ports.Services.PasswordHasher

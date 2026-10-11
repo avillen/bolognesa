@@ -1,19 +1,19 @@
 defmodule Bolognesa.Identification do
   @moduledoc "Public identification and manual correction API."
 
-  alias Bolognesa.Identification.Application.CorrectIdentification
-  alias Bolognesa.Identification.Application.CorrectSeriesIdentification
   alias Bolognesa.Identification.Application.Dto.ReviewPage
   alias Bolognesa.Identification.Application.Dto.SeriesReviewItem
   alias Bolognesa.Identification.Application.Dto.SeriesReviewPage
-  alias Bolognesa.Identification.Application.GetSeriesReviewItem
-  alias Bolognesa.Identification.Application.GetSeriesSeason
-  alias Bolognesa.Identification.Application.ListReviewItems
-  alias Bolognesa.Identification.Application.ListSeriesReviewItems
   alias Bolognesa.Identification.Application.Ports.Providers.SeriesProvider
-  alias Bolognesa.Identification.Application.RetryIdentification
-  alias Bolognesa.Identification.Application.SearchCandidates
-  alias Bolognesa.Identification.Application.SearchSeriesCandidates
+  alias Bolognesa.Identification.Application.UseCases.CorrectIdentification
+  alias Bolognesa.Identification.Application.UseCases.CorrectSeriesIdentification
+  alias Bolognesa.Identification.Application.UseCases.GetSeriesReviewItem
+  alias Bolognesa.Identification.Application.UseCases.GetSeriesSeason
+  alias Bolognesa.Identification.Application.UseCases.ListReviewItems
+  alias Bolognesa.Identification.Application.UseCases.ListSeriesReviewItems
+  alias Bolognesa.Identification.Application.UseCases.RetryIdentification
+  alias Bolognesa.Identification.Application.UseCases.SearchCandidates
+  alias Bolognesa.Identification.Application.UseCases.SearchSeriesCandidates
   alias Bolognesa.Identification.Domain.Identification, as: IdentificationDecision
   alias Bolognesa.Identification.Domain.SeasonDetails
   alias Bolognesa.Identification.Domain.SeriesCandidate

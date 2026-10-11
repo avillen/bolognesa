@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.InspectMediaFileTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Libraries.Application.InspectMediaFile
+  alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
   alias Bolognesa.Libraries.Domain.Inspection
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Domain.TechnicalTrack

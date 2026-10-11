@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.CorrectIdentificationTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Identification.Application.CorrectIdentification
+  alias Bolognesa.Identification.Application.UseCases.CorrectIdentification
   alias Bolognesa.Identification.Domain.Identification
   alias Bolognesa.Identification.Domain.MovieDetails
   alias Bolognesa.Identity.Domain.Actor

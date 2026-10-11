@@ -1,6 +1,6 @@
 defmodule Bolognesa.Libraries do
   @moduledoc "Configure and read media libraries."
-  alias Bolognesa.Libraries.Application.{
+  alias Bolognesa.Libraries.Application.UseCases.{
     CreateLibrary,
     GetInspectionCounts,
     GetScanStatus,

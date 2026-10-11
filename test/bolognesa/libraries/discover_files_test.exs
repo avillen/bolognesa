@@ -2,7 +2,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
-  alias Bolognesa.Libraries.Application.DiscoverFiles
+  alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository

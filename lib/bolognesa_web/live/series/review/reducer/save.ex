@@ -6,7 +6,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.Save do
 
   @spec call(
           Phoenix.LiveView.Socket.t(),
-          Bolognesa.Identification.Application.CorrectSeriesIdentification.choice()
+          Bolognesa.Identification.Application.UseCases.CorrectSeriesIdentification.choice()
         ) :: Phoenix.LiveView.Socket.t()
   def call(%{assigns: %{saving?: true}} = socket, _), do: socket
 

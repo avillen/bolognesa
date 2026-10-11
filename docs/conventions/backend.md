@@ -43,8 +43,9 @@ lib/bolognesa/
       media_file.ex
       source_path.ex
     application/
-      create_library.ex
-      scan_library.ex
+      use_cases/
+        create_library.ex
+        scan_library.ex
       ports/
         repositories/
           library_repository.ex
@@ -66,6 +67,8 @@ Los puertos se nombran por su responsabilidad, como `UserRepository` o `LibraryR
 Dentro de cada contexto, `Application.Ports` y `Infrastructure` usan categorías paralelas: `Repositories`, `Readers`, `Providers` y `Services`. Los behaviours se ubican bajo `Application.Ports.<Category>` y sus adaptadores bajo `Infrastructure.<Category>`, por ejemplo `Application.Ports.Readers.CatalogReader` e `Infrastructure.Readers.EctoCatalogReader`. La categoría depende de la responsabilidad del contrato, no de la tecnología: un reader Ecto va en `Readers` y un repositorio Ecto en `Repositories`. `Services` agrupa dependencias técnicas que no son consultas, almacenamiento o proveedores de datos externos.
 
 Los colaboradores internos y mappers permanecen con el repositorio, reader, provider o service al que pertenecen. Los schemas Ecto globales siguen en `Bolognesa.Infrastructure.Persistence`; `Infrastructure.Jobs` conserva workers, reconciliadores y políticas. Las utilidades de infraestructura sin port directo no se mueven para crear simetría artificial.
+
+Los casos de uso se ubican en `application/use_cases/` y usan el namespace `Context.Application.UseCases.Nombre`. Los `dto/` y `ports/` permanecen como categorías hermanas. Otros colaboradores internos de aplicación que no representan una operación de entrada permanecen directamente en `application/` o junto a la responsabilidad que los usa.
 
 ## Convenciones del dominio y persistencia
 

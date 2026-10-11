@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Application.SearchSeriesCandidates do
+defmodule Bolognesa.Identification.Application.UseCases.SearchSeriesCandidates do
   @moduledoc "Authorize a bounded manual series search."
   alias Bolognesa.Identification.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Identification.Domain.SeriesCandidate

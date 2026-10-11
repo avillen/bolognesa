@@ -1,4 +1,4 @@
-defmodule Bolognesa.Catalog.Application.GetSeries do
+defmodule Bolognesa.Catalog.Application.UseCases.GetSeries do
   @moduledoc "Authorize one series and its identified seasons."
   alias Bolognesa.Catalog.Application.Dto.SeriesDetail
   alias Bolognesa.Catalog.Application.Ports.Readers.SeriesReader

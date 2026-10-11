@@ -1,4 +1,4 @@
-defmodule Bolognesa.Catalog.Application.GetMovie do
+defmodule Bolognesa.Catalog.Application.UseCases.GetMovie do
   @moduledoc "Authorize a movie detail read."
   alias Bolognesa.Catalog.Application.Dto.MovieDetail
   alias Bolognesa.Catalog.Application.Ports.Readers.CatalogReader

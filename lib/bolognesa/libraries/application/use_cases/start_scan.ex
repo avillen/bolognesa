@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Application.StartScan do
+defmodule Bolognesa.Libraries.Application.UseCases.StartScan do
   @moduledoc "Authorize a library scan request."
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor

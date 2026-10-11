@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Application.GetSeriesSeason do
+defmodule Bolognesa.Identification.Application.UseCases.GetSeriesSeason do
   @moduledoc "Authorize a season lookup for a manual episode selection."
   alias Bolognesa.Identification.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Identification.Domain.SeasonDetails

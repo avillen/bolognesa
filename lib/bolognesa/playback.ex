@@ -2,7 +2,7 @@ defmodule Bolognesa.Playback do
   @moduledoc "Authorize a movie version for direct or compatible playback."
 
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Playback.Application.StartPlayback
+  alias Bolognesa.Playback.Application.UseCases.StartPlayback
   alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Playback.Domain.TranscodeProfile
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile

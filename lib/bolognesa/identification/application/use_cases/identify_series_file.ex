@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Application.IdentifySeriesFile do
+defmodule Bolognesa.Identification.Application.UseCases.IdentifySeriesFile do
   @moduledoc "Identifies a complete episode selection with external I/O outside transactions."
   alias Bolognesa.Identification.Application.Ports.{IdentificationRepository, SeriesProvider}
   alias Bolognesa.Identification.Domain.{EpisodeHint, EpisodeSelection, SeriesMatch}
