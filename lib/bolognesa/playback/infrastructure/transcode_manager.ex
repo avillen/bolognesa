@@ -52,7 +52,16 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
       {:ok, root} ->
         remove_abandoned(root)
         Process.send_after(self(), :tick, @tick_ms)
-        {:ok, %{current: nil, port: nil, last_activity: nil, root: root, suspended?: false}}
+
+        {:ok,
+         %{
+           current: nil,
+           port: nil,
+           owner_ref: nil,
+           last_activity: nil,
+           root: root,
+           suspended?: false
+         }}
 
       {:error, reason} ->
         {:stop, reason}
@@ -62,9 +71,11 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @impl true
   def handle_call(
         {:start, actor_id, catalog_entry_id, file_id, source, profile, offset_ms},
-        _from,
+        {owner, _tag},
         state
       ) do
+    state = replace_actor_session(state, actor_id)
+
     case start_session(state, actor_id, catalog_entry_id, file_id, source, profile, offset_ms) do
       {:ok, session, port, root} ->
         Logger.info("transcode_started session_id=#{session.id} profile=#{profile}")
@@ -74,6 +85,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
            state
            | current: session,
              port: port,
+             owner_ref: Process.monitor(owner),
              root: root,
              last_activity: now(),
              suspended?: false
@@ -135,6 +147,11 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   end
 
   def handle_info({port, {:data, _bytes}}, %{port: port} = state), do: {:noreply, state}
+
+  def handle_info({:DOWN, ref, :process, _owner, _reason}, %{owner_ref: ref} = state),
+    do: {:noreply, clear(state, :page_closed)}
+
+  def handle_info({:DOWN, _ref, :process, _owner, _reason}, state), do: {:noreply, state}
   def handle_info({_port, _message}, state), do: {:noreply, state}
 
   def handle_info(:tick, state) do
@@ -205,6 +222,11 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
        do: :ok
 
   defp valid_offset(_, _), do: {:error, :invalid_offset}
+
+  defp replace_actor_session(%{current: %{actor_id: actor_id}} = state, actor_id),
+    do: clear(state, :replaced)
+
+  defp replace_actor_session(state, _actor_id), do: state
 
   defp root do
     path = configured_transcode_path()
@@ -304,6 +326,8 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   defp clear(%{current: nil} = state, _reason), do: state
 
   defp clear(state, reason) do
+    if state.owner_ref, do: Process.demonitor(state.owner_ref, [:flush])
+
     if state.port do
       if state.suspended?, do: signal(state.port, "CONT")
       signal(state.port, "TERM")
@@ -317,7 +341,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
     File.rm_rf(state.current.directory)
     Logger.info("transcode_closed session_id=#{state.current.id} reason=#{reason}")
-    %{state | current: nil, port: nil, last_activity: nil, suspended?: false}
+    %{state | current: nil, port: nil, owner_ref: nil, last_activity: nil, suspended?: false}
   end
 
   defp signal(port, name) do

@@ -15,6 +15,10 @@ Chrome mostró imagen sin audio para Matroska/H.264/AC-3 y no pudo abrir una AVI
 
 Se evaluó Membrane. Los componentes publicados no cubren directamente esta combinación de AVI/MPEG-4 Part 2/AC-3, por lo que añadirlo ahora complicaría el recorrido sin eliminar la dependencia de códecs externos. FFmpeg ya forma parte de la imagen para inspección.
 
+## Sustitución y cierre de sesiones (2026-10-11)
+
+Una nueva reproducción compatible sustituye atómicamente la sesión anterior del mismo actor, incluso desde otra pestaña. La sesión de otro actor conserva el cupo y devuelve `:busy`. El gestor monitoriza el proceso que inició la sesión y libera FFmpeg y los fragmentos cuando ese proceso termina; el evento `ended` del navegador libera la sesión al acabar el vídeo. Los cinco minutos sin actividad quedan como respaldo. Cerrar una página antigua o recibir eventos de su sesión no detiene la sesión nueva. Este ajuste está implementado localmente; publicación y comprobación en QNAP pendientes.
+
 ## Consecuencias
 
 FFmpeg reabre el original por ruta después de la validación con descriptor. Entre ambas operaciones existe una carrera que la API de procesos no hace atómica; el montaje de solo lectura evita modificaciones por Bolognesa, pero no impide cambios externos. HLS añade fragmentos temporales y una dependencia JavaScript. La fluidez, CPU, memoria y compatibilidad de Chrome, móvil e Hisense se comprobarán con la versión desplegada; la prueba sintética local confirma códecs de salida, no capacidad del NAS.

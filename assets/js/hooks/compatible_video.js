@@ -50,10 +50,16 @@ const CompatibleVideo = {
       if (!this.serverPaused && !this.resuming)
         this.pushEvent("compatible_error", {session_id: this.sessionId})
     }
+    this.onEnded = () => {
+      this.serverPaused = true
+      this.hls?.stopLoad()
+      this.pushEvent("playback_ended", {session_id: this.sessionId})
+    }
     this.el.addEventListener("timeupdate", this.onTimeUpdate)
     this.el.addEventListener("pause", this.onPause)
     this.el.addEventListener("play", this.onPlay)
     this.el.addEventListener("error", this.onError)
+    this.el.addEventListener("ended", this.onEnded)
     if (this.seek) this.seek.addEventListener("change", this.onSeek)
     this.onTimeUpdate()
 
@@ -92,6 +98,7 @@ const CompatibleVideo = {
     this.el.removeEventListener("pause", this.onPause)
     this.el.removeEventListener("play", this.onPlay)
     this.el.removeEventListener("error", this.onError)
+    this.el.removeEventListener("ended", this.onEnded)
     if (this.onNativeReady) this.el.removeEventListener("loadedmetadata", this.onNativeReady)
     if (this.seek) this.seek.removeEventListener("change", this.onSeek)
   },

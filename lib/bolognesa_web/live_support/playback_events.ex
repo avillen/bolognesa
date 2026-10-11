@@ -88,6 +88,17 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
     end
   end
 
+  def handle_event("playback_ended", %{"session_id" => id}, socket) do
+    case socket.assigns.compatible_session do
+      %{id: ^id} ->
+        Playback.stop_compatible(socket.assigns.current_scope.actor, id)
+        {:noreply, Phoenix.Component.assign(socket, :compatible_paused?, true)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("compatible_error", %{"session_id" => id}, socket) do
     case socket.assigns.compatible_session do
       %{id: ^id} ->

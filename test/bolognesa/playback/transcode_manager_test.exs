@@ -4,6 +4,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
 
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
+  alias BolognesaWeb.LiveSupport.PlaybackEvents
 
   setup do
     base =
@@ -56,11 +57,43 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
 
   test "allows one running conversion and releases it on stop", %{source: source} do
     assert {:ok, session} = TranscodeManager.start(1, 2, 3, source, :video, 0)
-    assert {:error, :busy} = TranscodeManager.start(1, 2, 3, source, :video, 0)
+    assert {:error, :busy} = TranscodeManager.start(2, 2, 3, source, :video, 0)
     assert {:ok, ^session} = TranscodeManager.lookup(session.id)
     assert :ok = TranscodeManager.stop(session.id)
     assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     assert {:ok, _} = TranscodeManager.start(1, 2, 3, source, :video, 1_000)
+  end
+
+  test "a new playback replaces the same actor's session", %{source: source} do
+    assert {:ok, previous} = TranscodeManager.start(1, 2, 3, source, :video, 0)
+    assert {:ok, next} = TranscodeManager.start(1, 4, 5, source, :video, 0)
+    assert next.id != previous.id
+    assert {:error, :not_found} = TranscodeManager.lookup(previous.id)
+    refute File.exists?(previous.directory)
+    assert {:ok, ^next} = TranscodeManager.lookup(next.id)
+    assert :ok = TranscodeManager.stop(previous.id)
+    assert {:ok, ^next} = TranscodeManager.lookup(next.id)
+  end
+
+  test "closing the owning page releases the conversion", %{source: source} do
+    caller = self()
+
+    owner =
+      spawn(fn ->
+        send(caller, {:started, TranscodeManager.start(1, 2, 3, source, :video, 0)})
+
+        receive do
+          :close -> :ok
+        end
+      end)
+
+    assert_receive {:started, {:ok, session}}
+    %{port: port} = :sys.get_state(TranscodeManager)
+    ref = :erlang.monitor(:port, port)
+    send(owner, :close)
+    assert_receive {:DOWN, ^ref, :port, ^port, _}, 5_000
+    assert {:error, :not_found} = TranscodeManager.lookup(session.id)
+    refute File.exists?(session.directory)
   end
 
   test "suspends production until playback resumes", %{source: source} do
@@ -69,6 +102,38 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     assert :ok = TranscodeManager.resume(session.id)
     assert :ok = TranscodeManager.stop(session.id)
     assert {:error, :not_found} = TranscodeManager.resume(session.id)
+  end
+
+  test "the ended event releases only the displayed session", %{source: source} do
+    assert {:ok, session} = TranscodeManager.start(1, 2, 3, source, :video, 0)
+
+    socket = %Phoenix.LiveView.Socket{
+      assigns: %{
+        __changed__: %{},
+        current_scope: %{actor: %{id: 1}},
+        compatible_session: session,
+        compatible_paused?: false
+      }
+    }
+
+    assert {:noreply, ^socket} =
+             PlaybackEvents.handle_event(
+               "playback_ended",
+               %{"session_id" => "obsolete"},
+               socket
+             )
+
+    assert {:ok, _} = TranscodeManager.lookup(session.id)
+
+    assert {:noreply, next} =
+             PlaybackEvents.handle_event(
+               "playback_ended",
+               %{"session_id" => session.id},
+               socket
+             )
+
+    assert next.assigns.compatible_paused?
+    assert {:error, :not_found} = TranscodeManager.lookup(session.id)
   end
 
   test "logout cleanup only stops the matching actor", %{source: source} do
