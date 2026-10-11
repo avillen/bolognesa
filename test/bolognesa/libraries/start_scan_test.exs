@@ -21,7 +21,10 @@ defmodule Bolognesa.Libraries.StartScanTest do
     path = Path.join(root, "scan-source-#{System.unique_integer([:positive])}")
     File.mkdir_p!(path)
     on_exit(fn -> File.rm_rf!(path) end)
-    {:ok, library} = Libraries.create_library(@admin, %{name: "Movies", path: path})
+
+    {:ok, library} =
+      Libraries.create_library(@admin, %{name: "Movies", path: path, content_type: :movie})
+
     %{library: library, path: path}
   end
 
@@ -260,7 +263,11 @@ defmodule Bolognesa.Libraries.StartScanTest do
       File.mkdir_p!(committed_path)
 
       {:ok, library} =
-        Libraries.create_library(@admin, %{name: "Concurrent", path: committed_path})
+        Libraries.create_library(@admin, %{
+          name: "Concurrent",
+          path: committed_path,
+          content_type: :movie
+        })
 
       try do
         callback.(library)

@@ -9,7 +9,11 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository d
   @impl true
   def insert(details) do
     %LibrarySchema{}
-    |> LibrarySchema.changeset(%{name: details.name, path: details.path})
+    |> LibrarySchema.changeset(%{
+      name: details.name,
+      path: details.path,
+      content_type: details.content_type
+    })
     |> Repo.insert()
     |> case do
       {:ok, stored} -> {:ok, LibraryMapper.to_library(stored)}

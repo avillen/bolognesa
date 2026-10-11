@@ -21,7 +21,10 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
     on_exit(fn -> File.rm_rf!(path) end)
     source = Path.join(path, "test.mkv")
     File.write!(source, "controlled media")
-    {:ok, library} = Libraries.create_library(@admin, %{name: "Pipeline", path: path})
+
+    {:ok, library} =
+      Libraries.create_library(@admin, %{name: "Pipeline", path: path, content_type: :movie})
+
     %{library: library, source: source}
   end
 

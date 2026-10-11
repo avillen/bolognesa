@@ -27,6 +27,28 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     %{token: token, path: path, actor: actor}
   end
 
+  test "creates a series library and rejects an unknown form type", %{
+    conn: conn,
+    token: token,
+    path: path
+  } do
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+
+    render_submit(view, "save", %{
+      "library" => %{"name" => "Series", "path" => path, "content_type" => "mixed"}
+    })
+
+    refute has_element?(view, "#library-list [data-library-name='Series']")
+
+    view
+    |> form("#library-form", library: %{name: "Series", path: path, content_type: "series"})
+    |> render_submit()
+
+    assert has_element?(view, "#library-list [data-library-name='Series']", "Series")
+    {:ok, reopened, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+    assert has_element?(reopened, "#library-list [data-content-type='series']")
+  end
+
   test "administrator adds a source and sees it after reconnecting", %{
     conn: conn,
     token: token,
@@ -70,7 +92,9 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path: path,
     actor: actor
   } do
-    {:ok, library} = Libraries.create_library(actor, %{name: "Scan", path: path})
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Scan", path: path, content_type: :movie})
+
     conn = init_test_session(conn, user_token: token)
     {:ok, view, _} = live(conn, ~p"/libraries")
     render_async(view)
@@ -91,7 +115,10 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     actor: actor
   } do
     File.write!(Path.join(path, "movie.MKV"), "video")
-    {:ok, library} = Libraries.create_library(actor, %{name: "Complete", path: path})
+
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Complete", path: path, content_type: :movie})
+
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
     render_async(view)
     view |> element("#library-scan-#{library.id}") |> render_click()
@@ -112,7 +139,10 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     actor: actor
   } do
     File.write!(Path.join(path, "movie.mkv"), "video")
-    {:ok, library} = Libraries.create_library(actor, %{name: "Technical", path: path})
+
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Technical", path: path, content_type: :movie})
+
     {:ok, first_scan} = Libraries.start_scan(actor, library.id)
     assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
 
@@ -144,7 +174,9 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
       File.write!(Path.join(path, name), "not media")
     end
 
-    {:ok, library} = Libraries.create_library(actor, %{name: "Broken", path: path})
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Broken", path: path, content_type: :movie})
+
     {:ok, _} = Libraries.start_scan(actor, library.id)
     assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
 
@@ -201,7 +233,9 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path: path,
     actor: actor
   } do
-    {:ok, library} = Libraries.create_library(actor, %{name: "Retry", path: path})
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Retry", path: path, content_type: :movie})
+
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
     render_async(view)
     view |> element("#library-scan-#{library.id}") |> render_click()
@@ -246,7 +280,10 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   } do
     alias BolognesaWeb.Library.Index.Reducers.{ApplyScanStatuses, Initialize}
     alias Live
-    {:ok, library} = Libraries.create_library(actor, %{name: "Retained", path: path})
+
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Retained", path: path, content_type: :movie})
+
     {:ok, _scan} = Libraries.start_scan(actor, library.id)
     {:ok, status} = Libraries.get_scan_status(actor, library.id)
     {:ok, counts} = Libraries.get_inspection_counts(actor, library.id)
@@ -279,7 +316,9 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     actor: actor
   } do
     alias BolognesaWeb.Library.Index.Reducers.{Initialize, StartScan}
-    {:ok, library} = Libraries.create_library(actor, %{name: "Authorized", path: path})
+
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Authorized", path: path, content_type: :movie})
 
     socket =
       %Phoenix.LiveView.Socket{

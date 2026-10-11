@@ -18,7 +18,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.Save do
   end
 
   defp save(socket, changeset) do
-    attrs = Map.take(Ecto.Changeset.apply_changes(changeset), [:name, :path])
+    attrs = Map.take(Ecto.Changeset.apply_changes(changeset), [:name, :path, :content_type])
 
     case Libraries.create_library(socket.assigns.current_scope.actor, attrs) do
       {:ok, library} ->
@@ -55,6 +55,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.Save do
 
   defp message(:source_outside_roots), do: "La carpeta está fuera de las ubicaciones permitidas."
   defp message(:invalid_name), do: "Introduce un nombre válido."
+  defp message(:invalid_content_type), do: "Selecciona películas o series."
   defp message(:invalid_path), do: "Introduce una ruta absoluta válida."
   defp message(_), do: "Servicio temporalmente no disponible. Vuelve a intentarlo."
 end

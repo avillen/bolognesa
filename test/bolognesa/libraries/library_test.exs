@@ -17,9 +17,28 @@ defmodule Bolognesa.Libraries.LibraryTest do
     %{path: path}
   end
 
+  test "requires a known content type and persists series", %{path: path} do
+    assert {:error, :invalid_content_type} =
+             Libraries.create_library(@admin, %{name: "Series", path: path})
+
+    assert {:error, :invalid_content_type} =
+             Libraries.create_library(@admin, %{name: "Series", path: path, content_type: :mixed})
+
+    assert {:ok, library} =
+             Libraries.create_library(@admin, %{name: "Series", path: path, content_type: :series})
+
+    assert library.content_type == :series
+    assert {:ok, [listed]} = Libraries.list_libraries(@admin)
+    assert listed.content_type == :series
+  end
+
   test "stores a canonical source and lists it after another read", %{path: path} do
     assert {:ok, library} =
-             Libraries.create_library(@admin, %{name: " Películas ", path: path <> "/."})
+             Libraries.create_library(@admin, %{
+               name: " Películas ",
+               path: path <> "/.",
+               content_type: :movie
+             })
 
     assert library.name == "Películas"
     assert String.ends_with?(library.path, Path.basename(path))
@@ -28,22 +47,31 @@ defmodule Bolognesa.Libraries.LibraryTest do
   end
 
   test "rejects invalid, missing and out-of-root sources", %{path: path} do
-    assert {:error, :invalid_name} = Libraries.create_library(@admin, %{name: " ", path: path})
+    assert {:error, :invalid_name} =
+             Libraries.create_library(@admin, %{name: " ", path: path, content_type: :movie})
 
     assert {:error, :invalid_path} =
-             Libraries.create_library(@admin, %{name: "A", path: "relative"})
+             Libraries.create_library(@admin, %{name: "A", path: "relative", content_type: :movie})
 
     assert {:error, :invalid_name} =
              Libraries.create_library(@admin, %{"name" => "A", "path" => path})
 
     assert {:error, :invalid_name} =
-             Libraries.create_library(@admin, %{name: <<255>>, path: path})
+             Libraries.create_library(@admin, %{name: <<255>>, path: path, content_type: :movie})
 
     assert {:error, :source_inaccessible} =
-             Libraries.create_library(@admin, %{name: "A", path: path <> "/missing"})
+             Libraries.create_library(@admin, %{
+               name: "A",
+               path: path <> "/missing",
+               content_type: :movie
+             })
 
     assert {:error, :source_outside_roots} =
-             Libraries.create_library(@admin, %{name: "A", path: System.tmp_dir!()})
+             Libraries.create_library(@admin, %{
+               name: "A",
+               path: System.tmp_dir!(),
+               content_type: :movie
+             })
 
     assert Repo.aggregate(LibrarySchema, :count) == 0
   end
@@ -53,7 +81,7 @@ defmodule Bolognesa.Libraries.LibraryTest do
     File.ln_s!(System.tmp_dir!(), link)
 
     assert {:error, :source_outside_roots} =
-             Libraries.create_library(@admin, %{name: "A", path: link})
+             Libraries.create_library(@admin, %{name: "A", path: link, content_type: :movie})
   end
 
   test "rejects a directory without read permission", %{path: path} do
@@ -61,17 +89,22 @@ defmodule Bolognesa.Libraries.LibraryTest do
 
     try do
       assert {:error, :source_inaccessible} =
-               Libraries.create_library(@admin, %{name: "A", path: path})
+               Libraries.create_library(@admin, %{name: "A", path: path, content_type: :movie})
     after
       File.chmod!(path, 0o700)
     end
   end
 
   test "rejects a second registration of the same physical directory", %{path: path} do
-    assert {:ok, _} = Libraries.create_library(@admin, %{name: "One", path: path})
+    assert {:ok, _} =
+             Libraries.create_library(@admin, %{name: "One", path: path, content_type: :movie})
 
     assert {:error, :duplicate_source} =
-             Libraries.create_library(@admin, %{name: "Two", path: path <> "/."})
+             Libraries.create_library(@admin, %{
+               name: "Two",
+               path: path <> "/.",
+               content_type: :movie
+             })
 
     assert Repo.aggregate(LibrarySchema, :count) == 1
   end
@@ -80,10 +113,16 @@ defmodule Bolognesa.Libraries.LibraryTest do
     alias_path = path <> "-alias"
     File.ln_s!(path, alias_path)
     on_exit(fn -> File.rm(alias_path) end)
-    assert {:ok, _} = Libraries.create_library(@admin, %{name: "One", path: path})
+
+    assert {:ok, _} =
+             Libraries.create_library(@admin, %{name: "One", path: path, content_type: :movie})
 
     assert {:error, :duplicate_source} =
-             Libraries.create_library(@admin, %{name: "Two", path: alias_path})
+             Libraries.create_library(@admin, %{
+               name: "Two",
+               path: alias_path,
+               content_type: :movie
+             })
   end
 
   test "simultaneous registrations create one library", %{path: path} do
@@ -98,7 +137,8 @@ defmodule Bolognesa.Libraries.LibraryTest do
               send(parent, {:ready, self()})
 
               receive do
-                :go -> Libraries.create_library(@admin, %{name: name, path: path})
+                :go ->
+                  Libraries.create_library(@admin, %{name: name, path: path, content_type: :movie})
               end
             end)
           end)
@@ -124,7 +164,9 @@ defmodule Bolognesa.Libraries.LibraryTest do
   end
 
   test "requires an administrator for writes and reads", %{path: path} do
-    assert {:error, :forbidden} = Libraries.create_library(@member, %{name: "A", path: path})
+    assert {:error, :forbidden} =
+             Libraries.create_library(@member, %{name: "A", path: path, content_type: :movie})
+
     assert {:error, :forbidden} = Libraries.list_libraries(@member)
     assert {:error, :forbidden} = Libraries.list_libraries(nil)
   end

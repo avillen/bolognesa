@@ -1,5 +1,5 @@
 defmodule BolognesaWeb.Library.Index.Forms.Library do
-  @moduledoc "Web input for a movie library source."
+  @moduledoc "Web input for a library source."
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -7,13 +7,14 @@ defmodule BolognesaWeb.Library.Index.Forms.Library do
   embedded_schema do
     field :name, :string
     field :path, :string
+    field :content_type, Ecto.Enum, values: [:movie, :series], default: :movie
   end
 
   @spec changeset(map()) :: Ecto.Changeset.t()
   def changeset(params \\ %{}) do
     %__MODULE__{}
-    |> cast(params, [:name, :path])
-    |> validate_required([:name, :path])
+    |> cast(params, [:name, :path, :content_type])
+    |> validate_required([:name, :path, :content_type])
     |> validate_length(:name, max: 120)
     |> validate_length(:path, max: 4096)
     |> validate_change(:path, fn :path, path ->

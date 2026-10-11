@@ -4,7 +4,7 @@
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">Biblioteca</p>
         <h1 class="mt-3 text-4xl font-semibold tracking-tight text-stone-50">
-          Fuentes de películas
+          Fuentes multimedia
         </h1>
         <p class="mt-3 max-w-2xl text-sm leading-6 text-stone-300">
           Registra una carpeta y escanéala para descubrir sus archivos de vídeo. Puedes salir de esta pantalla mientras continúa.
@@ -39,9 +39,11 @@
             :for={{id, library} <- @streams.libraries}
             id={id}
             data-library-name={library.name}
+            data-content-type={library.content_type}
             class="rounded-xl border border-stone-700 bg-stone-800/60 p-5"
           >
             <h3 class="font-semibold text-stone-50">{library.name}</h3>
+            <p class="mt-1 text-xs text-amber-200">{library.content_type_label}</p>
             <p class="mt-2 break-all text-sm text-stone-400">{library.path}</p>
             <div class="mt-5 flex flex-wrap items-center justify-between gap-4">
               <div class="space-y-2">
@@ -197,6 +199,14 @@
             label="Nombre"
             required
             class="w-full rounded-xl border border-stone-600 bg-stone-800 px-4 py-3 text-stone-50 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+          />
+          <.input
+            field={@form[:content_type]}
+            id="library-content-type"
+            type="select"
+            label="Contenido"
+            options={[{"Películas", :movie}, {"Series", :series}]}
+            required
           />
           <.input
             field={@form[:path]}
