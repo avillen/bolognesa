@@ -15,6 +15,12 @@ H0 (base de trabajo), P0 (prueba temprana de reproducción) y H1 (cuenta adminis
 
 Priorizar según el uso real: recuperación de acceso a la cuenta, series, música, cuentas adicionales, conversión de formatos, acceso remoto y aplicaciones específicas. H1 no incluye recuperación de contraseña; su mecanismo se decidirá cuando se aborde. No se fija todavía un calendario ni una secuencia detallada entre esas ampliaciones.
 
+## Ampliación priorizada: series
+
+El propietario priorizó series el 2026-10-11, sin cerrar las validaciones pendientes de H2, H3 ni H4. Alcance: bibliotecas separadas por tipo; identificación `S01E02` y `1x02`; especiales; selección íntegra de archivos múltiples; corrección manual protegida; navegación serie → temporada → episodio y entrega autorizada directa/HLS.
+
+Criterios: películas previas conservadas, dudas y fallos visibles, ningún conjunto parcial confirmado, archivos múltiples sin duplicar catálogo, revocación efectiva al corregir, migraciones sintéticas de ida/vuelta y rollback rechazado sin pérdida. La implementación local se comprueba con pruebas y verificador dedicado. Despliegue, navegación con medios reales y validación de dispositivos se registrarán por separado; esta ampliación no acredita progreso ni emparejamiento de TV.
+
 ## Cómo trabajar los hitos
 
 1. Revisar requisitos y decisiones pendientes del hito.

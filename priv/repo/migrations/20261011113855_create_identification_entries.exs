@@ -60,7 +60,8 @@ defmodule Bolognesa.Repo.Migrations.CreateIdentificationEntries do
   def down do
     execute """
     DO $$ BEGIN
-      IF EXISTS (SELECT 1 FROM catalog_entries WHERE kind <> 'movie')
+      IF EXISTS (SELECT 1 FROM libraries WHERE content_type = 'series')
+        OR EXISTS (SELECT 1 FROM catalog_entries WHERE kind <> 'movie')
         OR EXISTS (SELECT 1 FROM identification_entries GROUP BY identification_id HAVING count(*) > 1) THEN
         RAISE EXCEPTION 'cannot restore singular movie associations while series or multiple associations exist';
       END IF;

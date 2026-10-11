@@ -15,6 +15,10 @@ Entrar, configurar una carpeta de películas, escanearla, identificar sus obras,
 
 El contenido original se trata como solo lectura: no se mueve, renombra ni elimina. La primera reproducción es directa; no se presupone que cualquier formato funcione ni que el NAS pueda convertirlo en tiempo real.
 
+## Ampliación priorizada: series
+
+El propietario priorizó series antes de cerrar las validaciones domésticas pendientes. Bibliotecas de películas y series separadas, episodios `S01E02` y `1x02`, especiales y archivos con varios episodios están incluidos. Estos últimos se reproducen completos desde el principio con un aviso; no se prometen cortes ni reproducción automática. El [roadmap](roadmap.md) fija los criterios y el [estado](status.md) distingue implementación local de despliegue y pruebas reales.
+
 ## Visión posterior
 
 Series, documentales, música, cuentas independientes, conversión de formatos cuando sea necesaria, acceso remoto y clientes específicos. Los documentales se representan como películas o series según su estructura.

@@ -81,10 +81,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   def handle_event("playback_resume", %{"session_id" => id, "position_ms" => position}, socket) do
     case socket.assigns.compatible_session do
       %{id: ^id} = session ->
-        case Playback.resume_compatible(socket.assigns.current_scope.actor, id) do
-          :ok -> {:noreply, Phoenix.Component.assign(socket, :compatible_paused?, false)}
-          _ -> resume_expired(socket, session, position)
-        end
+        resume_session(socket, session, position)
 
       _ ->
         {:noreply, socket}
@@ -134,23 +131,29 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
          |> Phoenix.Component.assign(:compatible_ready?, true)
          |> Phoenix.Component.assign(:compatible_paused?, true)}
 
-      :waiting ->
-        if socket.assigns.compatible_poll_attempts < 60 do
-          Process.send_after(self(), {:compatible_poll, id}, 500)
+      :waiting when socket.assigns.compatible_poll_attempts < 60 ->
+        Process.send_after(self(), {:compatible_poll, id}, 500)
 
-          {:noreply,
-           Phoenix.Component.assign(
-             socket,
-             :compatible_poll_attempts,
-             socket.assigns.compatible_poll_attempts + 1
-           )}
-        else
-          Playback.stop_compatible(socket.assigns.current_scope.actor, id)
-          {:noreply, playback_failed(socket)}
-        end
+        {:noreply,
+         Phoenix.Component.assign(
+           socket,
+           :compatible_poll_attempts,
+           socket.assigns.compatible_poll_attempts + 1
+         )}
+
+      :waiting ->
+        Playback.stop_compatible(socket.assigns.current_scope.actor, id)
+        {:noreply, playback_failed(socket)}
 
       _ ->
         {:noreply, playback_failed(socket)}
+    end
+  end
+
+  defp resume_session(socket, session, position) do
+    case Playback.resume_compatible(socket.assigns.current_scope.actor, session.id) do
+      :ok -> {:noreply, Phoenix.Component.assign(socket, :compatible_paused?, false)}
+      _ -> resume_expired(socket, session, position)
     end
   end
 

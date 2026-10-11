@@ -1,3 +1,4 @@
+# Run: MIX_ENV=test mix run --no-start scripts/verify_catalog_expansion_migrations.exs
 # Run only against the disposable database named below. The application Repo is never migrated.
 defmodule Bolognesa.CatalogMigrationCheckRepo do
   use Ecto.Repo, otp_app: :bolognesa, adapter: Ecto.Adapters.Postgres
@@ -14,6 +15,12 @@ defmodule Bolognesa.CatalogMigrationCheck do
     database = System.get_env("CATALOG_MIGRATION_DATABASE", @database)
     if database != @database, do: raise("Refusing non-disposable database")
     if Mix.env() != :test, do: raise("Run with MIX_ENV=test")
+
+    if Process.whereis(Bolognesa.Supervisor) || Process.whereis(Bolognesa.Repo),
+      do: raise("Run with --no-start; Bolognesa must remain stopped")
+
+    {:ok, _} = Application.ensure_all_started(:ecto_sql)
+    {:ok, _} = Application.ensure_all_started(:postgrex)
 
     config = [
       username: "postgres",
@@ -37,6 +44,9 @@ defmodule Bolognesa.CatalogMigrationCheck do
         [{module, _}] = Code.compile_file(file)
         {version, module}
       end)
+
+    # This verifier covers the earlier catalog expansion only. Series have their own verifier.
+    migrations = Enum.filter(migrations, fn {version, _} -> version <= 20_261_011_104_533 end)
 
     for seeded? <- [true, false] do
       reset_storage!(config)

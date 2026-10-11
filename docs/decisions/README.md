@@ -18,3 +18,4 @@ Crear un registro cuando se elija o cambie un límite arquitectónico, contrato,
 | [0010](0010-context-owned-models.md) | Aceptada; implementada localmente | Modelos propios por contexto y comunicación mediante fachadas |
 | [0011](0011-live-transcoding.md) | Implementada localmente; despliegue y capacidad pendientes | FFmpeg/HLS al vuelo, sesiones privadas y originales de solo lectura |
 | [0012](0012-catalog-entry-identity.md) | Implementada localmente; sin despliegue | Identidad común, detalles propios y escritura atómica desde Identificación |
+| [0013](0013-series-and-multiple-episode-associations.md) | Implementada localmente; sin despliegue | Tipo de biblioteca, jerarquía de series y conjuntos ordenados y atómicos por archivo |

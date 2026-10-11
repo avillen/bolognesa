@@ -2,13 +2,16 @@
   <div class="mx-auto max-w-5xl space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <h1 class="text-3xl font-bold">Revisión de series</h1>
-      <.link navigate={~p"/series"} class="btn btn-ghost">Volver a series</.link>
+      <.link
+        navigate={~p"/series"}
+        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 text-amber-200 hover:bg-stone-800"
+      >Volver a series</.link>
     </div>
     <p :if={@loading?} role="status">Cargando archivos…</p>
-    <div :if={@error} role="alert" class="alert alert-error">
+    <div :if={@error} role="alert" class="rounded-xl border border-red-300/30 p-4 text-red-200">
       {@error}<.link
         patch={~p"/series/review?page=#{@page}&file_id=#{@selected_file_id}"}
-        class="btn"
+        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 border border-stone-600 text-amber-200"
       >Reintentar</.link>
     </div>
     <p :if={!@loading? && @total == 0}>No hay archivos pendientes de revisión.</p>
@@ -16,7 +19,7 @@
       <article
         :for={{dom_id, item} <- @streams.reviews}
         id={dom_id}
-        class="rounded-box border border-base-300 p-4"
+        class="rounded-2xl border border-stone-700 bg-zinc-900 p-4"
       >
         <p class="font-semibold break-all">{item.filename}</p>
         <p>{state_label(item.state)} · {failure_label(item.failure_reason)}</p>
@@ -28,15 +31,16 @@
         </p>
         <p :if={item.availability == :missing}>Archivo no disponible</p>
         <.link
+          :if={!@saving?}
           patch={~p"/series/review?page=#{@page}&file_id=#{item.file_id}"}
-          class="btn btn-sm"
+          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 border border-stone-600 text-amber-200"
           aria-disabled={@saving?}
         >Corregir</.link>
         <button
           phx-click="retry"
           phx-value-file_id={item.file_id}
           disabled={@saving?}
-          class="btn btn-sm btn-ghost"
+          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 text-amber-200 hover:bg-stone-800"
         >Reintentar identificación</button>
       </article>
     </div>
@@ -48,7 +52,7 @@
     <section
       :if={@selected_item}
       id="series-file-correction"
-      class="space-y-4 rounded-box border border-base-300 p-5"
+      class="space-y-4 rounded-2xl border border-stone-700 bg-zinc-900 p-5"
     >
       <h2 class="text-xl font-semibold break-all">Corregir {@selected_item.filename}</h2>
       <p :if={@selected_item.episode_numbers != []}>
@@ -67,7 +71,10 @@
         class="flex flex-wrap gap-2 items-end"
       >
         <.input field={@search_form[:query]} label="Buscar serie en TMDb" disabled={@saving?} />
-        <button class="btn btn-primary" disabled={@saving? || @searching?}>Buscar</button>
+        <button
+          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 bg-amber-300 text-stone-950 hover:bg-amber-200"
+          disabled={@saving? || @searching?}
+        >Buscar</button>
       </.form>
       <p :if={@searching?} role="status">Buscando series…</p>
       <div id="series-candidates" phx-update="stream" class="flex flex-wrap gap-2">
@@ -77,7 +84,7 @@
           phx-click="choose"
           phx-value-id={candidate.provider_id}
           disabled={@saving?}
-          class="btn btn-outline"
+          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 border border-stone-600 text-amber-200 hover:border-amber-300"
         >{candidate.title} {candidate.year}</button>
       </div>
       <div :if={@series_id} class="space-y-4">
@@ -95,7 +102,10 @@
             min="0"
             disabled={@saving?}
           />
-          <button class="btn" disabled={@saving? || @season_loading?}>Cargar episodios</button>
+          <button
+            class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 border border-stone-600 text-amber-200"
+            disabled={@saving? || @season_loading?}
+          >Cargar episodios</button>
         </.form>
         <p :if={@season_loading?} role="status">Cargando temporada…</p>
         <.form
@@ -116,19 +126,30 @@
                 name="selection[episode_numbers][]"
                 value={episode.number}
                 disabled={@saving?}
-                class="checkbox"
+                class="size-5 shrink-0 accent-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
               />
               <span>{episode.number}. {episode.title}</span>
             </label>
           </div>
           <button
-            class="btn btn-primary"
+            class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 bg-amber-300 text-stone-950 hover:bg-amber-200"
             disabled={@saving? || @season_number == nil || @episode_numbers == []}
           >{if @saving?, do: "Guardando…", else: "Guardar selección completa"}</button>
         </.form>
       </div>
-      <button phx-click="unidentified" disabled={@saving?} class="btn btn-ghost">Marcar sin identificar</button>
+      <button
+        phx-click="unidentified"
+        disabled={@saving?}
+        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-wait disabled:opacity-50 text-amber-200 hover:bg-stone-800"
+      >Marcar sin identificar</button>
     </section>
-    <p :if={@feedback} id="series-review-feedback" role="status" class="alert">{@feedback}</p>
+    <p
+      :if={@feedback}
+      id="series-review-feedback"
+      role="status"
+      class="rounded-xl border border-amber-300/30 p-4 text-amber-100"
+    >
+      {@feedback}
+    </p>
   </div>
 </Layouts.app>

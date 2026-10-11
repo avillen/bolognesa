@@ -53,7 +53,8 @@ defmodule Bolognesa.Repo.Migrations.AddSeriesCatalog do
   def down do
     execute """
     DO $$ BEGIN
-      IF EXISTS (SELECT 1 FROM catalog_entries WHERE kind <> 'movie') THEN
+      IF EXISTS (SELECT 1 FROM libraries WHERE content_type = 'series')
+        OR EXISTS (SELECT 1 FROM catalog_entries WHERE kind <> 'movie') THEN
         RAISE EXCEPTION 'cannot remove series hierarchy while series content exists';
       END IF;
     END $$;

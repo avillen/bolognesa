@@ -16,7 +16,7 @@ El primer recorrido completo será: entrar con una cuenta administradora, config
 
 El acceso a los archivos originales será de lectura. Bolognesa no los moverá, renombrará ni eliminará.
 
-Quedan para fases posteriores las series, la música, la transcodificación, las aplicaciones específicas, la gestión de varias cuentas y el acceso remoto. Los documentales se modelarán como películas o series según su estructura.
+Series y transcodificación se han abordado por prioridad del propietario. Quedan para fases posteriores la música, las aplicaciones específicas, la gestión de varias cuentas y el acceso remoto. Los documentales se modelarán como películas o series según su estructura.
 
 ## Arquitectura y dependencias
 
@@ -114,11 +114,11 @@ El diseño H2b aprobado fija la identidad física como `(library_id, relative_pa
 
 Describe obras con independencia de su disponibilidad física. El primer agregado es `Movie`. Una película puede no tener archivos disponibles o estar relacionada con varias versiones físicas.
 
-Los conceptos futuros son `Series`, `Season`, `Episode`, `Artist`, `Album` y `Track`. Sus límites transaccionales se diseñarán en sus fases; no se implementan por adelantado.
+Series, temporadas y episodios tienen identidades y detalles propios. Temporada cero representa especiales; los episodios tienen numeración positiva. Cada temporada pertenece a una serie y cada episodio a una temporada. Los conceptos futuros son `Artist`, `Album` y `Track`; sus límites se diseñarán cuando se aborden.
 
 Catálogo consulta obras con modelos propios. Identificación controla la creación o reutilización de identidades y detalles durante la identificación, junto con la asociación al archivo en su propia transacción. Su escritor privado usa datos validados del propio contexto; Catálogo no importa esos modelos para leer. Un alta independiente de la identificación requerirá revisar ese propietario con el caso concreto.
 
-`CatalogEntry` representa la identidad común y su referencia externa única `(provider, resource_type, provider_id)`. La entrega admite solo películas TMDb. `movies.id` es PK y FK restrictiva de `catalog_entries.id`, sin generación independiente; sus campos contienen los detalles de película. Las lecturas de Catálogo unen identidad, detalles, identificaciones y archivos mediante un adaptador propio. Ver [decisión 0012](../decisions/0012-catalog-entry-identity.md).
+`CatalogEntry` representa la identidad común y su referencia externa única `(provider, resource_type, provider_id)`. Se admiten películas, series, temporadas y episodios TMDb, con `resource_type` igual a `kind`. Las tablas de detalles usan su ID como PK/FK restrictiva de `catalog_entries.id`, sin generación independiente. Las lecturas de Catálogo unen identidad, detalles, identificaciones y archivos mediante un adaptador propio. Ver [decisiones 0012](../decisions/0012-catalog-entry-identity.md) y [0013](../decisions/0013-series-and-multiple-episode-associations.md).
 
 ### Identificación
 
@@ -126,7 +126,9 @@ Relaciona archivos con obras. `Identification` conserva el estado, los candidato
 
 Una coincidencia dudosa requiere revisión. Una corrección manual queda protegida ante posteriores identificaciones automáticas. Esta protección debe comprobarse al guardar, incluso si un trabajo automático comenzó antes de la corrección.
 
-La relación confirmada referencia el identificador del archivo y `catalog_entry_id`. Identificación controla esa relación; no se mantienen dos fuentes de verdad independientes en Bibliotecas y Catálogo.
+Cada archivo tiene una decisión. Sus relaciones confirmadas viven en `identification_entries`, ordenadas por posición positiva y sin repetir elemento ni posición. Una película tiene una relación; una serie selecciona entre uno y cien episodios de una sola temporada. La corrección sustituye el conjunto completo de forma atómica; los estados sin confirmar no exponen relaciones vigentes. Identificación controla esas relaciones; no se mantienen dos fuentes de verdad independientes en Bibliotecas y Catálogo.
+
+Las bibliotecas declaran tipo inmutable `movie` o `series`; el trabajador lo consulta sin duplicarlo en argumentos de trabajos. Las bibliotecas previas se conservan como películas.
 
 Los adaptadores de proveedores normalizan respuestas externas antes de entregarlas a la aplicación. Las peticiones HTTP se realizan con Req.
 
@@ -136,11 +138,11 @@ En H3, Bibliotecas llama al escritor de solicitudes de Identificación dentro de
 
 Controla autorización, selección del archivo y pistas, estrategia de entrega y sesiones. En H4a el usuario elige una versión física: `StartPlayback` recibe el actor, la obra y el archivo, comprueba la relación vigente y la disponibilidad, y devuelve los datos necesarios para la entrega o un motivo de rechazo explícito. Las capacidades conocidas del cliente podrán orientar una selección automática posterior, cuando exista esa necesidad.
 
-Inicialmente solo se ofrece reproducción directa. Las capacidades declaradas por el cliente orientan la selección, pero no garantizan que su navegador pueda reproducir el contenido. La compatibilidad real se valida con archivos de prueba en los dispositivos previstos.
+La entrega directa y la conversión compatible FFmpeg/HLS están implementadas. Solo películas y episodios confirmados son reproducibles; series y temporadas son contenedores. Un archivo múltiple se reproduce completo desde su principio y la interfaz informa esa limitación. Las capacidades declaradas por el cliente orientan la selección, pero no garantizan que su navegador pueda reproducir el contenido. La compatibilidad real se valida con archivos de prueba en los dispositivos previstos.
 
 La entrega debe soportar peticiones de rangos de bytes para buscar posiciones. Cada petición de contenido requiere autorización, también cuando el navegador la realiza fuera del canal interactivo de la página. Los clientes solicitan identificadores autorizados, no rutas de disco arbitrarias. H4a transmite desde un descriptor validado y vuelve a comprobar sesión, vínculo y archivo en cada petición; ver [decisión 0006](../decisions/0006-authorized-direct-playback.md).
 
-La conversión de formatos tendrá un puerto propio cuando se implemente. No se asume capacidad de transcodificación del NAS sin una evaluación previa.
+La conversión utiliza puertos propios y sesiones transitorias privadas. No se asume capacidad de transcodificación del NAS sin una evaluación previa.
 
 ### Actividad personal
 
@@ -229,6 +231,6 @@ Cada fase tendrá un diseño acotado y un plan verificable. El diseño de LiveVi
 
 Reproducción recibe identidad de catálogo y archivo y consulta la asociación confirmada sin depender de detalles de película. Las rutas específicas traducen sus parámetros en la frontera; no acreditan una asociación. Las sesiones HLS revalidan actor, elemento, archivo y revisión.
 
-Los puertos siguen siendo behaviours. Introducir un protocol requiere al menos dos structs reales del mismo contexto, una operación de semántica común y un consumidor que mejore con el despacho por tipo. No se añaden implementaciones ficticias para anticipar series.
+Los puertos siguen siendo behaviours. Introducir un protocol requiere al menos dos structs reales del mismo contexto, una operación de semántica común y un consumidor que mejore con el despacho por tipo. No se añaden implementaciones ficticias para anticipar funcionalidades.
 
 El cambio de identidad requiere las tres migraciones y una actualización coordinada de la aplicación; no se admite coexistencia de versiones antiguas y nuevas. Su comprobación de ida y vuelta usa una base desechable y datos sintéticos, nunca la base normal ni QNAP.
