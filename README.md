@@ -21,6 +21,8 @@ Scanning discovers files; it does not by itself create catalog movies. Movie and
 
 There is no demo media bundled with the repository. Use a video you have the right to play. For a public demo, choose a file whose license explicitly permits redistribution and display, and include its attribution and license terms.
 
+For a ready-made sample, download the standard MP4 from the [official Big Buck Bunny download directory](https://download.blender.org/demo/movies/BBB/) and place it under `./media`. The Blender Foundation releases the film under [CC BY 3.0](https://peach.blender.org/about/); when showing or sharing the film, retain its credits and attribution: `© copyright 2008, Blender Foundation / www.bigbuckbunny.org`. The normal 1080p MP4 archive is about 263 MiB, so it is not included in this repository.
+
 ## Screenshots and demo
 
 Screenshots should come from a real running Boloñesa instance. The most useful screens for an introduction are:
@@ -33,25 +35,19 @@ To record the flow, start the app, sign in, register and scan a mounted media fo
 
 ## Quick start with Docker
 
-Requirements: Docker with the Compose plugin and a compatible video file for playback. The first build downloads dependencies and may take a few minutes.
+Requirements: Docker with the Compose plugin and a compatible video file for playback. For the full scan-to-play journey, configure a TMDb API Read Access Token first. Create a TMDb account, request API access in its API settings, then copy the read token as described in [TMDb's authentication guide](https://developer.themoviedb.org/docs/authentication-application). The app displays TMDb attribution on its **About** page.
 
 ```sh
 mkdir -p media
-# Copy a video you can use into ./media
+cp .env.example .env
+# Edit .env and set TMDB_READ_TOKEN; the default media path is ./media
+# Copy a compatible video into ./media (see the licensed sample above)
 docker compose up --build
 ```
 
 The app is available at [http://localhost:4000](http://localhost:4000). The first visit opens `/setup`; create the administrator account, then sign in. Compose starts PostgreSQL, waits for it to become healthy, runs database migrations and starts the app. The local database is stored in a named Docker volume.
 
-In Boloñesa, open **Libraries**, add a movie library with the path `/media`, and start a scan. If `TMDB_READ_TOKEN` is configured, discovered files can be identified and then appear in the movie catalog. Identification runs in the background, so allow it to finish before opening the movie. The `/media` mount is read-only inside the app container.
-
-To configure a different host folder or port, copy `.env.example` to `.env` and edit it:
-
-```sh
-cp .env.example .env
-```
-
-Set `MEDIA_PATH` to a folder on your machine and `BOLOGNESA_PORT` to an available port. If you want movie identification, add your TMDb API read access token as `TMDB_READ_TOKEN`. Keep `.env` private; it is ignored by Git. These are local development defaults and the web port is bound to `127.0.0.1`.
+In Boloñesa, open **Libraries**, add a movie library with the path `/media`, and start a scan. Discovered files are identified in the background and then appear in the movie catalog. Allow identification to finish before opening the movie. The `/media` mount is read-only inside the app container. Change `MEDIA_PATH` in `.env` to use another host folder, or set `BOLOGNESA_PORT` if port 4000 is already taken. Keep `.env` private; it is ignored by Git. The web port is bound to `127.0.0.1`.
 
 Stop the services with `docker compose down`. This keeps the database volume. Removing that volume deletes the local Boloñesa database and account.
 

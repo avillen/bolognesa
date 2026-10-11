@@ -15,18 +15,7 @@ Open [http://localhost:4000](http://localhost:4000) and create the first adminis
 
 For native development, install Elixir 1.17 or newer in the supported 1.x series, Erlang/OTP, PostgreSQL and `ffprobe`. Configure PostgreSQL as in `config/dev.exs`, then run `mix setup` and `mix phx.server`. Use `mix test` for the test suite and `mix precommit` for the full local check. Tests use PostgreSQL.
 
-## Where things live
-
-- `lib/bolognesa/libraries/` handles library sources, scanning and media inspection.
-- `lib/bolognesa/catalog/` reads the movie and series catalog.
-- `lib/bolognesa/identification/` matches files to catalog entries and stores corrections.
-- `lib/bolognesa/playback/` authorizes and serves media, including the existing compatibility playback path.
-- `lib/bolognesa/identity/` handles the initial administrator and sessions.
-- `lib/bolognesa_web/` contains Phoenix routes, LiveViews, controllers and interface components.
-- `test/` follows those contexts and includes LiveView and HTTP behavior tests.
-- `docs/` contains product scope, current status, decisions, designs, plans and validation evidence.
-
-The contexts keep domain decisions and storage behind small application-facing interfaces. You do not need to redesign those boundaries to contribute; follow the nearest existing pattern and explain a change when it improves that pattern.
+The app is organized by domain context under `lib/bolognesa/`, with the Phoenix interface in `lib/bolognesa_web/` and matching tests under `test/`. See the [architecture decision](docs/decisions/0001-architecture-foundation.md) and [backend conventions](docs/conventions/backend.md) for details. Follow the nearest existing pattern; explain a change when it improves that pattern.
 
 ## Propose a change
 
