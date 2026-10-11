@@ -4,11 +4,16 @@ defmodule Bolognesa.Catalog.Application.Ports.CatalogReader do
   alias Bolognesa.Catalog.Domain.{Movie, MovieVersion}
 
   @type adapter :: atom()
-  @type listed_movie :: {Movie.t(), non_neg_integer(), non_neg_integer()}
 
-  @callback list_movies(binary(), pos_integer()) ::
-              {:ok, {[listed_movie()], non_neg_integer()}} | {:error, :unavailable}
+  @typedoc "One-based page number for a catalog listing."
+  @type page_number :: pos_integer()
 
-  @callback get_movie(pos_integer()) ::
+  @typedoc "Movie, total associated versions, and available associated versions, in that order."
+  @type listed_movie :: {Movie.t(), MovieVersion.count(), MovieVersion.available_count()}
+
+  @callback list_movies(query :: String.t(), page :: page_number()) ::
+              {:ok, {[listed_movie()], Movie.count()}} | {:error, :unavailable}
+
+  @callback get_movie(movie_id :: Movie.id()) ::
               {:ok, {Movie.t(), [MovieVersion.t()]}} | {:error, :not_found | :unavailable}
 end

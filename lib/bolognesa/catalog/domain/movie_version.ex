@@ -1,6 +1,12 @@
 defmodule Bolognesa.Catalog.Domain.MovieVersion do
   @moduledoc "The physical version facts needed by a movie detail read."
 
+  @typedoc "Number of physical versions associated with a movie, including missing files."
+  @type count :: non_neg_integer()
+
+  @typedoc "Number of associated physical versions whose files are available."
+  @type available_count :: non_neg_integer()
+
   @type t :: %__MODULE__{
           id: pos_integer(),
           availability: :available | :missing,

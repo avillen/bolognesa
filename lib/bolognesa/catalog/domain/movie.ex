@@ -13,6 +13,9 @@ defmodule Bolognesa.Catalog.Domain.Movie do
     :backdrop_path
   ]
 
+  @typedoc "Number of movies matching a catalog query, across all pages."
+  @type count :: non_neg_integer()
+
   @type id :: pos_integer()
   @type provider :: :tmdb
   @type title :: String.t()

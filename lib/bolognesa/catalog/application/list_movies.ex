@@ -7,7 +7,7 @@ defmodule Bolognesa.Catalog.Application.ListMovies do
   @spec call(
           Bolognesa.Identity.Domain.Actor.t(),
           binary(),
-          pos_integer(),
+          CatalogReader.page_number(),
           CatalogReader.adapter()
         ) ::
           {:ok, MoviePage.t()} | {:error, :forbidden | :invalid_query | :unavailable}

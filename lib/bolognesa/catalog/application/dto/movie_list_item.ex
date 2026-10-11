@@ -1,7 +1,7 @@
 defmodule Bolognesa.Catalog.Application.Dto.MovieListItem do
   @moduledoc "Movie and physical version counts in a catalog listing."
 
-  alias Bolognesa.Catalog.Domain.Movie
+  alias Bolognesa.Catalog.Domain.{Movie, MovieVersion}
 
   @enforce_keys [:id, :title, :year, :poster_path, :version_count, :available_count]
   defstruct [:id, :title, :year, :poster_path, :version_count, :available_count]
@@ -11,11 +11,11 @@ defmodule Bolognesa.Catalog.Application.Dto.MovieListItem do
           title: Movie.title(),
           year: Movie.year() | nil,
           poster_path: Movie.poster_path() | nil,
-          version_count: non_neg_integer(),
-          available_count: non_neg_integer()
+          version_count: MovieVersion.count(),
+          available_count: MovieVersion.available_count()
         }
 
-  @spec from_domain({Movie.t(), non_neg_integer(), non_neg_integer()}) :: t()
+  @spec from_domain({Movie.t(), MovieVersion.count(), MovieVersion.available_count()}) :: t()
   def from_domain({%Movie{} = movie, version_count, available_count}) do
     %__MODULE__{
       id: movie.id,
