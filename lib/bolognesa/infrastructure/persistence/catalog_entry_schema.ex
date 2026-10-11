@@ -3,6 +3,8 @@ defmodule Bolognesa.Infrastructure.Persistence.CatalogEntrySchema do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{}
+
   schema "catalog_entries" do
     field :kind, Ecto.Enum, values: [:movie, :series, :season, :episode]
     field :provider, Ecto.Enum, values: [:tmdb]

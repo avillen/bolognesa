@@ -1,10 +1,13 @@
 defmodule Bolognesa.Identification do
   @moduledoc "Public identification and manual correction API."
+
   alias Bolognesa.Identification.Application.CorrectIdentification
   alias Bolognesa.Identification.Application.CorrectSeriesIdentification
   alias Bolognesa.Identification.Application.Dto.ReviewPage
+  alias Bolognesa.Identification.Application.Dto.SeriesReviewPage
   alias Bolognesa.Identification.Application.GetSeriesSeason
   alias Bolognesa.Identification.Application.ListReviewItems
+  alias Bolognesa.Identification.Application.ListSeriesReviewItems
   alias Bolognesa.Identification.Application.Ports.SeriesProvider
   alias Bolognesa.Identification.Application.RetryIdentification
   alias Bolognesa.Identification.Application.SearchCandidates
@@ -15,9 +18,15 @@ defmodule Bolognesa.Identification do
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoSeriesReviewReader
   alias Bolognesa.Identification.Infrastructure.TmdbMovieProvider
   alias Bolognesa.Identification.Infrastructure.TmdbSeriesProvider
   alias Bolognesa.Identity.Domain.Actor
+
+  @spec list_series_review_items(Actor.t(), pos_integer()) ::
+          {:ok, SeriesReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}
+  def list_series_review_items(actor, page),
+    do: ListSeriesReviewItems.call(actor, page, EctoSeriesReviewReader)
 
   @spec correct_series(Actor.t(), pos_integer(), CorrectSeriesIdentification.choice()) ::
           {:ok, IdentificationDecision.t()} | {:error, CorrectSeriesIdentification.reason()}

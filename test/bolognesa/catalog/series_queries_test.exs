@@ -1,0 +1,61 @@
+defmodule Bolognesa.Catalog.SeriesQueriesTest do
+  use Bolognesa.DataCase, async: false
+  alias Bolognesa.Catalog
+  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Infrastructure.Persistence.{CatalogEntrySchema, MovieSchema}
+  alias Bolognesa.SeriesFixtures
+  @actor %Actor{id: 1, role: :admin}
+
+  test "groups versions and multi episode files without inflating catalog counts" do
+    library = SeriesFixtures.library()
+    double = SeriesFixtures.file(library.id, "Serie S00E01E02.mkv")
+    decision = SeriesFixtures.identify(double, 0, [1, 2])
+    single = SeriesFixtures.file(library.id, "Serie S00E01.mp4")
+    SeriesFixtures.identify(single, 0, [1])
+    assert {:ok, page} = Catalog.list_series(@actor, "Serie", 1)
+    assert page.total == 1
+    assert [item] = page.items
+    assert item.episode_count == 2
+    assert {:ok, detail} = Catalog.get_series(@actor, item.id)
+    assert [%{number: 0, episode_count: 2} = season] = detail.seasons
+    assert {:ok, episodes} = Catalog.list_episodes(@actor, season.id, 1)
+    assert Enum.map(episodes.items, & &1.number) == [1, 2]
+    assert hd(episodes.items).version_count == 2
+    assert {:ok, episode} = Catalog.get_episode(@actor, hd(decision.catalog_entry_ids))
+    assert episode.series.title == "Serie"
+    assert length(episode.versions) == 2
+    assert Enum.map(episode.versions, & &1.episode_numbers) == [[1, 2], [1]]
+    single |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+    assert {:ok, episodes} = Catalog.list_episodes(@actor, season.id, 1)
+    assert hd(episodes.items).available_version_count == 1
+    assert {:ok, %{total: 2, items: []}} = Catalog.list_episodes(@actor, season.id, 2)
+  end
+
+  test "movie and series resources with the same external ID remain separate" do
+    library = SeriesFixtures.library()
+    file = SeriesFixtures.file(library.id, "Serie S01E01.mkv")
+    SeriesFixtures.identify(file, 1, [1])
+
+    identity =
+      Repo.insert!(%CatalogEntrySchema{
+        kind: :movie,
+        provider: :tmdb,
+        resource_type: :movie,
+        provider_id: 201
+      })
+
+    Repo.insert!(%MovieSchema{id: identity.id, title: "Movie"})
+    assert {:ok, %{total: 1}} = Catalog.list_series(@actor, "", 1)
+    assert {:ok, %{total: 1}} = Catalog.list_movies(@actor, "", 1)
+  end
+
+  test "queries authorize validate and distinguish empty pages from missing parents" do
+    assert {:error, :forbidden} = Catalog.list_series(nil, "", 1)
+    assert {:error, :invalid_query} = Catalog.list_series(@actor, String.duplicate("x", 257), 1)
+    assert {:error, :invalid_page} = Catalog.list_series(@actor, "", 0)
+    assert {:ok, %{items: [], total: 0}} = Catalog.list_series(@actor, "", 1)
+    assert {:error, :not_found} = Catalog.get_series(@actor, 9_999_999)
+    assert {:error, :not_found} = Catalog.get_episode(@actor, 9_999_999)
+    assert {:error, :not_found} = Catalog.list_episodes(@actor, 9_999_999, 1)
+  end
+end
