@@ -2,7 +2,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   use ExUnit.Case, async: false
   alias Bolognesa.Infrastructure.LocalSourcePath
 
-  alias Bolognesa.Playback.Domain.Source
+  alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
 
   setup do

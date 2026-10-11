@@ -1,6 +1,9 @@
 defmodule Bolognesa.Catalog.Application.Ports.Readers.SeriesReader do
   @moduledoc "Catalog-owned reads for series hierarchy and episode versions."
-  alias Bolognesa.Catalog.Domain.{Episode, EpisodeVersion, Season, Series}
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Episode
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.EpisodeVersion
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Season
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
   @type adapter :: atom()
   @type page_number :: pos_integer()
   @callback list_series(query :: binary(), page :: page_number()) ::

@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.InspectionRecoveryTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Libraries.Domain.NewMediaFile
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
   alias Bolognesa.Libraries.Infrastructure.Jobs.{
     InspectionPolicy,

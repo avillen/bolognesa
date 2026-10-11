@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.Infrastructure.Repositories.IdentifiedMovieWriter do
   @moduledoc false
-  alias Bolognesa.Identification.Domain.MovieDetails
-  alias Bolognesa.Identification.Domain.NewMovie
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.MovieDetails
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.NewMovie
   alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Repo

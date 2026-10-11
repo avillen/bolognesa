@@ -6,7 +6,7 @@ defmodule Bolognesa.Identification.RequestBackfillTest do
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository
 
-  alias Bolognesa.Identification.Domain.MovieDetails
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.MovieDetails
 
   alias Bolognesa.Infrastructure.Persistence.{IdentificationEventSchema, IdentificationSchema}
 

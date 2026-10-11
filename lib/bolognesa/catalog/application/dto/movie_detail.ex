@@ -2,7 +2,8 @@ defmodule Bolognesa.Catalog.Application.Dto.MovieDetail do
   @moduledoc "Movie detail returned by the catalog read use case."
 
   alias Bolognesa.Catalog.Application.Dto.MovieVersion, as: MovieVersionDto
-  alias Bolognesa.Catalog.Domain.{Movie, MovieVersion}
+  alias Bolognesa.Catalog.Domain.ReadModels.Movies.Movie
+  alias Bolognesa.Catalog.Domain.ReadModels.Movies.MovieVersion
 
   @enforce_keys [:movie, :versions]
   defstruct [:movie, :versions]

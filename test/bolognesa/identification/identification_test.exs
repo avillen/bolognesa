@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.IdentificationTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Identification.Domain.Identification
+  alias Bolognesa.Identification.Domain.Entities.Identification
 
   @now ~U[2026-10-11 10:00:00.000000Z]
   @candidates %{"items" => [%{"provider_id" => 42}]}

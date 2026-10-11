@@ -1,7 +1,9 @@
 defmodule Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository do
   @moduledoc "Durable scan requests, generation-protected inventory writes and recovery."
-
-  alias Bolognesa.Libraries.Domain.{Library, NewMediaFile, Scan, ScanStatus}
+  alias Bolognesa.Libraries.Domain.Entities.Library
+  alias Bolognesa.Libraries.Domain.Entities.Scan
+  alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
   @type adapter :: atom()
 

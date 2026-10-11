@@ -3,7 +3,7 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
   alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
   alias Bolognesa.Infrastructure.Persistence.{IdentificationEventSchema, IdentificationSchema}
 
-  alias Bolognesa.Identification.Domain.Identification
+  alias Bolognesa.Identification.Domain.Entities.Identification
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema

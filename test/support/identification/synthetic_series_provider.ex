@@ -1,7 +1,7 @@
 defmodule Bolognesa.Test.SyntheticSeriesProvider do
   @moduledoc false
   @behaviour Bolognesa.Identification.Application.Ports.Providers.SeriesProvider
-  alias Bolognesa.Identification.Domain.{
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.{
     EpisodeDetails,
     SeasonDetails,
     SeriesCandidate,

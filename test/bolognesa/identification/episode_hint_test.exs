@@ -1,6 +1,6 @@
 defmodule Bolognesa.Identification.EpisodeHintTest do
   use ExUnit.Case, async: true
-  alias Bolognesa.Identification.Domain.EpisodeHint
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeHint
 
   test "recognizes both conventions specials repetitions and inclusive ranges" do
     for {name, season, numbers} <- [

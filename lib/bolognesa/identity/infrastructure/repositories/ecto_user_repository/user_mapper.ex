@@ -1,6 +1,6 @@
 defmodule Bolognesa.Identity.Infrastructure.Repositories.EctoUserRepository.UserMapper do
   @moduledoc false
-  alias Bolognesa.Identity.Domain.User
+  alias Bolognesa.Identity.Domain.Entities.User
   alias Bolognesa.Infrastructure.Persistence.UserSchema
 
   @spec to_user(UserSchema.t()) :: User.t()

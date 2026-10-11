@@ -1,9 +1,10 @@
 defmodule Bolognesa.Libraries.Application.UseCases.StartScan do
   @moduledoc "Authorize a library scan request."
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
-  alias Bolognesa.Libraries.Domain.{Library, Scan}
+  alias Bolognesa.Libraries.Domain.Entities.Library
+  alias Bolognesa.Libraries.Domain.Entities.Scan
 
   @spec call(Actor.t(), Library.id(), ScanRepository.adapter(), keyword()) ::
           {:ok, Scan.t()} | {:error, :forbidden | :not_found | :scan_in_progress | :unavailable}

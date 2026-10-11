@@ -4,8 +4,8 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   alias Bolognesa.Infrastructure.Persistence.{InspectionEventSchema, InspectionSchema}
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
-  alias Bolognesa.Libraries.Domain.NewMediaFile
-  alias Bolognesa.Libraries.Domain.TechnicalMedia
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Ecto.Adapters.SQL

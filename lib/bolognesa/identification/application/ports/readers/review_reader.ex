@@ -1,7 +1,8 @@
 defmodule Bolognesa.Identification.Application.Ports.Readers.ReviewReader do
   @moduledoc "Read domain records needed to assemble an identification review page."
 
-  alias Bolognesa.Identification.Domain.{Identification, ReviewFile, ReviewMovie}
+  alias Bolognesa.Identification.Domain.Entities.Identification
+  alias Bolognesa.Identification.Domain.ReadModels.{ReviewFile, ReviewMovie}
 
   @type adapter :: atom()
   @type entry :: {Identification.t(), ReviewFile.t(), ReviewMovie.t() | nil}

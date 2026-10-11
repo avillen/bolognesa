@@ -2,11 +2,11 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
   use Bolognesa.DataCase, async: false
   use Oban.Testing, repo: Bolognesa.Repo
 
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.{InspectionEventSchema, InspectionSchema}
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries
-  alias Bolognesa.Libraries.Domain.InspectionCounts
+  alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoOutboxRepository

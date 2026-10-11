@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
-  alias Bolognesa.Libraries.Domain.NewMediaFile
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Libraries.Support.{ControlledFileDiscovery, UnavailableScanRepository}

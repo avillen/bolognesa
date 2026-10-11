@@ -3,7 +3,7 @@ defmodule Bolognesa.Identity.InstallAdminTest do
   alias Ecto.Adapters.SQL.Sandbox
 
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.UserSchema
 
   @password "correct horse battery staple"

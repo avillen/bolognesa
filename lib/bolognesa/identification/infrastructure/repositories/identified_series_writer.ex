@@ -1,6 +1,6 @@
 defmodule Bolognesa.Identification.Infrastructure.Repositories.IdentifiedSeriesWriter do
   @moduledoc false
-  alias Bolognesa.Identification.Domain.EpisodeSelection
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeSelection
 
   alias Bolognesa.Infrastructure.Persistence.{
     CatalogEntrySchema,

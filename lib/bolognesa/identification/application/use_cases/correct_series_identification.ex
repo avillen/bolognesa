@@ -1,9 +1,10 @@
 defmodule Bolognesa.Identification.Application.UseCases.CorrectSeriesIdentification do
   @moduledoc "Replace a file's entire episode selection after validating its current revision."
   alias Bolognesa.Identification.Application.Ports.{IdentificationRepository, SeriesProvider}
-  alias Bolognesa.Identification.Domain.{EpisodeSelection, Identification}
+  alias Bolognesa.Identification.Domain.Entities.Identification
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeSelection
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
   @type choice :: :unidentified | {:tmdb, pos_integer(), non_neg_integer(), [pos_integer()]}
   @type reason ::
           :forbidden

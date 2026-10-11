@@ -1,6 +1,8 @@
 defmodule BolognesaWeb.Library.Index.State.Library do
   @moduledoc false
-  alias Bolognesa.Libraries.Domain.{Library, Scan, ScanStatus}
+  alias Bolognesa.Libraries.Domain.Entities.Library
+  alias Bolognesa.Libraries.Domain.Entities.Scan
+  alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
 
   defstruct [
     :id,

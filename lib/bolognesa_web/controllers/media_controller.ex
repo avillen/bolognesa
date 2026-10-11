@@ -2,7 +2,7 @@ defmodule BolognesaWeb.MediaController do
   use BolognesaWeb, :controller
 
   alias Bolognesa.Playback
-  alias Bolognesa.Playback.Domain.ByteRange
+  alias Bolognesa.Playback.Domain.ValueObjects.ByteRange
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
 
   @chunk_size 65_536

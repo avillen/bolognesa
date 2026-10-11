@@ -14,7 +14,7 @@ defmodule Bolognesa.Identification.CorrectSeriesIdentificationTest do
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository
 
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
 
   alias Bolognesa.Infrastructure.Persistence.{
     IdentificationSchema,

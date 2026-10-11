@@ -3,7 +3,7 @@ defmodule Bolognesa.Identification.Application.UseCases.GetSeriesReviewItem do
   alias Bolognesa.Identification.Application.Dto.SeriesReviewItem
   alias Bolognesa.Identification.Application.Ports.Readers.SeriesReviewReader
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
 
   @spec call(Actor.t(), pos_integer(), SeriesReviewReader.adapter()) ::
           {:ok, SeriesReviewItem.t()} | {:error, :forbidden | :not_found | :unavailable}

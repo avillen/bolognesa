@@ -2,7 +2,7 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
   use ExUnit.Case, async: false
   alias Bolognesa.Infrastructure.LocalSourcePath
 
-  alias Bolognesa.Libraries.Domain.{Library, MediaFile}
+  alias Bolognesa.Libraries.Domain.Entities.{Library, MediaFile}
   alias Bolognesa.Libraries.Infrastructure.Services.{BoundedCommand, FfprobeMediaProbe}
 
   setup do
@@ -91,7 +91,7 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
 
     case File.write(path, "video") do
       :ok ->
-        assert {:ok, %Bolognesa.Libraries.Domain.TechnicalMedia{}} =
+        assert {:ok, %Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia{}} =
                  FfprobeMediaProbe.inspect(library(root), file(path, root),
                    executable: executable
                  )

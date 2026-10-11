@@ -1,6 +1,8 @@
 defmodule Bolognesa.Catalog.Application.Dto.SeasonListItem do
   @moduledoc "Public season list item projection."
-  alias Bolognesa.Catalog.Domain.{Episode, Season, Series}
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Episode
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Season
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
   defstruct [:id, :series_id, :number, :title, :poster_path, :episode_count]
 
   @type t :: %__MODULE__{

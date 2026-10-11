@@ -4,7 +4,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.Initialize do
   import Phoenix.LiveView, only: [stream: 4]
 
   alias Bolognesa.Libraries
-  alias Bolognesa.Libraries.Domain.ScanStatus
+  alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
 
   alias BolognesaWeb.Library.Index.Forms.Library
   alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses

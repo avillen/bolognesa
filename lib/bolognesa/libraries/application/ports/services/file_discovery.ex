@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.Application.Ports.Services.FileDiscovery do
   @moduledoc "Read-only file discovery, validating the source before and after all batches."
 
-  alias Bolognesa.Libraries.Domain.NewMediaFile
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
   @type adapter :: atom()
   @type error ::

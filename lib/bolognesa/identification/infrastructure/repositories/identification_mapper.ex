@@ -1,6 +1,6 @@
 defmodule Bolognesa.Identification.Infrastructure.Repositories.IdentificationMapper do
   @moduledoc false
-  alias Bolognesa.Identification.Domain.Identification
+  alias Bolognesa.Identification.Domain.Entities.Identification
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
 
   @spec to_domain(IdentificationSchema.t(), [pos_integer()]) :: Identification.t()

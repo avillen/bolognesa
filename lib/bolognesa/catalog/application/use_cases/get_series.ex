@@ -2,9 +2,9 @@ defmodule Bolognesa.Catalog.Application.UseCases.GetSeries do
   @moduledoc "Authorize one series and its identified seasons."
   alias Bolognesa.Catalog.Application.Dto.SeriesDetail
   alias Bolognesa.Catalog.Application.Ports.Readers.SeriesReader
-  alias Bolognesa.Catalog.Domain.Series
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
 
   @spec call(Actor.t(), Series.id(), SeriesReader.adapter()) ::
           {:ok, SeriesDetail.t()} | {:error, :forbidden | :not_found | :unavailable}

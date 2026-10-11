@@ -2,7 +2,13 @@ defmodule Bolognesa.Identification.Infrastructure.Providers.TmdbSeriesProvider d
   @moduledoc "TMDb series adapter with bounded shared transport."
   @behaviour Bolognesa.Identification.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Identification.Application.Ports.Providers.SeriesProvider
-  alias Bolognesa.Identification.Domain.{SeasonDetails, SeriesCandidate, SeriesDetails}
+
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.{
+    SeasonDetails,
+    SeriesCandidate,
+    SeriesDetails
+  }
+
   alias Bolognesa.Identification.Infrastructure.Providers.{TmdbClient, TmdbSeriesResponse}
 
   @impl true

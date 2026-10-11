@@ -1,7 +1,7 @@
 defmodule Bolognesa.Playback.ByteRangeTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Playback.Domain.ByteRange
+  alias Bolognesa.Playback.Domain.ValueObjects.ByteRange
 
   test "selects a complete body or a single bounded byte range" do
     assert {:ok, {0, 8, 200}} = ByteRange.parse(nil, 8)

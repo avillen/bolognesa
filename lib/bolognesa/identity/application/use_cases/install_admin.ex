@@ -2,8 +2,8 @@ defmodule Bolognesa.Identity.Application.UseCases.InstallAdmin do
   @moduledoc "Install the sole initial administrator."
   alias Bolognesa.Identity.Application.Ports.Repositories.UserRepository
   alias Bolognesa.Identity.Application.Ports.Services.PasswordHasher
-  alias Bolognesa.Identity.Domain.NewAdmin
-  alias Bolognesa.Identity.Domain.User
+  alias Bolognesa.Identity.Domain.Entities.User
+  alias Bolognesa.Identity.Domain.ValueObjects.Sessions.NewAdmin
 
   @spec call(NewAdmin.attrs(), UserRepository.adapter(), PasswordHasher.adapter()) ::
           {:ok, User.t()}

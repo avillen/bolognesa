@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.IdentifiedSeriesWriterTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Identification.Domain.{
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.{
     EpisodeDetails,
     EpisodeSelection,
     SeasonDetails,

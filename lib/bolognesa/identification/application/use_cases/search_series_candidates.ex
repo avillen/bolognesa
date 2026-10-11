@@ -1,9 +1,9 @@
 defmodule Bolognesa.Identification.Application.UseCases.SearchSeriesCandidates do
   @moduledoc "Authorize a bounded manual series search."
   alias Bolognesa.Identification.Application.Ports.Providers.SeriesProvider
-  alias Bolognesa.Identification.Domain.SeriesCandidate
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.SeriesCandidate
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
 
   @spec call(Actor.t(), binary(), SeriesProvider.adapter()) ::
           {:ok, [SeriesCandidate.t()]}

@@ -6,7 +6,7 @@ defmodule Bolognesa.Identification.Application.UseCases.ListReviewItems do
   alias Bolognesa.Identification.Application.Ports.Readers.ReviewReader
   alias Bolognesa.Identity
 
-  @spec call(Bolognesa.Identity.Domain.Actor.t(), pos_integer(), ReviewReader.adapter()) ::
+  @spec call(Bolognesa.Identity.Domain.Entities.Actor.t(), pos_integer(), ReviewReader.adapter()) ::
           {:ok, ReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}
   def call(actor, page, reader) do
     with :ok <- Identity.authorize(actor, :admin),

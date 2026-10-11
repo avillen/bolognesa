@@ -1,7 +1,7 @@
 defmodule Bolognesa.Catalog.Application.Dto.MovieListItem do
   @moduledoc "Movie and physical version counts in a catalog listing."
-
-  alias Bolognesa.Catalog.Domain.{Movie, MovieVersion}
+  alias Bolognesa.Catalog.Domain.ReadModels.Movies.Movie
+  alias Bolognesa.Catalog.Domain.ReadModels.Movies.MovieVersion
 
   @enforce_keys [:id, :title, :year, :poster_path, :version_count, :available_count]
   defstruct [:id, :title, :year, :poster_path, :version_count, :available_count]

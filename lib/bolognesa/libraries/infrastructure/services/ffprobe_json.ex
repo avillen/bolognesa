@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
   @moduledoc false
 
-  alias Bolognesa.Libraries.Domain.TechnicalMedia
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
 
   @max_bytes 262_144
   @max_tracks 128

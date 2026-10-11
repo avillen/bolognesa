@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository.LibraryMapper do
   @moduledoc false
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
-  alias Bolognesa.Libraries.Domain.Library
+  alias Bolognesa.Libraries.Domain.Entities.Library
 
   @spec to_library(LibrarySchema.t()) :: Library.t()
   def to_library(schema),

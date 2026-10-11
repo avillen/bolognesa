@@ -2,9 +2,9 @@ defmodule Bolognesa.Catalog.Application.UseCases.GetEpisode do
   @moduledoc "Authorize an episode detail and physical versions."
   alias Bolognesa.Catalog.Application.Dto.EpisodeDetail
   alias Bolognesa.Catalog.Application.Ports.Readers.SeriesReader
-  alias Bolognesa.Catalog.Domain.Episode
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Episode
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
 
   @spec call(Actor.t(), Episode.id(), SeriesReader.adapter()) ::
           {:ok, EpisodeDetail.t()} | {:error, :forbidden | :not_found | :unavailable}

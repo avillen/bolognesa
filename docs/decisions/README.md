@@ -20,3 +20,4 @@ Crear un registro cuando se elija o cambie un límite arquitectónico, contrato,
 | [0012](0012-catalog-entry-identity.md) | Implementada localmente; sin despliegue | Identidad común, detalles propios y escritura atómica desde Identificación |
 | [0013](0013-series-and-multiple-episode-associations.md) | Implementada localmente; sin despliegue | Tipo de biblioteca, jerarquía de series y conjuntos ordenados y atómicos por archivo |
 | [0014](0014-parallel-port-infrastructure-categories.md) | Implementada localmente; sin despliegue | Categorías paralelas para ports y adaptadores por responsabilidad |
+| [0015](0015-domain-concept-directories.md) | Implementada localmente en todos los contextos con dominio; sin despliegue | Directorios del dominio por tipo de concepto, con agrupación opcional por subdominio |

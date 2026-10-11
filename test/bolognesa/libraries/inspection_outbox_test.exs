@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
   alias Bolognesa.Infrastructure.Persistence.InspectionEventSchema
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
-  alias Bolognesa.Libraries.Domain.NewMediaFile
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.OutboxDispatcher
   alias Bolognesa.Libraries.Infrastructure.Repositories.{EctoOutboxRepository, EctoScanRepository}
   alias Ecto.Adapters.SQL

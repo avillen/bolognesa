@@ -1,10 +1,10 @@
 defmodule Bolognesa.Identification.Application.UseCases.CorrectIdentification do
   @moduledoc "Resolve an identification by an administrator's explicit choice."
-  alias Bolognesa.Identification.Domain.Identification
+  alias Bolognesa.Identification.Domain.Entities.Identification
   alias Bolognesa.Identity
 
   @spec call(
-          Bolognesa.Identity.Domain.Actor.t(),
+          Bolognesa.Identity.Domain.Entities.Actor.t(),
           pos_integer(),
           :unidentified | {:tmdb, pos_integer()},
           module(),

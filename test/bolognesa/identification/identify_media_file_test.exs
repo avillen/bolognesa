@@ -2,9 +2,9 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Identification.Application.UseCases.IdentifyMediaFile
-  alias Bolognesa.Identification.Domain.FileToIdentify
-  alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
+  alias Bolognesa.Identification.Domain.Entities.Identification
+  alias Bolognesa.Identification.Domain.ReadModels.FileToIdentify
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.{MovieCandidate, MovieDetails}
 
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository

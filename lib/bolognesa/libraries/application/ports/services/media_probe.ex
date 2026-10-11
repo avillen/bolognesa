@@ -1,7 +1,8 @@
 defmodule Bolognesa.Libraries.Application.Ports.Services.MediaProbe do
   @moduledoc "Reads bounded technical metadata from a physical media file."
-
-  alias Bolognesa.Libraries.Domain.{Library, MediaFile, TechnicalMedia}
+  alias Bolognesa.Libraries.Domain.Entities.Library
+  alias Bolognesa.Libraries.Domain.Entities.MediaFile
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
 
   @type adapter :: module()
   @type reason ::

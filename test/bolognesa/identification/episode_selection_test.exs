@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.EpisodeSelectionTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Identification.Domain.{
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.{
     EpisodeDetails,
     EpisodeSelection,
     SeasonDetails,

@@ -2,7 +2,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoSeriesReader do
   @moduledoc false
   @behaviour Bolognesa.Catalog.Application.Ports.Readers.SeriesReader
   import Ecto.Query
-  alias Bolognesa.Catalog.Domain.EpisodeVersion
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.EpisodeVersion
   alias Bolognesa.Catalog.Infrastructure.Readers.EctoSeriesReader.SeriesMapper
 
   alias Bolognesa.Infrastructure.Persistence.{

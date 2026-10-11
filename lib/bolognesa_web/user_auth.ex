@@ -4,7 +4,7 @@ defmodule BolognesaWeb.UserAuth do
   import Phoenix.Controller, only: [redirect: 2]
 
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
 
   @spec fetch_current_scope(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
   def fetch_current_scope(conn, _opts) do

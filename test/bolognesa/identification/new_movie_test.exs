@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.NewMovieTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Identification.Domain.NewMovie
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.NewMovie
 
   test "requires a provider identity and usable title" do
     assert {:error, :invalid_movie} =

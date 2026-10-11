@@ -2,7 +2,8 @@ defmodule Bolognesa.Libraries.InventoryRequestPlanTest do
   use ExUnit.Case, async: true
 
   alias Bolognesa.Libraries.Application.InventoryRequestPlan
-  alias Bolognesa.Libraries.Domain.{MediaFile, NewMediaFile}
+  alias Bolognesa.Libraries.Domain.Entities.MediaFile
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
   @modified ~U[2026-10-03 00:00:00Z]
   @generation "current"

@@ -14,16 +14,16 @@ defmodule Bolognesa.Identification do
   alias Bolognesa.Identification.Application.UseCases.RetryIdentification
   alias Bolognesa.Identification.Application.UseCases.SearchCandidates
   alias Bolognesa.Identification.Application.UseCases.SearchSeriesCandidates
-  alias Bolognesa.Identification.Domain.Identification, as: IdentificationDecision
-  alias Bolognesa.Identification.Domain.SeasonDetails
-  alias Bolognesa.Identification.Domain.SeriesCandidate
+  alias Bolognesa.Identification.Domain.Entities.Identification, as: IdentificationDecision
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.SeasonDetails
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.SeriesCandidate
   alias Bolognesa.Identification.Infrastructure.Providers.TmdbMovieProvider
   alias Bolognesa.Identification.Infrastructure.Providers.TmdbSeriesProvider
   alias Bolognesa.Identification.Infrastructure.Readers.EctoReviewReader
   alias Bolognesa.Identification.Infrastructure.Readers.EctoSeriesReviewReader
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoRequestWriter
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
 
   @spec get_series_review_item(Actor.t(), pos_integer()) ::
           {:ok, SeriesReviewItem.t()} | {:error, :forbidden | :not_found | :unavailable}

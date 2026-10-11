@@ -1,13 +1,10 @@
 defmodule Bolognesa.Identification.Application.Ports.Repositories.IdentificationRepository do
   @moduledoc "Persistence boundary for identification transitions."
-  alias Bolognesa.Identification.Domain.{
-    EpisodeSelection,
-    FileToIdentify,
-    Identification,
-    MovieCandidate,
-    MovieDetails,
-    SeriesCandidate
-  }
+  alias Bolognesa.Identification.Domain.Entities.Identification
+  alias Bolognesa.Identification.Domain.ReadModels.FileToIdentify
+
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.{MovieCandidate, MovieDetails}
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.{EpisodeSelection, SeriesCandidate}
 
   @type adapter :: atom()
   @type review_reason ::

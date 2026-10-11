@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.SeriesReviewQueriesTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Identification
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
   alias Bolognesa.SeriesFixtures
   @actor %Actor{id: 1, role: :admin}

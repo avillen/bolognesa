@@ -9,7 +9,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery do
   @behaviour Bolognesa.Libraries.Application.Ports.Services.FileDiscovery
 
   alias Bolognesa.Infrastructure.LocalSourcePath
-  alias Bolognesa.Libraries.Domain.NewMediaFile
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
   @batch_size Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy.batch_size()
   @extensions ~w(.mp4 .m4v .mkv .avi .mov .webm .mpeg .mpg .ts .m2ts)

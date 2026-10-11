@@ -2,9 +2,9 @@ defmodule Bolognesa.Playback.Application.UseCases.StartPlayback do
   @moduledoc "Authorize and select a currently linked physical movie version."
 
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Playback.Application.Ports.Repositories.PlaybackRepository
-  alias Bolognesa.Playback.Domain.Source
+  alias Bolognesa.Playback.Domain.ReadModels.Source
 
   @spec call(Actor.t(), integer(), integer(), PlaybackRepository.adapter()) ::
           {:ok, Source.t()}

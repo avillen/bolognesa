@@ -1,10 +1,10 @@
 defmodule Bolognesa.Playback do
   @moduledoc "Authorize a movie version for direct or compatible playback."
 
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Playback.Application.UseCases.StartPlayback
-  alias Bolognesa.Playback.Domain.Source
-  alias Bolognesa.Playback.Domain.TranscodeProfile
+  alias Bolognesa.Playback.Domain.Policies.TranscodeProfile
+  alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   alias Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
@@ -36,7 +36,7 @@ defmodule Bolognesa.Playback do
   end
 
   @spec start_compatible(Actor.t(), integer(), integer(), integer(), :auto | :video) ::
-          {:ok, Bolognesa.Playback.Domain.TranscodeSession.t()} | {:error, atom()}
+          {:ok, Bolognesa.Playback.Domain.ReadModels.TranscodeSession.t()} | {:error, atom()}
   def start_compatible(actor, catalog_entry_id, file_id, offset_ms, mode \\ :auto) do
     with {:ok, profile, source} <- delivery(actor, catalog_entry_id, file_id),
          :ok <- validate_profile(profile, mode) do
@@ -46,7 +46,7 @@ defmodule Bolognesa.Playback do
   end
 
   @spec compatible_session(Actor.t(), integer(), integer(), String.t()) ::
-          {:ok, Bolognesa.Playback.Domain.TranscodeSession.t()} | {:error, atom()}
+          {:ok, Bolognesa.Playback.Domain.ReadModels.TranscodeSession.t()} | {:error, atom()}
   def compatible_session(actor, catalog_entry_id, file_id, session_id) do
     with {:ok, session} <- TranscodeManager.lookup(session_id),
          true <-

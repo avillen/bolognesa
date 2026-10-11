@@ -2,7 +2,8 @@ defmodule Bolognesa.Identification.Infrastructure.Readers.EctoSeriesReviewReader
   @moduledoc false
   @behaviour Bolognesa.Identification.Application.Ports.Readers.SeriesReviewReader
   import Ecto.Query
-  alias Bolognesa.Identification.Domain.{ReviewEpisode, ReviewSeriesFile, SeriesCandidate}
+  alias Bolognesa.Identification.Domain.ReadModels.{ReviewEpisode, ReviewSeriesFile}
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.SeriesCandidate
   alias Bolognesa.Identification.Infrastructure.Repositories.IdentificationMapper
 
   alias Bolognesa.Infrastructure.Persistence.{

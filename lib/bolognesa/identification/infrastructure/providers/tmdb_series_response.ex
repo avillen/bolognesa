@@ -1,6 +1,6 @@
 defmodule Bolognesa.Identification.Infrastructure.Providers.TmdbSeriesResponse do
   @moduledoc false
-  alias Bolognesa.Identification.Domain.{
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.{
     EpisodeDetails,
     SeasonDetails,
     SeriesCandidate,

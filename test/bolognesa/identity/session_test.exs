@@ -2,7 +2,7 @@ defmodule Bolognesa.Identity.SessionTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.SessionSchema
 
   @password "correct horse battery staple"

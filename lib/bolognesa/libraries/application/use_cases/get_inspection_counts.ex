@@ -2,8 +2,9 @@ defmodule Bolognesa.Libraries.Application.UseCases.GetInspectionCounts do
   @moduledoc "Authorize aggregate technical inspection counts for one library."
 
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Libraries.Domain.{InspectionCounts, Library}
+  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Libraries.Domain.Entities.Library
+  alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
 
   @spec call(Actor.t(), Library.id(), module()) ::
           {:ok, InspectionCounts.t()} | {:error, :forbidden | :not_found | :unavailable}

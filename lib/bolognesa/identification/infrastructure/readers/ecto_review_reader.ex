@@ -4,7 +4,7 @@ defmodule Bolognesa.Identification.Infrastructure.Readers.EctoReviewReader do
 
   import Ecto.Query
 
-  alias Bolognesa.Identification.Domain.{ReviewFile, ReviewMovie}
+  alias Bolognesa.Identification.Domain.ReadModels.{ReviewFile, ReviewMovie}
   alias Bolognesa.Identification.Infrastructure.Repositories.IdentificationMapper
   alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema

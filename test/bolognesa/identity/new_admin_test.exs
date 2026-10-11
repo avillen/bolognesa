@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identity.NewAdminTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Identity.Domain.NewAdmin
+  alias Bolognesa.Identity.Domain.ValueObjects.Sessions.NewAdmin
 
   test "a validated administrator registration normalizes identity and redacts its password" do
     password = "correct horse battery staple"

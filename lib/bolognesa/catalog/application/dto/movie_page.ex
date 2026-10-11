@@ -2,7 +2,8 @@ defmodule Bolognesa.Catalog.Application.Dto.MoviePage do
   @moduledoc "A page of catalog movie listing results."
 
   alias Bolognesa.Catalog.Application.Dto.MovieListItem
-  alias Bolognesa.Catalog.Domain.{Movie, MovieVersion}
+  alias Bolognesa.Catalog.Domain.ReadModels.Movies.Movie
+  alias Bolognesa.Catalog.Domain.ReadModels.Movies.MovieVersion
 
   @enforce_keys [:items, :total]
   defstruct [:items, :total]

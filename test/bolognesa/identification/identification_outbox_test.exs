@@ -4,8 +4,8 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
   alias SQL.Sandbox
   use Oban.Testing, repo: Bolognesa.Repo
 
-  alias Bolognesa.Identification.Domain.MovieCandidate
-  alias Bolognesa.Identification.Domain.MovieDetails
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.MovieCandidate
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.MovieDetails
   alias Bolognesa.Identification.Infrastructure.Jobs.OutboxDispatcher
 
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
@@ -14,7 +14,7 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoOutboxRepository
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoRequestWriter
 
-  alias Bolognesa.Libraries.Domain.NewMediaFile
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
 
   alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema

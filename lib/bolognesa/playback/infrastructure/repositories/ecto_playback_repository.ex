@@ -10,8 +10,8 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-  alias Bolognesa.Playback.Domain.Source
-  alias Bolognesa.Playback.Domain.TechnicalTrack
+  alias Bolognesa.Playback.Domain.ReadModels.Source
+  alias Bolognesa.Playback.Domain.ReadModels.TechnicalTrack
   alias Bolognesa.Repo
 
   @impl true

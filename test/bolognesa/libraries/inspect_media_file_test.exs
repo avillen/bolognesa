@@ -2,9 +2,9 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
-  alias Bolognesa.Libraries.Domain.Inspection
-  alias Bolognesa.Libraries.Domain.NewMediaFile
-  alias Bolognesa.Libraries.Domain.TechnicalTrack
+  alias Bolognesa.Libraries.Domain.Entities.Inspection
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
 

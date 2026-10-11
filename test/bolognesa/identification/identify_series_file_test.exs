@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.IdentifySeriesFileTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Identification.Application.UseCases.IdentifySeriesFile
-  alias Bolognesa.Identification.Domain.EpisodeSelection
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeSelection
   alias Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker
 
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,

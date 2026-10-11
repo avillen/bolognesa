@@ -1,7 +1,10 @@
 defmodule Bolognesa.Catalog.Application.Dto.EpisodeDetail do
   @moduledoc "Public episode detail result."
   alias Bolognesa.Catalog.Application.Dto.EpisodeVersion, as: EpisodeVersionDto
-  alias Bolognesa.Catalog.Domain.{Episode, EpisodeVersion, Season, Series}
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Episode
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.EpisodeVersion
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Season
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
 
   defstruct [:episode, :season, :series, :versions]
 

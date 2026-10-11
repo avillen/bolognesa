@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.Infrastructure.Providers.TmdbResponse do
   @moduledoc false
 
-  alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.{MovieCandidate, MovieDetails}
 
   @spec search(binary()) :: {:ok, [MovieCandidate.t()]} | {:error, :invalid_response}
   def search(body) when is_binary(body) do

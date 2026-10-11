@@ -1,9 +1,9 @@
 defmodule Bolognesa.Identification.Application.UseCases.GetSeriesSeason do
   @moduledoc "Authorize a season lookup for a manual episode selection."
   alias Bolognesa.Identification.Application.Ports.Providers.SeriesProvider
-  alias Bolognesa.Identification.Domain.SeasonDetails
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.SeasonDetails
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
 
   @spec call(Actor.t(), pos_integer(), non_neg_integer(), SeriesProvider.adapter()) ::
           {:ok, SeasonDetails.t()}

@@ -1,7 +1,9 @@
 defmodule Bolognesa.Libraries.ScanDomainTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Libraries.Domain.{MediaFile, NewMediaFile, Scan, ScanStatus}
+  alias Bolognesa.Libraries.Domain.Entities.{MediaFile, Scan}
+  alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
   @now ~U[2026-10-03 00:00:00Z]
   @later ~U[2026-10-03 00:01:00Z]

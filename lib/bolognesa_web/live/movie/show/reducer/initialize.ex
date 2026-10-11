@@ -4,7 +4,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
   import Phoenix.LiveView, only: [stream: 3, start_async: 3]
   alias Bolognesa.Catalog
 
-  @spec call(Phoenix.LiveView.Socket.t(), Bolognesa.Identity.Domain.Actor.t(), integer()) ::
+  @spec call(Phoenix.LiveView.Socket.t(), Bolognesa.Identity.Domain.Entities.Actor.t(), integer()) ::
           Phoenix.LiveView.Socket.t()
   def call(socket, actor, id) do
     request_id = make_ref()

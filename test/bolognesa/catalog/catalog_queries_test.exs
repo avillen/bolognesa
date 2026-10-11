@@ -7,10 +7,10 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
   alias Bolognesa.Catalog.Application.Dto.MovieListItem
   alias Bolognesa.Catalog.Application.Dto.MoviePage
   alias Bolognesa.Catalog.Application.Dto.MovieVersion
-  alias Bolognesa.Catalog.Domain.Movie
-  alias Bolognesa.Catalog.Domain.MovieVersion, as: DomainMovieVersion
-  alias Bolognesa.Catalog.Infrastructure.Readers.EctoCatalogReader
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Catalog.Domain.ReadModels.Movies.Movie
+  alias Bolognesa.Catalog.Domain.ReadModels.Movies.MovieVersion, as: DomainMovieVersion
+  alias Bolognesa.Catalog.Infrastructure.Readers.EctoMoviesReader
+  alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
 
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
@@ -69,10 +69,10 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
 
     assert id == movie.id
 
-    assert {:ok, {[{%Movie{id: ^id}, 2, 1}], 1}} = EctoCatalogReader.list_movies("Mi", 1)
+    assert {:ok, {[{%Movie{id: ^id}, 2, 1}], 1}} = EctoMoviesReader.list_movies("Mi", 1)
 
     assert {:ok, {%Movie{id: ^id}, [version | _]}} =
-             EctoCatalogReader.get_movie(id)
+             EctoMoviesReader.get_movie(id)
 
     assert version.__struct__ == DomainMovieVersion
     assert version.availability == :available

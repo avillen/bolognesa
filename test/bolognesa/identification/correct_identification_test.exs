@@ -2,9 +2,9 @@ defmodule Bolognesa.Identification.CorrectIdentificationTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Identification.Application.UseCases.CorrectIdentification
-  alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Identification.Domain.MovieDetails
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identification.Domain.Entities.Identification
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.MovieDetails
+  alias Bolognesa.Identity.Domain.Entities.Actor
 
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
     as: Repository

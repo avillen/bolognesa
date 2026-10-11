@@ -1,7 +1,7 @@
 defmodule Bolognesa.Catalog.Application.Dto.MovieVersion do
   @moduledoc "Physical version fields exposed by a catalog movie detail read."
 
-  alias Bolognesa.Catalog.Domain.MovieVersion, as: DomainMovieVersion
+  alias Bolognesa.Catalog.Domain.ReadModels.Movies.MovieVersion, as: DomainMovieVersion
 
   @enforce_keys [:id, :availability, :size_bytes, :origin, :needs_review]
   defstruct [:id, :availability, :size_bytes, :origin, :needs_review]

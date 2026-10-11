@@ -1,6 +1,7 @@
 defmodule Bolognesa.Catalog.Application.Dto.SeriesListItem do
   @moduledoc "Public series list item projection."
-  alias Bolognesa.Catalog.Domain.{Episode, Series}
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Episode
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
 
   defstruct [
     :id,

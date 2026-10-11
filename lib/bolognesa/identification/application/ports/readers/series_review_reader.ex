@@ -1,6 +1,6 @@
 defmodule Bolognesa.Identification.Application.Ports.Readers.SeriesReviewReader do
   @moduledoc "Reads one review row per series file."
-  alias Bolognesa.Identification.Domain.{ReviewEpisode, ReviewSeriesFile}
+  alias Bolognesa.Identification.Domain.ReadModels.{ReviewEpisode, ReviewSeriesFile}
   @type adapter :: atom()
   @callback get_series_review_item(pos_integer()) ::
               {:ok, {ReviewSeriesFile.t(), [ReviewEpisode.t()]}}

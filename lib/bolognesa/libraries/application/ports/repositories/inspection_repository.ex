@@ -1,13 +1,11 @@
 defmodule Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository do
   @moduledoc "Atomic state transitions for a current technical inspection token."
 
-  alias Bolognesa.Libraries.Domain.{
-    Inspection,
-    InspectionCounts,
-    Library,
-    MediaFile,
-    TechnicalMedia
-  }
+  alias Bolognesa.Libraries.Domain.Entities.Inspection
+  alias Bolognesa.Libraries.Domain.Entities.Library
+  alias Bolognesa.Libraries.Domain.Entities.MediaFile
+  alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
 
   @type adapter :: module()
   @callback counts(Library.id()) ::

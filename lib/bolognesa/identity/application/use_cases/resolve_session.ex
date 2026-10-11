@@ -1,9 +1,9 @@
 defmodule Bolognesa.Identity.Application.UseCases.ResolveSession do
   @moduledoc "Resolve a cookie token against an active database session."
   alias Bolognesa.Identity.Application.Ports.Repositories.UserRepository
-  alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Identity.Domain.Session
-  alias Bolognesa.Identity.Domain.SessionToken
+  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Identity.Domain.ReadModels.Session
+  alias Bolognesa.Identity.Domain.ValueObjects.Sessions.SessionToken
 
   @spec call(Session.token() | nil, UserRepository.adapter()) ::
           {:ok, Actor.t()} | {:error, :unauthenticated | :unavailable}

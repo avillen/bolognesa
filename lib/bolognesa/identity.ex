@@ -7,10 +7,10 @@ defmodule Bolognesa.Identity do
     StartSession
   }
 
-  alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Identity.Domain.NewAdmin
-  alias Bolognesa.Identity.Domain.Session
-  alias Bolognesa.Identity.Domain.User
+  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Identity.Domain.Entities.User
+  alias Bolognesa.Identity.Domain.ReadModels.Session
+  alias Bolognesa.Identity.Domain.ValueObjects.Sessions.NewAdmin
   alias Bolognesa.Identity.Infrastructure.Repositories.EctoUserRepository
   alias Bolognesa.Identity.Infrastructure.Services.BcryptHasher
 

@@ -8,7 +8,12 @@ defmodule Bolognesa.Libraries do
     StartScan
   }
 
-  alias Bolognesa.Libraries.Domain.{InspectionCounts, Library, NewLibrary, Scan, ScanStatus}
+  alias Bolognesa.Libraries.Domain.Entities.Library
+  alias Bolognesa.Libraries.Domain.Entities.Scan
+  alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
+  alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewLibrary
+
   alias Bolognesa.Libraries.Infrastructure.Services.LocalFileSource
 
   alias Bolognesa.Libraries.Infrastructure.Repositories.{
@@ -17,7 +22,7 @@ defmodule Bolognesa.Libraries do
     EctoScanRepository
   }
 
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
 
   @spec create_library(Actor.t(), NewLibrary.attrs()) ::
           {:ok, Library.t()}

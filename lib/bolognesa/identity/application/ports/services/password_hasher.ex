@@ -1,6 +1,6 @@
 defmodule Bolognesa.Identity.Application.Ports.Services.PasswordHasher do
   @moduledoc "Password hashing boundary for identity use cases."
-  alias Bolognesa.Identity.Domain.User
+  alias Bolognesa.Identity.Domain.Entities.User
 
   @typedoc "Module implementing the password hasher behaviour."
   @type adapter :: atom()

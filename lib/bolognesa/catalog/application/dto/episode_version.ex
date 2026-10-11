@@ -1,6 +1,6 @@
 defmodule Bolognesa.Catalog.Application.Dto.EpisodeVersion do
   @moduledoc "Public episode version projection."
-  alias Bolognesa.Catalog.Domain.EpisodeVersion, as: DomainEpisodeVersion
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.EpisodeVersion, as: DomainEpisodeVersion
 
   defstruct [
     :id,

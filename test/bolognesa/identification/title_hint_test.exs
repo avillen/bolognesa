@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.TitleHintTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Identification.Domain.TitleHint
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.TitleHint
 
   test "extracts title and year from a release name without directories" do
     assert {:ok, %{title: "Mi pelicula", year: 2001}} =

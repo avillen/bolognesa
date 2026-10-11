@@ -1,6 +1,8 @@
 defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoSeriesReader.SeriesMapper do
   @moduledoc false
-  alias Bolognesa.Catalog.Domain.{Episode, Season, Series}
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Episode
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Season
+  alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
 
   alias Bolognesa.Infrastructure.Persistence.{
     CatalogEntrySchema,

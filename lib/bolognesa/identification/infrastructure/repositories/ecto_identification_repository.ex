@@ -4,10 +4,10 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificatio
 
   @behaviour Bolognesa.Identification.Application.Ports.Repositories.IdentificationRepository
 
-  alias Bolognesa.Identification.Domain.FileToIdentify
-  alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Identification.Domain.MovieCandidate
-  alias Bolognesa.Identification.Domain.MovieDetails
+  alias Bolognesa.Identification.Domain.Entities.Identification
+  alias Bolognesa.Identification.Domain.ReadModels.FileToIdentify
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.MovieCandidate
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.MovieDetails
 
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
 

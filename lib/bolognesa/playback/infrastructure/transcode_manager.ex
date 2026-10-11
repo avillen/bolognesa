@@ -5,7 +5,8 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   require Logger
 
   alias Bolognesa.Infrastructure.LocalSourcePath
-  alias Bolognesa.Playback.Domain.{Source, TranscodeSession}
+  alias Bolognesa.Playback.Domain.ReadModels.Source
+  alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
   alias Bolognesa.Playback.Infrastructure.{FfmpegArgs, LocalMediaFile}
 
   @idle_ms 300_000

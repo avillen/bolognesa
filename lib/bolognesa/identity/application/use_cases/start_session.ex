@@ -2,9 +2,9 @@ defmodule Bolognesa.Identity.Application.UseCases.StartSession do
   @moduledoc "Authenticate credentials and create a durable session."
   alias Bolognesa.Identity.Application.Ports.Repositories.UserRepository
   alias Bolognesa.Identity.Application.Ports.Services.PasswordHasher
-  alias Bolognesa.Identity.Domain.Session
-  alias Bolognesa.Identity.Domain.SessionToken
-  alias Bolognesa.Identity.Domain.User
+  alias Bolognesa.Identity.Domain.Entities.User
+  alias Bolognesa.Identity.Domain.ReadModels.Session
+  alias Bolognesa.Identity.Domain.ValueObjects.Sessions.SessionToken
 
   @spec call(User.email(), User.password(), UserRepository.adapter(), PasswordHasher.adapter()) ::
           {:ok, Session.token()} | {:error, :invalid_credentials | :unavailable}

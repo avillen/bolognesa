@@ -1,7 +1,8 @@
 defmodule Bolognesa.Playback.TranscodeProfileTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Playback.Domain.{Source, TranscodeProfile}
+  alias Bolognesa.Playback.Domain.Policies.TranscodeProfile
+  alias Bolognesa.Playback.Domain.ReadModels.Source
 
   test "chooses direct delivery for an inspected MP4 with H.264 and AAC" do
     assert TranscodeProfile.choose(source("mov,mp4,m4a,3gp,3g2,mj2", "h264", "aac")) == :direct

@@ -1,11 +1,8 @@
 defmodule Bolognesa.Identification.Application.Dto.SeriesReviewItem do
   @moduledoc "Public series file review row."
-  alias Bolognesa.Identification.Domain.{
-    Identification,
-    ReviewEpisode,
-    ReviewSeriesFile,
-    SeriesCandidate
-  }
+  alias Bolognesa.Identification.Domain.Entities.Identification
+  alias Bolognesa.Identification.Domain.ReadModels.{ReviewEpisode, ReviewSeriesFile}
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.SeriesCandidate
 
   defstruct [
     :id,

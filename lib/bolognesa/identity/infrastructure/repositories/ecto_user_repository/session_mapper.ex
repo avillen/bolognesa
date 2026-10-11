@@ -1,6 +1,6 @@
 defmodule Bolognesa.Identity.Infrastructure.Repositories.EctoUserRepository.SessionMapper do
   @moduledoc false
-  alias Bolognesa.Identity.Domain.User
+  alias Bolognesa.Identity.Domain.Entities.User
 
   alias Bolognesa.Identity.Infrastructure.Repositories.EctoUserRepository.UserMapper
   alias Bolognesa.Infrastructure.Persistence.SessionSchema

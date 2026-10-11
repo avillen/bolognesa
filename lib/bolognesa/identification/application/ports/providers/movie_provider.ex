@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.Application.Ports.Providers.MovieProvider do
   @moduledoc "Searches and retrieves bounded movie metadata."
 
-  alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
+  alias Bolognesa.Identification.Domain.ValueObjects.Movies.{MovieCandidate, MovieDetails}
 
   @type reason ::
           :not_configured

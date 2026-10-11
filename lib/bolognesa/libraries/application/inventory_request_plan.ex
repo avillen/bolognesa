@@ -1,7 +1,9 @@
 defmodule Bolognesa.Libraries.Application.InventoryRequestPlan do
   @moduledoc "Plans inventory revision and downstream requests for one observed file."
-
-  alias Bolognesa.Libraries.Domain.{Inspection, MediaFile, NewMediaFile, Scan}
+  alias Bolognesa.Libraries.Domain.Entities.Inspection
+  alias Bolognesa.Libraries.Domain.Entities.MediaFile
+  alias Bolognesa.Libraries.Domain.Entities.Scan
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
   @type t :: %__MODULE__{
           revision: pos_integer(),

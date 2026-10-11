@@ -1,14 +1,14 @@
 defmodule Bolognesa.Catalog.Application.UseCases.ListMovies do
   @moduledoc "Authorize and bound a movie catalog search."
   alias Bolognesa.Catalog.Application.Dto.MoviePage
-  alias Bolognesa.Catalog.Application.Ports.Readers.CatalogReader
+  alias Bolognesa.Catalog.Application.Ports.Readers.MoviesReader
   alias Bolognesa.Identity
 
   @spec call(
-          Bolognesa.Identity.Domain.Actor.t(),
+          Bolognesa.Identity.Domain.Entities.Actor.t(),
           binary(),
-          CatalogReader.page_number(),
-          CatalogReader.adapter()
+          MoviesReader.page_number(),
+          MoviesReader.adapter()
         ) ::
           {:ok, MoviePage.t()} | {:error, :forbidden | :invalid_query | :unavailable}
   def call(actor, query, page, reader) do

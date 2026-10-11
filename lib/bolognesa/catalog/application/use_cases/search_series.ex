@@ -3,7 +3,7 @@ defmodule Bolognesa.Catalog.Application.UseCases.SearchSeries do
   alias Bolognesa.Catalog.Application.Dto.SeriesPage
   alias Bolognesa.Catalog.Application.Ports.Readers.SeriesReader
   alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
 
   @spec call(Actor.t(), binary(), SeriesReader.page_number(), SeriesReader.adapter()) ::
           {:ok, SeriesPage.t()}

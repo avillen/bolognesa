@@ -1,9 +1,9 @@
 defmodule Bolognesa.Identification.Application.Dto.ReviewItem do
   @moduledoc "Identification and file details shown in the review list."
 
-  alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Identification.Domain.ReviewFile
-  alias Bolognesa.Identification.Domain.ReviewMovie
+  alias Bolognesa.Identification.Domain.Entities.Identification
+  alias Bolognesa.Identification.Domain.ReadModels.ReviewFile
+  alias Bolognesa.Identification.Domain.ReadModels.ReviewMovie
 
   @enforce_keys [
     :file_id,

@@ -2,7 +2,7 @@ defmodule Bolognesa.Libraries.Support.SuccessfulMediaProbe do
   @moduledoc false
   @behaviour Bolognesa.Libraries.Application.Ports.Services.MediaProbe
 
-  alias Bolognesa.Libraries.Domain.TechnicalMedia
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
 
   @impl true
   def inspect(_library, _file) do

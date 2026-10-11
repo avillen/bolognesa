@@ -4,7 +4,7 @@ defmodule Bolognesa.Libraries.Application.UseCases.DiscoverFiles do
   require Logger
 
   alias Bolognesa.Libraries.Application.Ports.{FileDiscovery, ScanRepository}
-  alias Bolognesa.Libraries.Domain.Scan
+  alias Bolognesa.Libraries.Domain.Entities.Scan
 
   @type result :: :ok | {:cancel, Scan.reason()} | {:error, Scan.reason()}
 

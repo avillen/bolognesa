@@ -4,11 +4,11 @@ defmodule Bolognesa.Identification.ReviewQueriesTest do
 
   alias Bolognesa.Identification
   alias Bolognesa.Identification.Application.Dto.{ReviewItem, ReviewPage}
-  alias Bolognesa.Identification.Domain.Identification, as: IdentificationDecision
-  alias Bolognesa.Identification.Domain.ReviewFile
-  alias Bolognesa.Identification.Domain.ReviewMovie
+  alias Bolognesa.Identification.Domain.Entities.Identification, as: IdentificationDecision
+  alias Bolognesa.Identification.Domain.ReadModels.ReviewFile
+  alias Bolognesa.Identification.Domain.ReadModels.ReviewMovie
   alias Bolognesa.Identification.Infrastructure.Readers.EctoReviewReader
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema

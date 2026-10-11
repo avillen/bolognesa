@@ -2,7 +2,7 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificatio
   @moduledoc false
   import Ecto.Query
 
-  alias Bolognesa.Identification.Domain.Identification
+  alias Bolognesa.Identification.Domain.Entities.Identification
 
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
 

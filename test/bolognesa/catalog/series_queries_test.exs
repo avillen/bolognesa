@@ -1,7 +1,7 @@
 defmodule Bolognesa.Catalog.SeriesQueriesTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Catalog
-  alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.{CatalogEntrySchema, InspectionSchema, MovieSchema}
   alias Bolognesa.SeriesFixtures
   @actor %Actor{id: 1, role: :admin}

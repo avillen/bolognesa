@@ -1,6 +1,11 @@
 defmodule Bolognesa.Identification.Application.Ports.Providers.SeriesProvider do
   @moduledoc "Searches series and retrieves bounded season metadata."
-  alias Bolognesa.Identification.Domain.{SeasonDetails, SeriesCandidate, SeriesDetails}
+  alias Bolognesa.Identification.Domain.ValueObjects.Series.{
+    SeasonDetails,
+    SeriesCandidate,
+    SeriesDetails
+  }
+
   @type adapter :: atom()
   @type reason ::
           :not_configured
