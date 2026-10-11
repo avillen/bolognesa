@@ -18,7 +18,7 @@ defmodule Bolognesa.Identification.Domain.Entities.Identification do
 
   @type state :: :pending | :automatic | :manual | :manual_unidentified | :failed | :unmatched
   @type origin :: :automatic | :manual | nil
-  @type token :: binary()
+  @type token :: String.t()
   @type candidate_data :: %{items: [map()]} | %{String.t() => [map()]}
   @type result :: %{
           candidate_data: candidate_data(),

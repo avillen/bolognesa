@@ -1,5 +1,7 @@
 defmodule Bolognesa.Identification.Application.UseCases.CorrectMovieIdentification do
   @moduledoc "Resolve an identification by an administrator's explicit choice."
+  alias Bolognesa.Identification.Application.Ports.Providers.MovieProvider
+  alias Bolognesa.Identification.Application.Ports.Repositories.IdentificationRepository
   alias Bolognesa.Identification.Domain.Entities.Identification
   alias Bolognesa.Identity
 
@@ -7,8 +9,8 @@ defmodule Bolognesa.Identification.Application.UseCases.CorrectMovieIdentificati
           Bolognesa.Identity.Domain.Entities.Actor.t(),
           pos_integer(),
           :unidentified | {:tmdb, pos_integer()},
-          module(),
-          module()
+          IdentificationRepository.adapter(),
+          MovieProvider.adapter()
         ) ::
           {:ok, Identification.t()}
           | {:error,

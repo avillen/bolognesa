@@ -19,7 +19,7 @@ defmodule Bolognesa.Identification.Application.Ports.Repositories.Identification
               {:ok, FileToIdentify.t()} | {:error, :not_found | :unavailable}
   @callback complete_series(
               file_id :: pos_integer(),
-              token :: binary(),
+              token :: Identification.token(),
               candidates :: [SeriesCandidate.t()],
               selection :: EpisodeSelection.t() | nil,
               review_reason :: review_reason() | nil
@@ -31,19 +31,27 @@ defmodule Bolognesa.Identification.Application.Ports.Repositories.Identification
             ) ::
               {:ok, Identification.t()}
               | {:error, :not_found | :unavailable | :wrong_content_type | :source_changed}
-  @callback begin_identification(pos_integer(), binary(), integer() | nil) ::
+  @callback begin_identification(
+              file_id :: pos_integer(),
+              token :: Identification.token(),
+              job_id :: integer() | nil
+            ) ::
               {:ok, :stale | FileToIdentify.t()} | {:error, :unavailable}
   @callback complete(
-              pos_integer(),
-              binary(),
-              [MovieCandidate.t()],
-              MovieDetails.t() | nil,
-              boolean()
+              file_id :: pos_integer(),
+              token :: Identification.token(),
+              candidates :: [MovieCandidate.t()],
+              details :: MovieDetails.t() | nil,
+              needs_review? :: boolean()
             ) ::
               :ok | {:ok, :stale} | {:error, atom()}
-  @callback fail(pos_integer(), binary(), atom()) ::
+  @callback fail(
+              file_id :: pos_integer(),
+              token :: Identification.token(),
+              reason :: atom()
+            ) ::
               :ok | {:ok, :stale} | {:error, atom()}
-  @callback correct(pos_integer(), :unidentified | MovieDetails.t()) ::
+  @callback correct(file_id :: pos_integer(), choice :: :unidentified | MovieDetails.t()) ::
               {:ok, Identification.t()} | {:error, atom()}
-  @callback retry(pos_integer()) :: {:ok, Identification.t()} | {:error, atom()}
+  @callback retry(file_id :: pos_integer()) :: {:ok, Identification.t()} | {:error, atom()}
 end

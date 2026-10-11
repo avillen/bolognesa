@@ -105,7 +105,7 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificatio
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  @spec begin_identification(pos_integer(), binary(), integer() | nil) ::
+  @spec begin_identification(pos_integer(), Identification.token(), integer() | nil) ::
           {:ok, :stale} | {:ok, FileToIdentify.t()} | {:error, :unavailable}
   @impl true
   def begin_identification(file_id, token, job_id) do
@@ -120,7 +120,13 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificatio
     end)
   end
 
-  @spec complete(pos_integer(), binary(), [MovieCandidate.t()], MovieDetails.t() | nil, boolean()) ::
+  @spec complete(
+          pos_integer(),
+          Identification.token(),
+          [MovieCandidate.t()],
+          MovieDetails.t() | nil,
+          boolean()
+        ) ::
           :ok | {:ok, :stale} | {:error, :unavailable}
   @impl true
   def complete(file_id, token, candidates, details, needs_review) do
@@ -135,7 +141,8 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificatio
     end)
   end
 
-  @spec fail(pos_integer(), binary(), atom()) :: :ok | {:ok, :stale} | {:error, :unavailable}
+  @spec fail(pos_integer(), Identification.token(), atom()) ::
+          :ok | {:ok, :stale} | {:error, :unavailable}
   @impl true
   def fail(file_id, token, reason) do
     transaction(fn ->

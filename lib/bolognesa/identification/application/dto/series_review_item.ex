@@ -24,7 +24,7 @@ defmodule Bolognesa.Identification.Application.Dto.SeriesReviewItem do
           id: pos_integer(),
           file_id: pos_integer(),
           filename: binary(),
-          availability: :available | :missing,
+          availability: ReviewSeriesFile.availability(),
           state: Identification.state(),
           origin: Identification.origin(),
           failure_reason: binary() | nil,

@@ -3,6 +3,8 @@ defmodule Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker do
   use Oban.Worker, queue: :identifications, max_attempts: 3
   require Logger
 
+  alias Bolognesa.Identification.Application.Ports.Providers.{MovieProvider, SeriesProvider}
+  alias Bolognesa.Identification.Application.Ports.Repositories.IdentificationRepository
   alias Bolognesa.Identification.Application.UseCases.IdentifyMovieFile
   alias Bolognesa.Identification.Application.UseCases.IdentifySeriesFile
   alias Bolognesa.Identification.Infrastructure.Providers.TmdbMovieProvider
@@ -22,12 +24,26 @@ defmodule Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker do
     perform(job, EctoIdentificationRepository, provider, series_provider)
   end
 
-  @spec perform(Oban.Job.t(), module(), module()) :: :ok | {:error, atom()} | {:cancel, atom()}
+  @spec perform(
+          Oban.Job.t(),
+          IdentificationRepository.adapter(),
+          MovieProvider.adapter()
+        ) ::
+          :ok
+          | {:error, :unavailable | :rate_limited | :provider_unavailable | :unexpected_failure}
+          | {:cancel, :invalid_job}
   def perform(job, repository, provider),
     do: perform(job, repository, provider, TmdbSeriesProvider)
 
-  @spec perform(Oban.Job.t(), module(), module(), module()) ::
-          :ok | {:error, atom()} | {:cancel, atom()}
+  @spec perform(
+          Oban.Job.t(),
+          IdentificationRepository.adapter(),
+          MovieProvider.adapter(),
+          SeriesProvider.adapter()
+        ) ::
+          :ok
+          | {:error, :unavailable | :rate_limited | :provider_unavailable | :unexpected_failure}
+          | {:cancel, :invalid_job}
   def perform(
         %Oban.Job{args: %{"file_id" => id, "token" => token}, attempt: attempt} = job,
         repository,

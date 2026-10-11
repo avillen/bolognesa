@@ -24,7 +24,7 @@ defmodule Bolognesa.Identification.Application.UseCases.IdentifySeriesFile do
 
   @spec call(
           pos_integer(),
-          binary(),
+          Bolognesa.Identification.Domain.Entities.Identification.token(),
           pos_integer(),
           IdentificationRepository.adapter(),
           SeriesProvider.adapter(),

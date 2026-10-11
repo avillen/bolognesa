@@ -2,6 +2,8 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.IdentifiedSeriesW
   @moduledoc false
   alias Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeSelection
 
+  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
+
   alias Bolognesa.Infrastructure.Persistence.{
     CatalogEntrySchema,
     EpisodeSchema,
@@ -12,7 +14,7 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.IdentifiedSeriesW
   alias Bolognesa.Repo
 
   @spec upsert!(EpisodeSelection.t()) :: [pos_integer()]
-  @spec upsert!(EpisodeSelection.t(), module()) :: [pos_integer()]
+  @spec upsert!(EpisodeSelection.t(), DecisionStore.repo()) :: [pos_integer()]
   def upsert!(%EpisodeSelection{} = selection, repo \\ Repo) do
     {:ok, validated} =
       EpisodeSelection.new(

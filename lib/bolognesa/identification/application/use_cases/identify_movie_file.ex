@@ -1,11 +1,20 @@
 defmodule Bolognesa.Identification.Application.UseCases.IdentifyMovieFile do
   @moduledoc "Identify a pending file, with provider I/O outside database transactions."
+  alias Bolognesa.Identification.Application.Ports.Providers.MovieProvider
+  alias Bolognesa.Identification.Application.Ports.Repositories.IdentificationRepository
+  alias Bolognesa.Identification.Domain.Entities.Identification
   alias Bolognesa.Identification.Domain.ValueObjects.Movies.TitleHint
 
   @transient [:rate_limited, :provider_unavailable]
 
-  @spec call(pos_integer(), binary(), pos_integer(), module(), module(), integer() | nil) ::
-          :ok | {:error, atom()}
+  @spec call(
+          pos_integer(),
+          Identification.token(),
+          pos_integer(),
+          IdentificationRepository.adapter(),
+          MovieProvider.adapter(),
+          integer() | nil
+        ) :: :ok | {:error, :unavailable | :unusable_name | MovieProvider.reason()}
   def call(file_id, token, attempt, repository, provider, job_id \\ nil) do
     case repository.begin_identification(file_id, token, job_id) do
       {:ok, :stale} -> :ok
