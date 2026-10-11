@@ -31,45 +31,64 @@ defmodule BolognesaWeb.Layouts do
     default: nil,
     doc: "the current [scope](https://phoenix.hexdocs.pm/scopes.html)"
 
+  attr :active_section, :atom, default: nil
+
   slot :inner_block, required: true
 
   @spec app(map()) :: Phoenix.LiveView.Rendered.t()
   def app(assigns) do
     ~H"""
-    <header class="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-6 sm:px-8">
-      <a
-        href={~p"/"}
-        class="inline-flex min-h-11 items-center gap-3 rounded-xl text-ink transition hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >
-        <span class="flex size-12 shrink-0 items-center justify-center">
-          <img src={~p"/images/bolognesa-cat.svg"} width="48" height="48" alt="" />
-        </span>
-        <span class="text-lg font-semibold tracking-tight">boloñesa</span>
-      </a>
-      <nav class="flex w-full items-center justify-between gap-3 text-sm font-medium text-muted sm:w-auto sm:justify-start sm:gap-4">
-        <.link
-          navigate={~p"/movies"}
-          class="min-h-11 py-3 transition hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >Películas</.link>
-        <.link
-          navigate={~p"/series"}
-          id="nav-series"
-          class="min-h-11 py-3 transition hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >Series</.link>
-        <.link
-          navigate={~p"/libraries"}
-          class="min-h-11 py-3 transition hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >Bibliotecas</.link>
-        <.link
-          navigate={~p"/about"}
-          class="min-h-11 py-3 transition hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >Acerca de</.link>
-      </nav>
-    </header>
-
-    <main class="px-5 pb-20 pt-10 sm:px-8 sm:pt-16">
-      {render_slot(@inner_block)}
-    </main>
+    <div class="app-shell">
+      <header class="app-sidebar">
+        <.link navigate={~p"/"} class="app-brand">
+          <img src={~p"/images/bolognesa-cat.svg"} width="36" height="36" alt="" />
+          <span>boloñesa</span>
+        </.link>
+        <nav aria-label="Navegación principal" class="app-navigation">
+          <.link
+            navigate={~p"/"}
+            class={["app-nav-link", @active_section == :home && "is-active"]}
+            aria-current={@active_section == :home && "page"}
+          >
+            <.icon name="hero-home" class="size-5" /> <span>Inicio</span>
+          </.link>
+          <.link
+            navigate={~p"/movies"}
+            class={["app-nav-link", @active_section == :movies && "is-active"]}
+            aria-current={@active_section == :movies && "page"}
+          >
+            <.icon name="hero-film" class="size-5" /> <span>Películas</span>
+          </.link>
+          <.link
+            navigate={~p"/series"}
+            id="nav-series"
+            class={["app-nav-link", @active_section == :series && "is-active"]}
+            aria-current={@active_section == :series && "page"}
+          >
+            <.icon name="hero-tv" class="size-5" /> <span>Series</span>
+          </.link>
+          <p class="app-nav-caption">Mi biblioteca</p>
+          <.link
+            navigate={~p"/libraries"}
+            class={["app-nav-link", @active_section == :libraries && "is-active"]}
+            aria-current={@active_section == :libraries && "page"}
+          >
+            <.icon name="hero-folder" class="size-5" /> <span>Bibliotecas</span>
+          </.link>
+          <.link
+            navigate={~p"/about"}
+            class={["app-nav-link", @active_section == :about && "is-active"]}
+            aria-current={@active_section == :about && "page"}
+          >
+            <.icon name="hero-information-circle" class="size-5" /> <span>Acerca de</span>
+          </.link>
+        </nav>
+        <p class="app-sidebar-note">Tu cine, en casa.</p>
+      </header>
+      <main id="app-content" class="app-content">
+        {render_slot(@inner_block)}
+      </main>
+    </div>
 
     <.flash_group flash={@flash} />
     """

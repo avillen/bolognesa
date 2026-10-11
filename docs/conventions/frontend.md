@@ -132,11 +132,13 @@ La interfaz debe contemplar ratón, pantalla táctil, teclado y mando: acciones 
 
 ## Identidad visual
 
-La referencia acordada utiliza carbón (`#17191d`) para el fondo, grafito (`#282b30`) para superficies elevadas, blanco cálido (`#f4f1ed`) para texto y gris secundario (`#96989f`) para información auxiliar. El terracota (`#c26e54`) destaca acciones principales, selecciones, foco y progreso de reproducción; los enlaces usan una variante clara para conservar contraste sobre las tarjetas.
+La referencia vigente es el mediacenter oscuro aportado por el propietario el 2026-10-11: fondo casi negro (`#0e1113`), superficies (`#171b1e`), grafito (`#22272b`), blanco cálido (`#f4f1ed`) y gris secundario (`#a3a5a8`). El coral (`#e47755`) destaca acciones principales, selecciones, foco y progreso; los enlaces usan una variante clara para conservar contraste. Los botones coral llevan texto oscuro.
 
-Los colores se declaran como tokens semánticos en `assets/css/app.css` mediante `@theme`: `canvas`, `surface`, `raised`, `border`, `border-strong`, `ink`, `muted`, `accent`, `accent-hover` y `accent-soft`. Los templates consumen esas utilidades en lugar de paletas genéricas. Los botones terracota llevan texto carbón. Se conservan colores semánticos puntuales para errores y éxito.
+Los colores se declaran como tokens semánticos en `assets/css/app.css` mediante `@theme`: `canvas`, `surface`, `raised`, `border`, `border-strong`, `ink`, `muted`, `accent`, `accent-hover` y `accent-soft`. Los templates consumen esas utilidades. Se conservan colores semánticos para errores y éxito.
 
-La marca visible es «boloñesa», acompañada del gato vectorial en `priv/static/images/bolognesa-cat.svg`; el nombre técnico del proyecto sigue siendo Bolognesa. El SVG reproduce la silueta vectorizada de la referencia, con trazo blanco y fondo terracota redondeado, y se usa también como favicon explícito. El icono es decorativo cuando acompaña al nombre. Se evitan degradados llamativos y animaciones excesivas; los pósteres aportan la variedad visual.
+El layout compartido usa barra lateral fija al desplazamiento en escritorio y cabecera con navegación que se adapta al ancho en móvil. Cada pantalla indica `active_section` para señalar la sección vigente. El catálogo utiliza pósteres verticales 2:3; las fichas usan imágenes panorámicas con una capa oscura para mantener legibilidad y colocan temporadas, versiones y reproducción debajo. Se conserva espacio y una inicial cuando el póster falta o falla. El diseño solo presenta datos y acciones existentes: no introduce favoritos, progreso duradero, valoraciones ni ajustes.
+
+La marca visible sigue siendo «boloñesa», acompañada del gato vectorial en `priv/static/images/bolognesa-cat.svg`, también usado como favicon. Las imágenes aportan la variedad visual; los degradados se limitan a la legibilidad sobre imágenes de fichas. Se mantiene foco visible, acciones accesibles sin hover y respeto por la preferencia de movimiento reducido.
 
 ## Verificación
 

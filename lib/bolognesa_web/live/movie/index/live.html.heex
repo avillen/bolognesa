@@ -1,4 +1,4 @@
-<Layouts.app flash={@flash} current_scope={@current_scope}>
+<Layouts.app flash={@flash} current_scope={@current_scope} active_section={:movies}>
   <section id="movies-screen" class="mx-auto max-w-6xl space-y-8">
     <header class="flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -50,18 +50,18 @@
       {@total} películas
     </p>
 
-    <div id="movies-list" phx-update="stream" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div id="movies-list" phx-update="stream" class="poster-grid">
       <div
         :for={{dom_id, movie} <- @streams.movies}
         id={dom_id}
-        class="group overflow-hidden rounded-2xl border border-border bg-surface transition hover:border-accent/50 hover:shadow-xl"
+        class="poster-card group"
       >
         <.link
           navigate={~p"/movies/#{movie.id}"}
           id={"movie-link-#{movie.id}"}
           class="block h-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-          <div class="relative flex aspect-[16/9] items-center justify-center overflow-hidden bg-raised text-4xl font-bold text-accent-soft/50">
+          <div class="poster-art relative flex aspect-[2/3] items-center justify-center overflow-hidden rounded-lg bg-raised text-4xl font-bold text-accent-soft/50">
             <span aria-hidden="true">{String.first(movie.title)}</span>
             <img
               :if={movie.poster_path}
@@ -74,12 +74,12 @@
               class="absolute inset-0 size-full object-cover"
             />
           </div>
-          <div class="p-5">
-            <h2 class="text-lg font-semibold text-ink">{movie.title}</h2>
-            <p class="mt-2 text-sm text-muted">
+          <div class="py-3">
+            <h2 class="text-sm font-semibold text-ink">{movie.title}</h2>
+            <p class="mt-1 text-xs text-muted">
               {movie.year || "Año desconocido"} · {movie.version_count} versiones
             </p>
-            <p class="mt-3 text-xs font-medium text-accent-soft">
+            <p class="mt-1 text-xs font-medium text-muted">
               {movie.available_count} disponibles
             </p>
           </div>

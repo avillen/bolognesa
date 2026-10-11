@@ -1,4 +1,4 @@
-<Layouts.app flash={@flash} current_scope={@current_scope}>
+<Layouts.app flash={@flash} current_scope={@current_scope} active_section={:libraries}>
   <section id="libraries-screen" class="mx-auto max-w-5xl space-y-8">
     <header class="flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -20,7 +20,7 @@
     </header>
 
     <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.85fr)]">
-      <div class="rounded-3xl border border-accent/10 bg-surface p-6 shadow-2xl sm:p-8">
+      <div class="rounded-xl bg-surface p-6 sm:p-8">
         <h2 class="text-xl font-semibold text-ink">Bibliotecas registradas</h2>
         <p
           :if={@scan_feedback}
@@ -178,7 +178,7 @@
         </div>
       </div>
 
-      <div class="rounded-3xl border border-accent/10 bg-surface p-6 shadow-2xl sm:p-8">
+      <div class="rounded-xl bg-surface p-6 sm:p-8">
         <h2 class="text-xl font-semibold text-ink">Añadir fuente</h2>
         <p class="mt-2 text-sm leading-6 text-muted">
           Usa la ruta visible para Bolognesa dentro del servidor.
