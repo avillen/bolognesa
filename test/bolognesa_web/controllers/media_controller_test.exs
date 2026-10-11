@@ -5,8 +5,6 @@ defmodule BolognesaWeb.MediaControllerTest do
   alias Bolognesa.Identity
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
 
-  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
-
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -50,15 +48,15 @@ defmodule BolognesaWeb.MediaControllerTest do
       )
 
     identification =
-      Repo.insert!(
-        IdentificationSchema.changeset(%IdentificationSchema{}, %{
+      Bolognesa.IdentificationFixtures.insert_decision!(
+        %{
           media_file_id: file.id,
-          catalog_entry_id: movie.id,
           observed_revision: 1,
           token: Ecto.UUID.generate(),
           state: :automatic,
           origin: :automatic
-        })
+        },
+        [movie.id]
       )
 
     {:ok,

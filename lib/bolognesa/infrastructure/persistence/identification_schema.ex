@@ -3,11 +3,12 @@ defmodule Bolognesa.Infrastructure.Persistence.IdentificationSchema do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{}
+
   @states [:pending, :automatic, :manual, :manual_unidentified, :failed, :unmatched]
 
   schema "media_identifications" do
     field :media_file_id, :id
-    field :catalog_entry_id, :id
     field :state, Ecto.Enum, values: @states, default: :pending
     field :origin, Ecto.Enum, values: [:automatic, :manual]
     field :observed_revision, :integer
@@ -28,10 +29,8 @@ defmodule Bolognesa.Infrastructure.Persistence.IdentificationSchema do
     |> validate_required([:media_file_id, :state, :observed_revision, :token])
     |> validate_number(:observed_revision, greater_than: 0)
     |> foreign_key_constraint(:media_file_id)
-    |> foreign_key_constraint(:catalog_entry_id)
     |> unique_constraint(:media_file_id)
     |> check_constraint(:state, name: :media_identifications_state_valid)
-    |> check_constraint(:catalog_entry_id, name: :media_identifications_choice_valid)
     |> check_constraint(:observed_revision, name: :media_identifications_revision_positive)
   end
 end

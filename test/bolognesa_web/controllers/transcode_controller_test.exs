@@ -6,7 +6,6 @@ defmodule BolognesaWeb.TranscodeControllerTest do
   alias Bolognesa.Infrastructure.LocalSourcePath
 
   alias Bolognesa.Infrastructure.Persistence.{
-    IdentificationSchema,
     LibrarySchema,
     MediaFileSchema,
     MovieSchema
@@ -82,15 +81,15 @@ defmodule BolognesaWeb.TranscodeControllerTest do
       )
 
     identification =
-      Repo.insert!(
-        IdentificationSchema.changeset(%IdentificationSchema{}, %{
+      Bolognesa.IdentificationFixtures.insert_decision!(
+        %{
           media_file_id: file.id,
-          catalog_entry_id: movie.id,
           observed_revision: file.revision,
           token: Ecto.UUID.generate(),
           state: :manual,
           origin: :manual
-        })
+        },
+        [movie.id]
       )
 
     executable = Path.join(physical, "fake-ffmpeg")

@@ -5,7 +5,6 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
   alias Bolognesa.Identity
   alias Bolognesa.Infrastructure.LocalSourcePath
-  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -72,15 +71,15 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         })
       )
 
-    Repo.insert!(
-      IdentificationSchema.changeset(%IdentificationSchema{}, %{
+    Bolognesa.IdentificationFixtures.insert_decision!(
+      %{
         media_file_id: file.id,
-        catalog_entry_id: movie.id,
         observed_revision: 1,
         token: Ecto.UUID.generate(),
         state: :automatic,
         origin: :automatic
-      })
+      },
+      [movie.id]
     )
 
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies/#{movie.id}")
@@ -297,15 +296,15 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         })
       )
 
-    Repo.insert!(
-      IdentificationSchema.changeset(%IdentificationSchema{}, %{
+    Bolognesa.IdentificationFixtures.insert_decision!(
+      %{
         media_file_id: file.id,
-        catalog_entry_id: movie_id,
         observed_revision: 1,
         token: Ecto.UUID.generate(),
         state: :automatic,
         origin: :automatic
-      })
+      },
+      [movie_id]
     )
 
     file

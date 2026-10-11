@@ -3,6 +3,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter 
 
   import Ecto.Query
 
+  alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
   alias Bolognesa.Infrastructure.Persistence.IdentificationEventSchema
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
 
@@ -115,6 +116,11 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter 
         started_at: nil,
         finished_at: nil
       })
+    )
+
+    repo.delete_all(
+      from relation in IdentificationEntrySchema,
+        where: relation.identification_id == ^existing.id
     )
 
     insert_event!(repo, existing.media_file_id, token)

@@ -65,7 +65,7 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
     assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, Provider)
 
     assert {:ok,
-            %{state: :automatic, needs_review?: true, catalog_entry_id: catalog_entry_id} =
+            %{state: :automatic, needs_review?: true, catalog_entry_ids: [catalog_entry_id]} =
               identification} =
              Repository.get(file.id)
 
@@ -73,6 +73,26 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
 
     assert is_integer(catalog_entry_id)
     assert :ok = IdentifyMediaFile.call(file.id, token, 2, Repository, Provider)
+  end
+
+  test "reanalysis removes automatic associations and ignores the old token" do
+    {file, token} = pending_file("Film.mkv")
+    assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, ExactProvider)
+    assert {:ok, %{catalog_entry_ids: [_]}} = Repository.get(file.id)
+    assert {:ok, pending} = Repository.retry(file.id)
+    assert pending.state == :pending
+    assert pending.catalog_entry_ids == []
+
+    assert {:ok, :stale} =
+             Repository.complete(
+               file.id,
+               token,
+               [],
+               %MovieDetails{provider_id: 43, title: "Film"},
+               false
+             )
+
+    assert {:ok, %{catalog_entry_ids: []}} = Repository.get(file.id)
   end
 
   test "matching title without years completes without review" do

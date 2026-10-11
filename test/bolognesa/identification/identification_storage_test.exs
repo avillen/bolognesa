@@ -40,12 +40,11 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
       media_file_id: file.id,
       state: :manual,
       origin: :manual,
-      catalog_entry_id: movie.id,
       observed_revision: 1,
       token: Ecto.UUID.generate()
     }
 
-    Repo.insert!(struct(IdentificationSchema, attrs))
+    Bolognesa.IdentificationFixtures.insert_decision!(attrs, [movie.id])
 
     assert_raise Ecto.ConstraintError, fn ->
       Repo.insert!(struct(IdentificationSchema, %{attrs | token: Ecto.UUID.generate()}))
@@ -54,7 +53,7 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
     assert Repo.aggregate(IdentificationSchema, :count, :id) == 1
   end
 
-  test "database rejects invalid revision and an unidentified choice with a movie" do
+  test "database rejects invalid revision and a relation on an unidentified decision" do
     file = file_fixture()
     movie = movie_fixture(43)
 
@@ -67,14 +66,20 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
       })
     end
 
-    assert_raise Ecto.ConstraintError, fn ->
+    unidentified =
       Repo.insert!(%IdentificationSchema{
         media_file_id: file.id,
-        catalog_entry_id: movie.id,
         state: :manual_unidentified,
         origin: :manual,
         observed_revision: 1,
         token: Ecto.UUID.generate()
+      })
+
+    assert_raise Postgrex.Error, fn ->
+      Repo.insert!(%Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema{
+        identification_id: unidentified.id,
+        catalog_entry_id: movie.id,
+        position: 1
       })
     end
   end
@@ -84,17 +89,22 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
     movie = movie_fixture(44)
 
     identification =
-      Repo.insert!(%IdentificationSchema{
-        media_file_id: file.id,
-        catalog_entry_id: movie.id,
-        state: :manual,
-        origin: :manual,
-        observed_revision: 1,
-        token: Ecto.UUID.generate()
-      })
+      Bolognesa.IdentificationFixtures.insert_decision!(
+        %{
+          media_file_id: file.id,
+          state: :manual,
+          origin: :manual,
+          observed_revision: 1,
+          token: Ecto.UUID.generate()
+        },
+        [movie.id]
+      )
 
     file |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
-    assert Repo.get!(IdentificationSchema, identification.id).catalog_entry_id == movie.id
+
+    assert Repo.get_by!(Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema,
+             identification_id: identification.id
+           ).catalog_entry_id == movie.id
   end
 
   test "one event exists for a file and request token" do

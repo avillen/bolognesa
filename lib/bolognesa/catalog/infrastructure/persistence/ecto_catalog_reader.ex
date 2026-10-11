@@ -7,6 +7,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
   alias Bolognesa.Catalog.Domain.MovieVersion
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader.MovieMapper
   alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
@@ -28,8 +29,12 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
         from(movie in filtered,
           join: entry in CatalogEntrySchema,
           on: entry.id == movie.id and entry.kind == :movie,
+          left_join: relation in IdentificationEntrySchema,
+          on: relation.catalog_entry_id == movie.id,
           left_join: identification in IdentificationSchema,
-          on: identification.catalog_entry_id == movie.id,
+          on:
+            identification.id == relation.identification_id and
+              identification.state in [:automatic, :manual],
           left_join: file in MediaFileSchema,
           on: file.id == identification.media_file_id,
           group_by: [movie.id, entry.id],
@@ -74,7 +79,10 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
             from file in MediaFileSchema,
               join: identification in IdentificationSchema,
               on: identification.media_file_id == file.id,
-              where: identification.catalog_entry_id == ^id,
+              join: relation in IdentificationEntrySchema,
+              on: relation.identification_id == identification.id,
+              where:
+                relation.catalog_entry_id == ^id and identification.state in [:automatic, :manual],
               order_by: file.id,
               select: {file, identification}
           )

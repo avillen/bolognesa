@@ -59,10 +59,10 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
       send(worker, :continue)
       assert :ok = Task.await(task)
 
-      assert {:ok, %{origin: :manual, catalog_entry_id: catalog_entry_id, token: current_token}} =
+      assert {:ok, %{origin: :manual, catalog_entry_ids: catalog_entry_ids, token: current_token}} =
                Repository.get(file.id)
 
-      assert catalog_entry_id == corrected.catalog_entry_id
+      assert catalog_entry_ids == corrected.catalog_entry_ids
       assert current_token == corrected.token
     end
   end
@@ -86,8 +86,8 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
           end
 
         assert [
-                 {:ok, %{catalog_entry_id: first_catalog_entry_id}},
-                 {:ok, %{catalog_entry_id: second_catalog_entry_id}}
+                 {:ok, %{catalog_entry_ids: [first_catalog_entry_id]}},
+                 {:ok, %{catalog_entry_ids: [second_catalog_entry_id]}}
                ] =
                  Enum.map(tasks, &Task.await/1)
 

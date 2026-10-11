@@ -2,11 +2,11 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapp
   @moduledoc false
   alias Bolognesa.Identification.Domain.Identification
 
-  @spec to_domain(map()) :: Identification.t()
-  def to_domain(row) do
+  @spec to_domain(map(), [pos_integer()]) :: Identification.t()
+  def to_domain(row, entry_ids \\ []) do
     %Identification{
       media_file_id: row.media_file_id,
-      catalog_entry_id: row.catalog_entry_id,
+      catalog_entry_ids: entry_ids,
       state: row.state,
       origin: row.origin,
       observed_revision: row.observed_revision,

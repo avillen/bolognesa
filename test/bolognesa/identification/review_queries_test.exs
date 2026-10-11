@@ -65,16 +65,16 @@ defmodule Bolognesa.Identification.ReviewQueriesTest do
         })
       )
 
-    Repo.insert!(
-      IdentificationSchema.changeset(%IdentificationSchema{}, %{
+    Bolognesa.IdentificationFixtures.insert_decision!(
+      %{
         media_file_id: linked_file.id,
-        catalog_entry_id: movie.id,
         observed_revision: 1,
         token: Ecto.UUID.generate(),
         state: :automatic,
         origin: :automatic,
         needs_review: true
-      })
+      },
+      [movie.id]
     )
 
     assert {:error, :forbidden} = Identification.list_review_items(nil, 1)

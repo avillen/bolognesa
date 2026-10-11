@@ -3,7 +3,6 @@ defmodule Bolognesa.Identification.Domain.Identification do
 
   defstruct [
     :media_file_id,
-    :catalog_entry_id,
     :state,
     :origin,
     :observed_revision,
@@ -13,7 +12,8 @@ defmodule Bolognesa.Identification.Domain.Identification do
     :candidate_data,
     :job_id,
     :started_at,
-    :finished_at
+    :finished_at,
+    catalog_entry_ids: []
   ]
 
   @type state :: :pending | :automatic | :manual | :manual_unidentified | :failed | :unmatched
@@ -21,7 +21,7 @@ defmodule Bolognesa.Identification.Domain.Identification do
   @type candidate_data :: %{items: [map()]} | %{String.t() => [map()]}
   @type t :: %__MODULE__{
           media_file_id: pos_integer(),
-          catalog_entry_id: pos_integer() | nil,
+          catalog_entry_ids: [pos_integer()],
           state: state(),
           origin: origin(),
           observed_revision: pos_integer(),
@@ -46,6 +46,7 @@ defmodule Bolognesa.Identification.Domain.Identification do
      %{
        base
        | state: :pending,
+         catalog_entry_ids: [],
          observed_revision: revision,
          token: token,
          needs_review?: false,

@@ -5,6 +5,7 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
   import Ecto.Query
 
   alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
@@ -17,8 +18,10 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
   def find_source(catalog_entry_id, file_id) do
     query =
       from entry in CatalogEntrySchema,
+        join: relation in IdentificationEntrySchema,
+        on: relation.catalog_entry_id == entry.id,
         join: identification in IdentificationSchema,
-        on: identification.catalog_entry_id == entry.id,
+        on: identification.id == relation.identification_id,
         join: file in MediaFileSchema,
         on: file.id == identification.media_file_id,
         join: library in LibrarySchema,

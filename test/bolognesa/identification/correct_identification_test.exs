@@ -26,13 +26,13 @@ defmodule Bolognesa.Identification.CorrectIdentificationTest do
 
     actor = %Actor{id: 1, role: :admin}
 
-    assert {:ok, %Identification{state: :manual, catalog_entry_id: catalog_entry_id}} =
+    assert {:ok, %Identification{state: :manual, catalog_entry_ids: [catalog_entry_id]}} =
              CorrectIdentification.call(actor, file.id, {:tmdb, 51}, Repository, Provider)
 
     assert is_integer(catalog_entry_id)
     assert {:error, :manual_locked} = Repository.retry(file.id)
 
-    assert {:ok, %Identification{state: :manual_unidentified, catalog_entry_id: nil}} =
+    assert {:ok, %Identification{state: :manual_unidentified, catalog_entry_ids: []}} =
              CorrectIdentification.call(actor, file.id, :unidentified, Repository, Provider)
 
     assert {:error, :invalid_choice} =

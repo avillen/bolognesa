@@ -15,6 +15,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   alias Bolognesa.Identification.Domain.MovieCandidate
   alias Bolognesa.Identification.Domain.MovieDetails
 
+  alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
   alias Bolognesa.Repo
 
   @spec get(pos_integer()) ::
@@ -22,7 +23,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   def get(file_id) do
     case Repo.get_by(IdentificationSchema, media_file_id: file_id) do
       nil -> {:error, :not_found}
-      row -> {:ok, IdentificationMapper.to_domain(row)}
+      row -> {:ok, IdentificationMapper.to_domain(row, entry_ids(row.id))}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -172,7 +173,6 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     attrs = %{
       state: state,
       origin: :automatic,
-      catalog_entry_id: catalog_entry_id,
       needs_review: needs_review,
       failure_reason: nil,
       candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
@@ -180,6 +180,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     }
 
     Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
+    replace_entries!(identification.id, if(catalog_entry_id, do: [catalog_entry_id], else: []))
     :ok
   end
 
@@ -204,7 +205,6 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
       token: Ecto.UUID.generate(),
       state: if(catalog_entry_id, do: :manual, else: :manual_unidentified),
       origin: :manual,
-      catalog_entry_id: catalog_entry_id,
       needs_review: false,
       failure_reason: nil,
       candidate_data: %{"items" => []},
@@ -219,7 +219,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
         log: false
       )
 
-    {:ok, IdentificationMapper.to_domain(row)}
+    replace_entries!(row.id, if(catalog_entry_id, do: [catalog_entry_id], else: []))
+    {:ok, IdentificationMapper.to_domain(row, entry_ids(row.id))}
   end
 
   defp request_retry(file) do
@@ -253,6 +254,32 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
 
   defp candidate_data(candidate) do
     candidate |> Map.from_struct() |> Map.new(fn {key, value} -> {Atom.to_string(key), value} end)
+  end
+
+  defp entry_ids(identification_id) do
+    Repo.all(
+      from row in IdentificationEntrySchema,
+        where: row.identification_id == ^identification_id,
+        order_by: row.position,
+        select: row.catalog_entry_id
+    )
+  end
+
+  defp replace_entries!(identification_id, ids) do
+    Repo.delete_all(
+      from row in IdentificationEntrySchema, where: row.identification_id == ^identification_id
+    )
+
+    ids
+    |> Enum.with_index(1)
+    |> Enum.each(fn {id, position} ->
+      Repo.insert!(
+        %IdentificationEntrySchema{
+          identification_id: identification_id,
+          catalog_entry_id: id,
+          position: position
+        }, log: false)
+    end)
   end
 
   defp transaction(fun) do

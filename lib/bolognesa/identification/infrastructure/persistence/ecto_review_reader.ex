@@ -6,7 +6,9 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader d
 
   alias Bolognesa.Identification.Domain.{ReviewFile, ReviewMovie}
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
+  alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Repo
@@ -17,6 +19,11 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader d
   def list_review_items(page) do
     base =
       from identification in IdentificationSchema,
+        join: file in MediaFileSchema,
+        on: file.id == identification.media_file_id,
+        join: library in LibrarySchema,
+        on: library.id == file.library_id,
+        where: library.content_type == :movie,
         where:
           identification.state in [:pending, :failed, :unmatched, :manual_unidentified] or
             identification.needs_review == true
@@ -28,8 +35,10 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader d
         from(identification in base,
           join: file in MediaFileSchema,
           on: file.id == identification.media_file_id,
+          left_join: relation in IdentificationEntrySchema,
+          on: relation.identification_id == identification.id,
           left_join: movie in MovieSchema,
-          on: movie.id == identification.catalog_entry_id,
+          on: movie.id == relation.catalog_entry_id,
           order_by: identification.media_file_id,
           limit: @page_size,
           offset: ^((page - 1) * @page_size),
@@ -41,7 +50,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader d
     entries =
       Enum.map(rows, fn {identification, file, movie} ->
         {
-          IdentificationMapper.to_domain(identification),
+          IdentificationMapper.to_domain(identification, if(movie, do: [movie.id], else: [])),
           %ReviewFile{
             id: file.id,
             relative_path: file.relative_path,

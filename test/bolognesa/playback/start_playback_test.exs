@@ -38,11 +38,15 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
 
     identification
     |> IdentificationSchema.changeset(%{
-      catalog_entry_id: other.id,
       state: :manual,
       origin: :manual
     })
     |> Repo.update!()
+
+    Repo.update_all(
+      from(r in Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema,
+        where: r.identification_id == ^identification.id
+      ), set: [catalog_entry_id: other.id])
 
     assert {:error, :not_found} = Playback.start(actor, movie.id, file.id)
     assert {:ok, %{relative_path: "film.mp4"}} = Playback.start(actor, other.id, file.id)
@@ -115,15 +119,15 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
   end
 
   defp identify(file_id, movie_id) do
-    Repo.insert!(
-      IdentificationSchema.changeset(%IdentificationSchema{}, %{
+    Bolognesa.IdentificationFixtures.insert_decision!(
+      %{
         media_file_id: file_id,
-        catalog_entry_id: movie_id,
         observed_revision: 1,
         token: Ecto.UUID.generate(),
         state: :automatic,
         origin: :automatic
-      })
+      },
+      [movie_id]
     )
   end
 

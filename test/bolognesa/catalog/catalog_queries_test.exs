@@ -13,8 +13,6 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
 
-  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
-
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
 
@@ -48,15 +46,15 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
           })
         )
 
-      Repo.insert!(
-        IdentificationSchema.changeset(%IdentificationSchema{}, %{
+      Bolognesa.IdentificationFixtures.insert_decision!(
+        %{
           media_file_id: file.id,
-          catalog_entry_id: movie.id,
           observed_revision: 1,
           token: Ecto.UUID.generate(),
           state: :automatic,
           origin: :automatic
-        })
+        },
+        [movie.id]
       )
     end
 
