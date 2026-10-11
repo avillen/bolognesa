@@ -15,6 +15,8 @@
 
 # If the VM crashes, it generates a dump, let's ignore it too.
 erl_crash.dump
+*.dump
+*.dump.image-ref
 
 # Also ignore archive artifacts (built via "mix archive.build").
 *.ez
@@ -33,7 +35,13 @@ bolognesa-*.tar
 
 # In case you use Node.js/npm, you want to ignore these.
 npm-debug.log
+*.log
 /assets/node_modules/
+
+# Local machine files and private TLS material.
+.DS_Store
+*.pem
+*.key
 
 # Local deployment credentials and exported images.
 .env
