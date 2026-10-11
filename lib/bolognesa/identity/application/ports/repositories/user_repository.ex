@@ -3,8 +3,8 @@ defmodule Bolognesa.Identity.Application.Ports.Repositories.UserRepository do
   alias Bolognesa.Identity.Application.Ports.Services.PasswordHasher
   alias Bolognesa.Identity.Domain.Entities.User
   alias Bolognesa.Identity.Domain.ReadModels.Session
-  alias Bolognesa.Identity.Domain.ValueObjects.Sessions.NewAdmin
   alias Bolognesa.Identity.Domain.ValueObjects.Locale
+  alias Bolognesa.Identity.Domain.ValueObjects.Sessions.NewAdmin
 
   @typedoc "Module implementing the repository behaviour."
   @type adapter :: atom()

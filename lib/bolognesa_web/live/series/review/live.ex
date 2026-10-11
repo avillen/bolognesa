@@ -29,7 +29,7 @@ defmodule BolognesaWeb.Series.Review.Live do
 
   def handle_event("season", %{"season" => %{"number" => number}}, socket) do
     case integer(number, 0, nil) do
-      nil -> {:noreply, assign(socket, :feedback, "Temporada inválida.")}
+      nil -> {:noreply, assign(socket, :feedback, gettext("Temporada inválida."))}
       value -> {:noreply, Reducer.LoadSeason.call(socket, value)}
     end
   end
@@ -53,11 +53,11 @@ defmodule BolognesaWeb.Series.Review.Live do
       case result do
         {:ok, _} ->
           socket
-          |> assign(:feedback, "Identificación solicitada de nuevo.")
+          |> assign(:feedback, gettext("Identificación solicitada de nuevo."))
           |> Reducer.Load.call(socket.assigns.page, socket.assigns.selected_file_id)
 
         _ ->
-          assign(socket, :feedback, "No se pudo reintentar.")
+          assign(socket, :feedback, gettext("No se pudo reintentar."))
       end
 
     {:noreply, socket}
@@ -75,14 +75,17 @@ defmodule BolognesaWeb.Series.Review.Live do
   end
 
   defp integer(_, _, default), do: default
-  defp state_label(:pending), do: "Pendiente"
+  defp state_label(:pending), do: gettext("Pendiente")
   defp state_label(:failed), do: "Error"
-  defp state_label(:unmatched), do: "Sin coincidencia"
-  defp state_label(:manual_unidentified), do: "Sin identificar manualmente"
-  defp state_label(_), do: "Revisar identificación"
-  defp failure_label("incomplete_episodes"), do: "TMDb no contiene todos los episodios indicados"
-  defp failure_label("unusable_name"), do: "Nombre de archivo no interpretable"
-  defp failure_label("not_configured"), do: "TMDb sin configurar"
-  defp failure_label("rate_limited"), do: "TMDb limitó las solicitudes"
-  defp failure_label(_), do: "La identificación necesita revisión"
+  defp state_label(:unmatched), do: gettext("Sin coincidencia")
+  defp state_label(:manual_unidentified), do: gettext("Sin identificar manualmente")
+  defp state_label(_), do: gettext("Revisar identificación")
+
+  defp failure_label("incomplete_episodes"),
+    do: gettext("TMDb no contiene todos los episodios indicados")
+
+  defp failure_label("unusable_name"), do: gettext("Nombre de archivo no interpretable")
+  defp failure_label("not_configured"), do: gettext("TMDb sin configurar")
+  defp failure_label("rate_limited"), do: gettext("TMDb limitó las solicitudes")
+  defp failure_label(_), do: gettext("La identificación necesita revisión")
 end

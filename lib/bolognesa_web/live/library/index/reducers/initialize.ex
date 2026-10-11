@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Library.Index.Reducers.Initialize do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [stream: 4]
 
@@ -14,7 +15,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.Initialize do
   def call(socket) do
     socket =
       socket
-      |> assign(:page_title, "Bibliotecas")
+      |> assign(:page_title, gettext("Bibliotecas"))
       |> assign(:form, to_form(Library.changeset()))
       |> assign(:error, nil)
       |> assign(:success, nil)
@@ -32,7 +33,10 @@ defmodule BolognesaWeb.Library.Index.Reducers.Initialize do
 
       {:error, _} ->
         socket
-        |> assign(:error, "No se pudieron cargar las bibliotecas. Recarga para reintentar.")
+        |> assign(
+          :error,
+          gettext("No se pudieron cargar las bibliotecas. Recarga para reintentar.")
+        )
         |> stream(:libraries, [], reset: true)
     end
   end

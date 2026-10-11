@@ -3,16 +3,20 @@
     <header class="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">
-          Colección
+          {gettext("Colección")}
         </p>
-        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-ink">Películas</h1>
-        <p class="mt-3 text-sm text-muted">Obras identificadas de tus bibliotecas.</p>
+        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-ink">
+          {gettext("Películas")}
+        </h1>
+        <p class="mt-3 text-sm text-muted">
+          {gettext("Obras identificadas de tus bibliotecas.")}
+        </p>
       </div>
       <.link
         navigate={~p"/movies/review"}
         id="movies-review-link"
         class="min-h-11 rounded-xl border border-accent/50 px-5 py-3 text-sm font-semibold text-accent-soft transition hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >Revisar identificaciones</.link>
+      >{gettext("Revisar identificaciones")}</.link>
     </header>
 
     <.form
@@ -25,18 +29,18 @@
         field={@form[:query]}
         id="movie-search-query"
         type="search"
-        label="Buscar película"
+        label={gettext("Buscar película")}
         class="w-full rounded-xl border border-border-strong bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
       />
       <button
         id="movie-search-button"
         type="submit"
         class="min-h-12 rounded-xl bg-accent px-6 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >Buscar</button>
+      >{gettext("Buscar")}</button>
     </.form>
 
     <p :if={@loading?} id="movies-loading" role="status" class="text-sm text-muted">
-      Cargando películas…
+      {gettext("Cargando películas…")}
     </p>
     <p
       :if={@error}
@@ -47,7 +51,7 @@
       {@error}
     </p>
     <p :if={!@loading? && !@error} id="movies-count" class="text-sm text-muted">
-      {@total} películas
+      {ngettext("%{count} película", "%{count} películas", @total)}
     </p>
 
     <div id="movies-list" phx-update="stream" class="poster-grid">
@@ -69,7 +73,7 @@
               phx-hook="ImageFallback"
               phx-update="ignore"
               src={"https://image.tmdb.org/t/p/w500#{movie.poster_path}"}
-              alt={"Cartel de #{movie.title}"}
+              alt={gettext("Cartel de %{value0}", value0: movie.title)}
               loading="lazy"
               class="absolute inset-0 size-full object-cover"
             />
@@ -77,10 +81,14 @@
           <div class="py-3">
             <h2 class="text-sm font-semibold text-ink">{movie.title}</h2>
             <p class="mt-1 text-xs text-muted">
-              {movie.year || "Año desconocido"} · {movie.version_count} versiones
+              {movie.year || gettext("Año desconocido")} · {ngettext(
+                "%{count} versión",
+                "%{count} versiones",
+                movie.version_count
+              )}
             </p>
             <p class="mt-1 text-xs font-medium text-muted">
-              {movie.available_count} disponibles
+              {ngettext("%{count} disponible", "%{count} disponibles", movie.available_count)}
             </p>
           </div>
         </.link>
@@ -91,25 +99,27 @@
       id="movies-empty"
       class="rounded-2xl border border-dashed border-border p-8 text-center text-muted"
     >
-      Aún no hay películas con ese nombre. Escanea una biblioteca o revisa las identificaciones.
+      {gettext(
+        "Aún no hay películas con ese nombre. Escanea una biblioteca o revisa las identificaciones."
+      )}
     </p>
     <nav
       :if={@total > 24}
       id="movies-pagination"
-      aria-label="Páginas del catálogo"
+      aria-label={gettext("Páginas del catálogo")}
       class="flex items-center justify-center gap-4"
     >
       <.link
         :if={@page > 1}
         patch={~p"/movies?#{%{query: @query, page: @page - 1}}"}
         class="rounded-xl border border-border-strong px-4 py-3 text-ink"
-      >Anterior</.link>
-      <span class="text-sm text-muted">Página {@page}</span>
+      >{gettext("Anterior")}</.link>
+      <span class="text-sm text-muted">{gettext("Página %{page}", page: @page)}</span>
       <.link
         :if={@page * 24 < @total}
         patch={~p"/movies?#{%{query: @query, page: @page + 1}}"}
         class="rounded-xl border border-border-strong px-4 py-3 text-ink"
-      >Siguiente</.link>
+      >{gettext("Siguiente")}</.link>
     </nav>
   </section>
 </Layouts.app>

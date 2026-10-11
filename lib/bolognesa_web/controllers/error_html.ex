@@ -19,7 +19,18 @@ defmodule BolognesaWeb.ErrorHTML do
   # the template name. For example, "404.html" becomes
   # "Not Found".
   @spec render(String.t(), map()) :: String.t()
-  def render(template, _assigns) do
-    Phoenix.Controller.status_message_from_template(template)
+  def render(template, assigns) do
+    Gettext.with_locale(BolognesaWeb.Gettext, locale(assigns), fn -> message(template) end)
   end
+
+  defp message("404.html"), do: gettext("Página no encontrada")
+  defp message("500.html"), do: gettext("Error interno del servidor")
+  defp message(template), do: Phoenix.Controller.status_message_from_template(template)
+
+  defp locale(%{conn: conn}) do
+    conn.assigns[:locale] ||
+      BolognesaWeb.Locale.negotiate(List.first(Plug.Conn.get_req_header(conn, "accept-language")))
+  end
+
+  defp locale(_), do: Gettext.get_locale(BolognesaWeb.Gettext)
 end

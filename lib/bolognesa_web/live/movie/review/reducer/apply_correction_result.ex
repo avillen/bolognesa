@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Movie.Review.Reducer.ApplyCorrectionResult do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   alias BolognesaWeb.Movie.Review.Reducer.{Load, SelectFile}
 
@@ -12,11 +13,11 @@ defmodule BolognesaWeb.Movie.Review.Reducer.ApplyCorrectionResult do
         {:ok, {:ok, _}} ->
           socket
           |> SelectFile.call(nil)
-          |> assign(:feedback, "Corrección guardada.")
+          |> assign(:feedback, gettext("Corrección guardada."))
           |> Load.call()
 
         _ ->
-          assign(socket, :feedback, "No se pudo guardar la corrección.")
+          assign(socket, :feedback, gettext("No se pudo guardar la corrección."))
       end
     else
       socket

@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.UserAuth do
+  use Gettext, backend: BolognesaWeb.Gettext
   @moduledoc "Resolve the verified actor for browser and LiveView requests."
   import Plug.Conn
   import Phoenix.Controller, only: [redirect: 2]
@@ -23,7 +24,7 @@ defmodule BolognesaWeb.UserAuth do
 
   def assign_scope_result(conn, {:error, :unavailable}) do
     conn
-    |> send_resp(503, "Servicio temporalmente no disponible")
+    |> send_resp(503, gettext("Servicio temporalmente no disponible"))
     |> halt()
   end
 
@@ -51,6 +52,11 @@ defmodule BolognesaWeb.UserAuth do
   @spec on_mount(:require_authenticated, map(), map(), Phoenix.LiveView.Socket.t()) ::
           {:cont, Phoenix.LiveView.Socket.t()} | {:halt, Phoenix.LiveView.Socket.t()}
   def on_mount(:require_authenticated, _params, session, socket) do
+    browser =
+      if session["browser_locale"] in ["es", "en"], do: session["browser_locale"], else: "es"
+
+    Gettext.put_locale(BolognesaWeb.Gettext, browser)
+
     result =
       case session["user_token"] do
         nil -> {:error, :unauthenticated}
@@ -66,7 +72,11 @@ defmodule BolognesaWeb.UserAuth do
 
       {:error, :unavailable} ->
         socket =
-          Phoenix.LiveView.put_flash(socket, :error, "Servicio temporalmente no disponible")
+          Phoenix.LiveView.put_flash(
+            socket,
+            :error,
+            gettext("Servicio temporalmente no disponible")
+          )
 
         {:halt, Phoenix.LiveView.redirect(socket, to: "/login")}
     end

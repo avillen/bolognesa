@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Series.Season.Reducer.ApplyResult do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2]
   import Phoenix.LiveView, only: [stream: 4]
   alias Bolognesa.Catalog.Application.Dto.EpisodePage
@@ -22,5 +23,8 @@ defmodule BolognesaWeb.Series.Season.Reducer.ApplyResult do
 
   defp apply_result(socket, _),
     do:
-      assign(socket, loading?: false, error: "No se pudo cargar esta ficha. Vuelve a intentarlo.")
+      assign(socket,
+        loading?: false,
+        error: gettext("No se pudo cargar esta ficha. Vuelve a intentarlo.")
+      )
 end

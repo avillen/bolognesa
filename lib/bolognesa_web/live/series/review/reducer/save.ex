@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Series.Review.Reducer.Save do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2]
   alias Bolognesa.Identification
   alias BolognesaWeb.Series.Review.AsyncRequest
@@ -11,7 +12,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.Save do
   def call(%{assigns: %{saving?: true}} = socket, _), do: socket
 
   def call(%{assigns: %{selected_item: nil}} = socket, _),
-    do: assign(socket, feedback: "Selecciona un archivo.")
+    do: assign(socket, feedback: gettext("Selecciona un archivo."))
 
   def call(socket, choice) do
     actor = socket.assigns.current_scope.actor

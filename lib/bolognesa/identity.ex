@@ -11,8 +11,8 @@ defmodule Bolognesa.Identity do
   alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Identity.Domain.Entities.User
   alias Bolognesa.Identity.Domain.ReadModels.Session
-  alias Bolognesa.Identity.Domain.ValueObjects.Sessions.NewAdmin
   alias Bolognesa.Identity.Domain.ValueObjects.Locale
+  alias Bolognesa.Identity.Domain.ValueObjects.Sessions.NewAdmin
   alias Bolognesa.Identity.Infrastructure.Repositories.EctoUserRepository
   alias Bolognesa.Identity.Infrastructure.Services.BcryptHasher
 

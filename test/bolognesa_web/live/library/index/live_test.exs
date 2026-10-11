@@ -127,7 +127,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     send(view.pid, :refresh_scan_statuses)
     render_async(view)
     assert has_element?(view, "#library-scan-state-#{library.id}[data-state='completed']")
-    assert has_element?(view, "#library-scan-count-#{library.id}", "1 archivos")
+    assert has_element?(view, "#library-scan-count-#{library.id}", "1 archivo")
     assert has_element?(view, "#library-scan-completed-#{library.id}")
     refute has_element?(view, "#library-scan-#{library.id}[disabled]")
   end

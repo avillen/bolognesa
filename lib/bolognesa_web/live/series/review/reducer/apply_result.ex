@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Series.Review.Reducer.ApplyResult do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2]
   import Phoenix.LiveView, only: [stream: 4]
   alias BolognesaWeb.Series.Review.Reducer.Load
@@ -27,7 +28,8 @@ defmodule BolognesaWeb.Series.Review.Reducer.ApplyResult do
     do:
       assign(socket,
         loading?: false,
-        error: "No se pudo cargar la revisión. Comprueba el archivo y vuelve a intentarlo.",
+        error:
+          gettext("No se pudo cargar la revisión. Comprueba el archivo y vuelve a intentarlo."),
         selected_item: nil
       )
 
@@ -36,7 +38,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.ApplyResult do
     |> assign(
       searching?: false,
       candidate_titles: Map.new(items, &{&1.provider_id, &1.title}),
-      feedback: if(items == [], do: "No se encontraron series.", else: nil)
+      feedback: if(items == [], do: gettext("No se encontraron series."), else: nil)
     )
     |> stream(:candidates, items, reset: true)
   end
@@ -45,7 +47,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.ApplyResult do
     do:
       assign(socket,
         searching?: false,
-        feedback: "No se pudo buscar en TMDb. Vuelve a intentarlo."
+        feedback: gettext("No se pudo buscar en TMDb. Vuelve a intentarlo.")
       )
 
   defp apply_result(socket, :season, {:ok, {:ok, season}}) do
@@ -56,7 +58,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.ApplyResult do
       season_loading?: false,
       season_number: season.number,
       episode_numbers: Enum.map(episodes, & &1.number),
-      feedback: if(episodes == [], do: "La temporada no contiene episodios.", else: nil)
+      feedback: if(episodes == [], do: gettext("La temporada no contiene episodios."), else: nil)
     )
     |> stream(:episodes, episodes, reset: true)
   end
@@ -65,12 +67,12 @@ defmodule BolognesaWeb.Series.Review.Reducer.ApplyResult do
     do:
       assign(socket,
         season_loading?: false,
-        feedback: "No se pudo cargar la temporada. Vuelve a intentarlo."
+        feedback: gettext("No se pudo cargar la temporada. Vuelve a intentarlo.")
       )
 
   defp apply_result(socket, :correction, {:ok, {:ok, _}}) do
     socket
-    |> assign(saving?: false, feedback: "Identificación guardada.")
+    |> assign(saving?: false, feedback: gettext("Identificación guardada."))
     |> Load.call(socket.assigns.page, socket.assigns.selected_file_id)
   end
 
@@ -78,13 +80,13 @@ defmodule BolognesaWeb.Series.Review.Reducer.ApplyResult do
     do:
       assign(socket,
         saving?: false,
-        feedback: "El archivo ha cambiado. Recarga antes de corregirlo."
+        feedback: gettext("El archivo ha cambiado. Recarga antes de corregirlo.")
       )
 
   defp apply_result(socket, :correction, _),
     do:
       assign(socket,
         saving?: false,
-        feedback: "No se pudo guardar la selección completa. Vuelve a intentarlo."
+        feedback: gettext("No se pudo guardar la selección completa. Vuelve a intentarlo.")
       )
 end

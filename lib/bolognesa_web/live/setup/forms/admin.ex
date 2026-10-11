@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Setup.Forms.Admin do
   @moduledoc "Validation for the first administrator form."
+  use Gettext, backend: BolognesaWeb.Gettext
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -21,7 +22,13 @@ defmodule BolognesaWeb.Setup.Forms.Admin do
     |> validate_change(:password, fn :password, password ->
       if byte_size(password) in 12..72 and :binary.match(password, <<0>>) == :nomatch,
         do: [],
-        else: [password: "debe tener entre 12 y 72 bytes y no contener caracteres nulos"]
+        else: [
+          password:
+            dgettext_noop(
+              "errors",
+              "debe tener entre 12 y 72 bytes y no contener caracteres nulos"
+            )
+        ]
     end)
     |> validate_confirmation(:password, required: true)
   end

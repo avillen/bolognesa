@@ -1,15 +1,18 @@
 defmodule BolognesaWeb.Router do
   use BolognesaWeb, :router
   import BolognesaWeb.UserAuth
+  import BolognesaWeb.Locale
 
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
+    plug :fetch_browser_locale
     plug :fetch_live_flash
     plug :put_root_layout, html: {BolognesaWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_scope
+    plug :apply_user_locale
   end
 
   pipeline :authenticated do
@@ -32,7 +35,7 @@ defmodule BolognesaWeb.Router do
 
     post "/login", SessionController, :create
 
-    live_session :public_access do
+    live_session :public_access, on_mount: [{BolognesaWeb.Locale, :default}] do
       live "/setup", Setup.Live, :new
       live "/login", Login.Live, :new
     end
@@ -43,7 +46,8 @@ defmodule BolognesaWeb.Router do
 
     delete "/logout", SessionController, :delete
 
-    live_session :authenticated, on_mount: [{BolognesaWeb.UserAuth, :require_authenticated}] do
+    live_session :authenticated,
+      on_mount: [{BolognesaWeb.UserAuth, :require_authenticated}, {BolognesaWeb.Locale, :default}] do
       live "/", Home.Live, :index
       live "/libraries", Library.Index.Live, :index
       live "/movies", Movie.Index.Live, :index
@@ -54,6 +58,7 @@ defmodule BolognesaWeb.Router do
       live "/series/:id", Series.Show.Live, :show
       live "/episodes/:id", Episode.Show.Live, :show
       live "/movies/:id", Movie.Show.Live, :show
+      live "/settings", Settings.Live, :index
       live "/about", About.Live, :index
     end
   end

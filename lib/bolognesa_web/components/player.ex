@@ -18,10 +18,10 @@ defmodule BolognesaWeb.Player do
       :if={@selected_file_id}
       id={"#{@prefix}-player"}
       class="mt-10 space-y-3"
-      aria-label="Reproductor"
+      aria-label={gettext("Reproductor")}
     >
       <h2 class="text-xl font-semibold text-ink">
-        Reproduciendo versión {@selected_file_id}
+        {gettext("Reproduciendo versión %{id}", id: @selected_file_id)}
       </h2>
       <p
         :if={@compatible_session && !@compatible_ready? && !@playback_error}
@@ -30,7 +30,7 @@ defmodule BolognesaWeb.Player do
         data-session-id={@compatible_session.id}
         class="text-muted"
       >
-        Preparando reproducción…
+        {gettext("Preparando reproducción…")}
       </p>
       <video
         :if={!@compatible_session}
@@ -43,7 +43,7 @@ defmodule BolognesaWeb.Player do
         src={media_url(@kind, @entry_id, @selected_file_id)}
         class="aspect-video w-full rounded-xl bg-black"
       >
-        Tu navegador no admite la reproducción de vídeo.
+        {gettext("Tu navegador no admite la reproducción de vídeo.")}
       </video>
       <div :if={@compatible_session && @compatible_ready?} class="space-y-3">
         <video
@@ -59,9 +59,9 @@ defmodule BolognesaWeb.Player do
           playsinline
           preload="auto"
           class="aspect-video w-full rounded-xl bg-black"
-        >Tu navegador no admite la reproducción de vídeo.</video>
+        >{gettext("Tu navegador no admite la reproducción de vídeo.")}</video>
         <div :if={@compatible_session.duration_ms} class="space-y-1 text-sm text-ink">
-          <label for={"#{@prefix}-seek-#{@compatible_session.id}"}>Posición</label>
+          <label for={"#{@prefix}-seek-#{@compatible_session.id}"}>{gettext("Posición")}</label>
           <input
             id={"#{@prefix}-seek-#{@compatible_session.id}"}
             type="range"
@@ -69,7 +69,7 @@ defmodule BolognesaWeb.Player do
             max={@compatible_session.duration_ms}
             value={@compatible_session.offset_ms}
             data-compatible-seek={@compatible_session.id}
-            aria-label="Ir a una posición del archivo"
+            aria-label={gettext("Ir a una posición del archivo")}
             class="w-full accent-accent"
           />
           <span data-compatible-position={@compatible_session.id}></span>
@@ -93,7 +93,7 @@ defmodule BolognesaWeb.Player do
       phx-value-file_id={@selected_file_id}
       class="min-h-11 rounded-xl bg-accent px-5 py-3 font-semibold text-canvas"
     >
-      Probar modo compatible
+      {gettext("Probar modo compatible")}
     </button>
     """
   end

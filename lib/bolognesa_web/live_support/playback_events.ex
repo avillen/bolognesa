@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
+  use Gettext, backend: BolognesaWeb.Gettext
   @moduledoc "Shared LiveView lifecycle for authorized direct and HLS playback."
   alias Bolognesa.Playback
   alias BolognesaWeb.LiveSupport.{PlaybackError, SelectVersion}
@@ -108,7 +109,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
          socket
          |> Phoenix.Component.assign(
            :playback_error,
-           "La conversión se ha interrumpido. Vuelve a intentarlo."
+           gettext("La conversión se ha interrumpido. Vuelve a intentarlo.")
          )
          |> Phoenix.Component.assign(:playback_error_reason, "transcode_failed")}
 
@@ -195,7 +196,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
     socket
     |> Phoenix.Component.assign(
       :playback_error,
-      "No se pudo preparar esta versión. Vuelve a intentarlo."
+      gettext("No se pudo preparar esta versión. Vuelve a intentarlo.")
     )
     |> Phoenix.Component.assign(:playback_error_reason, "transcode_failed")
   end

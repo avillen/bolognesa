@@ -3,25 +3,27 @@
     <header class="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">
-          Biblioteca
+          {gettext("Biblioteca")}
         </p>
         <h1 class="mt-3 text-4xl font-semibold tracking-tight text-ink">
-          Fuentes multimedia
+          {gettext("Fuentes multimedia")}
         </h1>
         <p class="mt-3 max-w-2xl text-sm leading-6 text-muted">
-          Registra una carpeta y escanéala para descubrir sus archivos de vídeo. Puedes salir de esta pantalla mientras continúa.
+          {gettext(
+            "Registra una carpeta y escanéala para descubrir sus archivos de vídeo. Puedes salir de esta pantalla mientras continúa."
+          )}
         </p>
       </div>
       <.link
         navigate={~p"/"}
         id="libraries-home-link"
         class="min-h-11 rounded-xl border border-border-strong px-5 py-3 text-sm font-medium text-ink transition hover:border-accent hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >Volver a Inicio</.link>
+      >{gettext("Volver a Inicio")}</.link>
     </header>
 
     <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.85fr)]">
       <div class="rounded-xl bg-surface p-6 sm:p-8">
-        <h2 class="text-xl font-semibold text-ink">Bibliotecas registradas</h2>
+        <h2 class="text-xl font-semibold text-ink">{gettext("Bibliotecas registradas")}</h2>
         <p
           :if={@scan_feedback}
           id="library-scan-feedback"
@@ -35,7 +37,7 @@
             id="libraries-empty"
             class="hidden rounded-xl border border-dashed border-border p-5 text-sm text-muted only:block"
           >
-            Todavía no hay bibliotecas.
+            {gettext("Todavía no hay bibliotecas.")}
           </p>
           <div
             :for={{id, library} <- @streams.libraries}
@@ -66,14 +68,19 @@
                   id={"library-scan-count-#{library.id}"}
                   class="text-xs text-muted"
                 >
-                  {library.files_discovered} archivos descubiertos · Intento {library.attempt}
+                  {ngettext(
+                    "%{count} archivo descubierto · Intento %{attempt}",
+                    "%{count} archivos descubiertos · Intento %{attempt}",
+                    library.files_discovered,
+                    attempt: library.attempt
+                  )}
                 </p>
                 <p
                   :if={library.last_completed_at}
                   id={"library-scan-completed-#{library.id}"}
                   class="text-xs text-muted"
                 >
-                  Último escaneo completo: {library.last_completed_at}
+                  {gettext("Último escaneo completo:")} {library.last_completed_at}
                 </p>
                 <p
                   id={"library-inspection-counts-#{library.id}"}
@@ -103,7 +110,9 @@
                   id={"library-inspection-help-#{library.id}"}
                   class="max-w-md text-xs leading-5 text-muted"
                 >
-                  El análisis técnico no terminó para esos archivos. Esto no confirma un problema de reproducción.
+                  {gettext(
+                    "El análisis técnico no terminó para esos archivos. Esto no confirma un problema de reproducción."
+                  )}
                 </p>
               </div>
               <div class="flex flex-wrap gap-2">
@@ -113,7 +122,7 @@
                   phx-click="scan"
                   phx-value-library_id={library.id}
                   disabled={library.active?}
-                  phx-disable-with="Solicitando…"
+                  phx-disable-with={gettext("Solicitando…")}
                   class="min-h-11 rounded-xl border border-accent/40 px-5 py-3 text-sm font-semibold text-accent-soft transition hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50"
                 >
                   {library.button_label}
@@ -125,7 +134,7 @@
                   phx-value-library_id={library.id}
                   disabled={library.active?}
                   class="min-h-11 rounded-xl border border-border-strong px-5 py-3 text-sm font-medium text-ink transition hover:border-accent hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50"
-                >Reanalizar</button>
+                >{gettext("Reanalizar")}</button>
               </div>
             </div>
             <div
@@ -136,16 +145,20 @@
             >
               <p class="flex items-center gap-2 font-semibold">
                 <.icon name="hero-exclamation-triangle" class="size-5 shrink-0" />
-                Inventario incompleto
+                {gettext("Inventario incompleto")}
               </p>
               <p class="mt-2">{library.error}</p>
               <p class="mt-2 text-xs leading-5">
-                {library.files_discovered} {if library.files_discovered == 1,
-                  do: "archivo registrado",
-                  else: "archivos registrados"} antes del fallo. El escaneo no ha terminado de recorrer la carpeta.
+                {ngettext(
+                  "%{count} archivo registrado antes del fallo. El escaneo no ha terminado de recorrer la carpeta.",
+                  "%{count} archivos registrados antes del fallo. El escaneo no ha terminado de recorrer la carpeta.",
+                  library.files_discovered
+                )}
               </p>
               <p :if={library.inspection_active?} class="mt-2 text-xs leading-5">
-                El análisis de los archivos ya registrados continúa. Puedes salir de esta pantalla mientras termina.
+                {gettext(
+                  "El análisis de los archivos ya registrados continúa. Puedes salir de esta pantalla mientras termina."
+                )}
               </p>
             </div>
           </div>
@@ -154,11 +167,13 @@
           :if={@reinspect_library_id}
           id={"library-reinspect-confirm-#{@reinspect_library_id}"}
           role="group"
-          aria-label="Confirmar nuevo análisis"
+          aria-label={gettext("Confirmar nuevo análisis")}
           class="mt-5 rounded-xl border border-accent/30 bg-accent/10 p-5"
         >
           <p class="text-sm leading-6 text-accent-soft">
-            Se volverán a leer los archivos de esta biblioteca. El análisis puede tardar y utilizar recursos del servidor.
+            {gettext(
+              "Se volverán a leer los archivos de esta biblioteca. El análisis puede tardar y utilizar recursos del servidor."
+            )}
           </p>
           <div class="mt-4 flex flex-wrap gap-2">
             <button
@@ -167,21 +182,21 @@
               phx-click="confirm_reinspect"
               phx-value-library_id={@reinspect_library_id}
               class="min-h-11 rounded-xl bg-accent px-4 py-2 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            >Confirmar</button>
+            >{gettext("Confirmar")}</button>
             <button
               id={"library-reinspect-cancel-button-#{@reinspect_library_id}"}
               type="button"
               phx-click="cancel_reinspect"
               class="min-h-11 rounded-xl border border-border-strong px-4 py-2 text-ink transition hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            >Cancelar</button>
+            >{gettext("Cancelar")}</button>
           </div>
         </div>
       </div>
 
       <div class="rounded-xl bg-surface p-6 sm:p-8">
-        <h2 class="text-xl font-semibold text-ink">Añadir fuente</h2>
+        <h2 class="text-xl font-semibold text-ink">{gettext("Añadir fuente")}</h2>
         <p class="mt-2 text-sm leading-6 text-muted">
-          Usa la ruta visible para Bolognesa dentro del servidor.
+          {gettext("Usa la ruta visible para Bolognesa dentro del servidor.")}
         </p>
         <p
           :if={@error}
@@ -210,7 +225,7 @@
             field={@form[:name]}
             id="library-name"
             type="text"
-            label="Nombre"
+            label={gettext("Nombre")}
             required
             class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
           />
@@ -218,15 +233,15 @@
             field={@form[:content_type]}
             id="library-content-type"
             type="select"
-            label="Contenido"
-            options={[{"Películas", :movie}, {"Series", :series}]}
+            label={gettext("Contenido")}
+            options={[{gettext("Películas"), :movie}, {gettext("Series"), :series}]}
             required
           />
           <.input
             field={@form[:path]}
             id="library-path"
             type="text"
-            label="Carpeta de origen"
+            label={gettext("Carpeta de origen")}
             placeholder="/media/movies"
             required
             class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
@@ -234,9 +249,9 @@
           <button
             id="library-submit"
             type="submit"
-            phx-disable-with="Guardando…"
+            phx-disable-with={gettext("Guardando…")}
             class="min-h-12 w-full rounded-xl bg-accent px-5 py-3 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >Guardar biblioteca</button>
+          >{gettext("Guardar biblioteca")}</button>
         </.form>
       </div>
     </div>

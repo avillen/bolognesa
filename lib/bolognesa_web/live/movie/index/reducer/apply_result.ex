@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Movie.Index.Reducer.ApplyResult do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream: 4]
 
@@ -14,7 +15,9 @@ defmodule BolognesaWeb.Movie.Index.Reducer.ApplyResult do
           |> stream(:movies, items, reset: true)
 
         _ ->
-          socket |> assign(:loading?, false) |> assign(:error, "No se pudo cargar el catálogo.")
+          socket
+          |> assign(:loading?, false)
+          |> assign(:error, gettext("No se pudo cargar el catálogo."))
       end
     else
       socket

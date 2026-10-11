@@ -1,11 +1,13 @@
 <Layouts.app flash={@flash} current_scope={@current_scope} active_section={:series}>
   <section class="mx-auto max-w-5xl space-y-7">
-    <.link navigate={~p"/series"} class="inline-flex min-h-11 items-center text-accent-soft">← Series</.link>
+    <.link navigate={~p"/series"} class="inline-flex min-h-11 items-center text-accent-soft">{gettext(
+      "← Series"
+    )}</.link>
     <p :if={@loading?} id="episodes-loading" role="status" class="text-muted">
-      Cargando episodios…
+      {gettext("Cargando episodios…")}
     </p>
     <p :if={@error} id="episodes-error" role="alert" class="text-red-200">
-      {@error} <button phx-click="retry" class="min-h-11 px-4">Reintentar</button>
+      {@error} <button phx-click="retry" class="min-h-11 px-4">{gettext("Reintentar")}</button>
     </p>
     <div :if={@detail}>
       <.link
@@ -14,11 +16,11 @@
       >{@detail.series.title}</.link>
       <h1 id="season-title" class="mt-3 text-3xl font-semibold text-ink">
         {if @detail.season.number == 0,
-          do: "Especiales",
-          else: "Temporada #{@detail.season.number}"}
+          do: gettext("Especiales"),
+          else: gettext("Temporada %{value0}", value0: @detail.season.number)}
       </h1>
       <p :if={@total == 0} id="episodes-empty" class="mt-5 text-muted">
-        No hay episodios identificados.
+        {gettext("No hay episodios identificados.")}
       </p>
     </div>
     <div id="episode-list" phx-update="stream" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -32,21 +34,26 @@
           class="inline-flex min-h-11 items-center font-semibold text-accent-soft"
         >{episode.number}. {episode.title}</.link>
         <p class="text-sm text-muted">
-          {episode.available_version_count} de {episode.version_count} versiones disponibles
+          {ngettext(
+            "%{available} de %{count} versión disponible",
+            "%{available} de %{count} versiones disponibles",
+            episode.version_count,
+            available: episode.available_version_count
+          )}
         </p>
       </article>
     </div>
-    <nav aria-label="Páginas de episodios" class="flex gap-5 text-accent-soft">
+    <nav aria-label={gettext("Páginas de episodios")} class="flex gap-5 text-accent-soft">
       <.link
         :if={@page > 1}
         patch={~p"/series/seasons/#{@content_id}?#{%{page: @page - 1}}"}
         class="min-h-11 py-3"
-      >Anterior</.link>
+      >{gettext("Anterior")}</.link>
       <.link
         :if={@page * 24 < @total}
         patch={~p"/series/seasons/#{@content_id}?#{%{page: @page + 1}}"}
         class="min-h-11 py-3"
-      >Siguiente</.link>
+      >{gettext("Siguiente")}</.link>
     </nav>
   </section>
 </Layouts.app>

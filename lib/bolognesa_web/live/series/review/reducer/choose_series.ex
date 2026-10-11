@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Series.Review.Reducer.ChooseSeries do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2]
   alias BolognesaWeb.Series.Review.Reducer.ResetSelection
   @spec call(Phoenix.LiveView.Socket.t(), pos_integer()) :: Phoenix.LiveView.Socket.t()
@@ -11,7 +12,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.ChooseSeries do
         socket |> ResetSelection.call() |> assign(series_id: id, series_title: title)
 
       :error ->
-        assign(socket, feedback: "Selecciona una serie de los resultados.")
+        assign(socket, feedback: gettext("Selecciona una serie de los resultados."))
     end
   end
 end

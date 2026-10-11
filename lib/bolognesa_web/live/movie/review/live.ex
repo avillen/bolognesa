@@ -38,7 +38,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
         {:noreply, Reducer.SelectFile.call(socket, file_id)}
 
       :error ->
-        {:noreply, assign(socket, :feedback, "Archivo inválido.")}
+        {:noreply, assign(socket, :feedback, gettext("Archivo inválido."))}
     end
   end
 
@@ -68,7 +68,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
          assign(socket, :form, to_form(%{"query" => query, "tmdb_id" => id}, as: :correction))}
 
       :error ->
-        {:noreply, assign(socket, :feedback, "Candidato inválido.")}
+        {:noreply, assign(socket, :feedback, gettext("Candidato inválido."))}
     end
   end
 
@@ -78,14 +78,14 @@ defmodule BolognesaWeb.Movie.Review.Live do
         {:noreply, Reducer.BeginCorrection.call(socket, file_id, {:tmdb, tmdb_id})}
 
       _ ->
-        {:noreply, assign(socket, :feedback, "Selecciona una película válida.")}
+        {:noreply, assign(socket, :feedback, gettext("Selecciona una película válida."))}
     end
   end
 
   def handle_event("unidentified", _params, socket) do
     case socket.assigns.selected_file_id do
       nil ->
-        {:noreply, assign(socket, :feedback, "Selecciona un archivo.")}
+        {:noreply, assign(socket, :feedback, gettext("Selecciona un archivo."))}
 
       file_id ->
         {:noreply, Reducer.BeginCorrection.call(socket, file_id, :unidentified)}
@@ -100,10 +100,12 @@ defmodule BolognesaWeb.Movie.Review.Live do
     case result do
       {:ok, _} ->
         {:noreply,
-         socket |> assign(:feedback, "Identificación solicitada de nuevo.") |> Reducer.Load.call()}
+         socket
+         |> assign(:feedback, gettext("Identificación solicitada de nuevo."))
+         |> Reducer.Load.call()}
 
       _ ->
-        {:noreply, assign(socket, :feedback, "No se pudo reintentar.")}
+        {:noreply, assign(socket, :feedback, gettext("No se pudo reintentar."))}
     end
   end
 
@@ -133,18 +135,18 @@ defmodule BolognesaWeb.Movie.Review.Live do
     end
   end
 
-  defp state_label(:pending), do: "Pendiente"
+  defp state_label(:pending), do: gettext("Pendiente")
   defp state_label(:failed), do: "Error"
-  defp state_label(:unmatched), do: "Sin coincidencia"
-  defp state_label(:manual_unidentified), do: "Sin identificar manualmente"
-  defp state_label(:automatic), do: "Revisar coincidencia"
-  defp state_label(_), do: "Revisión"
+  defp state_label(:unmatched), do: gettext("Sin coincidencia")
+  defp state_label(:manual_unidentified), do: gettext("Sin identificar manualmente")
+  defp state_label(:automatic), do: gettext("Revisar coincidencia")
+  defp state_label(_), do: gettext("Revisión")
 
-  defp failure_label("not_configured"), do: "TMDb sin configurar"
-  defp failure_label("rate_limited"), do: "TMDb limitó las solicitudes"
-  defp failure_label("provider_unavailable"), do: "TMDb no disponible"
-  defp failure_label("unauthorized"), do: "Token de TMDb rechazado"
-  defp failure_label("unusable_name"), do: "Nombre de archivo no interpretable"
-  defp failure_label("attempts_exhausted"), do: "Se agotaron los reintentos"
-  defp failure_label(_), do: "No se pudo identificar"
+  defp failure_label("not_configured"), do: gettext("TMDb sin configurar")
+  defp failure_label("rate_limited"), do: gettext("TMDb limitó las solicitudes")
+  defp failure_label("provider_unavailable"), do: gettext("TMDb no disponible")
+  defp failure_label("unauthorized"), do: gettext("Token de TMDb rechazado")
+  defp failure_label("unusable_name"), do: gettext("Nombre de archivo no interpretable")
+  defp failure_label("attempts_exhausted"), do: gettext("Se agotaron los reintentos")
+  defp failure_label(_), do: gettext("No se pudo identificar")
 end

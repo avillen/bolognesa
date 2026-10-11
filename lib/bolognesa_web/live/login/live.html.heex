@@ -4,17 +4,21 @@
     class="mx-auto max-w-md rounded-3xl border border-accent/10 bg-surface p-6 shadow-2xl sm:p-10"
   >
     <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">
-      Tu biblioteca, en casa
+      {gettext("Tu biblioteca, en casa")}
     </p>
-    <h1 class="mt-3 text-3xl font-semibold tracking-tight text-ink">Bienvenido de nuevo</h1>
-    <p class="mt-3 text-sm leading-6 text-muted">Entra con tu cuenta para continuar.</p>
+    <h1 class="mt-3 text-3xl font-semibold tracking-tight text-ink">
+      {gettext("Bienvenido de nuevo")}
+    </h1>
+    <p class="mt-3 text-sm leading-6 text-muted">
+      {gettext("Entra con tu cuenta para continuar.")}
+    </p>
 
     <.form for={@form} action={~p"/login"} method="post" id="login-form" class="mt-8 space-y-4">
       <.input
         field={@form[:email]}
         id="login-email"
         type="email"
-        label="Correo electrónico"
+        label={gettext("Correo electrónico")}
         autocomplete="email"
         required
         class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
@@ -23,7 +27,7 @@
         field={@form[:password]}
         id="login-password"
         type="password"
-        label="Contraseña"
+        label={gettext("Contraseña")}
         autocomplete="current-password"
         required
         class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
@@ -32,7 +36,7 @@
         id="login-submit"
         type="submit"
         class="mt-3 min-h-12 w-full rounded-xl bg-accent px-5 py-3 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >Entrar</button>
+      >{gettext("Entrar")}</button>
     </.form>
   </section>
 </Layouts.app>

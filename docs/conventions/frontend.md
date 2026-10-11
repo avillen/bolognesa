@@ -136,9 +136,19 @@ La referencia vigente es el mediacenter oscuro aportado por el propietario el 20
 
 Los colores se declaran como tokens semánticos en `assets/css/app.css` mediante `@theme`: `canvas`, `surface`, `raised`, `border`, `border-strong`, `ink`, `muted`, `accent`, `accent-hover` y `accent-soft`. Los templates consumen esas utilidades. Se conservan colores semánticos para errores y éxito.
 
-El layout compartido usa barra lateral fija al desplazamiento en escritorio y cabecera con navegación que se adapta al ancho en móvil. Cada pantalla indica `active_section` para señalar la sección vigente. El catálogo utiliza pósteres verticales 2:3; las fichas usan imágenes panorámicas con una capa oscura para mantener legibilidad y colocan temporadas, versiones y reproducción debajo. Se conserva espacio y una inicial cuando el póster falta o falla. El diseño solo presenta datos y acciones existentes: no introduce favoritos, progreso duradero, valoraciones ni ajustes.
+El layout compartido usa barra lateral fija al desplazamiento en escritorio y cabecera con navegación que se adapta al ancho en móvil. Cada pantalla indica `active_section` para señalar la sección vigente. El catálogo utiliza pósteres verticales 2:3; las fichas usan imágenes panorámicas con una capa oscura para mantener legibilidad y colocan temporadas, versiones y reproducción debajo. Se conserva espacio y una inicial cuando el póster falta o falla. El diseño solo presenta datos y acciones existentes: no introduce favoritos, progreso duradero ni valoraciones. Ajustes contiene inicialmente la preferencia de idioma de la cuenta.
 
 La marca visible sigue siendo «boloñesa», acompañada del gato vectorial en `priv/static/images/bolognesa-cat.svg`, también usado como favicon. Las imágenes aportan la variedad visual; los degradados se limitan a la legibilidad sobre imágenes de fichas. Se mantiene foco visible, acciones accesibles sin hover y respeto por la preferencia de movimiento reducido.
+
+## Idioma de la interfaz
+
+Los textos propios de la web utilizan Gettext con `BolognesaWeb.Gettext`: claves fuente españolas, interpolación y plurales para cantidades, y catálogos completos de español e inglés. También se traducen mensajes, títulos, estados y atributos accesibles. Los motivos del backend y los datos almacenados del catálogo no se traducen.
+
+El locale efectivo se resuelve en la frontera web: preferencia explícita del actor verificado, idioma del navegador y español como fallback. Los plugs y el hook de montaje establecen Gettext por proceso; nunca se modifica una configuración global por petición. El HTML declara el idioma efectivo. Las tareas asíncronas devuelven datos y se preparan sus textos en el proceso de presentación; si una tarea necesita traducir, recibe el locale explícitamente.
+
+Los mensajes propios de changesets se marcan con `dgettext_noop("errors", ...)` y se traducen al mostrar el formulario mediante CoreComponents, evitando doble traducción. La extracción y los catálogos se mantienen juntos; las pruebas comprueban cobertura, plurales, flags fuzzy y placeholders.
+
+Ajustes guarda el idioma en la cuenta mediante la fachada de Identidad y recarga el documento completo. Las pestañas ya abiertas mantienen su idioma hasta recargar. [Decisión 0016](../decisions/0016-user-locale-and-settings.md).
 
 ## Verificación
 

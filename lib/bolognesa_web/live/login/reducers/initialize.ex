@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Login.Reducers.Initialize do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
 
@@ -20,7 +21,7 @@ defmodule BolognesaWeb.Login.Reducers.Initialize do
       {:error, :unavailable} ->
         socket
         |> assign(:form, to_form(Login.changeset()))
-        |> put_flash(:error, "Servicio temporalmente no disponible")
+        |> put_flash(:error, gettext("Servicio temporalmente no disponible"))
     end
   end
 end

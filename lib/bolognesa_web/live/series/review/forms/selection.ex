@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Series.Review.Forms.Selection do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   use Ecto.Schema
   import Ecto.Changeset
   @primary_key false
@@ -17,13 +18,20 @@ defmodule BolognesaWeb.Series.Review.Forms.Selection do
     |> validate_change(:episode_numbers, fn :episode_numbers, numbers ->
       if Enum.all?(numbers, &(&1 > 0)) and Enum.uniq(numbers) == numbers,
         do: [],
-        else: [episode_numbers: "Selecciona episodios válidos sin repetir."]
+        else: [
+          episode_numbers: dgettext_noop("errors", "Selecciona episodios válidos sin repetir.")
+        ]
     end)
   end
 
   defp require_episodes(changeset) do
     if get_field(changeset, :episode_numbers) == [],
-      do: add_error(changeset, :episode_numbers, "Selecciona al menos un episodio."),
+      do:
+        add_error(
+          changeset,
+          :episode_numbers,
+          dgettext_noop("errors", "Selecciona al menos un episodio.")
+        ),
       else: changeset
   end
 

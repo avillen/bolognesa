@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.LiveSupport.SelectVersion do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   alias Bolognesa.Playback
 
@@ -100,9 +101,9 @@ defmodule BolognesaWeb.LiveSupport.SelectVersion do
               :unreadable,
               :unsafe_entry
             ],
-       do: "El archivo ya no está disponible. Revisa la biblioteca y vuelve a escanear."
+       do: gettext("El archivo ya no está disponible. Revisa la biblioteca y vuelve a escanear.")
 
-  defp message(_), do: "No se pudo preparar esta versión. Vuelve a intentarlo."
+  defp message(_), do: gettext("No se pudo preparar esta versión. Vuelve a intentarlo.")
 
   defp error_reason(reason)
        when reason in [

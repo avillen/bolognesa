@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Setup.Reducers.Save do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
 
@@ -16,7 +17,11 @@ defmodule BolognesaWeb.Setup.Reducers.Save do
         validate_and_save(socket, params)
 
       {:error, :unavailable} ->
-        put_flash(socket, :error, "Servicio temporalmente no disponible. Inténtalo de nuevo.")
+        put_flash(
+          socket,
+          :error,
+          gettext("Servicio temporalmente no disponible. Inténtalo de nuevo.")
+        )
     end
   end
 
@@ -49,7 +54,11 @@ defmodule BolognesaWeb.Setup.Reducers.Save do
         assign(socket, :form, to_form(%{changeset | action: :insert}))
 
       {:error, :unavailable} ->
-        put_flash(socket, :error, "Servicio temporalmente no disponible. Inténtalo de nuevo.")
+        put_flash(
+          socket,
+          :error,
+          gettext("Servicio temporalmente no disponible. Inténtalo de nuevo.")
+        )
     end
   end
 end

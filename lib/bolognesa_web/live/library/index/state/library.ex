@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Library.Index.State.Library do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   alias Bolognesa.Libraries.Domain.Entities.Library
   alias Bolognesa.Libraries.Domain.Entities.Scan
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
@@ -62,7 +63,8 @@ defmodule BolognesaWeb.Library.Index.State.Library do
       name: library.name,
       path: library.path,
       content_type: library.content_type,
-      content_type_label: if(library.content_type == :series, do: "Series", else: "Películas"),
+      content_type_label:
+        if(library.content_type == :series, do: gettext("Series"), else: gettext("Películas")),
       state: state(scan),
       state_label: label(state(scan)),
       active?: scan != nil and Scan.active?(scan),
@@ -74,15 +76,31 @@ defmodule BolognesaWeb.Library.Index.State.Library do
       inspection_summary: summary(counts),
       inspection_failure_reasons: failure_reasons(counts),
       inspection_active?: counts.pending + counts.running > 0,
-      button_label: if(state(scan) == :failed, do: "Reintentar", else: "Escanear")
+      button_label:
+        if(state(scan) == :failed, do: gettext("Reintentar"), else: gettext("Escanear"))
     }
   end
 
   defp summary(counts) do
-    "Análisis: #{counts.pending} pendientes, #{counts.running} en curso, " <>
-      "#{counts.succeeded} correctos, #{counts.failed} análisis técnicos con error" <>
-      if(counts.uninspected > 0, do: ", #{counts.uninspected} sin analizar", else: "")
+    gettext(
+      "Análisis: %{pending}, %{running}, %{succeeded}, %{failed}",
+      pending: ngettext("%{count} pendiente", "%{count} pendientes", counts.pending),
+      running: ngettext("%{count} en curso", "%{count} en curso", counts.running),
+      succeeded: ngettext("%{count} correcto", "%{count} correctos", counts.succeeded),
+      failed:
+        ngettext(
+          "%{count} análisis técnico con error",
+          "%{count} análisis técnicos con error",
+          counts.failed
+        )
+    ) <>
+      uninspected_summary(counts.uninspected)
   end
+
+  defp uninspected_summary(0), do: ""
+
+  defp uninspected_summary(count),
+    do: ngettext(", %{count} sin analizar", ", %{count} sin analizar", count)
 
   defp failure_reasons(counts) do
     counts
@@ -93,47 +111,64 @@ defmodule BolognesaWeb.Library.Index.State.Library do
     end)
   end
 
-  defp inspection_message(:source_changed), do: "El archivo cambió desde el escaneo"
-  defp inspection_message(:source_inaccessible), do: "No se puede acceder al archivo"
-  defp inspection_message(:unsafe_entry), do: "La entrada no se puede analizar de forma segura"
-  defp inspection_message(:unreadable), do: "No se pudo leer el archivo"
-  defp inspection_message(:unsupported), do: "Formato no admitido"
-  defp inspection_message(:timeout), do: "Se agotó el tiempo de análisis"
-  defp inspection_message(:tool_unavailable), do: "Herramienta de análisis no disponible"
-  defp inspection_message(:invalid_output), do: "No se pudieron interpretar los datos técnicos"
-  defp inspection_message(:storage_unavailable), do: "Almacenamiento no disponible"
-  defp inspection_message(:attempts_exhausted), do: "Se agotaron los reintentos"
-  defp inspection_message(:unexpected_failure), do: "Error inesperado durante el análisis"
-  defp inspection_message(_), do: "No se pudo completar el análisis"
+  defp inspection_message(:source_changed), do: gettext("El archivo cambió desde el escaneo")
+  defp inspection_message(:source_inaccessible), do: gettext("No se puede acceder al archivo")
+
+  defp inspection_message(:unsafe_entry),
+    do: gettext("La entrada no se puede analizar de forma segura")
+
+  defp inspection_message(:unreadable), do: gettext("No se pudo leer el archivo")
+  defp inspection_message(:unsupported), do: gettext("Formato no admitido")
+  defp inspection_message(:timeout), do: gettext("Se agotó el tiempo de análisis")
+  defp inspection_message(:tool_unavailable), do: gettext("Herramienta de análisis no disponible")
+
+  defp inspection_message(:invalid_output),
+    do: gettext("No se pudieron interpretar los datos técnicos")
+
+  defp inspection_message(:storage_unavailable), do: gettext("Almacenamiento no disponible")
+  defp inspection_message(:attempts_exhausted), do: gettext("Se agotaron los reintentos")
+
+  defp inspection_message(:unexpected_failure),
+    do: gettext("Error inesperado durante el análisis")
+
+  defp inspection_message(_), do: gettext("No se pudo completar el análisis")
 
   defp state(nil), do: :not_scanned
   defp state(scan), do: scan.state
-  defp label(:not_scanned), do: "Pendiente de escaneo"
-  defp label(:queued), do: "En cola"
-  defp label(:running), do: "Escaneando"
-  defp label(:retrying), do: "Esperando reintento"
-  defp label(:completed), do: "Escaneo completado"
-  defp label(:failed), do: "Escaneo interrumpido"
+  defp label(:not_scanned), do: gettext("Pendiente de escaneo")
+  defp label(:queued), do: gettext("En cola")
+  defp label(:running), do: gettext("Escaneando")
+  defp label(:retrying), do: gettext("Esperando reintento")
+  defp label(:completed), do: gettext("Escaneo completado")
+  defp label(:failed), do: gettext("Escaneo interrumpido")
   defp format_date(nil), do: nil
   defp format_date(date), do: Calendar.strftime(date, "%d/%m/%Y %H:%M UTC")
   defp failure(%Scan{failure_reason: reason}) when reason != nil, do: message(reason)
   defp failure(_), do: nil
-  defp message(:source_inaccessible), do: "No se puede leer la carpeta de origen."
-  defp message(:source_outside_roots), do: "La carpeta está fuera de las ubicaciones permitidas."
-  defp message(:source_changed), do: "La carpeta cambió durante el escaneo. Vuelve a intentarlo."
+  defp message(:source_inaccessible), do: gettext("No se puede leer la carpeta de origen.")
+
+  defp message(:source_outside_roots),
+    do: gettext("La carpeta está fuera de las ubicaciones permitidas.")
+
+  defp message(:source_changed),
+    do: gettext("La carpeta cambió durante el escaneo. Vuelve a intentarlo.")
 
   defp message(:entry_unreadable),
     do:
-      "No se pudo leer todo el contenido de la carpeta. Comprueba los permisos de lectura y pulsa Reintentar."
+      gettext(
+        "No se pudo leer todo el contenido de la carpeta. Comprueba los permisos de lectura y pulsa Reintentar."
+      )
 
   defp message(:unsafe_entry),
-    do: "La carpeta contiene un enlace o una entrada que no se puede escanear."
+    do: gettext("La carpeta contiene un enlace o una entrada que no se puede escanear.")
 
-  defp message(:storage_unavailable), do: "El almacenamiento está temporalmente indisponible."
-  defp message(:timeout), do: "El escaneo superó el tiempo disponible."
+  defp message(:storage_unavailable),
+    do: gettext("El almacenamiento está temporalmente indisponible.")
+
+  defp message(:timeout), do: gettext("El escaneo superó el tiempo disponible.")
 
   defp message(:attempts_exhausted),
-    do: "Se agotaron los intentos automáticos. Puedes reintentar."
+    do: gettext("Se agotaron los intentos automáticos. Puedes reintentar.")
 
-  defp message(_), do: "No se pudo completar el escaneo. Puedes reintentar."
+  defp message(_), do: gettext("No se pudo completar el escaneo. Puedes reintentar.")
 end

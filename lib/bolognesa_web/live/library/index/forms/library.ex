@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Library.Index.Forms.Library do
   @moduledoc "Web input for a library source."
   use Ecto.Schema
+  use Gettext, backend: BolognesaWeb.Gettext
   import Ecto.Changeset
 
   @primary_key false
@@ -18,7 +19,9 @@ defmodule BolognesaWeb.Library.Index.Forms.Library do
     |> validate_length(:name, max: 120)
     |> validate_length(:path, max: 4096)
     |> validate_change(:path, fn :path, path ->
-      if Path.type(path) == :absolute, do: [], else: [path: "debe ser una ruta absoluta"]
+      if Path.type(path) == :absolute,
+        do: [],
+        else: [path: dgettext_noop("errors", "debe ser una ruta absoluta")]
     end)
   end
 end

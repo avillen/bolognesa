@@ -1,41 +1,47 @@
 <Layouts.app flash={@flash} current_scope={@current_scope} active_section={:home}>
   <section id="home-screen" class="mx-auto max-w-5xl">
     <div class="welcome-panel p-7 sm:p-12">
-      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">Inicio</p>
+      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">
+        {gettext("Inicio")}
+      </p>
       <h1
         id="home-welcome"
         class="mt-4 text-4xl font-semibold tracking-tight text-ink sm:text-5xl"
       >
-        Hola, {@admin_name}
+        {gettext("Hola, %{name}", name: @admin_name)}
       </h1>
       <p class="mt-5 max-w-2xl text-base leading-7 text-muted">
-        Configura una carpeta de películas o series para empezar a construir tu biblioteca.
+        {gettext(
+          "Configura una carpeta de películas o series para empezar a construir tu biblioteca."
+        )}
       </p>
       <.link
         navigate={~p"/libraries"}
         id="home-libraries-link"
         class="mt-7 inline-flex min-h-12 items-center rounded-xl bg-accent px-6 py-3 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
-        Configurar bibliotecas <.icon name="hero-arrow-right" class="ml-2 size-4" />
+        {gettext("Configurar bibliotecas")} <.icon name="hero-arrow-right" class="ml-2 size-4" />
       </.link>
       <.link
         navigate={~p"/movies"}
         id="home-movies-link"
         class="ml-0 mt-3 inline-flex min-h-12 items-center rounded-xl border border-accent/40 px-6 py-3 font-semibold text-accent-soft transition hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:ml-3 sm:mt-0"
-      >Ver películas</.link>
+      >{gettext("Ver películas")}</.link>
       <.link
         navigate={~p"/series"}
         id="home-series-link"
         class="ml-3 mt-3 inline-flex min-h-12 items-center rounded-xl border border-accent/40 px-6 py-3 font-semibold text-accent-soft"
-      >Ver series</.link>
+      >{gettext("Ver series")}</.link>
       <div class="mt-10 flex flex-col gap-4 border-t border-border/70 pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p class="text-sm text-muted">Sesión iniciada como {@admin_email}</p>
+        <p class="text-sm text-muted">
+          {gettext("Sesión iniciada como %{email}", email: @admin_email)}
+        </p>
         <.form for={@logout_form} action={~p"/logout"} method="delete" id="logout-form">
           <button
             id="logout-button"
             type="submit"
             class="min-h-11 rounded-xl border border-border-strong px-5 py-2 text-sm font-medium text-ink transition hover:border-accent hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >Cerrar sesión</button>
+          >{gettext("Cerrar sesión")}</button>
         </.form>
       </div>
     </div>

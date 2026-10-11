@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Movie.Review.Reducer.ApplyCandidatesResult do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
 
   @spec call(Phoenix.LiveView.Socket.t(), reference(), term()) :: Phoenix.LiveView.Socket.t()
@@ -12,10 +13,12 @@ defmodule BolognesaWeb.Movie.Review.Reducer.ApplyCandidatesResult do
         {:ok, {:error, :not_configured}} ->
           socket
           |> assign(:searching?, false)
-          |> assign(:feedback, "TMDb sin configurar. Añade TMDB_READ_TOKEN al servidor.")
+          |> assign(:feedback, gettext("TMDb sin configurar. Añade TMDB_READ_TOKEN al servidor."))
 
         _ ->
-          socket |> assign(:searching?, false) |> assign(:feedback, "No se pudo buscar en TMDb.")
+          socket
+          |> assign(:searching?, false)
+          |> assign(:feedback, gettext("No se pudo buscar en TMDb."))
       end
     else
       socket

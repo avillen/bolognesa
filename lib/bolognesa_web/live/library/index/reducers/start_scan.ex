@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream_insert: 3]
 
@@ -36,7 +37,12 @@ defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
       |> assign(:scan_active_ids, MapSet.put(socket.assigns.scan_active_ids, id))
       |> stream_insert(:libraries, row)
     else
-      _ -> assign(socket, :scan_feedback, "Escaneo solicitado. No se pudo actualizar su estado.")
+      _ ->
+        assign(
+          socket,
+          :scan_feedback,
+          gettext("Escaneo solicitado. No se pudo actualizar su estado.")
+        )
     end
   end
 
@@ -48,8 +54,8 @@ defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
   end
 
   defp parse_id(_), do: {:error, :not_found}
-  defp message(:not_found), do: "No se encontró la biblioteca."
-  defp message(:forbidden), do: "No tienes permiso para escanear esta biblioteca."
-  defp message(:scan_in_progress), do: "Esta biblioteca ya tiene un escaneo activo."
-  defp message(_), do: "No se pudo solicitar el escaneo. Vuelve a intentarlo."
+  defp message(:not_found), do: gettext("No se encontró la biblioteca.")
+  defp message(:forbidden), do: gettext("No tienes permiso para escanear esta biblioteca.")
+  defp message(:scan_in_progress), do: gettext("Esta biblioteca ya tiene un escaneo activo.")
+  defp message(_), do: gettext("No se pudo solicitar el escaneo. Vuelve a intentarlo.")
 end

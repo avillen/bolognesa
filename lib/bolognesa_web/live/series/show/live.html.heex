@@ -1,11 +1,13 @@
 <Layouts.app flash={@flash} current_scope={@current_scope} active_section={:series}>
   <section class="mx-auto max-w-5xl space-y-7">
-    <.link navigate={~p"/series"} class="inline-flex min-h-11 items-center text-accent-soft">← Todas las series</.link>
+    <.link navigate={~p"/series"} class="inline-flex min-h-11 items-center text-accent-soft">{gettext(
+      "← Todas las series"
+    )}</.link>
     <p :if={@loading?} id="series-loading" role="status" class="text-muted">
-      Cargando serie…
+      {gettext("Cargando serie…")}
     </p>
     <p :if={@error} id="series-error" role="alert" class="text-red-200">
-      {@error} <button phx-click="retry" class="min-h-11 px-4">Reintentar</button>
+      {@error} <button phx-click="retry" class="min-h-11 px-4">{gettext("Reintentar")}</button>
     </p>
     <div :if={@detail} class="detail-panel">
       <div class="detail-hero">
@@ -15,7 +17,7 @@
             phx-hook="ImageFallback"
             phx-update="ignore"
             src={"https://image.tmdb.org/t/p/w780#{@detail.series.backdrop_path}"}
-            alt={"Imagen de #{@detail.series.title}"}
+            alt={gettext("Imagen de %{value0}", value0: @detail.series.title)}
             class="size-full object-cover"
           />
         </div>
@@ -24,7 +26,7 @@
             <h1 id="series-title" class="text-4xl font-semibold text-ink">
               {@detail.series.title}
             </h1>
-            <p class="mt-3 text-muted">{@detail.series.year || "Año desconocido"}</p>
+            <p class="mt-3 text-muted">{@detail.series.year || gettext("Año desconocido")}</p>
             <p :if={@detail.series.overview} class="mt-6 max-w-3xl leading-7 text-muted">
               {@detail.series.overview}
             </p>
@@ -32,9 +34,11 @@
         </div>
       </div>
       <div class="detail-body">
-        <h2 class="mt-8 text-xl font-semibold text-ink">Temporadas en tu biblioteca</h2>
+        <h2 class="mt-8 text-xl font-semibold text-ink">
+          {gettext("Temporadas en tu biblioteca")}
+        </h2>
         <p :if={@total == 0} id="seasons-empty" class="mt-4 text-muted">
-          No hay temporadas identificadas.
+          {gettext("No hay temporadas identificadas.")}
         </p>
         <div id="season-list" phx-update="stream" class="mt-4 grid gap-4 sm:grid-cols-2">
           <article
@@ -45,8 +49,16 @@
             <.link
               navigate={~p"/series/seasons/#{season.id}"}
               class="inline-flex min-h-11 items-center text-lg font-semibold text-accent-soft"
-            >{if season.number == 0, do: "Especiales", else: "Temporada #{season.number}"}</.link>
-            <p class="text-sm text-muted">{season.episode_count} episodios identificados</p>
+            >{if season.number == 0,
+              do: gettext("Especiales"),
+              else: gettext("Temporada %{value0}", value0: season.number)}</.link>
+            <p class="text-sm text-muted">
+              {ngettext(
+                "%{count} episodio identificado",
+                "%{count} episodios identificados",
+                season.episode_count
+              )}
+            </p>
           </article>
         </div>
       </div>

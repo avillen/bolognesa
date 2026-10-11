@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Library.Index.Reducers.Save do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [stream_insert: 3]
 
@@ -26,7 +27,10 @@ defmodule BolognesaWeb.Library.Index.Reducers.Save do
         |> CancelScanStatuses.call()
         |> assign(:form, to_form(Library.changeset()))
         |> assign(:error, nil)
-        |> assign(:success, "Biblioteca guardada. La carpeta todavía no se ha escaneado.")
+        |> assign(
+          :success,
+          gettext("Biblioteca guardada. La carpeta todavía no se ha escaneado.")
+        )
         |> stream_insert(
           :libraries,
           LibraryState.from_domain(library, %ScanStatus{library_id: library.id})
@@ -48,14 +52,16 @@ defmodule BolognesaWeb.Library.Index.Reducers.Save do
     |> assign(:form, to_form(%{changeset | action: :insert}))
   end
 
-  defp message(:duplicate_source), do: "Esta carpeta ya está registrada."
+  defp message(:duplicate_source), do: gettext("Esta carpeta ya está registrada.")
 
   defp message(:source_inaccessible),
-    do: "No se puede leer la carpeta. Comprueba la ruta y vuelve a intentarlo."
+    do: gettext("No se puede leer la carpeta. Comprueba la ruta y vuelve a intentarlo.")
 
-  defp message(:source_outside_roots), do: "La carpeta está fuera de las ubicaciones permitidas."
-  defp message(:invalid_name), do: "Introduce un nombre válido."
-  defp message(:invalid_content_type), do: "Selecciona películas o series."
-  defp message(:invalid_path), do: "Introduce una ruta absoluta válida."
-  defp message(_), do: "Servicio temporalmente no disponible. Vuelve a intentarlo."
+  defp message(:source_outside_roots),
+    do: gettext("La carpeta está fuera de las ubicaciones permitidas.")
+
+  defp message(:invalid_name), do: gettext("Introduce un nombre válido.")
+  defp message(:invalid_content_type), do: gettext("Selecciona películas o series.")
+  defp message(:invalid_path), do: gettext("Introduce una ruta absoluta válida.")
+  defp message(_), do: gettext("Servicio temporalmente no disponible. Vuelve a intentarlo.")
 end

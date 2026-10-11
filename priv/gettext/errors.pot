@@ -107,3 +107,23 @@ msgstr ""
 
 msgid "must be equal to %{number}"
 msgstr ""
+
+#: lib/bolognesa_web/live/series/review/forms/selection.ex:33
+#, elixir-autogen, elixir-format
+msgid "Selecciona al menos un episodio."
+msgstr ""
+
+#: lib/bolognesa_web/live/series/review/forms/selection.ex:22
+#, elixir-autogen, elixir-format
+msgid "Selecciona episodios válidos sin repetir."
+msgstr ""
+
+#: lib/bolognesa_web/live/setup/forms/admin.ex:27
+#, elixir-autogen, elixir-format
+msgid "debe tener entre 12 y 72 bytes y no contener caracteres nulos"
+msgstr ""
+
+#: lib/bolognesa_web/live/library/index/forms/library.ex:24
+#, elixir-autogen, elixir-format
+msgid "debe ser una ruta absoluta"
+msgstr ""

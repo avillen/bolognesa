@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream: 4, connected?: 1]
 
@@ -38,13 +39,14 @@ defmodule BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses do
   end
 
   defp apply_result(socket, _error) do
-    assign(socket, :scan_feedback, @refresh_failure)
+    assign(socket, :scan_feedback, gettext(@refresh_failure))
   end
 
-  defp clear_refresh_failure(%{assigns: %{scan_feedback: @refresh_failure}} = socket),
-    do: assign(socket, :scan_feedback, nil)
-
-  defp clear_refresh_failure(socket), do: socket
+  defp clear_refresh_failure(socket) do
+    if socket.assigns.scan_feedback == gettext(@refresh_failure),
+      do: assign(socket, :scan_feedback, nil),
+      else: socket
+  end
 
   defp schedule(socket) do
     if connected?(socket) and MapSet.size(socket.assigns.scan_active_ids) > 0,

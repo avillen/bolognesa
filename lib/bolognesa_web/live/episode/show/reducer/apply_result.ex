@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Episode.Show.Reducer.ApplyResult do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream: 4]
 
@@ -18,7 +19,9 @@ defmodule BolognesaWeb.Episode.Show.Reducer.ApplyResult do
           |> stream(:versions, detail.versions, reset: true)
 
         _ ->
-          socket |> assign(:loading?, false) |> assign(:error, "No se encontró el episodio.")
+          socket
+          |> assign(:loading?, false)
+          |> assign(:error, gettext("No se encontró el episodio."))
       end
     else
       socket

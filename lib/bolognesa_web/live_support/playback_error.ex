@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.LiveSupport.PlaybackError do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
 
   @spec call(Phoenix.LiveView.Socket.t(), binary()) :: Phoenix.LiveView.Socket.t()
@@ -9,7 +10,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackError do
       socket
       |> assign(
         :playback_error,
-        "El navegador no pudo reproducir esta versión. Prueba otra disponible."
+        gettext("El navegador no pudo reproducir esta versión. Prueba otra disponible.")
       )
       |> assign(:playback_error_reason, "browser_error")
     else

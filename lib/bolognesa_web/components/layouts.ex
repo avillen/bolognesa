@@ -44,20 +44,20 @@ defmodule BolognesaWeb.Layouts do
           <img src={~p"/images/bolognesa-cat.svg"} width="36" height="36" alt="" />
           <span>boloñesa</span>
         </.link>
-        <nav aria-label="Navegación principal" class="app-navigation">
+        <nav aria-label={gettext("Navegación principal")} class="app-navigation">
           <.link
             navigate={~p"/"}
             class={["app-nav-link", @active_section == :home && "is-active"]}
             aria-current={@active_section == :home && "page"}
           >
-            <.icon name="hero-home" class="size-5" /> <span>Inicio</span>
+            <.icon name="hero-home" class="size-5" /> <span>{gettext("Inicio")}</span>
           </.link>
           <.link
             navigate={~p"/movies"}
             class={["app-nav-link", @active_section == :movies && "is-active"]}
             aria-current={@active_section == :movies && "page"}
           >
-            <.icon name="hero-film" class="size-5" /> <span>Películas</span>
+            <.icon name="hero-film" class="size-5" /> <span>{gettext("Películas")}</span>
           </.link>
           <.link
             navigate={~p"/series"}
@@ -65,25 +65,34 @@ defmodule BolognesaWeb.Layouts do
             class={["app-nav-link", @active_section == :series && "is-active"]}
             aria-current={@active_section == :series && "page"}
           >
-            <.icon name="hero-tv" class="size-5" /> <span>Series</span>
+            <.icon name="hero-tv" class="size-5" /> <span>{gettext("Series")}</span>
           </.link>
-          <p class="app-nav-caption">Mi biblioteca</p>
+          <p class="app-nav-caption">{gettext("Mi biblioteca")}</p>
           <.link
             navigate={~p"/libraries"}
             class={["app-nav-link", @active_section == :libraries && "is-active"]}
             aria-current={@active_section == :libraries && "page"}
           >
-            <.icon name="hero-folder" class="size-5" /> <span>Bibliotecas</span>
+            <.icon name="hero-folder" class="size-5" /> <span>{gettext("Bibliotecas")}</span>
+          </.link>
+          <.link
+            navigate={~p"/settings"}
+            id="nav-settings"
+            class={["app-nav-link", @active_section == :settings && "is-active"]}
+            aria-current={@active_section == :settings && "page"}
+          >
+            <.icon name="hero-cog-6-tooth" class="size-5" /> <span>{gettext("Ajustes")}</span>
           </.link>
           <.link
             navigate={~p"/about"}
             class={["app-nav-link", @active_section == :about && "is-active"]}
             aria-current={@active_section == :about && "page"}
           >
-            <.icon name="hero-information-circle" class="size-5" /> <span>Acerca de</span>
+            <.icon name="hero-information-circle" class="size-5" />
+            <span>{gettext("Acerca de")}</span>
           </.link>
         </nav>
-        <p class="app-sidebar-note">Tu cine, en casa.</p>
+        <p class="app-sidebar-note">{gettext("Tu cine, en casa.")}</p>
       </header>
       <main id="app-content" class="app-content">
         {render_slot(@inner_block)}

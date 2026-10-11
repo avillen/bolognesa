@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Series.Review.Reducer.BeginCorrection do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2, to_form: 2]
   alias BolognesaWeb.Series.Review.Forms.Selection
   alias BolognesaWeb.Series.Review.Reducer.Save
@@ -21,7 +22,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.BeginCorrection do
     else
       _ ->
         assign(socket,
-          feedback: "Selecciona una serie, una temporada y al menos un episodio válido."
+          feedback: gettext("Selecciona una serie, una temporada y al menos un episodio válido.")
         )
     end
   end

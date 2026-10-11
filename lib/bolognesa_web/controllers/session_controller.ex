@@ -15,17 +15,17 @@ defmodule BolognesaWeb.SessionController do
 
       {:error, :invalid_credentials} ->
         conn
-        |> put_flash(:error, "Correo o contraseña incorrectos")
+        |> put_flash(:error, gettext("Correo o contraseña incorrectos"))
         |> redirect(to: "/login")
 
       {:error, :unavailable} ->
-        send_resp(conn, 503, "Servicio temporalmente no disponible")
+        send_resp(conn, 503, gettext("Servicio temporalmente no disponible"))
     end
   end
 
   def create(conn, _params) do
     conn
-    |> put_flash(:error, "Correo o contraseña incorrectos")
+    |> put_flash(:error, gettext("Correo o contraseña incorrectos"))
     |> redirect(to: "/login")
   end
 
@@ -43,7 +43,7 @@ defmodule BolognesaWeb.SessionController do
         |> redirect(to: "/login")
 
       {:error, :unavailable} ->
-        send_resp(conn, 503, "Servicio temporalmente no disponible")
+        send_resp(conn, 503, gettext("Servicio temporalmente no disponible"))
     end
   end
 end

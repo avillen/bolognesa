@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Series.Review.Reducer.LoadSeason do
   @moduledoc false
+  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2, to_form: 2]
   import Phoenix.LiveView, only: [stream: 4]
   alias Bolognesa.Identification
@@ -8,7 +9,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.LoadSeason do
   def call(%{assigns: %{saving?: true}} = socket, _), do: socket
 
   def call(%{assigns: %{series_id: nil}} = socket, _),
-    do: assign(socket, feedback: "Selecciona una serie.")
+    do: assign(socket, feedback: gettext("Selecciona una serie."))
 
   def call(socket, number) do
     actor = socket.assigns.current_scope.actor
