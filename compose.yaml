@@ -1,0 +1,44 @@
+name: bolognesa
+
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: bolognesa
+      POSTGRES_USER: bolognesa
+      POSTGRES_PASSWORD: local-development-only
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bolognesa -d bolognesa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ecto://bolognesa:local-development-only@db:5432/bolognesa
+      SECRET_KEY_BASE: local-development-only-secret-key-base-change-for-real-deployments-0000000000000000000000000000000000000000000000000000000000000000
+      PHX_HOST: localhost
+      PORT: "4000"
+      PUBLIC_PORT: "4000"
+      BIND_IP: 0.0.0.0
+      BOLOGNESA_LAN_HTTP: "true"
+      BOLOGNESA_LIBRARY_ROOTS: /media
+    ports:
+      - "127.0.0.1:${BOLOGNESA_PORT:-4000}:4000"
+    volumes:
+      - type: bind
+        source: ${MEDIA_PATH:-./media}
+        target: /media
+        read_only: true
+    tmpfs:
+      - /transcode:size=512m,uid=65534,gid=65534,mode=0700
+    command: ["sh", "-c", "/app/bin/migrate && exec /app/bin/server"]
+
+volumes:
+  database:
