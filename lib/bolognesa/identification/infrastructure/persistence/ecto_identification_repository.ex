@@ -13,11 +13,12 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.EntryStore
 
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository.JobRecovery
+
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedMovieWriter
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedSeriesWriter
-  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Repo
@@ -205,24 +206,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
 
   @spec reconcile_jobs(DateTime.t()) :: :ok | {:error, :unavailable}
   def reconcile_jobs(now) do
-    cutoff = DateTime.add(now, -60, :second)
-
-    rows =
-      Repo.all(
-        from identification in IdentificationSchema,
-          left_join: job in Oban.Job,
-          on: job.id == identification.job_id,
-          where: identification.state == :pending and not is_nil(identification.job_id),
-          where:
-            is_nil(job.id) or job.state in ["discarded", "cancelled", "completed"] or
-              (job.state == "executing" and job.attempted_at < ^cutoff and
-                 identification.started_at < ^cutoff),
-          order_by: identification.id,
-          limit: 100,
-          select: {identification.media_file_id, identification.token, job.state}
-      )
-
-    Enum.each(rows, fn {file_id, token, state} ->
+    JobRecovery.interrupted(Repo, now)
+    |> Enum.each(fn {file_id, token, state} ->
       reason = if state == "discarded", do: :attempts_exhausted, else: :unexpected_failure
       fail(file_id, token, reason)
     end)

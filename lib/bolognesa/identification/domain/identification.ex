@@ -99,7 +99,7 @@ defmodule Bolognesa.Identification.Domain.Identification do
       {:ok,
        %{
          decision
-         | state: if(ids == [], do: :unmatched, else: :automatic),
+         | state: automatic_state(ids),
            origin: :automatic,
            catalog_entry_ids: ids,
            candidate_data: result.candidate_data,
@@ -131,7 +131,7 @@ defmodule Bolognesa.Identification.Domain.Identification do
       {:ok,
        %{
          decision
-         | state: if(ids == [], do: :manual_unidentified, else: :manual),
+         | state: manual_state(ids),
            origin: :manual,
            observed_revision: revision,
            token: token,
@@ -149,6 +149,11 @@ defmodule Bolognesa.Identification.Domain.Identification do
   end
 
   def correct(_decision, _revision, _token, _ids, _now), do: {:error, :invalid_correction}
+
+  defp automatic_state([]), do: :unmatched
+  defp automatic_state(_ids), do: :automatic
+  defp manual_state([]), do: :manual_unidentified
+  defp manual_state(_ids), do: :manual
 
   defp valid_ids?(ids) when is_list(ids),
     do: Enum.all?(ids, &(is_integer(&1) and &1 > 0)) and Enum.uniq(ids) == ids
