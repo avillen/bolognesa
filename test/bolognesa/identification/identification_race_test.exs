@@ -1,6 +1,11 @@
 defmodule Bolognesa.Identification.IdentificationRaceTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Identification.Application.UseCases.{CorrectIdentification, IdentifyMediaFile}
+
+  alias Bolognesa.Identification.Application.UseCases.{
+    CorrectMovieIdentification,
+    IdentifyMovieFile
+  }
+
   alias Bolognesa.Identification.Domain.ValueObjects.Movies.{MovieCandidate, MovieDetails}
   alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 
@@ -53,13 +58,13 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
       task =
         Task.Supervisor.async_nolink(supervisor, fn ->
           Process.put(:owner, owner)
-          IdentifyMediaFile.call(file.id, token, 1, Repository, BlockedProvider)
+          IdentifyMovieFile.call(file.id, token, 1, Repository, BlockedProvider)
         end)
 
       assert_receive {:search_waiting, worker}, 2_000
 
       assert {:ok, corrected} =
-               CorrectIdentification.call(
+               CorrectMovieIdentification.call(
                  %Actor{id: 1, role: :admin},
                  file.id,
                  choice,

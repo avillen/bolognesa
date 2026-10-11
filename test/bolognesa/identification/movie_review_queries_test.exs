@@ -1,13 +1,13 @@
-defmodule Bolognesa.Identification.ReviewQueriesTest do
+defmodule Bolognesa.Identification.MovieReviewQueriesTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identification
-  alias Bolognesa.Identification.Application.Dto.{ReviewItem, ReviewPage}
+  alias Bolognesa.Identification.Application.Dto.{MovieReviewItem, MovieReviewPage}
   alias Bolognesa.Identification.Domain.Entities.Identification, as: IdentificationDecision
-  alias Bolognesa.Identification.Domain.ReadModels.ReviewFile
   alias Bolognesa.Identification.Domain.ReadModels.ReviewMovie
-  alias Bolognesa.Identification.Infrastructure.Readers.EctoReviewReader
+  alias Bolognesa.Identification.Domain.ReadModels.ReviewMovieFile
+  alias Bolognesa.Identification.Infrastructure.Readers.EctoMovieReviewReader
   alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
@@ -79,16 +79,16 @@ defmodule Bolognesa.Identification.ReviewQueriesTest do
 
     assert {:error, :forbidden} = Identification.list_review_items(nil, 1)
 
-    assert {:ok, %ReviewPage{items: [%ReviewItem{} | _] = items, total: 4}} =
+    assert {:ok, %MovieReviewPage{items: [%MovieReviewItem{} | _] = items, total: 4}} =
              Identification.list_review_items(%Actor{id: 1, role: :admin}, 1)
 
     assert Enum.map(items, & &1.filename) == ["a.mkv", "b.mkv", "c.mkv", "d.mkv"]
     assert List.last(items).movie_title == "Película dudosa"
 
     assert {:ok, {[{%IdentificationDecision{}, file, nil} | _] = entries, 4}} =
-             EctoReviewReader.list_review_items(1)
+             EctoMovieReviewReader.list_review_items(1)
 
-    assert file.__struct__ == ReviewFile
+    assert file.__struct__ == ReviewMovieFile
     assert file.relative_path == "a.mkv"
 
     assert {_, _, %ReviewMovie{id: catalog_entry_id, title: "Película dudosa"}} =

@@ -3,7 +3,7 @@ defmodule Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker do
   use Oban.Worker, queue: :identifications, max_attempts: 3
   require Logger
 
-  alias Bolognesa.Identification.Application.UseCases.IdentifyMediaFile
+  alias Bolognesa.Identification.Application.UseCases.IdentifyMovieFile
   alias Bolognesa.Identification.Application.UseCases.IdentifySeriesFile
   alias Bolognesa.Identification.Infrastructure.Providers.TmdbMovieProvider
   alias Bolognesa.Identification.Infrastructure.Providers.TmdbSeriesProvider
@@ -37,7 +37,7 @@ defmodule Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker do
       when is_integer(id) and id > 0 and is_binary(token) do
     case repository.find_file(id) do
       {:ok, %{content_type: :movie}} ->
-        IdentifyMediaFile.call(id, token, attempt, repository, movie_provider, job.id)
+        IdentifyMovieFile.call(id, token, attempt, repository, movie_provider, job.id)
 
       {:ok, %{content_type: :series}} ->
         IdentifySeriesFile.call(id, token, attempt, repository, series_provider, job.id)

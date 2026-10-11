@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.CorrectIdentificationTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Identification.Application.UseCases.CorrectIdentification
+  alias Bolognesa.Identification.Application.UseCases.CorrectMovieIdentification
   alias Bolognesa.Identification.Domain.Entities.Identification
   alias Bolognesa.Identification.Domain.ValueObjects.Movies.MovieDetails
   alias Bolognesa.Identity.Domain.Entities.Actor
@@ -22,21 +22,21 @@ defmodule Bolognesa.Identification.CorrectIdentificationTest do
     file = fixture()
 
     assert {:error, :forbidden} =
-             CorrectIdentification.call(nil, file.id, :unidentified, Repository, Provider)
+             CorrectMovieIdentification.call(nil, file.id, :unidentified, Repository, Provider)
 
     actor = %Actor{id: 1, role: :admin}
 
     assert {:ok, %Identification{state: :manual, catalog_entry_ids: [catalog_entry_id]}} =
-             CorrectIdentification.call(actor, file.id, {:tmdb, 51}, Repository, Provider)
+             CorrectMovieIdentification.call(actor, file.id, {:tmdb, 51}, Repository, Provider)
 
     assert is_integer(catalog_entry_id)
     assert {:error, :manual_locked} = Repository.retry(file.id)
 
     assert {:ok, %Identification{state: :manual_unidentified, catalog_entry_ids: []}} =
-             CorrectIdentification.call(actor, file.id, :unidentified, Repository, Provider)
+             CorrectMovieIdentification.call(actor, file.id, :unidentified, Repository, Provider)
 
     assert {:error, :invalid_choice} =
-             CorrectIdentification.call(actor, file.id, {:tmdb, 0}, Repository, Provider)
+             CorrectMovieIdentification.call(actor, file.id, {:tmdb, 0}, Repository, Provider)
   end
 
   defp fixture do

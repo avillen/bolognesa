@@ -172,8 +172,8 @@ El progreso se guarda periódicamente y al pausar; cerrar correctamente el naveg
 2. `StartScan`: registra la solicitud de escaneo.
 3. `DiscoverFiles`: descubre y reconcilia archivos.
 4. `InspectMediaFile`: obtiene contenedor, codecs, duración y pistas mediante un adaptador de herramientas multimedia.
-5. `IdentifyMediaFile`: busca candidatos y confirma una coincidencia o deja pendiente la revisión.
-6. `CorrectIdentification`: establece una coincidencia manual protegida.
+5. `IdentifyMovieFile`: busca candidatos para películas y confirma una coincidencia o deja pendiente la revisión.
+6. `CorrectMovieIdentification`: establece una coincidencia manual protegida para películas.
 7. `StartPlayback`: autoriza y prepara la reproducción directa.
 8. Guardar y consultar progreso por usuario y obra.
 

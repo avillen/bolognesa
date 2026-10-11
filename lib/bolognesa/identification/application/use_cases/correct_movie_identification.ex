@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Application.UseCases.CorrectIdentification do
+defmodule Bolognesa.Identification.Application.UseCases.CorrectMovieIdentification do
   @moduledoc "Resolve an identification by an administrator's explicit choice."
   alias Bolognesa.Identification.Domain.Entities.Identification
   alias Bolognesa.Identity

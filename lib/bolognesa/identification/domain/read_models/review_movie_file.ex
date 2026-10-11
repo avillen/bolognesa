@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Domain.ReadModels.ReviewFile do
+defmodule Bolognesa.Identification.Domain.ReadModels.ReviewMovieFile do
   @moduledoc "Physical file facts needed by the identification review."
 
   @type availability :: :available | :missing

@@ -1,9 +1,9 @@
-defmodule Bolognesa.Identification.Application.Dto.ReviewItem do
+defmodule Bolognesa.Identification.Application.Dto.MovieReviewItem do
   @moduledoc "Identification and file details shown in the review list."
 
   alias Bolognesa.Identification.Domain.Entities.Identification
-  alias Bolognesa.Identification.Domain.ReadModels.ReviewFile
   alias Bolognesa.Identification.Domain.ReadModels.ReviewMovie
+  alias Bolognesa.Identification.Domain.ReadModels.ReviewMovieFile
 
   @enforce_keys [
     :file_id,
@@ -23,15 +23,15 @@ defmodule Bolognesa.Identification.Application.Dto.ReviewItem do
           state: Identification.state(),
           needs_review: boolean(),
           failure_reason: binary() | nil,
-          availability: ReviewFile.availability(),
+          availability: ReviewMovieFile.availability(),
           filename: String.t(),
           catalog_entry_id: pos_integer() | nil,
           movie_title: String.t() | nil,
           candidates: Identification.candidate_data()
         }
 
-  @spec from_domain({Identification.t(), ReviewFile.t(), ReviewMovie.t() | nil}) :: t()
-  def from_domain({%Identification{} = decision, %ReviewFile{} = file, movie}) do
+  @spec from_domain({Identification.t(), ReviewMovieFile.t(), ReviewMovie.t() | nil}) :: t()
+  def from_domain({%Identification{} = decision, %ReviewMovieFile{} = file, movie}) do
     {catalog_entry_id, movie_title} = movie_details(movie)
 
     %__MODULE__{

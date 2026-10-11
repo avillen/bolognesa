@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.IdentifyMediaFileTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Identification.Application.UseCases.IdentifyMediaFile
+  alias Bolognesa.Identification.Application.UseCases.IdentifyMovieFile
   alias Bolognesa.Identification.Domain.Entities.Identification
   alias Bolognesa.Identification.Domain.ReadModels.FileToIdentify
   alias Bolognesa.Identification.Domain.ValueObjects.Movies.{MovieCandidate, MovieDetails}
@@ -62,7 +62,7 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
 
     assert beginning_file.__struct__ == FileToIdentify
 
-    assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, Provider)
+    assert :ok = IdentifyMovieFile.call(file.id, token, 1, Repository, Provider)
 
     assert {:ok,
             %{state: :automatic, needs_review?: true, catalog_entry_ids: [catalog_entry_id]} =
@@ -72,12 +72,12 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
     assert identification.__struct__ == Identification
 
     assert is_integer(catalog_entry_id)
-    assert :ok = IdentifyMediaFile.call(file.id, token, 2, Repository, Provider)
+    assert :ok = IdentifyMovieFile.call(file.id, token, 2, Repository, Provider)
   end
 
   test "reanalysis removes automatic associations and ignores the old token" do
     {file, token} = pending_file("Film.mkv")
-    assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, ExactProvider)
+    assert :ok = IdentifyMovieFile.call(file.id, token, 1, Repository, ExactProvider)
     assert {:ok, %{catalog_entry_ids: [_]}} = Repository.get(file.id)
     assert {:ok, pending} = Repository.retry(file.id)
     assert pending.state == :pending
@@ -97,7 +97,7 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
 
   test "matching title without years completes without review" do
     {file, token} = pending_file("Film.mkv")
-    assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, ExactProvider)
+    assert :ok = IdentifyMovieFile.call(file.id, token, 1, Repository, ExactProvider)
 
     assert {:ok, %Identification{state: :automatic, needs_review?: false}} =
              Repository.get(file.id)
@@ -105,7 +105,7 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
 
   test "release-only filename never reaches provider" do
     {file, token} = pending_file("1080p.WEB-DL.x265.mkv")
-    assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, NeverCalledProvider)
+    assert :ok = IdentifyMovieFile.call(file.id, token, 1, Repository, NeverCalledProvider)
     assert {:ok, %{state: :failed, failure_reason: "unusable_name"}} = Repository.get(file.id)
   end
 

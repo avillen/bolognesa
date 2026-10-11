@@ -4,7 +4,7 @@ defmodule Bolognesa.Identification.CorrectSeriesIdentificationTest do
   alias Bolognesa.Identification
 
   alias Bolognesa.Identification.Application.UseCases.{
-    CorrectIdentification,
+    CorrectMovieIdentification,
     CorrectSeriesIdentification,
     GetSeriesSeason,
     IdentifySeriesFile,
@@ -45,7 +45,7 @@ defmodule Bolognesa.Identification.CorrectSeriesIdentificationTest do
     assert {:error, :wrong_content_type} = correct(@actor, movie_file.id, choice)
 
     assert {:error, :wrong_content_type} =
-             CorrectIdentification.call(
+             CorrectMovieIdentification.call(
                @actor,
                file.id,
                :unidentified,

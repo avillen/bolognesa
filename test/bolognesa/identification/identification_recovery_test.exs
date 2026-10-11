@@ -1,7 +1,7 @@
 defmodule Bolognesa.Identification.IdentificationRecoveryTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Identification.Application.UseCases.IdentifyMediaFile
+  alias Bolognesa.Identification.Application.UseCases.IdentifyMovieFile
   alias Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker
 
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
@@ -82,18 +82,18 @@ defmodule Bolognesa.Identification.IdentificationRecoveryTest do
 
   test "permanent provider error is visible and retry gives a new token" do
     {file, token} = fixture()
-    assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, NoTokenProvider)
+    assert :ok = IdentifyMovieFile.call(file.id, token, 1, Repository, NoTokenProvider)
     assert {:ok, %{state: :failed, failure_reason: "not_configured"}} = Repository.get(file.id)
     assert {:ok, %{state: :pending, token: new_token}} = Repository.retry(file.id)
     refute token == new_token
-    assert :ok = IdentifyMediaFile.call(file.id, token, 2, Repository, NoTokenProvider)
+    assert :ok = IdentifyMovieFile.call(file.id, token, 2, Repository, NoTokenProvider)
     assert {:ok, %{state: :pending}} = Repository.get(file.id)
   end
 
   test "revision change makes a late job stale" do
     {file, token} = fixture()
     Repo.update!(MediaFileSchema.changeset(file, %{revision: 2}))
-    assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, NoTokenProvider)
+    assert :ok = IdentifyMovieFile.call(file.id, token, 1, Repository, NoTokenProvider)
     assert {:ok, %{state: :pending}} = Repository.get(file.id)
   end
 

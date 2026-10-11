@@ -3,7 +3,7 @@ defmodule Bolognesa.Identification.Infrastructure.Providers.TmdbMovieProvider do
   @behaviour Bolognesa.Identification.Application.Ports.Providers.MovieProvider
 
   alias Bolognesa.Identification.Infrastructure.Providers.TmdbClient
-  alias Bolognesa.Identification.Infrastructure.Providers.TmdbResponse
+  alias Bolognesa.Identification.Infrastructure.Providers.TmdbMovieResponse
 
   @impl true
   def search(query, year), do: search(query, year, [])
@@ -16,7 +16,7 @@ defmodule Bolognesa.Identification.Infrastructure.Providers.TmdbMovieProvider do
     params = if is_integer(year), do: Keyword.put(params, :year, year), else: params
 
     with {:ok, body} <- TmdbClient.get("/search/movie", params, opts) do
-      TmdbResponse.search(body)
+      TmdbMovieResponse.search(body)
     end
   end
 
@@ -28,7 +28,7 @@ defmodule Bolognesa.Identification.Infrastructure.Providers.TmdbMovieProvider do
           | {:error, Bolognesa.Identification.Application.Ports.Providers.MovieProvider.reason()}
   def details(id, opts) when is_integer(id) and id > 0 do
     with {:ok, body} <- TmdbClient.get("/movie/#{id}", [language: "es-ES"], opts),
-         {:ok, details} <- TmdbResponse.details(body) do
+         {:ok, details} <- TmdbMovieResponse.details(body) do
       if details.provider_id == id, do: {:ok, details}, else: {:error, :invalid_response}
     end
   end

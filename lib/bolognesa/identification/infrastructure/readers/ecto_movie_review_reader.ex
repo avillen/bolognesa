@@ -1,10 +1,10 @@
-defmodule Bolognesa.Identification.Infrastructure.Readers.EctoReviewReader do
+defmodule Bolognesa.Identification.Infrastructure.Readers.EctoMovieReviewReader do
   @moduledoc false
-  @behaviour Bolognesa.Identification.Application.Ports.Readers.ReviewReader
+  @behaviour Bolognesa.Identification.Application.Ports.Readers.MovieReviewReader
 
   import Ecto.Query
 
-  alias Bolognesa.Identification.Domain.ReadModels.{ReviewFile, ReviewMovie}
+  alias Bolognesa.Identification.Domain.ReadModels.{ReviewMovie, ReviewMovieFile}
   alias Bolognesa.Identification.Infrastructure.Repositories.IdentificationMapper
   alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
@@ -51,7 +51,7 @@ defmodule Bolognesa.Identification.Infrastructure.Readers.EctoReviewReader do
       Enum.map(rows, fn {identification, file, movie} ->
         {
           IdentificationMapper.to_domain(identification, if(movie, do: [movie.id], else: [])),
-          %ReviewFile{
+          %ReviewMovieFile{
             id: file.id,
             relative_path: file.relative_path,
             availability: file.availability

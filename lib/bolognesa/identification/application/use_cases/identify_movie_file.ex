@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Application.UseCases.IdentifyMediaFile do
+defmodule Bolognesa.Identification.Application.UseCases.IdentifyMovieFile do
   @moduledoc "Identify a pending file, with provider I/O outside database transactions."
   alias Bolognesa.Identification.Domain.ValueObjects.Movies.TitleHint
 

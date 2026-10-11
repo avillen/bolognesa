@@ -1,4 +1,4 @@
-defmodule Bolognesa.Identification.Infrastructure.Providers.TmdbResponse do
+defmodule Bolognesa.Identification.Infrastructure.Providers.TmdbMovieResponse do
   @moduledoc false
 
   alias Bolognesa.Identification.Domain.ValueObjects.Movies.{MovieCandidate, MovieDetails}

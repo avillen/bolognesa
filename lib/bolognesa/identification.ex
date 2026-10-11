@@ -1,25 +1,25 @@
 defmodule Bolognesa.Identification do
   @moduledoc "Public identification and manual correction API."
 
-  alias Bolognesa.Identification.Application.Dto.ReviewPage
+  alias Bolognesa.Identification.Application.Dto.MovieReviewPage
   alias Bolognesa.Identification.Application.Dto.SeriesReviewItem
   alias Bolognesa.Identification.Application.Dto.SeriesReviewPage
   alias Bolognesa.Identification.Application.Ports.Providers.SeriesProvider
-  alias Bolognesa.Identification.Application.UseCases.CorrectIdentification
+  alias Bolognesa.Identification.Application.UseCases.CorrectMovieIdentification
   alias Bolognesa.Identification.Application.UseCases.CorrectSeriesIdentification
   alias Bolognesa.Identification.Application.UseCases.GetSeriesReviewItem
   alias Bolognesa.Identification.Application.UseCases.GetSeriesSeason
-  alias Bolognesa.Identification.Application.UseCases.ListReviewItems
+  alias Bolognesa.Identification.Application.UseCases.ListMovieReviewItems
   alias Bolognesa.Identification.Application.UseCases.ListSeriesReviewItems
   alias Bolognesa.Identification.Application.UseCases.RetryIdentification
-  alias Bolognesa.Identification.Application.UseCases.SearchCandidates
+  alias Bolognesa.Identification.Application.UseCases.SearchMovieCandidates
   alias Bolognesa.Identification.Application.UseCases.SearchSeriesCandidates
   alias Bolognesa.Identification.Domain.Entities.Identification, as: IdentificationDecision
   alias Bolognesa.Identification.Domain.ValueObjects.Series.SeasonDetails
   alias Bolognesa.Identification.Domain.ValueObjects.Series.SeriesCandidate
   alias Bolognesa.Identification.Infrastructure.Providers.TmdbMovieProvider
   alias Bolognesa.Identification.Infrastructure.Providers.TmdbSeriesProvider
-  alias Bolognesa.Identification.Infrastructure.Readers.EctoReviewReader
+  alias Bolognesa.Identification.Infrastructure.Readers.EctoMovieReviewReader
   alias Bolognesa.Identification.Infrastructure.Readers.EctoSeriesReviewReader
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoRequestWriter
@@ -66,7 +66,7 @@ defmodule Bolognesa.Identification do
           {:ok, IdentificationDecision.t()} | {:error, atom()}
   def correct(actor, file_id, choice),
     do:
-      CorrectIdentification.call(
+      CorrectMovieIdentification.call(
         actor,
         file_id,
         choice,
@@ -80,12 +80,13 @@ defmodule Bolognesa.Identification do
     do: RetryIdentification.call(actor, file_id, EctoIdentificationRepository)
 
   @spec list_review_items(Actor.t(), pos_integer()) ::
-          {:ok, ReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}
-  def list_review_items(actor, page), do: ListReviewItems.call(actor, page, EctoReviewReader)
+          {:ok, MovieReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}
+  def list_review_items(actor, page),
+    do: ListMovieReviewItems.call(actor, page, EctoMovieReviewReader)
 
   @spec search_candidates(Actor.t(), binary()) :: {:ok, list()} | {:error, atom()}
   def search_candidates(actor, query),
-    do: SearchCandidates.call(actor, query, TmdbMovieProvider)
+    do: SearchMovieCandidates.call(actor, query, TmdbMovieProvider)
 
   @type request_entry :: %{
           required(:file_id) => pos_integer(),
