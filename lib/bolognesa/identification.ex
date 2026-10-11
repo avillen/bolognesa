@@ -1,16 +1,50 @@
 defmodule Bolognesa.Identification do
   @moduledoc "Public identification and manual correction API."
   alias Bolognesa.Identification.Application.CorrectIdentification
+  alias Bolognesa.Identification.Application.CorrectSeriesIdentification
   alias Bolognesa.Identification.Application.Dto.ReviewPage
+  alias Bolognesa.Identification.Application.GetSeriesSeason
   alias Bolognesa.Identification.Application.ListReviewItems
+  alias Bolognesa.Identification.Application.Ports.SeriesProvider
   alias Bolognesa.Identification.Application.RetryIdentification
   alias Bolognesa.Identification.Application.SearchCandidates
+  alias Bolognesa.Identification.Application.SearchSeriesCandidates
   alias Bolognesa.Identification.Domain.Identification, as: IdentificationDecision
+  alias Bolognesa.Identification.Domain.SeasonDetails
+  alias Bolognesa.Identification.Domain.SeriesCandidate
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader
   alias Bolognesa.Identification.Infrastructure.TmdbMovieProvider
+  alias Bolognesa.Identification.Infrastructure.TmdbSeriesProvider
   alias Bolognesa.Identity.Domain.Actor
+
+  @spec correct_series(Actor.t(), pos_integer(), CorrectSeriesIdentification.choice()) ::
+          {:ok, IdentificationDecision.t()} | {:error, CorrectSeriesIdentification.reason()}
+  def correct_series(actor, file_id, choice),
+    do:
+      CorrectSeriesIdentification.call(
+        actor,
+        file_id,
+        choice,
+        EctoIdentificationRepository,
+        series_provider()
+      )
+
+  @spec search_series_candidates(Actor.t(), binary()) ::
+          {:ok, [SeriesCandidate.t()]}
+          | {:error, :forbidden | :invalid_query | SeriesProvider.reason()}
+  def search_series_candidates(actor, query),
+    do: SearchSeriesCandidates.call(actor, query, series_provider())
+
+  @spec series_season(Actor.t(), pos_integer(), non_neg_integer()) ::
+          {:ok, SeasonDetails.t()}
+          | {:error, :forbidden | :invalid_selection | SeriesProvider.reason()}
+  def series_season(actor, id, number),
+    do: GetSeriesSeason.call(actor, id, number, series_provider())
+
+  defp series_provider,
+    do: Application.get_env(:bolognesa, :series_provider_adapter, TmdbSeriesProvider)
 
   @spec correct(Actor.t(), pos_integer(), :unidentified | {:tmdb, pos_integer()}) ::
           {:ok, IdentificationDecision.t()} | {:error, atom()}

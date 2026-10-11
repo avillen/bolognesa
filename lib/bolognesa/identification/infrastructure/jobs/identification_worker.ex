@@ -4,8 +4,10 @@ defmodule Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker do
   require Logger
 
   alias Bolognesa.Identification.Application.IdentifyMediaFile
+  alias Bolognesa.Identification.Application.IdentifySeriesFile
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository
   alias Bolognesa.Identification.Infrastructure.TmdbMovieProvider
+  alias Bolognesa.Identification.Infrastructure.TmdbSeriesProvider
 
   @impl Oban.Worker
   def timeout(_job), do: 30_000
@@ -13,24 +15,46 @@ defmodule Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker do
   @impl Oban.Worker
   def perform(job) do
     provider = Application.get_env(:bolognesa, :movie_provider_adapter, TmdbMovieProvider)
-    perform(job, EctoIdentificationRepository, provider)
+
+    series_provider =
+      Application.get_env(:bolognesa, :series_provider_adapter, TmdbSeriesProvider)
+
+    perform(job, EctoIdentificationRepository, provider, series_provider)
   end
 
   @spec perform(Oban.Job.t(), module(), module()) :: :ok | {:error, atom()} | {:cancel, atom()}
+  def perform(job, repository, provider),
+    do: perform(job, repository, provider, TmdbSeriesProvider)
+
+  @spec perform(Oban.Job.t(), module(), module(), module()) ::
+          :ok | {:error, atom()} | {:cancel, atom()}
   def perform(
         %Oban.Job{args: %{"file_id" => id, "token" => token}, attempt: attempt} = job,
         repository,
-        provider
+        movie_provider,
+        series_provider
       )
       when is_integer(id) and id > 0 and is_binary(token) do
-    IdentifyMediaFile.call(id, token, attempt, repository, provider, job.id)
+    case repository.find_file(id) do
+      {:ok, %{content_type: :movie}} ->
+        IdentifyMediaFile.call(id, token, attempt, repository, movie_provider, job.id)
+
+      {:ok, %{content_type: :series}} ->
+        IdentifySeriesFile.call(id, token, attempt, repository, series_provider, job.id)
+
+      {:error, :not_found} ->
+        :ok
+
+      {:error, :unavailable} ->
+        {:error, :unavailable}
+    end
   rescue
     _ -> unexpected_failure(id, job.id, attempt)
   catch
     _, _ -> unexpected_failure(id, job.id, attempt)
   end
 
-  def perform(_job, _repository, _provider), do: {:cancel, :invalid_job}
+  def perform(_, _, _, _), do: {:cancel, :invalid_job}
 
   defp unexpected_failure(id, job_id, attempt) do
     Logger.warning("Identification job failed",

@@ -11,13 +11,19 @@ defmodule Bolognesa.Identification.Application.CorrectIdentification do
           module()
         ) ::
           {:ok, Identification.t()}
-          | {:error, :forbidden | :not_found | :unavailable | :invalid_choice}
+          | {:error,
+             :forbidden | :not_found | :unavailable | :invalid_choice | :wrong_content_type}
   def call(actor, file_id, choice, repository, provider) do
     with :ok <- Identity.authorize(actor, :admin),
+         {:ok, file} <- repository.find_file(file_id),
+         :ok <- movie_file(file),
          {:ok, details} <- details(choice, provider) do
       repository.correct(file_id, details)
     end
   end
+
+  defp movie_file(%{content_type: :movie}), do: :ok
+  defp movie_file(_), do: {:error, :wrong_content_type}
 
   defp details(:unidentified, _provider), do: {:ok, :unidentified}
 

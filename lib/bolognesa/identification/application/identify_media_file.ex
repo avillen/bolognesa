@@ -10,6 +10,7 @@ defmodule Bolognesa.Identification.Application.IdentifyMediaFile do
     case repository.begin_identification(file_id, token, job_id) do
       {:ok, :stale} -> :ok
       {:error, :unavailable} -> {:error, :unavailable}
+      {:ok, %{content_type: :series}} -> {:error, :wrong_content_type}
       {:ok, file} -> identify(file_id, token, attempt, repository, provider, file)
     end
   end

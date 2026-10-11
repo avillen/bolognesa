@@ -4,19 +4,125 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
 
   @behaviour Bolognesa.Identification.Application.Ports.IdentificationRepository
 
-  alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
-  alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
-  alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedMovieWriter
-  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
-  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-
   alias Bolognesa.Identification.Domain.FileToIdentify
   alias Bolognesa.Identification.Domain.Identification
   alias Bolognesa.Identification.Domain.MovieCandidate
   alias Bolognesa.Identification.Domain.MovieDetails
-
+  alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
+  alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
+  alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedMovieWriter
+  alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedSeriesWriter
   alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Repo
+
+  @impl true
+  def find_file(id) do
+    case Repo.get(MediaFileSchema, id, log: false) do
+      %{availability: :available} = file -> {:ok, file_projection(file)}
+      _ -> {:error, :not_found}
+    end
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  @impl true
+  def complete_series(file_id, token, candidates, selection, reason) do
+    transaction(fn ->
+      case current(file_id, token) do
+        {:ok, identification, file} when identification.state == :pending ->
+          complete_series_current(identification, file, candidates, selection, reason)
+
+        _ ->
+          {:ok, :stale}
+      end
+    end)
+  end
+
+  @impl true
+  def correct_series(file_id, expected_revision, choice) do
+    transaction(fn ->
+      file = Repo.one(from row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE")
+      correct_series_current(file, expected_revision, choice)
+    end)
+  end
+
+  defp complete_series_current(identification, file, candidates, selection, reason) do
+    if file_projection(file).content_type == :series do
+      ids = if selection, do: IdentifiedSeriesWriter.upsert!(selection), else: []
+
+      Repo.update!(
+        IdentificationSchema.changeset(identification, %{
+          state: if(ids == [], do: :unmatched, else: :automatic),
+          origin: :automatic,
+          needs_review: ids == [],
+          failure_reason: if(reason, do: Atom.to_string(reason), else: nil),
+          candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
+          finished_at: DateTime.utc_now()
+        }),
+        log: false
+      )
+
+      replace_entries!(identification.id, ids)
+      :ok
+    else
+      {:ok, :stale}
+    end
+  end
+
+  defp correct_series_current(nil, _revision, _choice), do: {:error, :not_found}
+
+  defp correct_series_current(file, expected_revision, choice) do
+    cond do
+      file.availability != :available -> {:error, :not_found}
+      file.revision != expected_revision -> {:error, :source_changed}
+      file_projection(file).content_type != :series -> {:error, :wrong_content_type}
+      true -> save_series_correction(file, choice)
+    end
+  end
+
+  defp save_series_correction(file, choice) do
+    existing =
+      Repo.one(
+        from row in IdentificationSchema, where: row.media_file_id == ^file.id, lock: "FOR UPDATE"
+      )
+
+    ids = if choice == :unidentified, do: [], else: IdentifiedSeriesWriter.upsert!(choice)
+
+    row =
+      Repo.insert_or_update!(
+        IdentificationSchema.changeset(existing || %IdentificationSchema{}, %{
+          media_file_id: file.id,
+          observed_revision: file.revision,
+          token: Ecto.UUID.generate(),
+          state: if(ids == [], do: :manual_unidentified, else: :manual),
+          origin: :manual,
+          needs_review: false,
+          failure_reason: nil,
+          candidate_data: %{"items" => []},
+          job_id: nil,
+          started_at: nil,
+          finished_at: DateTime.utc_now()
+        }),
+        log: false
+      )
+
+    replace_entries!(row.id, ids)
+    {:ok, IdentificationMapper.to_domain(row, ids)}
+  end
+
+  defp file_projection(file) do
+    library = Repo.get!(LibrarySchema, file.library_id, log: false)
+
+    %FileToIdentify{
+      relative_path: file.relative_path,
+      revision: file.revision,
+      content_type: library.content_type
+    }
+  end
 
   @spec get(pos_integer()) ::
           {:ok, Identification.t()} | {:error, :not_found | :unavailable}
@@ -32,6 +138,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
 
   @spec begin_identification(pos_integer(), binary(), integer() | nil) ::
           {:ok, :stale} | {:ok, FileToIdentify.t()} | {:error, :unavailable}
+  @impl true
   def begin_identification(file_id, token, job_id) do
     transaction(fn ->
       case current(file_id, token) do
@@ -46,11 +153,12 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
 
   @spec complete(pos_integer(), binary(), [MovieCandidate.t()], MovieDetails.t() | nil, boolean()) ::
           :ok | {:ok, :stale} | {:error, :unavailable}
+  @impl true
   def complete(file_id, token, candidates, details, needs_review) do
     transaction(fn ->
       case current(file_id, token) do
-        {:ok, identification, _file} when identification.state == :pending ->
-          complete_pending_identification(identification, candidates, details, needs_review)
+        {:ok, identification, file} when identification.state == :pending ->
+          complete_movie_current(identification, file, candidates, details, needs_review)
 
         _ ->
           {:ok, :stale}
@@ -59,6 +167,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   end
 
   @spec fail(pos_integer(), binary(), atom()) :: :ok | {:ok, :stale} | {:error, :unavailable}
+  @impl true
   def fail(file_id, token, reason) do
     transaction(fn ->
       case current(file_id, token) do
@@ -82,6 +191,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
 
   @spec correct(pos_integer(), :unidentified | MovieDetails.t()) ::
           {:ok, Identification.t()} | {:error, :not_found | :unavailable}
+  @impl true
   def correct(file_id, choice) do
     transaction(fn ->
       file =
@@ -99,6 +209,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
 
   @spec retry(pos_integer()) ::
           {:ok, Identification.t()} | {:error, :not_found | :manual_locked | :unavailable}
+  @impl true
   def retry(file_id) do
     transaction(fn ->
       file =
@@ -163,7 +274,13 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     attrs = %{started_at: DateTime.utc_now()}
     attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
     Repo.update!(IdentificationSchema.changeset(identification, attrs), log: false)
-    {:ok, %FileToIdentify{relative_path: file.relative_path}}
+    {:ok, file_projection(file)}
+  end
+
+  defp complete_movie_current(identification, file, candidates, details, needs_review) do
+    if file_projection(file).content_type == :movie,
+      do: complete_pending_identification(identification, candidates, details, needs_review),
+      else: {:ok, :stale}
   end
 
   defp complete_pending_identification(identification, candidates, details, needs_review) do
@@ -189,6 +306,12 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   end
 
   defp correct_file(file, file_id, choice) do
+    if file_projection(file).content_type == :movie,
+      do: correct_movie_file(file, file_id, choice),
+      else: {:error, :wrong_content_type}
+  end
+
+  defp correct_movie_file(file, file_id, choice) do
     identification =
       Repo.one(
         from row in IdentificationSchema,
@@ -278,7 +401,9 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
           identification_id: identification_id,
           catalog_entry_id: id,
           position: position
-        }, log: false)
+        },
+        log: false
+      )
     end)
   end
 
@@ -291,5 +416,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
     Ecto.ConstraintError -> {:error, :unavailable}
+    Ecto.InvalidChangesetError -> {:error, :unavailable}
+    MatchError -> {:error, :unavailable}
   end
 end
