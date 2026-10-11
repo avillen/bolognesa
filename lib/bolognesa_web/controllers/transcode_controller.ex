@@ -18,12 +18,12 @@ defmodule BolognesaWeb.TranscodeController do
   end
 
   defp serve(conn, params, name, mime_type) do
-    with {:ok, movie_id} <- positive_id(params["movie_id"]),
+    with {:ok, catalog_entry_id} <- positive_id(params["movie_id"]),
          {:ok, file_id} <- positive_id(params["file_id"]),
          {:ok, session} <-
            Playback.compatible_session(
              conn.assigns.current_scope.actor,
-             movie_id,
+             catalog_entry_id,
              file_id,
              params["session_id"]
            ),

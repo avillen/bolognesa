@@ -4,21 +4,21 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
 
   import Ecto.Query
 
+  alias Bolognesa.Persistence.CatalogEntrySchema
   alias Bolognesa.Persistence.IdentificationSchema
   alias Bolognesa.Persistence.InspectionSchema
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
-  alias Bolognesa.Persistence.MovieSchema
   alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Playback.Domain.TechnicalTrack
   alias Bolognesa.Repo
 
   @impl true
-  def find_source(movie_id, file_id) do
+  def find_source(catalog_entry_id, file_id) do
     query =
-      from movie in MovieSchema,
+      from entry in CatalogEntrySchema,
         join: identification in IdentificationSchema,
-        on: identification.movie_id == movie.id,
+        on: identification.catalog_entry_id == entry.id,
         join: file in MediaFileSchema,
         on: file.id == identification.media_file_id,
         join: library in LibrarySchema,
@@ -28,7 +28,7 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
           inspection.media_file_id == file.id and inspection.observed_revision == file.revision and
             inspection.state == :succeeded,
         where:
-          movie.id == ^movie_id and file.id == ^file_id and
+          entry.id == ^catalog_entry_id and file.id == ^file_id and
             identification.state in [:automatic, :manual],
         select: %{
           path: library.path,

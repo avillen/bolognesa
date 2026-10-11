@@ -5,7 +5,8 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
   import Ecto.Query
 
   alias Bolognesa.Catalog.Domain.MovieVersion
-  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieMapper
+  alias Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader.MovieMapper
+  alias Bolognesa.Persistence.CatalogEntrySchema
   alias Bolognesa.Persistence.IdentificationSchema
   alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Persistence.MovieSchema
@@ -25,22 +26,26 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
     rows =
       Repo.all(
         from(movie in filtered,
+          join: entry in CatalogEntrySchema,
+          on: entry.id == movie.id and entry.kind == :movie,
           left_join: identification in IdentificationSchema,
-          on: identification.movie_id == movie.id,
+          on: identification.catalog_entry_id == movie.id,
           left_join: file in MediaFileSchema,
           on: file.id == identification.media_file_id,
-          group_by: movie.id,
+          group_by: [movie.id, entry.id],
           order_by: [asc: movie.title, asc: movie.id],
           limit: @page_size,
           offset: ^offset,
-          select: {movie, count(file.id), filter(count(file.id), file.availability == :available)}
+          select:
+            {movie, entry, count(file.id),
+             filter(count(file.id), file.availability == :available)}
         ),
         log: false
       )
 
     entries =
-      Enum.map(rows, fn {movie, version_count, available_count} ->
-        {MovieMapper.to_movie(movie), version_count, available_count}
+      Enum.map(rows, fn {movie, entry, version_count, available_count} ->
+        {MovieMapper.to_movie(movie, entry), version_count, available_count}
       end)
 
     {:ok, {entries, total}}
@@ -51,17 +56,25 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
 
   @impl true
   def get_movie(id) do
-    case Repo.get(MovieSchema, id) do
+    case Repo.one(
+           from(movie in MovieSchema,
+             join: entry in CatalogEntrySchema,
+             on: entry.id == movie.id and entry.kind == :movie,
+             where: movie.id == ^id,
+             select: {movie, entry}
+           ),
+           log: false
+         ) do
       nil ->
         {:error, :not_found}
 
-      movie ->
+      {movie, entry} ->
         versions =
           Repo.all(
             from file in MediaFileSchema,
               join: identification in IdentificationSchema,
               on: identification.media_file_id == file.id,
-              where: identification.movie_id == ^id,
+              where: identification.catalog_entry_id == ^id,
               order_by: file.id,
               select: {file, identification}
           )
@@ -77,7 +90,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
             }
           end)
 
-        {:ok, {MovieMapper.to_movie(movie), entries}}
+        {:ok, {MovieMapper.to_movie(movie, entry), entries}}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}

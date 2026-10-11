@@ -56,6 +56,25 @@ defmodule Bolognesa.Identification.IdentificationRecoveryTest do
              Repository.get(file.id)
   end
 
+  test "a job queued before manual correction keeps its arguments and is safely discarded" do
+    {file, token} = fixture()
+
+    job =
+      Repo.insert!(
+        Oban.Job.new(%{file_id: file.id, token: token},
+          worker: IdentificationWorker,
+          queue: :identifications
+        )
+      )
+
+    assert {:ok, corrected} = Repository.correct(file.id, :unidentified)
+    job = Repo.get!(Oban.Job, job.id)
+    assert job.args == %{"file_id" => file.id, "token" => token}
+    assert :ok = IdentificationWorker.perform(job)
+    assert {:ok, current} = Repository.get(file.id)
+    assert current == corrected
+  end
+
   defp fixture do
     library =
       Repo.insert!(

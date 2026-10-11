@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.TranscodeControllerTest do
   use BolognesaWeb.ConnCase, async: false
+  alias Bolognesa.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identity
   alias Bolognesa.Infrastructure.LocalSourcePath
@@ -52,12 +53,7 @@ defmodule BolognesaWeb.TranscodeControllerTest do
     {:ok, stat} = File.stat(original, time: :posix)
 
     movie =
-      Repo.insert!(
-        MovieSchema.changeset(
-          %MovieSchema{},
-          %{provider: :tmdb, provider_id: 991, title: "Fixture"}
-        )
-      )
+      Repo.insert!(movie_changeset(%{provider: :tmdb, provider_id: 991, title: "Fixture"}))
 
     library =
       Repo.insert!(
@@ -82,7 +78,7 @@ defmodule BolognesaWeb.TranscodeControllerTest do
       Repo.insert!(
         IdentificationSchema.changeset(%IdentificationSchema{}, %{
           media_file_id: file.id,
-          movie_id: movie.id,
+          catalog_entry_id: movie.id,
           observed_revision: file.revision,
           token: Ecto.UUID.generate(),
           state: :manual,
@@ -107,6 +103,18 @@ defmodule BolognesaWeb.TranscodeControllerTest do
     end)
 
     assert {:ok, session} = Playback.start_compatible(actor, movie.id, file.id, 0, :video)
+
+    for {request_actor, entry_id, file_id} <- [
+          {%{actor | id: actor.id + 1}, movie.id, file.id},
+          {actor, movie.id + 1, file.id},
+          {actor, movie.id, file.id + 1}
+        ] do
+      assert {:error, :not_found} =
+               Playback.compatible_session(request_actor, entry_id, file_id, session.id)
+
+      assert {:ok, ^session} = TranscodeManager.lookup(session.id)
+    end
+
     File.write!(Path.join(session.directory, "seg-000000.ts"), "synthetic segment")
 
     File.write!(
@@ -122,9 +130,32 @@ defmodule BolognesaWeb.TranscodeControllerTest do
     segment = get(init_test_session(conn, user_token: token), path <> "/seg-000000.ts")
     assert response(segment, 200) == "synthetic segment"
 
+    Repo.update!(MediaFileSchema.changeset(file, %{revision: file.revision + 1}))
+
+    assert {:error, :source_changed} =
+             Playback.compatible_session(actor, movie.id, file.id, session.id)
+
+    assert {:error, :not_found} = TranscodeManager.lookup(session.id)
+    Repo.update!(MediaFileSchema.changeset(file, %{revision: file.revision}))
+    assert {:ok, next_session} = Playback.start_compatible(actor, movie.id, file.id, 0, :video)
+    File.write!(Path.join(next_session.directory, "seg-000000.ts"), "synthetic segment")
+    path = "/movies/#{movie.id}/media/#{file.id}/hls/#{next_session.id}"
+
     Repo.delete!(identification)
     denied = get(init_test_session(conn, user_token: token), path <> "/seg-000000.ts")
     assert response(denied, 404) == ""
-    assert {:error, :not_found} = TranscodeManager.lookup(session.id)
+    assert {:error, :not_found} = TranscodeManager.lookup(next_session.id)
+  end
+
+  defp movie_changeset(attrs) do
+    entry =
+      Repo.insert!(
+        CatalogEntrySchema.changeset(
+          %CatalogEntrySchema{},
+          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
+        )
+      )
+
+    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
   end
 end

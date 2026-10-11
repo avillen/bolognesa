@@ -1,5 +1,6 @@
 defmodule Bolognesa.Catalog.CatalogQueriesTest do
   use Bolognesa.DataCase, async: false
+  alias Bolognesa.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Catalog
   alias Bolognesa.Catalog.Application.Dto.MovieDetail
@@ -17,22 +18,6 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
 
-  test "upsert returns a persisted movie and reuses its provider identity" do
-    attrs = %{provider: :tmdb, provider_id: 425, title: " La película "}
-
-    assert {:ok, first_id} =
-             Repo.transaction(fn -> Catalog.upsert_in_transaction!(Repo, attrs) end)
-
-    assert first_id > 0
-    assert Repo.get!(MovieSchema, first_id).title == "La película"
-
-    assert {:ok, same_id} =
-             Repo.transaction(fn -> Catalog.upsert_in_transaction!(Repo, attrs) end)
-
-    assert same_id == first_id
-    assert Repo.aggregate(MovieSchema, :count) == 1
-  end
-
   test "groups physical versions and retains movies with missing files" do
     actor = %Actor{id: 1, role: :admin}
 
@@ -43,7 +28,7 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
 
     movie =
       Repo.insert!(
-        MovieSchema.changeset(%MovieSchema{}, %{
+        movie_changeset(%{
           provider: :tmdb,
           provider_id: 87,
           title: "Mi pelicula"
@@ -66,7 +51,7 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
       Repo.insert!(
         IdentificationSchema.changeset(%IdentificationSchema{}, %{
           media_file_id: file.id,
-          movie_id: movie.id,
+          catalog_entry_id: movie.id,
           observed_revision: 1,
           token: Ecto.UUID.generate(),
           state: :automatic,
@@ -102,5 +87,17 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
     assert length(versions) == 2
     assert Enum.all?(versions, &match?(%MovieVersion{}, &1))
     assert {:ok, %MoviePage{items: [], total: 0}} = Catalog.list_movies(actor, "No existe", 1)
+  end
+
+  defp movie_changeset(attrs) do
+    entry =
+      Repo.insert!(
+        CatalogEntrySchema.changeset(
+          %CatalogEntrySchema{},
+          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
+        )
+      )
+
+    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
   end
 end

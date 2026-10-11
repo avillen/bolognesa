@@ -4,7 +4,7 @@ defmodule Bolognesa.Playback.Domain.TranscodeSession do
   @type t :: %__MODULE__{
           id: String.t(),
           actor_id: pos_integer(),
-          movie_id: pos_integer(),
+          catalog_entry_id: pos_integer(),
           file_id: pos_integer(),
           revision: pos_integer(),
           offset_ms: non_neg_integer(),
@@ -17,7 +17,7 @@ defmodule Bolognesa.Playback.Domain.TranscodeSession do
   defstruct [
     :id,
     :actor_id,
-    :movie_id,
+    :catalog_entry_id,
     :file_id,
     :revision,
     :offset_ms,

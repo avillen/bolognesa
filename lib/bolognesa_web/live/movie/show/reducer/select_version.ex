@@ -16,15 +16,15 @@ defmodule BolognesaWeb.Movie.Show.Reducer.SelectVersion do
 
   defp prepare(socket, file_id) do
     actor = socket.assigns.current_scope.actor
-    movie_id = socket.assigns.detail.movie.id
+    catalog_entry_id = socket.assigns.detail.movie.id
     stop_previous(socket)
 
-    case Playback.delivery(actor, movie_id, file_id) do
+    case Playback.delivery(actor, catalog_entry_id, file_id) do
       {:ok, :direct, _source} ->
-        prepare_direct(socket, actor, movie_id, file_id)
+        prepare_direct(socket, actor, catalog_entry_id, file_id)
 
       {:ok, _profile, _source} ->
-        start_compatible(socket, actor, movie_id, file_id, 0, :auto)
+        start_compatible(socket, actor, catalog_entry_id, file_id, 0, :auto)
 
       {:error, reason} ->
         socket
@@ -41,8 +41,8 @@ defmodule BolognesaWeb.Movie.Show.Reducer.SelectVersion do
           non_neg_integer(),
           :auto | :video
         ) :: Phoenix.LiveView.Socket.t()
-  def start_compatible(socket, actor, movie_id, file_id, offset_ms, mode) do
-    case Playback.start_compatible(actor, movie_id, file_id, offset_ms, mode) do
+  def start_compatible(socket, actor, catalog_entry_id, file_id, offset_ms, mode) do
+    case Playback.start_compatible(actor, catalog_entry_id, file_id, offset_ms, mode) do
       {:ok, session} ->
         Process.send_after(self(), {:compatible_poll, session.id}, 250)
 
@@ -73,8 +73,8 @@ defmodule BolognesaWeb.Movie.Show.Reducer.SelectVersion do
     end
   end
 
-  defp prepare_direct(socket, actor, movie_id, file_id) do
-    case Playback.prepare(actor, movie_id, file_id) do
+  defp prepare_direct(socket, actor, catalog_entry_id, file_id) do
+    case Playback.prepare(actor, catalog_entry_id, file_id) do
       :ok ->
         socket
         |> assign(:selected_file_id, file_id)

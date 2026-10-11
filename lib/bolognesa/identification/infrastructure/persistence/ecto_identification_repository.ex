@@ -4,9 +4,9 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
 
   @behaviour Bolognesa.Identification.Application.Ports.IdentificationRepository
 
-  alias Bolognesa.Catalog
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
+  alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedMovieWriter
   alias Bolognesa.Persistence.IdentificationSchema
   alias Bolognesa.Persistence.MediaFileSchema
 
@@ -166,13 +166,13 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   end
 
   defp complete_pending_identification(identification, candidates, details, needs_review) do
-    movie_id = if details, do: upsert_movie_id(details), else: nil
-    state = if movie_id, do: :automatic, else: :unmatched
+    catalog_entry_id = if details, do: upsert_catalog_entry_id(details), else: nil
+    state = if catalog_entry_id, do: :automatic, else: :unmatched
 
     attrs = %{
       state: state,
       origin: :automatic,
-      movie_id: movie_id,
+      catalog_entry_id: catalog_entry_id,
       needs_review: needs_review,
       failure_reason: nil,
       candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
@@ -183,9 +183,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
     :ok
   end
 
-  defp upsert_movie_id(details) do
-    attrs = details |> Map.from_struct() |> Map.put(:provider, :tmdb)
-    Catalog.upsert_in_transaction!(Repo, attrs)
+  defp upsert_catalog_entry_id(details) do
+    IdentifiedMovieWriter.upsert!(details)
   end
 
   defp correct_file(file, file_id, choice) do
@@ -196,16 +195,16 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
           lock: "FOR UPDATE"
       )
 
-    movie_id =
-      if choice == :unidentified, do: nil, else: upsert_movie_id(choice)
+    catalog_entry_id =
+      if choice == :unidentified, do: nil, else: upsert_catalog_entry_id(choice)
 
     attrs = %{
       media_file_id: file_id,
       observed_revision: file.revision,
       token: Ecto.UUID.generate(),
-      state: if(movie_id, do: :manual, else: :manual_unidentified),
+      state: if(catalog_entry_id, do: :manual, else: :manual_unidentified),
       origin: :manual,
-      movie_id: movie_id,
+      catalog_entry_id: catalog_entry_id,
       needs_review: false,
       failure_reason: nil,
       candidate_data: %{"items" => []},

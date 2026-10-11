@@ -1,5 +1,6 @@
 defmodule Bolognesa.Identification.ReviewQueriesTest do
   use Bolognesa.DataCase, async: false
+  alias Bolognesa.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identification
   alias Bolognesa.Identification.Application.Dto.{ReviewItem, ReviewPage}
@@ -46,7 +47,7 @@ defmodule Bolognesa.Identification.ReviewQueriesTest do
 
     movie =
       Repo.insert!(
-        MovieSchema.changeset(%MovieSchema{}, %{
+        movie_changeset(%{
           provider: :tmdb,
           provider_id: 42,
           title: "Película dudosa"
@@ -67,7 +68,7 @@ defmodule Bolognesa.Identification.ReviewQueriesTest do
     Repo.insert!(
       IdentificationSchema.changeset(%IdentificationSchema{}, %{
         media_file_id: linked_file.id,
-        movie_id: movie.id,
+        catalog_entry_id: movie.id,
         observed_revision: 1,
         token: Ecto.UUID.generate(),
         state: :automatic,
@@ -89,7 +90,22 @@ defmodule Bolognesa.Identification.ReviewQueriesTest do
 
     assert file.__struct__ == ReviewFile
     assert file.relative_path == "a.mkv"
-    assert {_, _, %ReviewMovie{id: movie_id, title: "Película dudosa"}} = List.last(entries)
-    assert movie_id == movie.id
+
+    assert {_, _, %ReviewMovie{id: catalog_entry_id, title: "Película dudosa"}} =
+             List.last(entries)
+
+    assert catalog_entry_id == movie.id
+  end
+
+  defp movie_changeset(attrs) do
+    entry =
+      Repo.insert!(
+        CatalogEntrySchema.changeset(
+          %CatalogEntrySchema{},
+          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
+        )
+      )
+
+    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
   end
 end

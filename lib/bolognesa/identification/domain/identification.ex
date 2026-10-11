@@ -3,7 +3,7 @@ defmodule Bolognesa.Identification.Domain.Identification do
 
   defstruct [
     :media_file_id,
-    :movie_id,
+    :catalog_entry_id,
     :state,
     :origin,
     :observed_revision,
@@ -21,7 +21,7 @@ defmodule Bolognesa.Identification.Domain.Identification do
   @type candidate_data :: %{items: [map()]} | %{String.t() => [map()]}
   @type t :: %__MODULE__{
           media_file_id: pos_integer(),
-          movie_id: pos_integer() | nil,
+          catalog_entry_id: pos_integer() | nil,
           state: state(),
           origin: origin(),
           observed_revision: pos_integer(),

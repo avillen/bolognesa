@@ -29,13 +29,13 @@ defmodule BolognesaWeb.Movie.Show.Live do
          Integer.to_string(socket.assigns.selected_file_id) == file_id do
       Reducer.SelectVersion.stop_previous(socket)
       actor = socket.assigns.current_scope.actor
-      movie_id = socket.assigns.detail.movie.id
+      catalog_entry_id = socket.assigns.detail.movie.id
 
       {:noreply,
        Reducer.SelectVersion.start_compatible(
          socket,
          actor,
-         movie_id,
+         catalog_entry_id,
          socket.assigns.selected_file_id,
          0,
          :video
@@ -58,13 +58,13 @@ defmodule BolognesaWeb.Movie.Show.Live do
              (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
         Reducer.SelectVersion.stop_previous(socket)
         actor = socket.assigns.current_scope.actor
-        movie_id = socket.assigns.detail.movie.id
+        catalog_entry_id = socket.assigns.detail.movie.id
 
         next =
           Reducer.SelectVersion.start_compatible(
             socket,
             actor,
-            movie_id,
+            catalog_entry_id,
             session.file_id,
             offset,
             if(session.profile == :video, do: :video, else: :auto)
@@ -169,14 +169,14 @@ defmodule BolognesaWeb.Movie.Show.Live do
       {offset, ""}
       when offset >= 0 and (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
         actor = socket.assigns.current_scope.actor
-        movie_id = socket.assigns.detail.movie.id
+        catalog_entry_id = socket.assigns.detail.movie.id
         mode = if session.profile == :video, do: :video, else: :auto
 
         {:noreply,
          Reducer.SelectVersion.start_compatible(
            socket,
            actor,
-           movie_id,
+           catalog_entry_id,
            session.file_id,
            offset,
            mode

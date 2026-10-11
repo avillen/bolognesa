@@ -17,11 +17,11 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   @spec start(pos_integer(), pos_integer(), pos_integer(), Source.t(), :audio | :video, integer()) ::
           {:ok, TranscodeSession.t()} | {:error, atom()}
-  def start(actor_id, movie_id, file_id, source, profile, offset_ms),
+  def start(actor_id, catalog_entry_id, file_id, source, profile, offset_ms),
     do:
       GenServer.call(
         __MODULE__,
-        {:start, actor_id, movie_id, file_id, source, profile, offset_ms}
+        {:start, actor_id, catalog_entry_id, file_id, source, profile, offset_ms}
       )
 
   @spec lookup(String.t()) :: {:ok, TranscodeSession.t()} | {:error, :not_found}
@@ -59,8 +59,12 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   end
 
   @impl true
-  def handle_call({:start, actor_id, movie_id, file_id, source, profile, offset_ms}, _from, state) do
-    case start_session(state, actor_id, movie_id, file_id, source, profile, offset_ms) do
+  def handle_call(
+        {:start, actor_id, catalog_entry_id, file_id, source, profile, offset_ms},
+        _from,
+        state
+      ) do
+    case start_session(state, actor_id, catalog_entry_id, file_id, source, profile, offset_ms) do
       {:ok, session, port, root} ->
         Logger.info("transcode_started session_id=#{session.id} profile=#{profile}")
 
@@ -144,7 +148,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   defp start_session(%{current: current}, _, _, _, _, _, _) when not is_nil(current),
     do: {:error, :busy}
 
-  defp start_session(_state, actor_id, movie_id, file_id, source, profile, offset_ms) do
+  defp start_session(_state, actor_id, catalog_entry_id, file_id, source, profile, offset_ms) do
     with :ok <- valid_offset(source, offset_ms),
          {:ok, root} <- root(),
          {:ok, executable} <- executable(),
@@ -157,7 +161,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
       session = %TranscodeSession{
         id: id,
         actor_id: actor_id,
-        movie_id: movie_id,
+        catalog_entry_id: catalog_entry_id,
         file_id: file_id,
         revision: source.revision,
         offset_ms: offset_ms,

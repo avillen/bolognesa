@@ -115,9 +115,9 @@ Describe obras con independencia de su disponibilidad física. El primer agregad
 
 Los conceptos futuros son `Series`, `Season`, `Episode`, `Artist`, `Album` y `Track`. Sus límites transaccionales se diseñarán en sus fases; no se implementan por adelantado.
 
-Catálogo controla los metadatos internos de la obra y sus referencias a proveedores. Identificación utiliza su fachada para localizar o incorporar una obra.
+Catálogo consulta obras con modelos propios. Identificación controla la creación o reutilización de identidades y detalles durante la identificación, junto con la asociación al archivo en su propia transacción. Su escritor privado usa datos validados del propio contexto; Catálogo no importa esos modelos para leer. Un alta independiente de la identificación requerirá revisar ese propietario con el caso concreto.
 
-En H3, `Movie` mantiene la unicidad `(provider, provider_id)`. Las lecturas de Catálogo pueden unir películas, identificaciones y archivos mediante un adaptador de proyección; no escriben datos de Bibliotecas. Ver [decisión 0005](../decisions/0005-catalog-identification.md).
+`CatalogEntry` representa la identidad común y su referencia externa única `(provider, resource_type, provider_id)`. La entrega admite solo películas TMDb. `movies.id` es PK y FK restrictiva de `catalog_entries.id`, sin generación independiente; sus campos contienen los detalles de película. Las lecturas de Catálogo unen identidad, detalles, identificaciones y archivos mediante un adaptador propio. Ver [decisión 0012](../decisions/0012-catalog-entry-identity.md).
 
 ### Identificación
 
@@ -125,7 +125,7 @@ Relaciona archivos con obras. `Identification` conserva el estado, los candidato
 
 Una coincidencia dudosa requiere revisión. Una corrección manual queda protegida ante posteriores identificaciones automáticas. Esta protección debe comprobarse al guardar, incluso si un trabajo automático comenzó antes de la corrección.
 
-La relación confirmada referencia el identificador del archivo y de la obra. Identificación controla esa relación; no se mantienen dos fuentes de verdad independientes en Bibliotecas y Catálogo.
+La relación confirmada referencia el identificador del archivo y `catalog_entry_id`. Identificación controla esa relación; no se mantienen dos fuentes de verdad independientes en Bibliotecas y Catálogo.
 
 Los adaptadores de proveedores normalizan respuestas externas antes de entregarlas a la aplicación. Las peticiones HTTP se realizan con Req.
 
@@ -223,3 +223,11 @@ Después de cambios de implementación se ejecutará `mix precommit` y se resolv
 5. **Ampliaciones:** series, música, cuentas adicionales, conversión, acceso remoto y clientes específicos, priorizados según el uso real.
 
 Cada fase tendrá un diseño acotado y un plan verificable. El diseño de LiveView se abordará después de revisar esta arquitectura del backend. No se define aún una API HTTP pública para futuros clientes, pero los casos de uso no dependerán de LiveView.
+
+## Ampliaciones de contenido
+
+Reproducción recibe identidad de catálogo y archivo y consulta la asociación confirmada sin depender de detalles de película. Las rutas específicas traducen sus parámetros en la frontera; no acreditan una asociación. Las sesiones HLS revalidan actor, elemento, archivo y revisión.
+
+Los puertos siguen siendo behaviours. Introducir un protocol requiere al menos dos structs reales del mismo contexto, una operación de semántica común y un consumidor que mejore con el despacho por tipo. No se añaden implementaciones ficticias para anticipar series.
+
+El cambio de identidad requiere las tres migraciones y una actualización coordinada de la aplicación; no se admite coexistencia de versiones antiguas y nuevas. Su comprobación de ida y vuelta usa una base desechable y datos sintéticos, nunca la base normal ni QNAP.

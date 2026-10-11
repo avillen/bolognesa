@@ -23,9 +23,9 @@ defmodule BolognesaWeb.MediaController do
   def show(conn, %{"movie_id" => movie_text, "file_id" => file_text}) do
     actor = conn.assigns.current_scope.actor
 
-    with {:ok, movie_id} <- positive_id(movie_text),
+    with {:ok, catalog_entry_id} <- positive_id(movie_text),
          {:ok, file_id} <- positive_id(file_text),
-         {:ok, source} <- Playback.start(actor, movie_id, file_id),
+         {:ok, source} <- Playback.start(actor, catalog_entry_id, file_id),
          {:ok, mime_type} <- mime_type(source.relative_path),
          {:ok, opened} <- LocalMediaFile.open(source) do
       try do

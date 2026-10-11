@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.MediaControllerTest do
   use BolognesaWeb.ConnCase, async: false
+  alias Bolognesa.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identity
   alias Bolognesa.Persistence.MovieSchema
@@ -32,9 +33,7 @@ defmodule BolognesaWeb.MediaControllerTest do
     {:ok, modified_at} = DateTime.from_unix(stat.mtime * 1_000_000, :microsecond)
 
     movie =
-      Repo.insert!(
-        MovieSchema.changeset(%MovieSchema{}, %{provider: :tmdb, provider_id: 802, title: "Film"})
-      )
+      Repo.insert!(movie_changeset(%{provider: :tmdb, provider_id: 802, title: "Film"}))
 
     library =
       Repo.insert!(LibrarySchema.changeset(%LibrarySchema{}, %{name: "Media", path: physical}))
@@ -54,7 +53,7 @@ defmodule BolognesaWeb.MediaControllerTest do
       Repo.insert!(
         IdentificationSchema.changeset(%IdentificationSchema{}, %{
           media_file_id: file.id,
-          movie_id: movie.id,
+          catalog_entry_id: movie.id,
           observed_revision: 1,
           token: Ecto.UUID.generate(),
           state: :automatic,
@@ -161,9 +160,7 @@ defmodule BolognesaWeb.MediaControllerTest do
     assert conn |> get(path) |> response(401) == ""
 
     other =
-      Repo.insert!(
-        MovieSchema.changeset(%MovieSchema{}, %{provider: :tmdb, provider_id: 803, title: "Other"})
-      )
+      Repo.insert!(movie_changeset(%{provider: :tmdb, provider_id: 803, title: "Other"}))
 
     wrong_path = ~p"/movies/#{other.id}/media/#{file.id}"
     assert conn |> init_test_session(user_token: token) |> get(wrong_path) |> response(404) == ""
@@ -184,5 +181,17 @@ defmodule BolognesaWeb.MediaControllerTest do
     result = conn |> init_test_session(user_token: token) |> get(path)
     assert result.status in [404, 409]
     refute response(result, result.status) =~ "different content"
+  end
+
+  defp movie_changeset(attrs) do
+    entry =
+      Repo.insert!(
+        CatalogEntrySchema.changeset(
+          %CatalogEntrySchema{},
+          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
+        )
+      )
+
+    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
   end
 end

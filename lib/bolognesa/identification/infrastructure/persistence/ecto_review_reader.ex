@@ -29,7 +29,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader d
           join: file in MediaFileSchema,
           on: file.id == identification.media_file_id,
           left_join: movie in MovieSchema,
-          on: movie.id == identification.movie_id,
+          on: movie.id == identification.catalog_entry_id,
           order_by: identification.media_file_id,
           limit: @page_size,
           offset: ^((page - 1) * @page_size),

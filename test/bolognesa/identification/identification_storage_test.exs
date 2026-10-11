@@ -1,8 +1,9 @@
 defmodule Bolognesa.Identification.IdentificationStorageTest do
   use Bolognesa.DataCase, async: true
+  alias Bolognesa.Persistence.CatalogEntrySchema
+  alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
 
   alias Bolognesa.Identification.Domain.Identification
-  alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Persistence.MovieSchema
@@ -24,17 +25,22 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
     file = file_fixture()
 
     movie =
-      Repo.insert!(%MovieSchema{provider: :tmdb, provider_id: 42, title: "Película"})
+      movie_fixture(42)
 
     assert_raise Ecto.ConstraintError, fn ->
-      Repo.insert!(%MovieSchema{provider: :tmdb, provider_id: 42, title: "Duplicada"})
+      Repo.insert!(%CatalogEntrySchema{
+        kind: :movie,
+        provider: :tmdb,
+        resource_type: :movie,
+        provider_id: 42
+      })
     end
 
     attrs = %{
       media_file_id: file.id,
       state: :manual,
       origin: :manual,
-      movie_id: movie.id,
+      catalog_entry_id: movie.id,
       observed_revision: 1,
       token: Ecto.UUID.generate()
     }
@@ -50,7 +56,7 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
 
   test "database rejects invalid revision and an unidentified choice with a movie" do
     file = file_fixture()
-    movie = Repo.insert!(%MovieSchema{provider: :tmdb, provider_id: 43, title: "Película"})
+    movie = movie_fixture(43)
 
     assert_raise Ecto.ConstraintError, fn ->
       Repo.insert!(%IdentificationSchema{
@@ -64,7 +70,7 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
     assert_raise Ecto.ConstraintError, fn ->
       Repo.insert!(%IdentificationSchema{
         media_file_id: file.id,
-        movie_id: movie.id,
+        catalog_entry_id: movie.id,
         state: :manual_unidentified,
         origin: :manual,
         observed_revision: 1,
@@ -75,12 +81,12 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
 
   test "missing physical file retains its movie and decision" do
     file = file_fixture()
-    movie = Repo.insert!(%MovieSchema{provider: :tmdb, provider_id: 44, title: "Película"})
+    movie = movie_fixture(44)
 
     identification =
       Repo.insert!(%IdentificationSchema{
         media_file_id: file.id,
-        movie_id: movie.id,
+        catalog_entry_id: movie.id,
         state: :manual,
         origin: :manual,
         observed_revision: 1,
@@ -88,7 +94,7 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
       })
 
     file |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
-    assert Repo.get!(IdentificationSchema, identification.id).movie_id == movie.id
+    assert Repo.get!(IdentificationSchema, identification.id).catalog_entry_id == movie.id
   end
 
   test "one event exists for a file and request token" do
@@ -117,5 +123,17 @@ defmodule Bolognesa.Identification.IdentificationStorageTest do
       availability: :available,
       last_seen_generation: Ecto.UUID.generate()
     })
+  end
+
+  defp movie_fixture(provider_id) do
+    entry =
+      Repo.insert!(%CatalogEntrySchema{
+        kind: :movie,
+        provider: :tmdb,
+        resource_type: :movie,
+        provider_id: provider_id
+      })
+
+    Repo.insert!(%MovieSchema{id: entry.id, title: "Película"})
   end
 end

@@ -2,6 +2,8 @@
 
 Estado: aceptada para la implementación local de H3 el 2026-10-07; desplegada en QNAP; revisión manual pendiente.
 
+La [decisión 0012](0012-catalog-entry-identity.md) sustituye la identidad, la referencia de asociación y la propiedad de escritura, incluida la excepción de transacción entre contextos descrita aquí. Las reglas de proveedor, protección manual y atomicidad siguen vigentes.
+
 ## Contexto
 
 El inventario H2 guarda archivos y revisiones, pero no conoce obras. H3 necesita reconocer películas, agrupar varios archivos de una obra y permitir correcciones que sobrevivan a escaneos y trabajos antiguos. El propietario aprobó TMDb, el envío de títulos inferidos del nombre de archivo y la selección automática del primer resultado válido, con revisión manual posterior.

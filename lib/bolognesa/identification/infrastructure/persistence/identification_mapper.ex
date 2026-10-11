@@ -6,7 +6,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapp
   def to_domain(row) do
     %Identification{
       media_file_id: row.media_file_id,
-      movie_id: row.movie_id,
+      catalog_entry_id: row.catalog_entry_id,
       state: row.state,
       origin: row.origin,
       observed_revision: row.observed_revision,

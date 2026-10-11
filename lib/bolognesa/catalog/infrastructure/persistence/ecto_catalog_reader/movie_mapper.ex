@@ -1,14 +1,15 @@
-defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoMovieRepository.MovieMapper do
+defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader.MovieMapper do
   @moduledoc false
   alias Bolognesa.Catalog.Domain.Movie
+  alias Bolognesa.Persistence.CatalogEntrySchema
   alias Bolognesa.Persistence.MovieSchema
 
-  @spec to_movie(MovieSchema.t()) :: Movie.t()
-  def to_movie(schema) do
+  @spec to_movie(MovieSchema.t(), CatalogEntrySchema.t()) :: Movie.t()
+  def to_movie(schema, entry) do
     %Movie{
       id: schema.id,
-      provider: schema.provider,
-      provider_id: schema.provider_id,
+      provider: entry.provider,
+      provider_id: entry.provider_id,
       title: schema.title,
       original_title: schema.original_title,
       year: schema.year,

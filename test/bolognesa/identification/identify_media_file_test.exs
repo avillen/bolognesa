@@ -64,12 +64,14 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
 
     assert :ok = IdentifyMediaFile.call(file.id, token, 1, Repository, Provider)
 
-    assert {:ok, %{state: :automatic, needs_review?: true, movie_id: movie_id} = identification} =
+    assert {:ok,
+            %{state: :automatic, needs_review?: true, catalog_entry_id: catalog_entry_id} =
+              identification} =
              Repository.get(file.id)
 
     assert identification.__struct__ == Identification
 
-    assert is_integer(movie_id)
+    assert is_integer(catalog_entry_id)
     assert :ok = IdentifyMediaFile.call(file.id, token, 2, Repository, Provider)
   end
 

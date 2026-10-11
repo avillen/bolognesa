@@ -2,6 +2,7 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Identification.Application.{CorrectIdentification, IdentifyMediaFile}
   alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
+  alias Bolognesa.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
     as: Repository
@@ -11,6 +12,7 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
   alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Persistence.MovieSchema
+  alias CatalogEntrySchema
   alias Ecto.Adapters.SQL.Sandbox
 
   defmodule BlockedProvider do
@@ -57,10 +59,10 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
       send(worker, :continue)
       assert :ok = Task.await(task)
 
-      assert {:ok, %{origin: :manual, movie_id: movie_id, token: current_token}} =
+      assert {:ok, %{origin: :manual, catalog_entry_id: catalog_entry_id, token: current_token}} =
                Repository.get(file.id)
 
-      assert movie_id == corrected.movie_id
+      assert catalog_entry_id == corrected.catalog_entry_id
       assert current_token == corrected.token
     end
   end
@@ -83,19 +85,37 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
             end)
           end
 
-        assert [{:ok, %{movie_id: first_movie_id}}, {:ok, %{movie_id: second_movie_id}}] =
+        assert [
+                 {:ok, %{catalog_entry_id: first_catalog_entry_id}},
+                 {:ok, %{catalog_entry_id: second_catalog_entry_id}}
+               ] =
                  Enum.map(tasks, &Task.await/1)
 
-        assert first_movie_id == second_movie_id
+        assert first_catalog_entry_id == second_catalog_entry_id
 
         assert Repo.aggregate(
-                 from(movie in MovieSchema, where: movie.provider_id == 9182),
+                 from(movie in MovieSchema,
+                   join: entry in CatalogEntrySchema,
+                   on: entry.id == movie.id,
+                   where: entry.provider_id == 9182
+                 ),
                  :count,
                  :id
                ) == 1
       after
         Repo.delete_all(from file in MediaFileSchema, where: file.id in ^[first.id, second.id])
-        Repo.delete_all(from movie in MovieSchema, where: movie.provider_id == 9182)
+
+        Repo.delete_all(
+          from movie in MovieSchema,
+            where:
+              movie.id in subquery(
+                from entry in CatalogEntrySchema,
+                  where: entry.provider_id == 9182,
+                  select: entry.id
+              )
+        )
+
+        Repo.delete_all(from entry in CatalogEntrySchema, where: entry.provider_id == 9182)
 
         Repo.delete_all(
           from library in LibrarySchema,

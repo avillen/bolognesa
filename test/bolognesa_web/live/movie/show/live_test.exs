@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Movie.Show.LiveTest do
   use BolognesaWeb.ConnCase, async: false
+  alias Bolognesa.Persistence.CatalogEntrySchema
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
@@ -24,7 +25,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
     movie =
       Repo.insert!(
-        MovieSchema.changeset(%MovieSchema{}, %{
+        movie_changeset(%{
           provider: :tmdb,
           provider_id: 999,
           title: "Mi pelicula"
@@ -50,7 +51,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
     movie =
       Repo.insert!(
-        MovieSchema.changeset(%MovieSchema{}, %{
+        movie_changeset(%{
           provider: :tmdb,
           provider_id: 1000,
           title: "Mi pelicula"
@@ -74,7 +75,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     Repo.insert!(
       IdentificationSchema.changeset(%IdentificationSchema{}, %{
         media_file_id: file.id,
-        movie_id: movie.id,
+        catalog_entry_id: movie.id,
         observed_revision: 1,
         token: Ecto.UUID.generate(),
         state: :automatic,
@@ -104,7 +105,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
     movie =
       Repo.insert!(
-        MovieSchema.changeset(%MovieSchema{}, %{
+        movie_changeset(%{
           provider: :tmdb,
           provider_id: 1001,
           title: "Mi pelicula"
@@ -244,7 +245,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
     movie =
       Repo.insert!(
-        MovieSchema.changeset(%MovieSchema{}, %{
+        movie_changeset(%{
           provider: :tmdb,
           provider_id: 1002,
           title: "Mi pelicula"
@@ -299,7 +300,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     Repo.insert!(
       IdentificationSchema.changeset(%IdentificationSchema{}, %{
         media_file_id: file.id,
-        movie_id: movie_id,
+        catalog_entry_id: movie_id,
         observed_revision: 1,
         token: Ecto.UUID.generate(),
         state: :automatic,
@@ -308,5 +309,17 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     )
 
     file
+  end
+
+  defp movie_changeset(attrs) do
+    entry =
+      Repo.insert!(
+        CatalogEntrySchema.changeset(
+          %CatalogEntrySchema{},
+          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
+        )
+      )
+
+    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
   end
 end

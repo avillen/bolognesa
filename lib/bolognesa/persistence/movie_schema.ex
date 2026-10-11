@@ -3,9 +3,8 @@ defmodule Bolognesa.Persistence.MovieSchema do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :id, autogenerate: false}
   schema "movies" do
-    field :provider, Ecto.Enum, values: [:tmdb]
-    field :provider_id, :integer
     field :title, :string
     field :original_title, :string
     field :year, :integer
@@ -19,8 +18,6 @@ defmodule Bolognesa.Persistence.MovieSchema do
   def changeset(movie, attrs) do
     movie
     |> cast(attrs, [
-      :provider,
-      :provider_id,
       :title,
       :original_title,
       :year,
@@ -28,11 +25,9 @@ defmodule Bolognesa.Persistence.MovieSchema do
       :poster_path,
       :backdrop_path
     ])
-    |> validate_required([:provider, :provider_id, :title])
-    |> validate_number(:provider_id, greater_than: 0)
+    |> validate_required([:title])
     |> validate_length(:title, max: 256)
-    |> unique_constraint([:provider, :provider_id])
-    |> check_constraint(:provider_id, name: :movies_provider_id_positive)
     |> check_constraint(:title, name: :movies_title_nonempty)
+    |> foreign_key_constraint(:id, name: :movies_id_fkey)
   end
 end

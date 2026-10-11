@@ -4,6 +4,6 @@ defmodule Bolognesa.Playback.Application.Ports.PlaybackRepository do
   @type adapter :: atom()
   alias Bolognesa.Playback.Domain.Source
 
-  @callback find_source(movie_id :: pos_integer(), file_id :: pos_integer()) ::
+  @callback find_source(catalog_entry_id :: pos_integer(), file_id :: pos_integer()) ::
               {:ok, Source.t()} | {:error, :not_found | :missing | :unavailable}
 end

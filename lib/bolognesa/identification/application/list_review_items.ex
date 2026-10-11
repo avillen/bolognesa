@@ -23,7 +23,7 @@ defmodule Bolognesa.Identification.Application.ListReviewItems do
   defp validate_page(_page), do: {:error, :invalid_page}
 
   defp to_review_item({%Identification{} = decision, %ReviewFile{} = file, movie}) do
-    {movie_id, movie_title} = movie_details(movie)
+    {catalog_entry_id, movie_title} = movie_details(movie)
 
     %ReviewItem{
       file_id: file.id,
@@ -32,7 +32,7 @@ defmodule Bolognesa.Identification.Application.ListReviewItems do
       failure_reason: decision.failure_reason,
       availability: file.availability,
       filename: safe_basename(file.relative_path),
-      movie_id: movie_id,
+      catalog_entry_id: catalog_entry_id,
       movie_title: movie_title,
       candidates: decision.candidate_data
     }

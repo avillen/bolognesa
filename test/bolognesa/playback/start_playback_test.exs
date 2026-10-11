@@ -1,5 +1,6 @@
 defmodule Bolognesa.Playback.StartPlaybackTest do
   use Bolognesa.DataCase, async: false
+  alias Bolognesa.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identity.Domain.Actor
   alias Bolognesa.Persistence.IdentificationSchema
@@ -36,7 +37,11 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
     assert {:error, :not_found} = Playback.start(actor, movie.id, 0)
 
     identification
-    |> IdentificationSchema.changeset(%{movie_id: other.id, state: :manual, origin: :manual})
+    |> IdentificationSchema.changeset(%{
+      catalog_entry_id: other.id,
+      state: :manual,
+      origin: :manual
+    })
     |> Repo.update!()
 
     assert {:error, :not_found} = Playback.start(actor, movie.id, file.id)
@@ -88,7 +93,7 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
 
   defp movie(provider_id) do
     Repo.insert!(
-      MovieSchema.changeset(%MovieSchema{}, %{
+      movie_changeset(%{
         provider: :tmdb,
         provider_id: provider_id,
         title: "Movie"
@@ -113,12 +118,24 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
     Repo.insert!(
       IdentificationSchema.changeset(%IdentificationSchema{}, %{
         media_file_id: file_id,
-        movie_id: movie_id,
+        catalog_entry_id: movie_id,
         observed_revision: 1,
         token: Ecto.UUID.generate(),
         state: :automatic,
         origin: :automatic
       })
     )
+  end
+
+  defp movie_changeset(attrs) do
+    entry =
+      Repo.insert!(
+        CatalogEntrySchema.changeset(
+          %CatalogEntrySchema{},
+          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
+        )
+      )
+
+    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
   end
 end

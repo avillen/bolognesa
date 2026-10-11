@@ -1,7 +1,5 @@
-defmodule Bolognesa.Catalog.Domain.NewMovie do
+defmodule Bolognesa.Identification.Domain.NewMovie do
   @moduledoc "Validated movie data before a database identity is assigned."
-
-  alias Bolognesa.Catalog.Domain.Movie
 
   defstruct [
     :provider,
@@ -17,22 +15,22 @@ defmodule Bolognesa.Catalog.Domain.NewMovie do
   @type attrs :: %{
           required(:provider) => :tmdb,
           required(:provider_id) => pos_integer(),
-          required(:title) => Movie.title(),
+          required(:title) => binary(),
           optional(:original_title) => binary() | nil,
-          optional(:year) => Movie.year() | nil,
+          optional(:year) => integer() | nil,
           optional(:overview) => binary() | nil,
-          optional(:poster_path) => Movie.poster_path() | nil,
+          optional(:poster_path) => binary() | nil,
           optional(:backdrop_path) => binary() | nil
         }
 
   @type t :: %__MODULE__{
           provider: :tmdb,
           provider_id: pos_integer(),
-          title: Movie.title(),
+          title: binary(),
           original_title: binary() | nil,
-          year: Movie.year() | nil,
+          year: integer() | nil,
           overview: binary() | nil,
-          poster_path: Movie.poster_path() | nil,
+          poster_path: binary() | nil,
           backdrop_path: binary() | nil
         }
 

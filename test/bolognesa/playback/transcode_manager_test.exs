@@ -86,28 +86,20 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
 
   test "a failed FFmpeg releases the only conversion slot", %{source: source} do
     bad = Path.join(source.path, "bad-ffmpeg")
-    File.write!(bad, "#!/bin/sh\nexit 2\n")
+    File.write!(bad, "#!/bin/sh\nread line\nexit 2\n")
     File.chmod!(bad, 0o700)
     good = Application.fetch_env!(:bolognesa, :ffmpeg_executable)
     Application.put_env(:bolognesa, :ffmpeg_executable, bad)
     assert {:ok, session} = TranscodeManager.start(1, 2, 3, source, :video, 0)
-    assert_eventually(fn -> TranscodeManager.lookup(session.id) == {:error, :not_found} end)
+    %{port: port} = :sys.get_state(TranscodeManager)
+    ref = :erlang.monitor(:port, port)
+    Port.command(port, "\n")
+    assert_receive {:DOWN, ^ref, :port, ^port, _}, 5_000
+    _ = :sys.get_state(TranscodeManager)
+    assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     Application.put_env(:bolognesa, :ffmpeg_executable, good)
     assert {:ok, _} = TranscodeManager.start(1, 2, 3, source, :video, 0)
   end
-
-  defp assert_eventually(predicate, attempts \\ 20)
-
-  defp assert_eventually(predicate, attempts) when attempts > 0 do
-    if predicate.() do
-      :ok
-    else
-      Process.sleep(50)
-      assert_eventually(predicate, attempts - 1)
-    end
-  end
-
-  defp assert_eventually(predicate, 0), do: assert(predicate.())
 
   defp restore(key, nil), do: Application.delete_env(:bolognesa, key)
   defp restore(key, value), do: Application.put_env(:bolognesa, key, value)

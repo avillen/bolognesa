@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Movie.Index.LiveTest do
   use BolognesaWeb.ConnCase, async: false
+  alias Bolognesa.Persistence.CatalogEntrySchema
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
@@ -33,7 +34,7 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
   test "search keeps matching catalog cards", %{conn: conn, token: token} do
     movie =
       Repo.insert!(
-        MovieSchema.changeset(%MovieSchema{}, %{
+        movie_changeset(%{
           provider: :tmdb,
           provider_id: 200,
           title: "Luz de invierno",
@@ -49,5 +50,17 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     render_async(view)
     refute has_element?(view, "#movie-link-#{movie.id}")
     assert has_element?(view, "#movies-empty")
+  end
+
+  defp movie_changeset(attrs) do
+    entry =
+      Repo.insert!(
+        CatalogEntrySchema.changeset(
+          %CatalogEntrySchema{},
+          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
+        )
+      )
+
+    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
   end
 end

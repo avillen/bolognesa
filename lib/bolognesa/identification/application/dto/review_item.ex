@@ -11,7 +11,7 @@ defmodule Bolognesa.Identification.Application.Dto.ReviewItem do
     :failure_reason,
     :availability,
     :filename,
-    :movie_id,
+    :catalog_entry_id,
     :movie_title,
     :candidates
   ]
@@ -24,7 +24,7 @@ defmodule Bolognesa.Identification.Application.Dto.ReviewItem do
           failure_reason: binary() | nil,
           availability: ReviewFile.availability(),
           filename: String.t(),
-          movie_id: pos_integer() | nil,
+          catalog_entry_id: pos_integer() | nil,
           movie_title: String.t() | nil,
           candidates: Identification.candidate_data()
         }
