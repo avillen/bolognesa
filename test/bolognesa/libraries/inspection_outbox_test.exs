@@ -1,11 +1,11 @@
 defmodule Bolognesa.Libraries.InspectionOutboxTest do
   use Bolognesa.DataCase, async: false
+  alias Bolognesa.Infrastructure.Persistence.InspectionEventSchema
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.OutboxDispatcher
   alias Bolognesa.Libraries.Infrastructure.Persistence.{EctoOutboxRepository, EctoScanRepository}
-  alias Bolognesa.Persistence.InspectionEventSchema
-  alias Bolognesa.Persistence.InspectionSchema
-  alias Bolognesa.Persistence.LibrarySchema
   alias Ecto.Adapters.SQL
   alias SQL.Sandbox
   use Oban.Testing, repo: Bolognesa.Repo
@@ -116,11 +116,14 @@ defmodule Bolognesa.Libraries.InspectionOutboxTest do
     Repo.delete_all(from job in Oban.Job, where: job.queue == "media_inspections")
 
     Repo.delete_all(
-      from file in Bolognesa.Persistence.MediaFileSchema,
+      from file in Bolognesa.Infrastructure.Persistence.MediaFileSchema,
         where: file.library_id == ^scan.library_id
     )
 
-    Repo.delete_all(from row in Bolognesa.Persistence.ScanSchema, where: row.id == ^scan.id)
+    Repo.delete_all(
+      from row in Bolognesa.Infrastructure.Persistence.ScanSchema, where: row.id == ^scan.id
+    )
+
     Repo.delete_all(from job in Oban.Job, where: job.id == ^scan.job_id)
     Repo.delete!(Repo.get!(LibrarySchema, scan.library_id))
   end

@@ -3,10 +3,10 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter 
 
   import Ecto.Query
 
-  alias Bolognesa.Persistence.IdentificationEventSchema
-  alias Bolognesa.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationEventSchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
 
-  alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Repo
 
   @type request_entry :: %{

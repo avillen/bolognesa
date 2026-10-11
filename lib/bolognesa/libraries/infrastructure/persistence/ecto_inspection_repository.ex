@@ -4,14 +4,14 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepositor
 
   import Ecto.Query
 
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries.Domain.InspectionCounts
   alias Bolognesa.Libraries.Domain.Library
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.InspectionMapper
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileMapper
-  alias Bolognesa.Persistence.InspectionSchema
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.MediaFileSchema
   alias Bolognesa.Repo
 
   @impl true

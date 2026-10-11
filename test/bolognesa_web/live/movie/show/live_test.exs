@@ -1,15 +1,15 @@
 defmodule BolognesaWeb.Movie.Show.LiveTest do
   use BolognesaWeb.ConnCase, async: false
-  alias Bolognesa.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
   alias Bolognesa.Infrastructure.LocalSourcePath
-  alias Bolognesa.Persistence.IdentificationSchema
-  alias Bolognesa.Persistence.InspectionSchema
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.MediaFileSchema
-  alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias Bolognesa.Repo
 

@@ -7,8 +7,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoIdentification
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentificationMapper
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedMovieWriter
-  alias Bolognesa.Persistence.IdentificationSchema
-  alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
 
   alias Bolognesa.Identification.Domain.FileToIdentify
   alias Bolognesa.Identification.Domain.Identification

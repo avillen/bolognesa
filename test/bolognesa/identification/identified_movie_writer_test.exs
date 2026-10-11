@@ -2,7 +2,7 @@ defmodule Bolognesa.Identification.IdentifiedMovieWriterTest do
   use Bolognesa.DataCase, async: true
   alias Bolognesa.Identification.Domain.MovieDetails
   alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedMovieWriter
-  alias Bolognesa.Persistence.{CatalogEntrySchema, MovieSchema}
+  alias Bolognesa.Infrastructure.Persistence.{CatalogEntrySchema, MovieSchema}
   import Ecto.Query
 
   test "reuses the external identity and retains original metadata" do

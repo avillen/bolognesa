@@ -2,8 +2,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository d
   @moduledoc false
   @behaviour Bolognesa.Libraries.Application.Ports.LibraryRepository
 
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibraryMapper
-  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Repo
 
   @impl true

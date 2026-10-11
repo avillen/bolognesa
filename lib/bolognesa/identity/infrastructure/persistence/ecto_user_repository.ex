@@ -10,7 +10,7 @@ defmodule Bolognesa.Identity.Infrastructure.Persistence.EctoUserRepository do
     UserMapper
   }
 
-  alias Bolognesa.Persistence.{SessionSchema, UserSchema}
+  alias Bolognesa.Infrastructure.Persistence.{SessionSchema, UserSchema}
 
   @impl true
   def admin_exists? do

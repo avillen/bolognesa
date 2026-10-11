@@ -3,14 +3,14 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
   use Oban.Testing, repo: Bolognesa.Repo
 
   alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Infrastructure.Persistence.{InspectionEventSchema, InspectionSchema}
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Domain.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoOutboxRepository
   alias Bolognesa.Libraries.Support.SuccessfulMediaProbe
-  alias Bolognesa.Persistence.{InspectionEventSchema, InspectionSchema}
-  alias Bolognesa.Persistence.MediaFileSchema
 
   @admin %Actor{id: 1, name: "Admin", email: "admin@example.com", role: :admin}
 

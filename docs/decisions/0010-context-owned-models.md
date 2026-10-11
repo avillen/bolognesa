@@ -10,7 +10,7 @@ Los lectores de Catálogo e Identificación componían respuestas con `MediaFile
 
 - Cada contexto representa sus lecturas y operaciones con modelos propios que contienen únicamente los datos necesarios. Repetir unos campos entre contextos es preferible a compartir una entidad por conveniencia.
 - Los módulos internos de un contexto no se llaman desde otro. Las operaciones entre contextos pasan por fachadas públicas y prefieren identificadores cuando son suficientes. La escritura de solicitudes de Identificación dentro de la transacción del inventario conserva su atomicidad mediante una operación de fachada.
-- Los schemas Ecto continúan en `Bolognesa.Persistence` para consultas entre tablas. La validación física de rutas, que comparten Bibliotecas y Reproducción, se ubica en `Bolognesa.Infrastructure` como utilidad técnica neutral.
+- Los schemas Ecto continúan en `Bolognesa.Infrastructure.Persistence` para consultas entre tablas. La validación física de rutas, que comparten Bibliotecas y Reproducción, se ubica en `Bolognesa.Infrastructure` como utilidad técnica neutral.
 - `Identity.Domain.Actor` continúa como contrato explícito de identidad autenticada para operaciones protegidas; no se usa para modelar datos de negocio de los otros contextos.
 
 ## Consecuencias

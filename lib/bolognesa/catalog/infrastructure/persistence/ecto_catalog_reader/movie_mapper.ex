@@ -1,8 +1,8 @@
 defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader.MovieMapper do
   @moduledoc false
   alias Bolognesa.Catalog.Domain.Movie
-  alias Bolognesa.Persistence.CatalogEntrySchema
-  alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
 
   @spec to_movie(MovieSchema.t(), CatalogEntrySchema.t()) :: Movie.t()
   def to_movie(schema, entry) do

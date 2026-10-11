@@ -33,9 +33,10 @@ Ejemplo orientativo de organización, creando únicamente los módulos necesario
 
 ```text
 lib/bolognesa/
-  persistence/
-    library_schema.ex
-    media_file_schema.ex
+  infrastructure/
+    persistence/
+      library_schema.ex
+      media_file_schema.ex
   libraries/
     domain/
       library.ex
@@ -67,21 +68,21 @@ Los puertos se nombran por su responsabilidad, como `UserRepository` o `LibraryR
 - Cada entrada al dominio declara un formato de atributos. La conversión desde parámetros web se hace en la frontera; no se aceptan a la vez claves string y átomo por precaución si los consumidores actuales usan solo uno de esos formatos.
 - Los datos sensibles de estructuras temporales, como contraseñas, se excluyen de `Inspect`. El adaptador persiste el hash, no la contraseña original.
 - Los schemas Ecto representan almacenamiento. Los mappers convierten entre estos schemas y entidades del dominio.
-- Los schemas Ecto se agrupan en `Bolognesa.Persistence`, con un módulo por tabla y nombres únicos, como `MediaFileSchema` o `IdentificationEventSchema`. Los adaptadores importan los schemas que necesitan; esa ubicación compartida no cambia qué contexto controla cada escritura.
+- Los schemas Ecto se agrupan en `lib/bolognesa/infrastructure/persistence/`, bajo `Bolognesa.Infrastructure.Persistence`, con un módulo por tabla y nombres únicos, como `MediaFileSchema` o `IdentificationEventSchema`. Los adaptadores importan los schemas que necesitan; esa ubicación compartida no cambia qué contexto controla cada escritura.
 - Cada contexto define sus propios modelos de dominio y proyecciones con los datos que necesita. No importa modelos, mappers, repositorios ni otros módulos internos de otro contexto para reutilizarlos. Si necesita parte de un concepto ajeno, define un modelo local con esos campos; la duplicación deliberada evita acoplar los contratos. La identidad autenticada `Identity.Domain.Actor` es el contrato explícito que reciben las operaciones protegidas, no un modelo de negocio que se incorpora al dominio de otro contexto.
 - La comunicación entre contextos pasa por sus fachadas públicas y, cuando basta, intercambia identificadores. Las consultas Ecto entre tablas pueden usar los schemas globales y construyen modelos del contexto lector. Una función técnica neutral que necesitan varios contextos vive fuera de ellos, por ejemplo en `Bolognesa.Infrastructure`; no se promueve allí lógica de negocio para evitar duplicarla.
 - Los mappers usados solo por un repositorio Ecto permanecen bajo el directorio y namespace de ese repositorio, por ejemplo `infrastructure/persistence/ecto_user_repository/user_mapper.ex`.
 - Los changesets comprueban requisitos de persistencia; las reglas de negocio viven en el dominio. Las restricciones de base de datos también protegen unicidad e integridad ante concurrencia.
 - Los repositorios exponen necesidades concretas del dominio, sin devolver queries o changesets a la aplicación. No se introduce un repositorio CRUD genérico.
 - Los resultados de repositorio que representan datos de negocio devuelven modelos de dominio, nunca schemas Ecto, DTOs de aplicación ni mapas libres. Si una lectura necesita varias entidades, el puerto tipa su colección o tupla y los metadatos escalares necesarios, como el total de una página. Los resultados sin entidad (`:ok`, booleanos, identificadores, contadores o estados) se declaran de forma explícita en el contrato.
-- Los DTOs de una respuesta pública se construyen en el caso de uso a partir de esos resultados de dominio. Un mapa de atributos puede ser una entrada delimitada de un puerto, pero no sustituye a un modelo de dominio en su salida.
+- El caso de uso coordina la construcción de los DTOs públicos a partir de los resultados de dominio. La conversión de campos reside en el propio módulo del DTO, mediante una función pura `from_domain/1` con spec y entradas de dominio explícitas; puede recibir una tupla de modelos y metadatos escalares cuando la respuesta los combina. El caso de uso invoca esa función en vez de mantener helpers privados de mapeo. El DTO puede depender del dominio de su propio contexto, pero no consulta repositorios, llama a fachadas ni ejecuta efectos. Los contenedores que solo agrupan DTOs o modelos ya preparados (páginas y fichas) pueden ensamblarse directamente en el caso de uso, sin un constructor obligatorio. Un mapa de atributos puede ser una entrada delimitada de un puerto, pero no sustituye a un modelo de dominio en su salida.
 - Cuando varios pasos producen y consumen el mismo formato, sus tamaños y reglas se definen una sola vez. En las sesiones, `SessionToken` fija el tamaño aleatorio de 32 bytes y la longitud canónica de 43 caracteres Base64url sin relleno; emisión y lectura usan esa definición.
 - Un puerto de transacciones permite ejecutar una unidad atómica sin exponer `Ecto.Multi` al caso de uso. No se mantiene una transacción abierta durante consultas HTTP, escaneos o análisis multimedia.
 - Los agregados son pequeños y delimitan consistencia transaccional. Una biblioteca no contiene todos sus archivos en memoria; una serie tampoco implica cargar todos sus episodios.
 - Cada contexto controla las escrituras de sus datos. Las referencias entre contextos utilizan identificadores y sus interfaces públicas.
 - Las lecturas pueden utilizar proyecciones específicas, sin reconstruir agregados completos. Las consultas que cruzan contextos se encapsulan en adaptadores de lectura explícitos; no conceden permiso para modificar datos ajenos.
 - Los adaptadores de lectura convierten schemas Ecto en modelos de dominio del contexto lector y entregan los metadatos necesarios de la consulta, como el total de una página. No construyen DTOs de aplicación.
-- Cuando una proyección de lectura es parte del contrato público, el caso de uso construye DTOs de aplicación tipados a partir de esas entidades. No se añaden a una entidad de dominio campos de otros contextos para formar la respuesta.
+- Cuando una proyección de lectura es parte del contrato público, el caso de uso entrega DTOs de aplicación tipados, delegando la conversión en sus constructores `from_domain/1`. No se añaden a una entidad de dominio campos de otros contextos para formar la respuesta.
 - Una entidad no corresponde a un proceso OTP. Los procesos se reservan para coordinación, concurrencia, supervisión y estado temporal.
 - No se introduce event sourcing ni CQRS completo.
 

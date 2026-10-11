@@ -1,4 +1,4 @@
-defmodule Bolognesa.Persistence.ScanSchema do
+defmodule Bolognesa.Infrastructure.Persistence.ScanSchema do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset

@@ -7,10 +7,10 @@ defmodule Bolognesa.Identification.IdentificationRecoveryTest do
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
     as: Repository
 
-  alias Bolognesa.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
 
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
 
   defmodule NoTokenProvider do
     def search(_, _), do: {:error, :not_configured}

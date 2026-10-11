@@ -1,4 +1,4 @@
-defmodule Bolognesa.Persistence.CatalogEntrySchema do
+defmodule Bolognesa.Infrastructure.Persistence.CatalogEntrySchema do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset

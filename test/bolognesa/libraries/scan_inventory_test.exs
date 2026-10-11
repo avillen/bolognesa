@@ -1,13 +1,13 @@
 defmodule Bolognesa.Libraries.ScanInventoryTest do
   use Bolognesa.DataCase, async: false
+  alias Bolognesa.Infrastructure.Persistence.{IdentificationEventSchema, IdentificationSchema}
+  alias Bolognesa.Infrastructure.Persistence.{InspectionEventSchema, InspectionSchema}
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Domain.TechnicalMedia
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
-  alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
-  alias Bolognesa.Persistence.{InspectionEventSchema, InspectionSchema}
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
   alias Ecto.Adapters.SQL
   alias EctoScanRepository.{MediaFileMapper, ScanMapper}
   alias SQL.Sandbox

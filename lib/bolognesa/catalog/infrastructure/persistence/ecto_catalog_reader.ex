@@ -6,10 +6,10 @@ defmodule Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader do
 
   alias Bolognesa.Catalog.Domain.MovieVersion
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader.MovieMapper
-  alias Bolognesa.Persistence.CatalogEntrySchema
-  alias Bolognesa.Persistence.IdentificationSchema
-  alias Bolognesa.Persistence.MediaFileSchema
-  alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Repo
 
   @page_size 24

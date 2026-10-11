@@ -1,10 +1,17 @@
 defmodule BolognesaWeb.TranscodeControllerTest do
   use BolognesaWeb.ConnCase, async: false
-  alias Bolognesa.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identity
   alias Bolognesa.Infrastructure.LocalSourcePath
-  alias Bolognesa.Persistence.{IdentificationSchema, LibrarySchema, MediaFileSchema, MovieSchema}
+
+  alias Bolognesa.Infrastructure.Persistence.{
+    IdentificationSchema,
+    LibrarySchema,
+    MediaFileSchema,
+    MovieSchema
+  }
+
   alias Bolognesa.Playback
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias Bolognesa.Repo

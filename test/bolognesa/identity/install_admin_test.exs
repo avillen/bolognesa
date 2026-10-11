@@ -4,7 +4,7 @@ defmodule Bolognesa.Identity.InstallAdminTest do
 
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Persistence.UserSchema
+  alias Bolognesa.Infrastructure.Persistence.UserSchema
 
   @password "correct horse battery staple"
 

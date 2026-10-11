@@ -1,10 +1,10 @@
 defmodule BolognesaWeb.Movie.Index.LiveTest do
   use BolognesaWeb.ConnCase, async: false
-  alias Bolognesa.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
-  alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Repo
 
   setup do

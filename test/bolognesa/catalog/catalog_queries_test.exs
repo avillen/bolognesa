@@ -1,6 +1,6 @@
 defmodule Bolognesa.Catalog.CatalogQueriesTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Catalog
   alias Bolognesa.Catalog.Application.Dto.MovieDetail
@@ -11,12 +11,12 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
   alias Bolognesa.Catalog.Domain.MovieVersion, as: DomainMovieVersion
   alias Bolognesa.Catalog.Infrastructure.Persistence.EctoCatalogReader
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
 
-  alias Bolognesa.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
 
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
 
   test "groups physical versions and retains movies with missing files" do
     actor = %Actor{id: 1, role: :admin}

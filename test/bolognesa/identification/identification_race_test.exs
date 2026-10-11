@@ -2,16 +2,16 @@ defmodule Bolognesa.Identification.IdentificationRaceTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Identification.Application.{CorrectIdentification, IdentifyMediaFile}
   alias Bolognesa.Identification.Domain.{MovieCandidate, MovieDetails}
-  alias Bolognesa.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
     as: Repository
 
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Persistence.IdentificationSchema
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.MediaFileSchema
-  alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias CatalogEntrySchema
   alias Ecto.Adapters.SQL.Sandbox
 

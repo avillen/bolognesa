@@ -10,8 +10,8 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
 
-  alias Bolognesa.Persistence.IdentificationEventSchema
-  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationEventSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
 
   test "delivers one committed event and leaves none pending" do
     {event, _scan} = pending_event()
@@ -150,11 +150,14 @@ defmodule Bolognesa.Identification.IdentificationOutboxTest do
     Repo.delete_all(from job in Oban.Job, where: job.queue == "identifications")
 
     Repo.delete_all(
-      from file in Bolognesa.Persistence.MediaFileSchema,
+      from file in Bolognesa.Infrastructure.Persistence.MediaFileSchema,
         where: file.library_id == ^scan.library_id
     )
 
-    Repo.delete_all(from row in Bolognesa.Persistence.ScanSchema, where: row.id == ^scan.id)
+    Repo.delete_all(
+      from row in Bolognesa.Infrastructure.Persistence.ScanSchema, where: row.id == ^scan.id
+    )
+
     Repo.delete_all(from job in Oban.Job, where: job.id == ^scan.job_id)
     Repo.delete!(Repo.get!(LibrarySchema, scan.library_id))
   end

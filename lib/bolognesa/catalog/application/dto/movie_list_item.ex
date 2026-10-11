@@ -14,4 +14,16 @@ defmodule Bolognesa.Catalog.Application.Dto.MovieListItem do
           version_count: non_neg_integer(),
           available_count: non_neg_integer()
         }
+
+  @spec from_domain({Movie.t(), non_neg_integer(), non_neg_integer()}) :: t()
+  def from_domain({%Movie{} = movie, version_count, available_count}) do
+    %__MODULE__{
+      id: movie.id,
+      title: movie.title,
+      year: movie.year,
+      poster_path: movie.poster_path,
+      version_count: version_count,
+      available_count: available_count
+    }
+  end
 end

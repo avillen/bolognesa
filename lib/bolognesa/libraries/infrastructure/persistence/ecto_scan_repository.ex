@@ -5,22 +5,22 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository do
   import Ecto.Query
 
   alias Bolognesa.Identification
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Application.InventoryRequestPlan
   alias Bolognesa.Libraries.Domain.Scan
   alias Bolognesa.Libraries.Domain.ScanStatus
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoLibraryRepository.LibraryMapper
-  alias Bolognesa.Persistence.LibrarySchema
   alias Bolognesa.Repo
 
-  alias Bolognesa.Persistence.InspectionEventSchema
-  alias Bolognesa.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.InspectionEventSchema
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
 
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.ScanSchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileMapper
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.ScanMapper
-  alias Bolognesa.Persistence.MediaFileSchema
-  alias Bolognesa.Persistence.ScanSchema
 
   @impl true
   def request(library_id), do: request(library_id, false)

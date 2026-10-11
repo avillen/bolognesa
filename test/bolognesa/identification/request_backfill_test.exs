@@ -3,10 +3,10 @@ defmodule Bolognesa.Identification.RequestBackfillTest do
 
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoRequestWriter
 
-  alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
+  alias Bolognesa.Infrastructure.Persistence.{IdentificationEventSchema, IdentificationSchema}
 
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
 
   test "backfills existing available files in bounded id order and is idempotent" do
     first = file_fixture("first.mp4")

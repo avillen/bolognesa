@@ -12,8 +12,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     ControlledScanRepository
   }
 
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
 
   setup do
     library =

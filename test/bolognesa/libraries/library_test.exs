@@ -1,8 +1,8 @@
 defmodule Bolognesa.Libraries.LibraryTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries
-  alias Bolognesa.Persistence.LibrarySchema
   alias Ecto.Adapters.SQL.Sandbox
 
   @admin %Actor{id: 1, name: "Ada", email: "ada@example.com", role: :admin}

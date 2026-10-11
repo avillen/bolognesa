@@ -4,8 +4,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoOutboxRepository do
 
   import Ecto.Query
 
-  alias Bolognesa.Persistence.InspectionEventSchema
-  alias Bolognesa.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.InspectionEventSchema
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Repo
 
   @worker "Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker"

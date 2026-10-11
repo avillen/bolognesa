@@ -9,11 +9,11 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     InspectionWorker
   }
 
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Persistence.{EctoOutboxRepository, EctoScanRepository}
   alias Bolognesa.Libraries.Support.{BlockingMediaProbe, RaisingMediaProbe, SuccessfulMediaProbe}
-  alias Bolognesa.Persistence.InspectionSchema
-  alias Bolognesa.Persistence.LibrarySchema
 
   setup do
     library =
@@ -185,8 +185,11 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     Application.put_env(:bolognesa, :media_probe_adapter, BlockingMediaProbe)
     on_exit(fn -> Application.put_env(:bolognesa, :media_probe_adapter, previous) end)
 
-    file = Repo.get!(Bolognesa.Persistence.MediaFileSchema, inspection.media_file_id)
-    scan = Repo.get_by!(Bolognesa.Persistence.ScanSchema, library_id: file.library_id)
+    file =
+      Repo.get!(Bolognesa.Infrastructure.Persistence.MediaFileSchema, inspection.media_file_id)
+
+    scan =
+      Repo.get_by!(Bolognesa.Infrastructure.Persistence.ScanSchema, library_id: file.library_id)
 
     {:ok, entry} =
       NewMediaFile.new(%{

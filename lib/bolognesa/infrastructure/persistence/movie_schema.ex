@@ -1,4 +1,4 @@
-defmodule Bolognesa.Persistence.MovieSchema do
+defmodule Bolognesa.Infrastructure.Persistence.MovieSchema do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset

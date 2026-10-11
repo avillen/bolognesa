@@ -1,8 +1,8 @@
 defmodule Bolognesa.Catalog.CatalogEntryStorageTest do
   use Bolognesa.DataCase, async: true
-  alias Bolognesa.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 
-  alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
 
   test "external identity validates kind and positive provider ID" do
     for attrs <- [%{provider_id: 0}, %{kind: :episode}, %{resource_type: :episode}] do

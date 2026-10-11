@@ -15,19 +15,8 @@ defmodule Bolognesa.Catalog.Application.ListMovies do
     with :ok <- Identity.authorize(actor, :admin),
          :ok <- validate(query, page),
          {:ok, {rows, total}} <- reader.list_movies(String.trim(query), page) do
-      {:ok, %MoviePage{items: Enum.map(rows, &to_list_item/1), total: total}}
+      {:ok, %MoviePage{items: Enum.map(rows, &MovieListItem.from_domain/1), total: total}}
     end
-  end
-
-  defp to_list_item({movie, version_count, available_count}) do
-    %MovieListItem{
-      id: movie.id,
-      title: movie.title,
-      year: movie.year,
-      poster_path: movie.poster_path,
-      version_count: version_count,
-      available_count: available_count
-    }
   end
 
   defp validate(query, page)

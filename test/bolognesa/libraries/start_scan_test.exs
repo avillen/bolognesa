@@ -1,12 +1,12 @@
 defmodule Bolognesa.Libraries.StartScanTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Identity.Domain.Actor
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Application.{GetInspectionCounts, GetScanStatus, StartScan}
   alias Bolognesa.Libraries.Domain.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
   alias Ecto.Adapters.SQL
   alias EctoScanRepository.MediaFileMapper
   alias SQL.Sandbox

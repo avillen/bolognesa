@@ -15,8 +15,8 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
     TimeoutMediaProbe
   }
 
-  alias Bolognesa.Persistence.InspectionSchema
-  alias Bolognesa.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
 
   setup do
     library =

@@ -2,8 +2,8 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.IdentifiedMovieWri
   @moduledoc false
   alias Bolognesa.Identification.Domain.MovieDetails
   alias Bolognesa.Identification.Domain.NewMovie
-  alias Bolognesa.Persistence.CatalogEntrySchema
-  alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Repo
 
   @spec upsert!(MovieDetails.t()) :: pos_integer()

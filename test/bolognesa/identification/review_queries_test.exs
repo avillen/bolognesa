@@ -1,6 +1,6 @@
 defmodule Bolognesa.Identification.ReviewQueriesTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identification
   alias Bolognesa.Identification.Application.Dto.{ReviewItem, ReviewPage}
@@ -9,10 +9,10 @@ defmodule Bolognesa.Identification.ReviewQueriesTest do
   alias Bolognesa.Identification.Domain.ReviewMovie
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoReviewReader
   alias Bolognesa.Identity.Domain.Actor
-  alias Bolognesa.Persistence.IdentificationSchema
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.MediaFileSchema
-  alias Bolognesa.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
 
   test "shows pending, failed and manually unidentified files to administrators only" do
     library =

@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository.MediaFileMapper do
   @moduledoc false
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries.Domain.MediaFile
-  alias Bolognesa.Persistence.MediaFileSchema
 
   @spec to_media_file(MediaFileSchema.t()) :: MediaFile.t()
   def to_media_file(schema) do

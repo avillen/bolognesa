@@ -9,9 +9,9 @@ defmodule Bolognesa.Identification.IdentifyMediaFileTest do
   alias Bolognesa.Identification.Infrastructure.Persistence.EctoIdentificationRepository,
     as: Repository
 
-  alias Bolognesa.Persistence.IdentificationSchema
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
 
   defmodule Provider do
     def search("Mi pelicula", 2001),

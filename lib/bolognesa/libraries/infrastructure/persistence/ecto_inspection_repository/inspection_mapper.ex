@@ -1,8 +1,8 @@
 defmodule Bolognesa.Libraries.Infrastructure.Persistence.EctoInspectionRepository.InspectionMapper do
   @moduledoc false
 
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Libraries.Domain.{Inspection, TechnicalTrack}
-  alias Bolognesa.Persistence.InspectionSchema
 
   @spec to_inspection(InspectionSchema.t()) :: Inspection.t()
   def to_inspection(schema) do

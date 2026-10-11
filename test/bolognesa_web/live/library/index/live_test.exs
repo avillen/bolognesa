@@ -4,9 +4,9 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
-  alias Bolognesa.Persistence.InspectionSchema
   alias Bolognesa.Repo
   use Oban.Testing, repo: Bolognesa.Repo
 

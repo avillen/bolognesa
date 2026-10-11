@@ -3,7 +3,7 @@ defmodule Bolognesa.Identification.Infrastructure.Persistence.EctoOutboxReposito
 
   import Ecto.Query
 
-  alias Bolognesa.Persistence.{IdentificationEventSchema, IdentificationSchema}
+  alias Bolognesa.Infrastructure.Persistence.{IdentificationEventSchema, IdentificationSchema}
 
   alias Bolognesa.Repo
 

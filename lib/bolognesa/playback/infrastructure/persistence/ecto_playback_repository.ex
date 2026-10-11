@@ -4,11 +4,11 @@ defmodule Bolognesa.Playback.Infrastructure.Persistence.EctoPlaybackRepository d
 
   import Ecto.Query
 
-  alias Bolognesa.Persistence.CatalogEntrySchema
-  alias Bolognesa.Persistence.IdentificationSchema
-  alias Bolognesa.Persistence.InspectionSchema
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
+  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Playback.Domain.Source
   alias Bolognesa.Playback.Domain.TechnicalTrack
   alias Bolognesa.Repo

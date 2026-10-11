@@ -1,12 +1,12 @@
 defmodule Bolognesa.Libraries.DiscoverFilesTest do
   use Bolognesa.DataCase, async: false
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
   alias Bolognesa.Libraries.Application.DiscoverFiles
   alias Bolognesa.Libraries.Domain.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
   alias Bolognesa.Libraries.Infrastructure.Persistence.EctoScanRepository
   alias Bolognesa.Libraries.Support.{ControlledFileDiscovery, UnavailableScanRepository}
-  alias Bolognesa.Persistence.LibrarySchema
-  alias Bolognesa.Persistence.{MediaFileSchema, ScanSchema}
   alias Ecto.Adapters.SQL.Sandbox
   @moduletag capture_log: true
   require Logger
