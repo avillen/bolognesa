@@ -45,6 +45,7 @@ Durante el desarrollo ejecutar las pruebas afectadas; ampliar cuando exista un r
 
 ## Procesos en pruebas
 
+- El pool de PostgreSQL en pruebas admite al menos cinco conexiones: las pruebas concurrentes con datos confirmados mantienen un owner sandbox, un coordinador y tres workers independientes. No reducirlo en runners con pocos schedulers ni sustituir esa capacidad por timeouts mayores.
 - **Always use `start_supervised!/1`** to start processes in tests as it guarantees cleanup between tests
 - **Avoid** `Process.sleep/1` and `Process.alive?/1` in tests
   - Instead of sleeping to wait for a process to finish, **always** use `Process.monitor/1` and assert on the DOWN message:

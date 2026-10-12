@@ -22,7 +22,9 @@ config :bolognesa, Bolognesa.Repo,
   hostname: "localhost",
   database: "bolognesa_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
+  # Committed concurrency tests hold a sandbox owner, a coordinator and three workers.
+  # Keep five connections available even on runners with one or two schedulers.
+  pool_size: max(System.schedulers_online() * 2, 5)
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

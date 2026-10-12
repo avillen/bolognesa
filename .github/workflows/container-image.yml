@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Require deployment secrets
+        env:
+          SECRET_KEY_BASE: validation-only
         run: |
           if docker compose --env-file deploy/compose/.env.example -f deploy/compose/compose.yaml config --quiet 2>compose-empty-secrets.log; then
             cat compose-empty-secrets.log
