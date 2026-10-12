@@ -63,7 +63,7 @@ El ejemplo de medios monta `/media/movies` y `/media/series`; puedes agregar cua
 
 ## Imágenes y releases
 
-`.github/workflows/container-image.yml` publica en el namespace GHCR del repositorio GitHub, convertido a minúsculas. En este repositorio es `ghcr.io/avillen/bolognesa`. Publica variantes multi-arquitectura `linux/amd64` y `linux/arm64`: HTTP privado (`latest-lan` / `sha-<commit>-lan`) y HTTPS (`latest` / `sha-<commit>`). Este perfil necesita la **variante HTTP**; Docker selecciona la arquitectura del servidor.
+`.github/workflows/container-image.yml` publica en el namespace GHCR del repositorio GitHub, convertido a minúsculas. En este repositorio es `ghcr.io/avillen/bolognesa`. Publica variantes multi-arquitectura `linux/amd64` y `linux/arm64`: HTTP privado (`latest-lan` / `sha-<commit>-lan`) y HTTPS (`latest` / `sha-<commit>`). Los builds de cada arquitectura y variante se ejecutan en paralelo en runners nativos y se unen en un manifiesto verificado. Este perfil necesita la **variante HTTP**; Docker selecciona la arquitectura del servidor.
 
 Antes de usar una publicación, verifica su manifiesto y acceso de descarga. El mantenedor debe configurar visibilidad pública del paquete para permitir instalaciones anónimas. Puedes fijar `BOLOGNESA_IMAGE` a un digest o tag inmutable.
 
