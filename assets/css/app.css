@@ -45,12 +45,14 @@ input, select, video {
 .app-shell { min-height: 100vh; }
 .app-sidebar { background: #0b0e10; padding: 24px 16px; }
 .app-brand { display: flex; align-items: center; gap: 10px; color: var(--color-ink); font-size: 18px; font-weight: 650; letter-spacing: -.04em; }
-.app-navigation { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 20px; }
+.app-navigation { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.app-nav-primary, .app-nav-secondary { display: flex; flex-wrap: wrap; gap: 4px; }
+.app-nav-secondary { padding-top: 8px; border-top: 1px solid var(--color-border); }
 .app-nav-link { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 12px; border-radius: 7px; color: var(--color-muted); font-size: 13px; transition: color .15s, background-color .15s; }
 .app-nav-link:hover { background: var(--color-surface); color: var(--color-ink); }
 .app-nav-link.is-active { background: #e16b4829; color: var(--color-ink); }
 .app-nav-link.is-active .size-5 { color: var(--color-accent-soft); }
-.app-nav-caption, .app-sidebar-note { display: none; }
+.app-sidebar-note { display: none; }
 .app-content { min-width: 0; padding: 28px 20px 64px; }
 .app-content h1 { letter-spacing: -.035em; }
 .app-content h2 { letter-spacing: -.02em; }
@@ -87,8 +89,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .app-shell { display: grid; grid-template-columns: 200px minmax(0, 1fr); }
   .app-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 30px 16px; }
   .app-brand { margin: 0 8px; }
-  .app-navigation { flex-direction: column; flex-wrap: nowrap; margin-top: 36px; }
-  .app-nav-caption { display: block; margin: 30px 12px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--color-muted); }
+  .app-navigation { flex: 1; min-height: 0; flex-direction: column; gap: 20px; margin-top: 36px; }
+  .app-nav-primary, .app-nav-secondary { flex-direction: column; flex-wrap: nowrap; gap: 4px; }
+  .app-nav-primary { min-height: 0; overflow-y: auto; margin: -6px; padding: 6px; }
+  .app-nav-secondary { flex-shrink: 0; margin-top: auto; padding: 16px 0 0; border-top: 1px solid var(--color-border); }
   .app-sidebar-note { display: block; margin: auto 12px 0; font-size: 11px; color: var(--color-muted); }
   .app-content { padding: 40px 40px 72px; }
   .poster-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }

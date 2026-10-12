@@ -90,6 +90,9 @@ try {
       for (const image of document.images) image.loading = "eager";
     });
     await page.waitForFunction(() => Array.from(document.images).every((image) => image.complete));
+    await page.evaluate(() =>
+      Promise.all(Array.from(document.images, (image) => image.decode().catch(() => {})))
+    );
     await page.waitForFunction(() => {
       const progress = Array.from(document.querySelectorAll("canvas"))
         .find((canvas) => canvas.style.zIndex === "100001");

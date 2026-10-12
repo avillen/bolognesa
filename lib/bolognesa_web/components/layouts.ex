@@ -49,58 +49,61 @@ defmodule BolognesaWeb.Layouts do
           <span>boloñesa</span>
         </.link>
         <nav aria-label={gettext("Navegación principal")} class="app-navigation">
-          <.link
-            navigate={~p"/"}
-            class={["app-nav-link", @active_section == :home && "is-active"]}
-            aria-current={@active_section == :home && "page"}
-          >
-            <.icon name="hero-home" class="size-5" /> <span>{gettext("Inicio")}</span>
-          </.link>
-          <p class="app-nav-caption">{gettext("Mi biblioteca")}</p>
-          <.link
-            :for={library <- @navigation_libraries}
-            id={"nav-library-#{library.id}"}
-            navigate={library_path(library)}
-            class={["app-nav-link", @active_library_id == library.id && "is-active"]}
-            aria-current={@active_library_id == library.id && "page"}
-          >
-            <.icon
-              name={if library.content_type == :movie, do: "hero-film", else: "hero-tv"}
-              class="size-5 shrink-0"
-            />
-            <span class="min-w-0 break-words">{library.name}</span>
-          </.link>
-          <p
-            :if={@navigation_error}
-            id="navigation-error"
-            role="alert"
-            class="px-3 text-sm text-muted"
-          >
-            {@navigation_error}
-          </p>
-          <.link
-            navigate={~p"/libraries"}
-            class={["app-nav-link", @active_section == :libraries && "is-active"]}
-            aria-current={@active_section == :libraries && "page"}
-          >
-            <.icon name="hero-folder" class="size-5" /> <span>{gettext("Bibliotecas")}</span>
-          </.link>
-          <.link
-            navigate={~p"/settings"}
-            id="nav-settings"
-            class={["app-nav-link", @active_section == :settings && "is-active"]}
-            aria-current={@active_section == :settings && "page"}
-          >
-            <.icon name="hero-cog-6-tooth" class="size-5" /> <span>{gettext("Ajustes")}</span>
-          </.link>
-          <.link
-            navigate={~p"/about"}
-            class={["app-nav-link", @active_section == :about && "is-active"]}
-            aria-current={@active_section == :about && "page"}
-          >
-            <.icon name="hero-information-circle" class="size-5" />
-            <span>{gettext("Acerca de")}</span>
-          </.link>
+          <div class="app-nav-primary">
+            <.link
+              navigate={~p"/"}
+              class={["app-nav-link", @active_section == :home && "is-active"]}
+              aria-current={@active_section == :home && "page"}
+            >
+              <.icon name="hero-home" class="size-5" /> <span>{gettext("Inicio")}</span>
+            </.link>
+            <.link
+              :for={library <- @navigation_libraries}
+              id={"nav-library-#{library.id}"}
+              navigate={library_path(library)}
+              class={["app-nav-link", @active_library_id == library.id && "is-active"]}
+              aria-current={@active_library_id == library.id && "page"}
+            >
+              <.icon
+                name={if library.content_type == :movie, do: "hero-film", else: "hero-tv"}
+                class="size-5 shrink-0"
+              />
+              <span class="min-w-0 break-words">{library.name}</span>
+            </.link>
+            <p
+              :if={@navigation_error}
+              id="navigation-error"
+              role="alert"
+              class="px-3 text-sm text-muted"
+            >
+              {@navigation_error}
+            </p>
+          </div>
+          <div class="app-nav-secondary">
+            <.link
+              navigate={~p"/libraries"}
+              class={["app-nav-link", @active_section == :libraries && "is-active"]}
+              aria-current={@active_section == :libraries && "page"}
+            >
+              <.icon name="hero-folder" class="size-5" /> <span>{gettext("Bibliotecas")}</span>
+            </.link>
+            <.link
+              navigate={~p"/settings"}
+              id="nav-settings"
+              class={["app-nav-link", @active_section == :settings && "is-active"]}
+              aria-current={@active_section == :settings && "page"}
+            >
+              <.icon name="hero-cog-6-tooth" class="size-5" /> <span>{gettext("Ajustes")}</span>
+            </.link>
+            <.link
+              navigate={~p"/about"}
+              class={["app-nav-link", @active_section == :about && "is-active"]}
+              aria-current={@active_section == :about && "page"}
+            >
+              <.icon name="hero-information-circle" class="size-5" />
+              <span>{gettext("Acerca de")}</span>
+            </.link>
+          </div>
         </nav>
         <p class="app-sidebar-note">{gettext("Tu cine, en casa.")}</p>
       </header>
