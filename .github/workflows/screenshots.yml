@@ -52,8 +52,5 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-
       - name: Verify README screenshots
         run: make check-screenshots

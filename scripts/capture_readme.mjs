@@ -9,7 +9,9 @@ const outputDirectory = process.env.BOLOGNESA_SCREENSHOT_OUTPUT_DIR
 await mkdir(outputDirectory, { recursive: true });
 const screenshotPath = (name) => `${outputDirectory}/${name}`;
 
-const browser = await chromium.launch({ headless: true });
+const browser = process.env.BOLOGNESA_SCREENSHOT_BROWSER_WS
+  ? await chromium.connect(process.env.BOLOGNESA_SCREENSHOT_BROWSER_WS, { exposeNetwork: "<loopback>" })
+  : await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({
     viewport: { width: 1440, height: 1000 },

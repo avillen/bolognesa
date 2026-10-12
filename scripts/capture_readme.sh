@@ -16,12 +16,17 @@ work_dir="$(mktemp -d "$temporary_root/bolognesa-screenshots.XXXXXX")"
 container_name="bolognesa-screenshots-$$"
 server_pid=""
 container_started="false"
+browser_container="bolognesa-screenshot-browser-$$"
+browser_started="false"
 completed="false"
 
 cleanup() {
   if [[ -n "$server_pid" ]]; then
     kill "$server_pid" 2>/dev/null || true
     wait "$server_pid" 2>/dev/null || true
+  fi
+  if [[ "$browser_started" == "true" ]]; then
+    docker stop "$browser_container" >/dev/null 2>&1 || true
   fi
   if [[ "$container_started" == "true" ]]; then
     docker stop "$container_name" >/dev/null 2>&1 || true
@@ -40,7 +45,23 @@ trap cleanup EXIT
 if [[ ! -d node_modules/playwright ]]; then
   npm ci
 fi
-npx playwright install chromium
+# Keep Chromium, native controls, fonts and rasterization identical on macOS and CI.
+browser_image="mcr.microsoft.com/playwright:v1.55.1-noble@sha256:d8e0bdf35da90942fc8f97a65fa7f1969200ccd916ec0fd78780d80d9b81e07b"
+docker run --detach --rm --init --ipc=host --platform linux/amd64 \
+  --name "$browser_container" --publish 127.0.0.1::3000 \
+  --volume "$repo_root/node_modules:/work/node_modules:ro" --workdir /work \
+  "$browser_image" node node_modules/playwright/cli.js run-server \
+  --host 0.0.0.0 --port 3000 >/dev/null
+browser_started="true"
+browser_port="$(docker port "$browser_container" 3000/tcp | awk -F: '{print $NF}')"
+export BOLOGNESA_SCREENSHOT_BROWSER_WS="ws://127.0.0.1:$browser_port"
+for _ in $(seq 1 40); do
+  if curl --silent --fail "http://127.0.0.1:$browser_port/" >/dev/null; then
+    break
+  fi
+  sleep 1
+done
+curl --silent --fail "http://127.0.0.1:$browser_port/" >/dev/null
 
 output_dir="$repo_root/docs/screenshots"
 if [[ "$mode" == "--check" ]]; then

@@ -4,7 +4,9 @@ import { chromium } from "playwright";
 const outputPath = process.argv[2];
 if (!outputPath) throw new Error("Pass the output path for the synthetic video.");
 
-const browser = await chromium.launch({ headless: true });
+const browser = process.env.BOLOGNESA_SCREENSHOT_BROWSER_WS
+  ? await chromium.connect(process.env.BOLOGNESA_SCREENSHOT_BROWSER_WS, { exposeNetwork: "<loopback>" })
+  : await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage();
   const video = await page.evaluate(async () => {
