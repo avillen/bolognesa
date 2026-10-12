@@ -50,7 +50,7 @@ finish() {
       if [ "$migration_started" -eq 1 ]; then
         echo 'Migration began; app remains stopped. Inspect schema and backup before recovery.' >&2
       else
-        echo 'Installation failed before migration; app remains stopped.' >&2
+        echo 'Deployment failed before migration; app remains stopped.' >&2
       fi
     fi
   fi

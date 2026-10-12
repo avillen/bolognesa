@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptada; ampliada el 2026-10-12 para HTTP privado y un despliegue común configurable. La implementación local admite red bridge/host, base en volumen/directorio y operación local/SSH. Publicación y sustitución real del despliegue anterior pendientes de verificar.
+Aceptada; ampliada el 2026-10-12 para HTTP privado y un despliegue común configurable. La implementación local admite red bridge/host, base en volumen/directorio y operación local/SSH. Publicación multi-arquitectura y sustitución real del despliegue anterior verificadas; ver evidencia en `docs/validation/qnap.md`.
 
 ## Contexto
 

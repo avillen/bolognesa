@@ -6,7 +6,7 @@ Este documento es la referencia de arquitectura y convenciones del backend de Bo
 
 Bolognesa es un mediacenter personal para practicar Elixir y llegar a utilizarlo de forma habitual. La visión incluye películas, series, documentales y música, con identificación, reproducción, cuentas independientes y futuros clientes.
 
-El despliegue genérico se ejecuta en un servidor Linux con Docker Compose. El QNAP TS-233 es la primera instalación y conserva su perfil operativo en `deploy/qnap/`; las limitaciones y validaciones propias del dispositivo no son requisitos de la arquitectura. El acceso privado por Tailscale está habilitado en esa instalación, pendiente de validación desde otro dispositivo. El primer cliente es web, utilizado desde ordenador, móvil y navegador de una televisión Hisense de aproximadamente seis años. La compatibilidad multimedia del televisor no está verificada.
+El despliegue genérico se ejecuta en un servidor Linux con Docker Compose. El QNAP TS-233 es la primera instalación validada y utiliza el despliegue común de `deploy/compose/` con configuración privada; las limitaciones y validaciones propias del dispositivo no son requisitos de la arquitectura. El acceso privado por Tailscale está habilitado en esa instalación, pendiente de validación desde otro dispositivo. El primer cliente es web, utilizado desde ordenador, móvil y navegador de una televisión Hisense de aproximadamente seis años. La compatibilidad multimedia del televisor no está verificada.
 
 El repositorio parte de una aplicación Phoenix con Ecto y PostgreSQL. Se mantiene una única aplicación, organizada por contextos delimitados, desplegable con Docker Compose. Los archivos específicos de cada entorno viven bajo `deploy/`; no se requieren umbrella ni servicios independientes.
 
@@ -16,7 +16,7 @@ El primer recorrido completo será: entrar con una cuenta administradora, config
 
 El acceso a los archivos originales será de lectura. Bolognesa no los moverá, renombrará ni eliminará.
 
-Series y transcodificación se han abordado por prioridad del propietario. Quedan para fases posteriores la música, las aplicaciones específicas, la gestión de varias cuentas y el acceso remoto general; el acceso privado por Tailscale está limitado al perfil QNAP y aún requiere una prueba desde otro dispositivo. Los documentales se modelarán como películas o series según su estructura.
+Series y transcodificación se han abordado por prioridad del propietario. Quedan para fases posteriores la música, las aplicaciones específicas, la gestión de varias cuentas y el acceso remoto general; el despliegue común admite acceso privado por LAN/Tailscale; la instalación actual aún requiere una prueba desde otro dispositivo de la tailnet. Los documentales se modelarán como películas o series según su estructura.
 
 ## Arquitectura y dependencias
 

@@ -53,7 +53,7 @@ In Boloñesa, open **Libraries**, add a movie library with the path `/media`, an
 
 Stop the services with `docker compose down`. This keeps the database volume. Removing that volume deletes the local Boloñesa database and account.
 
-For a private server deployment, use the [generic Linux Docker Compose profile](deploy/compose/README.md). It is configured for direct HTTP access over a trusted LAN or Tailscale network and must not be exposed to the Internet. Its multi-architecture image publication and public GHCR access still need verification. The root Compose file above remains the local development quick start. The [QNAP guide](deploy/qnap/README.md) describes the NAS-specific deployment.
+For a private server deployment, use the [generic Linux Docker Compose profile](deploy/compose/README.md). It is configured for direct HTTP access over a trusted LAN or Tailscale network and must not be exposed to the Internet. Its multi-architecture publication and private server deployment have been verified; the current GHCR package requires authentication, or you can build locally/use your own registry. The root Compose file above remains the local development quick start.
 
 ## Run from source
 
@@ -91,4 +91,4 @@ There is no license file yet. Please check with the maintainer before redistribu
 - [Roadmap](docs/roadmap.md)
 - [Architecture and project conventions](docs/conventions/)
 - [Generic Linux Docker Compose deployment](deploy/compose/README.md)
-- [QNAP deployment guide](deploy/qnap/README.md)
+- [Deployment transition history](docs/history/2026-10-12-unified-deployment-transition.md)

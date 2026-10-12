@@ -19,6 +19,8 @@ quote() {
 remote() { ssh -o BatchMode=yes -o ConnectTimeout=10 "$DEPLOY_HOST" "$1"; }
 upload() {
   local stage path name mapped=
+  local tar_options=()
+  if [[ $(LC_ALL=C tar --version) == *bsdtar* ]]; then tar_options=(--no-xattrs); fi
   stage=$(mktemp -d)
   trap 'rm -rf "$stage"' EXIT
   cp -R "$source_dir/scripts" "$stage/scripts"
@@ -33,11 +35,11 @@ upload() {
   done
   if [[ $transport == local ]]; then
     mkdir -p "$DEPLOY_DIR"
-    tar -C "$stage" -cf - . | tar -C "$DEPLOY_DIR" -xf -
+    LC_ALL=C COPYFILE_DISABLE=1 tar "${tar_options[@]}" -C "$stage" -cf - . | LC_ALL=C tar -C "$DEPLOY_DIR" -xf -
   else
     local command
-    command="mkdir -p $(quote "$DEPLOY_DIR") && tar -C $(quote "$DEPLOY_DIR") -xf -"
-    tar -C "$stage" -cf - . | remote "$command"
+    command="mkdir -p $(quote "$DEPLOY_DIR") && LC_ALL=C tar -C $(quote "$DEPLOY_DIR") -xf -"
+    LC_ALL=C COPYFILE_DISABLE=1 tar "${tar_options[@]}" -C "$stage" -cf - . | remote "$command"
   fi
   if [[ -n ${DEPLOY_IMAGE_TAR:-} ]]; then
     if [[ $transport == local ]]; then cp "$DEPLOY_IMAGE_TAR" "$DEPLOY_DIR/image.tar"; "$DOCKER_BIN" load -i "$DEPLOY_DIR/image.tar";
@@ -71,7 +73,7 @@ if [[ $transport == local ]]; then
   exec sh "$DEPLOY_DIR/scripts/operate.sh" "$operation" "$@"
 fi
 command=env
-for key in DEPLOY_DIR DOCKER_BIN COMPOSE_FILE DEPLOY_HEALTH_URL DEPLOY_BACKUP_DIR ALLOW_DATABASE_CONFIG_CHANGE EXPECTED_DATABASE_SOURCE DEPLOY_HTTP_RETRIES DEPLOY_WAIT_ATTEMPTS DEPLOY_WAIT_INTERVAL; do
+for key in DEPLOY_DIR DOCKER_BIN COMPOSE_FILE DEPLOY_HEALTH_URL DEPLOY_BACKUP_DIR ALLOW_DATABASE_CONFIG_CHANGE EXPECTED_DATABASE_SOURCE DEPLOY_HTTP_RETRIES DEPLOY_WAIT_ATTEMPTS DEPLOY_WAIT_INTERVAL DEPLOY_MIN_FREE_KIB; do
   if [[ -n ${!key:-} ]]; then command+=" $(quote "$key=${!key}")"; fi
 done
 command+=" sh $(quote "$DEPLOY_DIR/scripts/operate.sh") $(quote "$operation")"

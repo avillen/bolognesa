@@ -31,6 +31,8 @@ make deploy-init
 
 El comando distribuye las recetas seleccionadas y los scripts, prepara el directorio y genera secretos si no existe `.env`. No sobrescribe los secretos de una instalación existente. Edita el `.env` **en el destino** antes de instalar: `PHX_HOST`, `BOLOGNESA_BIND_IP`, `MEDIA_PATH`, imagen y puerto. Los secretos deben permanecer privados; puedes generarlos manualmente con `openssl rand -hex 64` para Phoenix y `openssl rand -hex 32` para PostgreSQL. El formato hexadecimal evita caracteres reservados en `DATABASE_URL`.
 
+Preflight comprueba espacio disponible para imágenes y backups: `DEPLOY_MIN_FREE_KIB` configura el presupuesto mínimo (predeterminado `262144`, 256 MiB). Ajusta ese presupuesto al tamaño real de la base; no garantiza que cualquier backup quepa. La carpeta PostgreSQL puede seguir privada y pertenecer a PostgreSQL: el usuario SSH no necesita leerla.
+
 Conserva `PUBLIC_PORT` y `BOLOGNESA_PORT` iguales para HTTP directo. `PHX_HOST` es el nombre/IP usado en el navegador. Si utilizas varios nombres privados, `PHX_CHECK_ORIGIN=conn` permite esos orígenes conservando la validación WebSocket; vacío valida contra `PHX_HOST`.
 
 ```sh
@@ -65,7 +67,7 @@ El ejemplo de medios monta `/media/movies` y `/media/series`; puedes agregar cua
 
 `.github/workflows/container-image.yml` publica en el namespace GHCR del repositorio GitHub, convertido a minúsculas. En este repositorio es `ghcr.io/avillen/bolognesa`. Publica variantes multi-arquitectura `linux/amd64` y `linux/arm64`: HTTP privado (`latest-lan` / `sha-<commit>-lan`) y HTTPS (`latest` / `sha-<commit>`). Los builds de cada arquitectura y variante se ejecutan en paralelo en runners nativos y se unen en un manifiesto verificado. Este perfil necesita la **variante HTTP**; Docker selecciona la arquitectura del servidor.
 
-Antes de usar una publicación, verifica su manifiesto y acceso de descarga. El mantenedor debe configurar visibilidad pública del paquete para permitir instalaciones anónimas. Puedes fijar `BOLOGNESA_IMAGE` a un digest o tag inmutable.
+La publicación y el despliegue HTTP en el servidor real están verificados. La consulta anónima a GHCR devolvió HTTP 401: para descargar este paquete actualmente necesitas autenticar Docker en el destino con permiso de lectura de paquetes (`read:packages`) o usar una imagen de tu propio registro/build local. El mantenedor debe configurar visibilidad pública del paquete para permitir instalaciones anónimas. Puedes fijar `BOLOGNESA_IMAGE` a un digest o tag inmutable.
 
 ```sh
 make deploy-release

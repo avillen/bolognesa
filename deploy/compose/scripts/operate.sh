@@ -19,12 +19,20 @@ case "$operation" in
     ;;
   preflight)
     require_runtime
+    minimum_kib=${DEPLOY_MIN_FREE_KIB:-262144}
+    case "$minimum_kib" in ''|*[!0-9]*) echo 'DEPLOY_MIN_FREE_KIB must be an integer' >&2; exit 2 ;; esac
+    available_kib=$(df -Pk "$DEPLOY_DIR" | awk 'END {print $4}')
+    test "$available_kib" -ge "$minimum_kib" || { echo 'Insufficient deployment storage for image/backup budget' >&2; exit 1; }
     "$DOCKER_BIN" version --format 'Docker {{.Server.Version}} {{.Server.Arch}}'
     command -v curl >/dev/null
     for key in MEDIA_PATH MOVIES_PATH SERIES_PATH POSTGRES_DATA_PATH; do
       source_path=$(runtime_value "$key")
       if [ -n "$source_path" ]; then
-        test -d "$source_path" && test -r "$source_path" && test -x "$source_path" || { echo "Configured $key is not an accessible directory" >&2; exit 1; }
+        test -d "$source_path" || { echo "Configured $key directory does not exist" >&2; exit 1; }
+        # PostgreSQL owns its private data directory; the operator need not read it.
+        if [ "$key" != POSTGRES_DATA_PATH ]; then
+          test -r "$source_path" && test -x "$source_path" || { echo "Configured $key is not readable by the operator" >&2; exit 1; }
+        fi
       fi
     done
     echo 'Deployment preflight passed'

@@ -84,4 +84,4 @@ if bash "$repo_dir/deploy/compose/scripts/release.sh" > "$test_dir/rejected.log"
   echo 'Unrelated workflow was accepted' >&2; exit 1
 fi
 test ! -s "$MOCK_MAKE_LOG"
-echo 'Compose release validation passed' 
+echo 'Compose release validation passed'

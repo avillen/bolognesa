@@ -30,6 +30,6 @@ export COMPOSE_FILE='first "quoted name".yaml:second with space.yaml'
 export DEPLOY_TRANSPORT=local
 bash "$repo_dir/deploy/compose/scripts/deploy.sh" status
 cp "$TRACE" "$test_dir/direct"
-make -s -C "$repo_dir" deploy-status DEPLOY_CONFIG=/dev/null QNAP_CONFIG=/dev/null DEPLOY_TRANSPORT=local DEPLOY_DIR="$DEPLOY_DIR" DOCKER_BIN="$DOCKER_BIN" DEPLOY_COMPOSE_FILES="$COMPOSE_FILE" DEPLOY_HEALTH_URL="$DEPLOY_HEALTH_URL"
+make -s -C "$repo_dir" deploy-status DEPLOY_CONFIG=/dev/null DEPLOY_TRANSPORT=local DEPLOY_DIR="$DEPLOY_DIR" DOCKER_BIN="$DOCKER_BIN" DEPLOY_COMPOSE_FILES="$COMPOSE_FILE" DEPLOY_HEALTH_URL="$DEPLOY_HEALTH_URL"
 cmp "$TRACE" "$test_dir/direct"
-echo 'Local/SSH and Make transport quoting passed' 
+echo 'Local/SSH and Make transport quoting passed'

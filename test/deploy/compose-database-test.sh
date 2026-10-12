@@ -12,6 +12,7 @@ if [ "$1" = compose ]; then
   shift
   while [ "${1:-}" = -f ] || [ "${1:-}" = --env-file ] || [ "${1:-}" = --project-directory ]; do shift 2; done
   case "$*" in
+    'config --environment') printf 'POSTGRES_DATA_PATH=%s\n' "${PRIVATE_DATABASE_PATH:-}" ;;
     'ps -a -q db') [ "$CASE" = present ] && echo current-db; exit 0 ;;
     'up -d db') echo recreated-db >> "$TRACE" ;;
     'exec -T db sh -c'*) echo dump >> "$TRACE"; echo synthetic ;;
@@ -29,4 +30,19 @@ if grep -q recreated-db "$TRACE"; then echo 'Backup recreated the database using
 export CASE=missing
 if sh "$repo_dir/deploy/compose/scripts/backup.sh" >/dev/null 2>&1; then echo 'Backup created a missing database' >&2; exit 1; fi
 test ! -s "$TRACE"
-echo 'Backup uses the existing database without reconfiguration'
+mkdir "$test_dir/private-postgres"
+chmod 000 "$test_dir/private-postgres"
+export PRIVATE_DATABASE_PATH="$test_dir/private-postgres"
+trap 'chmod 700 "$test_dir/private-postgres"; rm -rf "$test_dir"' EXIT
+sh "$repo_dir/deploy/compose/scripts/operate.sh" preflight >/dev/null
+cat > "$test_dir/bin/df" <<'SH'
+#!/bin/sh
+printf 'Filesystem 1024-blocks Used Available Capacity Mounted\n'
+printf 'synthetic 1000000 999999 %s 0%% /\n' "${FAKE_FREE_KIB:-999999}"
+SH
+chmod +x "$test_dir/bin/df"
+export PATH="$test_dir/bin:$PATH" FAKE_FREE_KIB=1
+if sh "$repo_dir/deploy/compose/scripts/operate.sh" preflight >/dev/null 2>&1; then
+  echo 'Preflight accepted insufficient backup/image space' >&2; exit 1
+fi
+echo 'Existing database and configurable storage preflight passed'

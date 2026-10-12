@@ -36,4 +36,4 @@ Leer todas las convenciones aplicables antes de modificar un área. Mantener los
 
 ## Operación
 
-Antes de desplegar en QNAP, leer `make help` y [la guía de despliegue](deploy/qnap/README.md). Usar `make qnap-release` para un commit `main` publicado y registrar el run de CI, digest de imagen, backup y verificación reales.
+Antes de desplegar, leer `make help` y [la guía de despliegue común](deploy/compose/README.md). Configurar la instalación con `.env.deploy` y usar `make deploy-release` para un commit `main` publicado. Registrar el run de CI, digest de imagen, backup y verificación reales; conservar proyecto, datos y rutas internas al actualizar.
