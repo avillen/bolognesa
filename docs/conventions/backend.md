@@ -6,9 +6,9 @@ Este documento es la referencia de arquitectura y convenciones del backend de Bo
 
 Bolognesa es un mediacenter personal para practicar Elixir y llegar a utilizarlo de forma habitual. La visión incluye películas, series, documentales y música, con identificación, reproducción, cuentas independientes y futuros clientes.
 
-El primer despliegue será en un QNAP TS-233 dentro de la red local. El acceso remoto llegará posteriormente. El primer cliente será web, utilizado desde ordenador, móvil y navegador de una televisión Hisense de aproximadamente seis años. La compatibilidad multimedia del televisor no está verificada.
+El despliegue genérico se ejecuta en un servidor Linux con Docker Compose. El QNAP TS-233 es la primera instalación y conserva su perfil operativo en `deploy/qnap/`; las limitaciones y validaciones propias del dispositivo no son requisitos de la arquitectura. El acceso privado por Tailscale está habilitado en esa instalación, pendiente de validación desde otro dispositivo. El primer cliente es web, utilizado desde ordenador, móvil y navegador de una televisión Hisense de aproximadamente seis años. La compatibilidad multimedia del televisor no está verificada.
 
-El repositorio parte de una aplicación Phoenix con Ecto y PostgreSQL. Se mantendrá una única aplicación y un único despliegue inicial, organizados por contextos delimitados. No se requieren umbrella ni servicios independientes.
+El repositorio parte de una aplicación Phoenix con Ecto y PostgreSQL. Se mantiene una única aplicación, organizada por contextos delimitados, desplegable con Docker Compose. Los archivos específicos de cada entorno viven bajo `deploy/`; no se requieren umbrella ni servicios independientes.
 
 ## Alcance inicial
 
@@ -16,7 +16,7 @@ El primer recorrido completo será: entrar con una cuenta administradora, config
 
 El acceso a los archivos originales será de lectura. Bolognesa no los moverá, renombrará ni eliminará.
 
-Series y transcodificación se han abordado por prioridad del propietario. Quedan para fases posteriores la música, las aplicaciones específicas, la gestión de varias cuentas y el acceso remoto. Los documentales se modelarán como películas o series según su estructura.
+Series y transcodificación se han abordado por prioridad del propietario. Quedan para fases posteriores la música, las aplicaciones específicas, la gestión de varias cuentas y el acceso remoto general; el acceso privado por Tailscale está limitado al perfil QNAP y aún requiere una prueba desde otro dispositivo. Los documentales se modelarán como películas o series según su estructura.
 
 ## Arquitectura y dependencias
 
@@ -158,7 +158,7 @@ La entrega directa y la conversión compatible FFmpeg/HLS están implementadas. 
 
 La entrega debe soportar peticiones de rangos de bytes para buscar posiciones. Cada petición de contenido requiere autorización, también cuando el navegador la realiza fuera del canal interactivo de la página. Los clientes solicitan identificadores autorizados, no rutas de disco arbitrarias. H4a transmite desde un descriptor validado y vuelve a comprobar sesión, vínculo y archivo en cada petición; ver [decisión 0006](../decisions/0006-authorized-direct-playback.md).
 
-La conversión utiliza puertos propios y sesiones transitorias privadas. No se asume capacidad de transcodificación del NAS sin una evaluación previa.
+La conversión utiliza puertos propios y sesiones transitorias privadas. No se asume capacidad de transcodificación del servidor sin una evaluación previa.
 
 ### Actividad personal
 

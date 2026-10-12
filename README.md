@@ -53,6 +53,8 @@ In Boloñesa, open **Libraries**, add a movie library with the path `/media`, an
 
 Stop the services with `docker compose down`. This keeps the database volume. Removing that volume deletes the local Boloñesa database and account.
 
+For a server deployment, use the [generic Linux Docker Compose profile](deploy/compose/README.md). It uses the published secure image, keeps the web port on loopback and requires a TLS reverse proxy. The root Compose file above remains the local development quick start. The [QNAP guide](deploy/qnap/README.md) describes the NAS-specific LAN deployment.
+
 ## Run from source
 
 For native development, install Elixir 1.17 or newer in the supported 1.x series, Erlang/OTP, PostgreSQL, and `ffprobe` (and `ffmpeg` if you want to work on the compatibility playback path). Configure PostgreSQL to match `config/dev.exs`, then run:
@@ -88,4 +90,5 @@ There is no license file yet. Please check with the maintainer before redistribu
 - [Current status and verification](docs/status.md)
 - [Roadmap](docs/roadmap.md)
 - [Architecture and project conventions](docs/conventions/)
+- [Generic Linux Docker Compose deployment](deploy/compose/README.md)
 - [QNAP deployment guide](deploy/qnap/README.md)

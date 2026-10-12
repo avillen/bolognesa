@@ -119,3 +119,5 @@ docker compose --env-file .env -f compose.yaml down
 ```
 
 `down` conserva el volumen nombrado. Borrar el volumen de PostgreSQL elimina la cuenta, bibliotecas registradas y catálogo; hazlo solo si quieres descartar los datos.
+
+Si ejecutas la restauración en una shell distinta de la que creó el backup, asigna antes `backup_file` a la ruta exacta del dump que vas a restaurar.

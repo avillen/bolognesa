@@ -22,3 +22,4 @@ Crear un registro cuando se elija o cambie un límite arquitectónico, contrato,
 | [0014](0014-parallel-port-infrastructure-categories.md) | Implementada localmente; sin despliegue | Categorías paralelas para ports y adaptadores por responsabilidad |
 | [0015](0015-domain-concept-directories.md) | Implementada localmente en todos los contextos con dominio; sin despliegue | Directorios del dominio por tipo de concepto, con agrupación opcional por subdominio |
 | [0016](0016-user-locale-and-settings.md) | Implementada y desplegada; recorrido autenticado QNAP pendiente | Preferencia de idioma por cuenta, detección del navegador y Ajustes |
+| [0017](0017-generic-linux-compose-deployment.md) | Implementada localmente; CI y arranque genérico pendientes | Despliegue Linux genérico con Docker Compose separado del perfil QNAP |

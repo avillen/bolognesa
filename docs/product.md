@@ -4,16 +4,16 @@ Bolognesa es un mediacenter personal construido con Elixir y Phoenix. Su objetiv
 
 ## Entorno y usuarios
 
-- Servidor inicial: QNAP TS-233, dentro de la red local. La base Phoenix está desplegada; capacidad bajo uso real y reproducción pendientes de verificar.
+- Despliegue previsto: un servidor Linux con Docker Compose. El QNAP TS-233 es el primer servidor y entorno validado; la capacidad bajo uso real y varias comprobaciones de reproducción siguen pendientes.
 - Clientes iniciales: navegador de ordenador durante el desarrollo, móvil y navegador de una televisión Hisense de aproximadamente seis años. El propietario comprobó que la página base se ve bien en móvil y televisión; la compatibilidad de reproducción sigue pendiente.
 - Una cuenta administradora al principio, con identidad real y datos personales asociados a su usuario. Se prevén cuentas independientes posteriormente.
-- Acceso desde fuera de casa en una fase posterior.
+- El acceso privado mediante Tailscale está habilitado en QNAP y pendiente de probar desde otro dispositivo de la tailnet. El acceso remoto general sigue siendo trabajo futuro.
 
 ## Primera versión utilizable
 
 Entrar, configurar una carpeta de películas, escanearla, identificar sus obras, corregir coincidencias, reproducir un archivo compatible y continuar desde la posición guardada.
 
-El contenido original se trata como solo lectura: no se mueve, renombra ni elimina. La primera reproducción es directa; no se presupone que cualquier formato funcione ni que el NAS pueda convertirlo en tiempo real.
+El contenido original se trata como solo lectura: no se mueve, renombra ni elimina. La primera reproducción es directa; no se presupone que cualquier formato funcione ni que el servidor doméstico pueda convertirlo en tiempo real.
 
 ## Ampliación priorizada: series
 
