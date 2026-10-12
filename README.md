@@ -53,7 +53,7 @@ In Boloñesa, open **Libraries**, add a movie library with the path `/media`, an
 
 Stop the services with `docker compose down`. This keeps the database volume. Removing that volume deletes the local Boloñesa database and account.
 
-For a server deployment, use the [generic Linux Docker Compose profile](deploy/compose/README.md). It uses the published secure image, keeps the web port on loopback and requires a TLS reverse proxy. The root Compose file above remains the local development quick start. The [QNAP guide](deploy/qnap/README.md) describes the NAS-specific LAN deployment.
+For a server deployment, use the [generic Linux Docker Compose profile](deploy/compose/README.md). It is configured for a secure image, keeps the web port on loopback and requires a TLS reverse proxy; image publication and public GHCR access still need verification. The root Compose file above remains the local development quick start. The [QNAP guide](deploy/qnap/README.md) describes the NAS-specific LAN deployment.
 
 ## Run from source
 

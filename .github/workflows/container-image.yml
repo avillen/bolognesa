@@ -24,6 +24,17 @@ jobs:
           fi
           grep -q "POSTGRES_PASSWORD" compose-empty-secrets.log
 
+      - name: Require Phoenix secret
+        env:
+          POSTGRES_PASSWORD: validation-only
+        run: |
+          if docker compose --env-file deploy/compose/.env.example -f deploy/compose/compose.yaml config --quiet 2>compose-empty-phoenix-secret.log; then
+            cat compose-empty-phoenix-secret.log
+            echo "Compose accepted an empty Phoenix secret" >&2
+            exit 1
+          fi
+          grep -q "SECRET_KEY_BASE" compose-empty-phoenix-secret.log
+
       - name: Validate generic Compose configuration
         env:
           SECRET_KEY_BASE: validation-only

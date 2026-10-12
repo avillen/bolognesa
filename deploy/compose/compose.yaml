@@ -1,4 +1,4 @@
-name: bolognesa
+name: bolognesa-server
 
 services:
   db:

@@ -1,6 +1,6 @@
 # Despliegue genérico en Linux con Docker Compose
 
-Este perfil ejecuta Bolognesa y PostgreSQL en un único servidor Linux con Docker Compose v2. La imagen publicada admite `linux/amd64` y `linux/arm64`; Docker selecciona la plataforma adecuada. Este procedimiento no depende de QNAP.
+Este perfil ejecuta Bolognesa y PostgreSQL en un único servidor Linux con Docker Compose v2. El workflow está configurado para publicar imágenes `linux/amd64` y `linux/arm64`; hasta completar una publicación y verificar que GHCR permite descargarlas sin iniciar sesión, el perfil no puede descargarse desde el registro. Este procedimiento no depende de QNAP.
 
 El servicio web se enlaza a `127.0.0.1` y la imagen aplica HTTPS. Colócalo detrás de un proxy inverso con TLS. No publiques el puerto 4000 directamente en Internet ni habilites HTTP directo: ese modo pertenece al perfil LAN de QNAP.
 
@@ -14,9 +14,9 @@ El servicio web se enlaza a `127.0.0.1` y la imagen aplica HTTPS. Colócalo detr
 
 ## Imagen publicada
 
-`.github/workflows/container-image.yml` valida el Compose genérico en pull requests y publica la imagen en GHCR desde `main`. La etiqueta `latest` sigue el commit publicado más reciente; cada ejecución también registra una referencia `sha-<commit>` y el digest multi-arquitectura (`linux/amd64` y `linux/arm64`). La imagen genérica conserva HTTPS forzado. El workflow `arm64-image.yml` sigue publicando por separado la variante LAN HTTP para QNAP.
+`.github/workflows/container-image.yml` valida el Compose genérico en pull requests y está configurado para publicar la imagen en GHCR desde `main`. Cada publicación debe producir una referencia `sha-<commit>`, la etiqueta `latest` y un digest multi-arquitectura (`linux/amd64` y `linux/arm64`). La imagen genérica conserva HTTPS forzado. El workflow `arm64-image.yml` sigue publicando por separado la variante LAN HTTP para QNAP.
 
-GHCR puede crear el primer paquete como privado. Antes de ofrecer el despliegue a otras personas, el mantenedor debe habilitar la descarga pública del paquete `bolognesa`; verifica una descarga sin iniciar sesión. En `.env`, usa `latest` para probar el último build o fija `BOLOGNESA_IMAGE` al tag `sha-<commit>` o al digest que muestra el resumen de CI.
+La publicación y la descarga pública de GHCR están pendientes de verificación. Antes de instalar, confirma en CI que el manifiesto contiene ambas plataformas y prueba una descarga sin iniciar sesión. GHCR puede crear el primer paquete como privado; el mantenedor debe habilitar su visibilidad pública. Después, en `.env`, usa `latest` para probar el último build o fija `BOLOGNESA_IMAGE` al tag `sha-<commit>` o al digest que muestra el resumen de CI.
 
 ## Primera instalación
 
@@ -47,12 +47,14 @@ Cambia el dominio por el valor real de `PHX_HOST`. Si el proxy usa varios nombre
 Inicia la base, ejecuta las migraciones y levanta la app:
 
 ```sh
-docker compose --env-file .env -f compose.yaml pull
-docker compose --env-file .env -f compose.yaml up -d --wait db
-docker compose --env-file .env -f compose.yaml run --rm --no-deps app /app/bin/migrate
-docker compose --env-file .env -f compose.yaml up -d app
+docker compose --env-file .env -f compose.yaml pull && \
+docker compose --env-file .env -f compose.yaml up -d --wait db && \
+docker compose --env-file .env -f compose.yaml run --rm --no-deps app /app/bin/migrate && \
+docker compose --env-file .env -f compose.yaml up -d app && \
 docker compose --env-file .env -f compose.yaml ps
 ```
+
+`--wait db` espera a que PostgreSQL aparezca como `healthy`. La cadena `&&` detiene el proceso si falla la descarga o una migración.
 
 Abre `https://<PHX_HOST>`. El primer acceso lleva a `/setup` para crear la cuenta administradora. `TMDB_READ_TOKEN` es opcional para arrancar; se necesita para identificar automáticamente películas y series.
 
@@ -62,34 +64,42 @@ La base usa un volumen Docker persistente. Guarda los backups en otra carpeta de
 
 ```sh
 backup_dir=/srv/bolognesa/backups
-mkdir -p "$backup_dir"
-docker compose --env-file .env -f compose.yaml stop app
-backup_file="$backup_dir/pre-migration-$(date +%Y%m%d-%H%M%S).dump"
+mkdir -p "$backup_dir" && \
+docker compose --env-file .env -f compose.yaml up -d --wait db && \
+docker compose --env-file .env -f compose.yaml stop app && \
+backup_file="$backup_dir/pre-migration-$(date +%Y%m%d-%H%M%S).dump" && \
 docker compose --env-file .env -f compose.yaml exec -T db \
-  pg_dump -U bolognesa -d bolognesa -Fc > "$backup_file"
+  pg_dump -U bolognesa -d bolognesa -Fc > "$backup_file" && \
 test -s "$backup_file"
 ```
+
+No continúes con la actualización si el backup no se ha creado y validado.
 
 Edita `BOLOGNESA_IMAGE` en `.env` para indicar el tag `sha-<commit>` o digest que vas a instalar. Después:
 
 ```sh
-docker compose --env-file .env -f compose.yaml pull app
-docker compose --env-file .env -f compose.yaml run --rm --no-deps app /app/bin/migrate
-docker compose --env-file .env -f compose.yaml up -d --force-recreate app
+docker compose --env-file .env -f compose.yaml pull app && \
+docker compose --env-file .env -f compose.yaml run --rm --no-deps app /app/bin/migrate && \
+docker compose --env-file .env -f compose.yaml up -d --force-recreate app && \
 docker compose --env-file .env -f compose.yaml ps
 ```
+
+Espera a que la base de datos esté `healthy` antes de migrar. La cadena `&&` deja la aplicación detenida si falla la descarga o la migración.
 
 Comprueba la URL HTTPS a través del proxy, que PostgreSQL esté `healthy` y que el montaje de medios siga siendo de solo lectura:
 
 ```sh
-docker inspect bolognesa-app-1 --format '{{json .Mounts}}'
+docker inspect bolognesa-server-app-1 --format '{{json .Mounts}}'
 ```
+
+El perfil usa recursos `bolognesa-server_*`, separados del Compose de desarrollo. Si ejecutas ambos perfiles a la vez, configura `BOLOGNESA_PORT` con un puerto local libre.
 
 Si la migración falla, mantén la app detenida y conserva el backup y el volumen original. Restaura el backup en la base persistente antes de volver a iniciar la app; después fija `BOLOGNESA_IMAGE` a la imagen anterior y recrea el servicio. Con el backup anterior disponible, la restauración en el volumen existente se realiza así:
 
 ```sh
-docker compose --env-file .env -f compose.yaml exec -T db dropdb -U bolognesa --if-exists bolognesa
-docker compose --env-file .env -f compose.yaml exec -T db createdb -U bolognesa -O bolognesa bolognesa
+docker compose --env-file .env -f compose.yaml up -d --wait db && \
+docker compose --env-file .env -f compose.yaml exec -T db dropdb -U bolognesa --if-exists bolognesa && \
+docker compose --env-file .env -f compose.yaml exec -T db createdb -U bolognesa -O bolognesa bolognesa && \
 docker compose --env-file .env -f compose.yaml exec -T db \
   pg_restore -U bolognesa -d bolognesa --no-owner < "$backup_file"
 ```
