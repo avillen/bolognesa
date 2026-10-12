@@ -48,6 +48,7 @@ input, select, video {
 .app-navigation { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
 .app-nav-primary, .app-nav-secondary { display: flex; flex-wrap: wrap; gap: 4px; }
 .app-nav-secondary { padding-top: 8px; border-top: 1px solid var(--color-border); }
+.app-nav-caption { display: none; }
 .app-nav-link { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 12px; border-radius: 7px; color: var(--color-muted); font-size: 13px; transition: color .15s, background-color .15s; }
 .app-nav-link:hover { background: var(--color-surface); color: var(--color-ink); }
 .app-nav-link.is-active { background: #e16b4829; color: var(--color-ink); }
@@ -93,6 +94,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .app-nav-primary, .app-nav-secondary { flex-direction: column; flex-wrap: nowrap; gap: 4px; }
   .app-nav-primary { min-height: 0; overflow-y: auto; margin: -6px; padding: 6px; }
   .app-nav-secondary { flex-shrink: 0; margin-top: auto; padding: 16px 0 0; border-top: 1px solid var(--color-border); }
+  .app-nav-caption { display: block; margin: 0 12px 4px; color: var(--color-muted); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
   .app-sidebar-note { display: block; margin: auto 12px 0; font-size: 11px; color: var(--color-muted); }
   .app-content { padding: 40px 40px 72px; }
   .poster-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }

@@ -80,6 +80,7 @@ defmodule BolognesaWeb.Layouts do
             </p>
           </div>
           <div class="app-nav-secondary">
+            <p class="app-nav-caption">{gettext("Mi cuenta")}</p>
             <.link
               navigate={~p"/libraries"}
               class={["app-nav-link", @active_section == :libraries && "is-active"]}
