@@ -15,6 +15,10 @@ The sidebar lists configured libraries by their stored names with movie or serie
 - Playback progress is not persisted across sessions. Multi-episode files play in full from the beginning.
 - The generic HTTP deployment is intended for a trusted private network and must not be exposed directly to the Internet.
 
+## Music work in preparation
+
+Local music listening has an approved design for incremental delivery: individual tracks first, then artist/album browsing and a queue, followed by continuous playback during navigation. The [approved design](music-playback-design.md) evaluates targeted discovery, inspection, and playback refactors. The [implementation plan](music-playback-plan.md) covers the first delivery. Implementation is deferred at the maintainer's request; resume by reviewing the plan, selecting an execution method, and checking the current code and baseline tests. No music code or migrations have been added. Existing verification above applies to movie and series behavior only.
+
 ## Before the first public release
 
 The repository now uses the MIT License. The history on `main` has been rewritten to remove old operational notes, private deployment files, local and NAS paths, internal addresses, and personal commit email addresses. A full-history Gitleaks scan reports no unallowlisted findings; `.gitleaksignore` records two exact matches for fixed development/test signing keys, which are not used in production. CI scans incoming commits for known credential patterns, but it does not replace a review for personal paths, addresses, or operational details.
