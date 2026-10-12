@@ -30,6 +30,10 @@ bolognesa-*.tar
 # Ignore assets that are produced by build tools.
 /priv/static/assets/
 
+# Ignore static files produced by `mix assets.deploy`.
+/priv/static/*-????????????????????????????????.*
+/priv/static/**/*.gz
+
 # Ignore digested assets cache.
 /priv/static/cache_manifest.json
 
@@ -37,6 +41,7 @@ bolognesa-*.tar
 npm-debug.log
 *.log
 /assets/node_modules/
+/node_modules/
 
 # Local machine files and private TLS material.
 .DS_Store

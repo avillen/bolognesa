@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "screenshots": "make screenshots",
+    "capture-screenshots": "node scripts/capture_readme.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.55.1"
+  }
+}

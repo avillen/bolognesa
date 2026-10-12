@@ -1,0 +1,59 @@
+name: README screenshots
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "config/**"
+      - "priv/**"
+      - "scripts/**"
+      - "Makefile"
+      - "package.json"
+      - "package-lock.json"
+      - "README.md"
+      - ".github/workflows/screenshots.yml"
+  pull_request:
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "config/**"
+      - "priv/**"
+      - "scripts/**"
+      - "Makefile"
+      - "package.json"
+      - "package-lock.json"
+      - "README.md"
+      - ".github/workflows/screenshots.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: 1.20.3
+          otp-version: 28.3.3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Mix dependencies
+        run: mix deps.get --check-locked
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify README screenshots
+        run: make check-screenshots

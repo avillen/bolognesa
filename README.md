@@ -33,7 +33,46 @@ Screenshots should come from a real running Boloñesa instance. The most useful 
 2. A movie detail page with an available version.
 3. The video player after playback starts.
 
-To record the flow, start the app, sign in, register and scan a mounted media folder, identify one movie, open its detail page, start playback, pause, and seek. Keep personal filenames and paths out of public captures. No screenshots are included yet.
+The captures below show a sample movie library, a movie detail page, and the player with a generated sample video. Playback support still depends on each file's format and the browser.
+
+<table>
+  <tr>
+    <td align="center"><a href="docs/screenshots/library.png"><img src="docs/screenshots/library.png" alt="Bolognesa movie library with a sample title" width="420"></a><br><strong>Movie library</strong></td>
+    <td align="center"><a href="docs/screenshots/movie.png"><img src="docs/screenshots/movie.png" alt="Sample movie detail page with an available version" width="420"></a><br><strong>Movie details</strong></td>
+  </tr>
+</table>
+
+<a href="docs/screenshots/player.png"><img src="docs/screenshots/player.png" alt="Generated sample video in the Bolognesa movie player" width="860"></a>
+
+<details>
+  <summary>Explore screenshots of every screen</summary>
+
+  **Getting started**
+
+  | First-run setup | Sign in | Home |
+  | --- | --- | --- |
+  | [<img src="docs/screenshots/setup.png" alt="First-run administrator setup screen" width="260">](docs/screenshots/setup.png) | [<img src="docs/screenshots/login.png" alt="Sign-in screen" width="260">](docs/screenshots/login.png) | [<img src="docs/screenshots/home.png" alt="Home screen" width="260">](docs/screenshots/home.png) |
+
+  **Libraries and movies**
+
+  | Libraries | Movie library | Movie review | Movie details | Player |
+  | --- | --- | --- | --- | --- |
+  | [<img src="docs/screenshots/libraries.png" alt="Libraries screen" width="190">](docs/screenshots/libraries.png) | [<img src="docs/screenshots/library.png" alt="Movie library" width="190">](docs/screenshots/library.png) | [<img src="docs/screenshots/movie-review.png" alt="Movie identification review screen" width="190">](docs/screenshots/movie-review.png) | [<img src="docs/screenshots/movie.png" alt="Movie details screen" width="190">](docs/screenshots/movie.png) | [<img src="docs/screenshots/player.png" alt="Video player screen" width="190">](docs/screenshots/player.png) |
+
+  **Series**
+
+  | Series library | Series review | Series details | Season | Episode |
+  | --- | --- | --- | --- | --- |
+  | [<img src="docs/screenshots/series.png" alt="Series library screen" width="190">](docs/screenshots/series.png) | [<img src="docs/screenshots/series-review.png" alt="Series identification review screen" width="190">](docs/screenshots/series-review.png) | [<img src="docs/screenshots/series-detail.png" alt="Series details screen" width="190">](docs/screenshots/series-detail.png) | [<img src="docs/screenshots/season.png" alt="Season screen" width="190">](docs/screenshots/season.png) | [<img src="docs/screenshots/episode.png" alt="Episode details screen" width="190">](docs/screenshots/episode.png) |
+
+  **Account**
+
+  | Settings | About |
+  | --- | --- |
+  | [<img src="docs/screenshots/settings.png" alt="Settings screen" width="260">](docs/screenshots/settings.png) | [<img src="docs/screenshots/about.png" alt="About screen" width="260">](docs/screenshots/about.png) |
+</details>
+
+The complete gallery is regenerated with `make screenshots`. Interface and application changes are checked in CI; if the rendered screens change, include the regenerated images in the same pull request.
 
 ## Quick start with Docker
 

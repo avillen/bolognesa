@@ -27,6 +27,8 @@ Open [http://localhost:4000](http://localhost:4000) and create the first adminis
 
 For native development, install Elixir 1.17 or newer in the supported 1.x series, Erlang/OTP, PostgreSQL and `ffprobe`. Configure PostgreSQL as in `config/dev.exs`, then run `mix setup` and `mix phx.server`. Use `mix test` for the test suite and `mix precommit` for the full local check. Tests use PostgreSQL.
 
+For interface changes, regenerate the README gallery with `make screenshots`. This needs Docker and Node.js/npm; Playwright installs Chromium. The command starts a temporary PostgreSQL container and uses synthetic demo data and a browser-generated video. CI runs the same capture flow for application, asset, configuration, or screenshot workflow changes and fails when the committed images are stale.
+
 The app is organized by domain context under `lib/bolognesa/`, with the Phoenix interface in `lib/bolognesa_web/` and matching tests under `test/`. See the [architecture decision](docs/decisions/0001-architecture-foundation.md) and [backend conventions](docs/conventions/backend.md) for details. Follow the nearest existing pattern; explain a change when it improves that pattern.
 
 ## Propose a change

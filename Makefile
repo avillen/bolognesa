@@ -1,11 +1,13 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: help local-up local-down local-logs
+.PHONY: help local-up local-down local-logs screenshots check-screenshots
 
 help:
 	@printf '%s\n' \
 	  'local-up/down/logs    Operate the development Compose project' \
+	  'screenshots           Regenerate README screenshots with isolated demo data' \
+	  'check-screenshots     Verify README screenshots are up to date' \
 	  'deploy-init/upload   Prepare and distribute the selected server recipe' \
 	  'deploy-preflight     Validate Docker, Compose and configured paths' \
 	  'deploy-build         Build/export an image with configurable local Docker/platform' \
@@ -25,6 +27,12 @@ local-down:
 
 local-logs:
 	@docker compose logs --tail 100 --follow app db
+
+screenshots:
+	@bash scripts/capture_readme.sh
+
+check-screenshots:
+	@bash scripts/capture_readme.sh --check
 
 DEPLOY_CONFIG ?= .env.deploy
 -include $(DEPLOY_CONFIG)
