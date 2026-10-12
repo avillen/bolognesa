@@ -37,6 +37,8 @@ For a feature or larger refactor, open an issue or discussion first so the scope
 
 Please keep changes focused. Prefer a small patch with a clear reason over a broad rewrite. When changing behavior, add a targeted test that describes what a user or caller should observe. Consider the effect on startup time, memory, disk reads and responsiveness, especially on modest hardware.
 
+Use the commit format and privacy checks in the [commit convention](docs/conventions/commits.md). CI scans incoming commits for known secret patterns, but contributors must still review staged changes for personal or operational details that automated scanners may not recognize.
+
 ## Pull requests
 
 Open a pull request with a short description of the problem and the behavior after the change. Include relevant test results and screenshots for interface changes when available. Mention anything you could not verify, such as a browser, device, or real media format. Keep personal media, credentials, local `.env` files, and private library details out of the PR.
