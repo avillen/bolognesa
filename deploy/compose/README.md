@@ -12,6 +12,12 @@ El servicio web se enlaza a `127.0.0.1` y la imagen aplica HTTPS. Colócalo detr
 - `openssl` para generar secretos.
 - Una imagen genérica publicada en GHCR. El paquete debe permitir descarga anónima. Fija una etiqueta `sha-<commit>` o digest para actualizaciones controladas.
 
+## Imagen publicada
+
+`.github/workflows/container-image.yml` valida el Compose genérico en pull requests y publica la imagen en GHCR desde `main`. La etiqueta `latest` sigue el commit publicado más reciente; cada ejecución también registra una referencia `sha-<commit>` y el digest multi-arquitectura (`linux/amd64` y `linux/arm64`). La imagen genérica conserva HTTPS forzado. El workflow `arm64-image.yml` sigue publicando por separado la variante LAN HTTP para QNAP.
+
+GHCR puede crear el primer paquete como privado. Antes de ofrecer el despliegue a otras personas, el mantenedor debe habilitar la descarga pública del paquete `bolognesa`; verifica una descarga sin iniciar sesión. En `.env`, usa `latest` para probar el último build o fija `BOLOGNESA_IMAGE` al tag `sha-<commit>` o al digest que muestra el resumen de CI.
+
 ## Primera instalación
 
 Desde la raíz del repositorio, prepara los archivos de configuración:
