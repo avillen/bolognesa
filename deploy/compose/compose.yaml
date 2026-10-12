@@ -1,0 +1,50 @@
+name: bolognesa
+
+services:
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bolognesa
+      POSTGRES_USER: bolognesa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    image: ${BOLOGNESA_IMAGE:?Set BOLOGNESA_IMAGE in .env}
+    init: true
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ecto://bolognesa:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/bolognesa
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Set SECRET_KEY_BASE in .env}
+      TMDB_READ_TOKEN: ${TMDB_READ_TOKEN:-}
+      PHX_HOST: ${PHX_HOST:?Set PHX_HOST in .env}
+      PHX_CHECK_ORIGIN: ${PHX_CHECK_ORIGIN:-}
+      PORT: "4000"
+      PUBLIC_PORT: ${PUBLIC_PORT:-443}
+      BOLOGNESA_LIBRARY_ROOTS: /media
+      BOLOGNESA_TRANSCODE_ROOT: /transcode
+    ports:
+      - "127.0.0.1:${BOLOGNESA_PORT:-4000}:4000"
+    volumes:
+      - type: bind
+        source: ${MEDIA_PATH:?Set MEDIA_PATH in .env}
+        target: /media
+        read_only: true
+        bind:
+          create_host_path: false
+    tmpfs:
+      - /transcode:size=512m,uid=65534,gid=65534,mode=0700
+    command: ["/app/bin/server"]
+
+volumes:
+  database:
