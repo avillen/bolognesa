@@ -24,7 +24,8 @@ for network in ('bridge', 'host'):
         assert {v['target'] for v in app['volumes']} == {'/media/movies','/media/series'}
         assert app['environment']['BOLOGNESA_LIBRARY_ROOTS'] == '/media/movies:/media/series'
         assert db['volumes'][0]['type'] == storage
-        if storage == 'bind': assert not db['volumes'][0]['bind']['create_host_path']
+        # Compose 2 omits false JSON fields; Compose 5 serializes them explicitly.
+        if storage == 'bind': assert not db['volumes'][0].get('bind', {}).get('create_host_path', False)
         if network == 'host':
             assert app['network_mode'] == db['network_mode'] == 'host'
             assert not app.get('ports')
