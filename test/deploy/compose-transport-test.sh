@@ -33,3 +33,21 @@ cp "$TRACE" "$test_dir/direct"
 make -s -C "$repo_dir" deploy-status DEPLOY_CONFIG=/dev/null DEPLOY_TRANSPORT=local DEPLOY_DIR="$DEPLOY_DIR" DOCKER_BIN="$DOCKER_BIN" DEPLOY_COMPOSE_FILES="$COMPOSE_FILE" DEPLOY_HEALTH_URL="$DEPLOY_HEALTH_URL"
 cmp "$TRACE" "$test_dir/direct"
 echo 'Local/SSH and Make transport quoting passed'
+
+# Exercise upload with GNU tar detection, including Bash versions that reject
+# empty array expansions under nounset. Delegate actual archiving to host tar.
+real_tar=$(command -v tar)
+cat > "$test_dir/bin/tar" <<'SH'
+#!/bin/sh
+if [ "${1:-}" = --version ]; then printf 'tar (GNU tar) 1.35\n'; exit; fi
+exec "$REAL_TAR" "$@"
+SH
+chmod +x "$test_dir/bin/tar"
+export REAL_TAR="$real_tar"
+export DEPLOY_COMPOSE_FILES=compose.yaml:network.host.yaml
+unset DEPLOY_IMAGE_TAR
+DEPLOY_TRANSPORT=local bash "$repo_dir/deploy/compose/scripts/deploy.sh" upload
+test -f "$target/compose.yaml"
+test -f "$target/network.host.yaml"
+DEPLOY_TRANSPORT=ssh DEPLOY_HOST=user@example bash "$repo_dir/deploy/compose/scripts/deploy.sh" upload
+echo 'Local/SSH upload with GNU tar passed'

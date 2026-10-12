@@ -39,7 +39,7 @@ try:
     values=dict(BOLOGNESA_IMAGE=image, SECRET_KEY_BASE=secrets.token_hex(64),
                 POSTGRES_PASSWORD=secrets.token_hex(32), PHX_HOST='127.0.0.1',
                 BOLOGNESA_PORT=port, PUBLIC_PORT=port, MEDIA_PATH=str(media),
-                COMPOSE_PROJECT_NAME=project, DATA_ROOT=str(target))
+                COMPOSE_PROJECT_NAME=project)
     (target/'.env').write_text('\n'.join(f'{k}={v}' for k,v in values.items())+'\n')
     (target/'.env').chmod(0o600)
     operation('install', image)

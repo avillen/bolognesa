@@ -41,7 +41,6 @@ case "$operation" in
     DEPLOY_OPERATION=$operation; export DEPLOY_OPERATION
     exec "$script_dir/update.sh" "$@"
     ;;
-  load-image) "$DOCKER_BIN" load -i "$DEPLOY_DIR/image.tar" ;;
   backup) exec "$script_dir/backup.sh" "$@" ;;
   restore) exec "$script_dir/restore.sh" "$@" ;;
   status) require_runtime; compose ps ;;

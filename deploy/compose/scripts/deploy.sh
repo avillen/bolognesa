@@ -16,11 +16,17 @@ quote() {
   local value=${1//\'/\'\\\'\'}
   printf "'%s'" "$value"
 }
+installed_compose_files() {
+  local path mapped=
+  local paths=(); IFS=: read -r -a paths <<< "$COMPOSE_FILE"
+  for path in "${paths[@]}"; do mapped+="${mapped:+:}$(basename "$path")"; done
+  printf '%s' "$mapped"
+}
 remote() { ssh -o BatchMode=yes -o ConnectTimeout=10 "$DEPLOY_HOST" "$1"; }
 upload() {
-  local stage path name mapped=
-  local tar_options=()
-  if [[ $(LC_ALL=C tar --version) == *bsdtar* ]]; then tar_options=(--no-xattrs); fi
+  local stage path name
+  local tar_command=(tar)
+  if [[ $(LC_ALL=C tar --version) == *bsdtar* ]]; then tar_command+=(--no-xattrs); fi
   stage=$(mktemp -d)
   trap 'rm -rf "$stage"' EXIT
   cp -R "$source_dir/scripts" "$stage/scripts"
@@ -31,15 +37,14 @@ upload() {
     name=$(basename "$path")
     [[ ! -e $stage/$name ]] || { echo "Duplicate Compose basename: $name" >&2; exit 2; }
     cp "$path" "$stage/$name"
-    mapped+="${mapped:+:}$name"
   done
   if [[ $transport == local ]]; then
     mkdir -p "$DEPLOY_DIR"
-    LC_ALL=C COPYFILE_DISABLE=1 tar "${tar_options[@]}" -C "$stage" -cf - . | LC_ALL=C tar -C "$DEPLOY_DIR" -xf -
+    LC_ALL=C COPYFILE_DISABLE=1 "${tar_command[@]}" -C "$stage" -cf - . | LC_ALL=C tar -C "$DEPLOY_DIR" -xf -
   else
     local command
     command="mkdir -p $(quote "$DEPLOY_DIR") && LC_ALL=C tar -C $(quote "$DEPLOY_DIR") -xf -"
-    LC_ALL=C COPYFILE_DISABLE=1 tar "${tar_options[@]}" -C "$stage" -cf - . | remote "$command"
+    LC_ALL=C COPYFILE_DISABLE=1 "${tar_command[@]}" -C "$stage" -cf - . | remote "$command"
   fi
   if [[ -n ${DEPLOY_IMAGE_TAR:-} ]]; then
     if [[ $transport == local ]]; then cp "$DEPLOY_IMAGE_TAR" "$DEPLOY_DIR/image.tar"; "$DOCKER_BIN" load -i "$DEPLOY_DIR/image.tar";
@@ -48,7 +53,6 @@ upload() {
       remote "$(quote "$DOCKER_BIN") load -i $(quote "$DEPLOY_DIR/image.tar")"
     fi
   fi
-  export COMPOSE_FILE=$mapped
   rm -rf "$stage"; trap - EXIT
 }
 case "$operation" in
@@ -65,10 +69,7 @@ case "$operation" in
   init) upload ;;
 esac
 # Preserve order but map locally selected filenames to their installed basenames.
-paths=(); IFS=: read -r -a paths <<< "$COMPOSE_FILE"
-installed_files=
-for path in "${paths[@]}"; do installed_files+="${installed_files:+:}$(basename "$path")"; done
-export COMPOSE_FILE=$installed_files
+export COMPOSE_FILE=$(installed_compose_files)
 if [[ $transport == local ]]; then
   exec sh "$DEPLOY_DIR/scripts/operate.sh" "$operation" "$@"
 fi

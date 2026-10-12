@@ -7,9 +7,8 @@ import Config
 # before starting your production server.
 config :bolognesa, BolognesaWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest.json"
 
-# Force using SSL in production. This also sets the "strict-security-transport" header,
-# known as HSTS. If you have a health check endpoint, you may want to exclude it below.
-# Note `:force_ssl` is required to be set at compile-time.
+# Private HTTP images disable SSL redirects at compile time.
+# Other production builds retain SSL redirects and HSTS.
 config :bolognesa, BolognesaWeb.Endpoint,
   force_ssl:
     if(System.get_env("BOLOGNESA_LAN_HTTP") == "true",
@@ -17,7 +16,6 @@ config :bolognesa, BolognesaWeb.Endpoint,
       else: [
         rewrite_on: [:x_forwarded_proto],
         exclude: [
-          # paths: ["/health"],
           hosts: ["localhost", "127.0.0.1"]
         ]
       ]

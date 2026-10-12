@@ -1,5 +1,0 @@
-# The base recipe already uses this mode. Select this file explicitly if desired.
-services:
-  app:
-    environment:
-      BIND_IP: 0.0.0.0

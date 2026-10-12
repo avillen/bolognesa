@@ -48,7 +48,7 @@ La receta `compose.yaml` usa red bridge y volumen Docker. `DEPLOY_COMPOSE_FILES`
 
 | Opción | Archivos/configuración |
 | --- | --- |
-| Bridge + volumen Docker | `DEPLOY_COMPOSE_FILES=compose.yaml` (o agregar `network.bridge.yaml`). DB no publica puertos. |
+| Bridge + volumen Docker | `DEPLOY_COMPOSE_FILES=compose.yaml`. DB no publica puertos. |
 | Red host | Agregar `network.host.yaml`. Configura `DB_PORT` y el bind/puerto de Phoenix. PostgreSQL escucha exclusivamente en loopback. No se usan mapeos `ports`. |
 | Directorio PostgreSQL | Agregar `storage.bind.yaml` y configurar `POSTGRES_DATA_PATH` en `.env`. Crear/verificar ese directorio explícitamente; no se crea al montar. |
 | Varias carpetas multimedia | Copiar `media.example.yaml` a `media.local.yaml`, editar los montajes y agregar ese archivo. Mantener todas las fuentes de solo lectura y configurar las raíces internas autorizadas. |
@@ -65,7 +65,7 @@ El ejemplo de medios monta `/media/movies` y `/media/series`; puedes agregar cua
 
 ## Imágenes y releases
 
-`.github/workflows/container-image.yml` publica en el namespace GHCR del repositorio GitHub, convertido a minúsculas. En este repositorio es `ghcr.io/avillen/bolognesa`. Publica variantes multi-arquitectura `linux/amd64` y `linux/arm64`: HTTP privado (`latest-lan` / `sha-<commit>-lan`) y HTTPS (`latest` / `sha-<commit>`). Los builds de cada arquitectura y variante se ejecutan en paralelo en runners nativos y se unen en un manifiesto verificado. Este perfil necesita la **variante HTTP**; Docker selecciona la arquitectura del servidor.
+`.github/workflows/container-image.yml` publica en el namespace GHCR del repositorio GitHub, convertido a minúsculas. En este repositorio es `ghcr.io/avillen/bolognesa`. Está configurado para publicar una imagen HTTP privada multi-arquitectura (`linux/amd64` y `linux/arm64`) con etiquetas `latest-lan` y `sha-<commit>-lan`. Los dos builds se ejecutan en paralelo en runners nativos y se unen en un manifiesto verificado; Docker selecciona la arquitectura del servidor. Las etiquetas HTTPS anteriores (`latest` / `sha-<commit>`) dejan de actualizarse y conservan su significado.
 
 La publicación y el despliegue HTTP en el servidor real están verificados. La consulta anónima a GHCR devolvió HTTP 401: para descargar este paquete actualmente necesitas autenticar Docker en el destino con permiso de lectura de paquetes (`read:packages`) o usar una imagen de tu propio registro/build local. El mantenedor debe configurar visibilidad pública del paquete para permitir instalaciones anónimas. Puedes fijar `BOLOGNESA_IMAGE` a un digest o tag inmutable.
 

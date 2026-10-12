@@ -33,7 +33,7 @@ wait_database() {
   test -n "$existing_db" || { echo 'Database does not exist; refusing to create it for this operation' >&2; return 1; }
   "$DOCKER_BIN" start "$existing_db" >&2
   wait_count=0
-  until [ "$("$DOCKER_BIN" inspect --format '{{.State.Health.Status}}' "$(database_id)" 2>/dev/null || true)" = healthy ]; do
+  until [ "$("$DOCKER_BIN" inspect --format '{{.State.Health.Status}}' "$existing_db" 2>/dev/null || true)" = healthy ]; do
     wait_count=$((wait_count+1))
     if [ "$wait_count" -ge "${DEPLOY_WAIT_ATTEMPTS:-60}" ]; then
       echo 'PostgreSQL did not become healthy; inspect database logs' >&2

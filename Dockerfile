@@ -41,7 +41,7 @@ RUN mix local.hex --force \
 # set build ENV
 ENV MIX_ENV="prod"
 
-# Explicit opt-in for the initial LAN-only HTTP smoke test.
+# Private LAN/Tailscale deployments opt in to HTTP at build time.
 ARG BOLOGNESA_LAN_HTTP=false
 ENV BOLOGNESA_LAN_HTTP=${BOLOGNESA_LAN_HTTP}
 

@@ -68,10 +68,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {arch: amd64, runner: ubuntu-24.04, variant: secure, lan: "false"}
-          - {arch: arm64, runner: ubuntu-24.04-arm, variant: secure, lan: "false"}
-          - {arch: amd64, runner: ubuntu-24.04, variant: lan, lan: "true"}
-          - {arch: arm64, runner: ubuntu-24.04-arm, variant: lan, lan: "true"}
+          - {arch: amd64, runner: ubuntu-24.04}
+          - {arch: arm64, runner: ubuntu-24.04-arm}
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -95,21 +93,20 @@ jobs:
         with:
           context: .
           platforms: linux/${{ matrix.arch }}
-          build-args: BOLOGNESA_LAN_HTTP=${{ matrix.lan }}
+          build-args: BOLOGNESA_LAN_HTTP=true
           outputs: type=image,name=${{ steps.namespace.outputs.image }},push-by-digest=true,name-canonical=true,push=true
           provenance: false
           sbom: false
           cache-from: |
-            type=gha,scope=bolognesa-native-${{ matrix.variant }}-${{ matrix.arch }}
-            type=gha,scope=bolognesa-arm64
-          cache-to: type=gha,scope=bolognesa-native-${{ matrix.variant }}-${{ matrix.arch }},mode=max,ignore-error=true
+            type=gha,scope=bolognesa-native-lan-${{ matrix.arch }}
+          cache-to: type=gha,scope=bolognesa-native-lan-${{ matrix.arch }},mode=max,ignore-error=true
       - name: Record platform digest
         env:
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: printf '%s\n' "$IMAGE_DIGEST" > digest.txt
       - uses: actions/upload-artifact@v7
         with:
-          name: digest-${{ matrix.variant }}-${{ matrix.arch }}
+          name: digest-lan-${{ matrix.arch }}
           path: digest.txt
           if-no-files-found: error
           retention-days: 1
@@ -132,37 +129,31 @@ jobs:
         with:
           pattern: digest-*
           path: digests
-      - name: Assemble and verify multi-architecture images
+      - name: Assemble and verify multi-architecture image
         env:
           REPOSITORY: ${{ github.repository }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           image="ghcr.io/$(printf '%s' "$REPOSITORY" | tr '[:upper:]' '[:lower:]')"
-          for variant in secure lan; do
-            amd64=$(cat "digests/digest-${variant}-amd64/digest.txt")
-            arm64=$(cat "digests/digest-${variant}-arm64/digest.txt")
-            [[ $amd64 =~ ^sha256:[0-9a-f]{64}$ && $arm64 =~ ^sha256:[0-9a-f]{64}$ ]]
-            suffix=
-            if [ "$variant" = lan ]; then suffix=-lan; fi
-            docker buildx imagetools create --metadata-file "$variant.json" \
-              -t "$image:sha-${COMMIT_SHA}${suffix}" -t "$image:latest${suffix}" \
-              "$image@$amd64" "$image@$arm64"
-            digest=$(jq -er '."containerimage.descriptor".digest' "$variant.json")
-            [[ $digest =~ ^sha256:[0-9a-f]{64}$ ]]
-            docker buildx imagetools inspect "$image@$digest"
-            docker buildx imagetools inspect --raw "$image@$digest" | \
-              jq -e '([.manifests[].platform | .os + "/" + .architecture] | sort) == ["linux/amd64", "linux/arm64"]'
-            {
-              echo "Commit: $COMMIT_SHA"
-              echo "Variant: $variant"
-              echo "Image: $image@$digest"
-              echo "Verified platforms: linux/amd64, linux/arm64"
-            } >> "$GITHUB_STEP_SUMMARY"
-            if [ "$variant" = lan ]; then
-              printf 'variant=lan\ncommit=%s\nimage=%s\n' "$COMMIT_SHA" "$image@$digest" > image-ref.txt
-            fi
-          done
+          amd64=$(cat "digests/digest-lan-amd64/digest.txt")
+          arm64=$(cat "digests/digest-lan-arm64/digest.txt")
+          [[ $amd64 =~ ^sha256:[0-9a-f]{64}$ && $arm64 =~ ^sha256:[0-9a-f]{64}$ ]]
+          docker buildx imagetools create --metadata-file lan.json \
+            -t "$image:sha-${COMMIT_SHA}-lan" -t "$image:latest-lan" \
+            "$image@$amd64" "$image@$arm64"
+          digest=$(jq -er '."containerimage.descriptor".digest' lan.json)
+          [[ $digest =~ ^sha256:[0-9a-f]{64}$ ]]
+          docker buildx imagetools inspect "$image@$digest"
+          docker buildx imagetools inspect --raw "$image@$digest" | \
+            jq -e '([.manifests[].platform | .os + "/" + .architecture] | sort) == ["linux/amd64", "linux/arm64"]'
+          {
+            echo "Commit: $COMMIT_SHA"
+            echo "Variant: lan"
+            echo "Image: $image@$digest"
+            echo "Verified platforms: linux/amd64, linux/arm64"
+          } >> "$GITHUB_STEP_SUMMARY"
+          printf 'variant=lan\ncommit=%s\nimage=%s\n' "$COMMIT_SHA" "$image@$digest" > image-ref.txt
       - uses: actions/upload-artifact@v7
         with:
           name: server-image-ref

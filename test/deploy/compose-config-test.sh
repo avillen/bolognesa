@@ -10,7 +10,8 @@ env = dict(os.environ, SECRET_KEY_BASE='synthetic', POSTGRES_PASSWORD='synthetic
            SERIES_PATH='/srv/series', DB_PORT='55432', BOLOGNESA_PORT='4400')
 for network in ('bridge', 'host'):
     for storage in ('volume', 'bind'):
-        files = [root/'compose.yaml', root/f'network.{network}.yaml']
+        files = [root/'compose.yaml']
+        if network == 'host': files.append(root/'network.host.yaml')
         if storage == 'bind': files.append(root/'storage.bind.yaml')
         files.append(root/'media.example.yaml')
         assert all(f.exists() for f in files), f'Missing configurable recipes: {files}'
