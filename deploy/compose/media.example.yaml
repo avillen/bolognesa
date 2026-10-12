@@ -1,0 +1,18 @@
+# Copy to media.local.yaml and customize the list for your installation.
+services:
+  app:
+    environment:
+      BOLOGNESA_LIBRARY_ROOTS: /media/movies:/media/series
+    volumes: !override
+      - type: bind
+        source: ${MOVIES_PATH:?Set MOVIES_PATH}
+        target: /media/movies
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${SERIES_PATH:?Set SERIES_PATH}
+        target: /media/series
+        read_only: true
+        bind:
+          create_host_path: false

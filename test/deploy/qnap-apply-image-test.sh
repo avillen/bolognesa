@@ -41,7 +41,7 @@ for phase in success backup migration http; do
   printf 'BOLOGNESA_IMAGE=%s\n' "$old" > "$dir/.env"
   touch "$dir/compose.yaml"
   export MOCK_TRACE="$dir/trace" MOCK_FAIL="$phase"
-  if sh "$repo_dir/deploy/qnap/apply-image.sh" "$image" "$dir" "$test_dir/bin/docker" localhost 4000 > "$dir/result" 2>&1; then
+  if sh "$repo_dir/deploy/qnap/scripts/apply-image.sh" "$image" "$dir" "$test_dir/bin/docker" localhost 4000 > "$dir/result" 2>&1; then
     [[ $phase == success ]] || { echo "Expected failure: $phase"; exit 1; }
   else
     [[ $phase != success ]] || { cat "$dir/result"; exit 1; }

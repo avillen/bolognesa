@@ -1,0 +1,8 @@
+services:
+  db:
+    volumes: !override
+      - type: bind
+        source: ${POSTGRES_DATA_PATH:?Set POSTGRES_DATA_PATH to an existing directory}
+        target: /var/lib/postgresql/data
+        bind:
+          create_host_path: false

@@ -48,7 +48,8 @@ npm-debug.log
 .env.*
 !.env.example
 /media/
-/deploy/qnap/*.tar
+/deploy/compose/*.tar
+/deploy/compose/*.local.yaml
 
 # Local design previews.
 /.superpowers/

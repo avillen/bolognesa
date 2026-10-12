@@ -1,133 +1,139 @@
-# Despliegue genérico en Linux con Docker Compose
+# Despliegue Linux con Docker Compose
 
-Este perfil ejecuta Bolognesa y PostgreSQL en un único servidor Linux con Docker Compose v2. El workflow está configurado para publicar imágenes `linux/amd64` y `linux/arm64`; hasta completar una publicación y verificar que GHCR permite descargarlas sin iniciar sesión, el perfil no puede descargarse desde el registro. Este procedimiento no depende del fabricante del servidor.
-
-El servicio web se enlaza a `127.0.0.1` y la imagen aplica HTTPS. Colócalo detrás de un proxy inverso con TLS. No publiques el puerto 4000 directamente en Internet ni habilites HTTP directo: ese modo pertenece al perfil LAN.
+Este despliegue ejecuta Bolognesa y PostgreSQL en un servidor Linux, con HTTP privado por LAN/Tailscale. Los mismos comandos funcionan en el servidor o desde otra máquina por SSH. No abras el puerto en el router ni uses acceso público para este perfil.
 
 ## Requisitos
 
-- Linux con Docker Engine y el plugin Docker Compose v2.
-- Proxy inverso en el servidor, con un nombre DNS y TLS configurados.
-- Acceso de lectura del usuario Docker a la carpeta multimedia.
-- `openssl` para generar secretos.
-- Una imagen genérica publicada en GHCR. El paquete debe permitir descarga anónima. Fija una etiqueta `sha-<commit>` o digest para actualizaciones controladas.
+- Docker Engine y Docker Compose **2.24.4 o posterior** en el servidor. Los overrides utilizan [las reglas de sustitución de Compose](https://docs.docker.com/reference/compose-file/merge/).
+- `curl`, shell POSIX y `openssl` en el servidor; Bash y Make en la máquina de operación.
+- Para SSH: claves configuradas y acceso Docker desde el usuario remoto. No se requieren Python ni jq en el servidor.
+- Para `deploy-release`: Git y `gh` autenticado en la máquina de operación, y acceso de descarga a GHCR desde el servidor.
+- Carpetas multimedia existentes y legibles para el contenedor, que ejecuta la app como `nobody`.
 
-## Imagen publicada
+El puerto se enlaza a loopback por defecto. Para acceso desde otros dispositivos, elige la IP privada LAN o Tailscale en `BOLOGNESA_BIND_IP`. Para escuchar en ambas interfaces mediante `0.0.0.0`, configura filtrado adecuado: los puertos Docker publicados pueden eludir reglas habituales de UFW/firewalld ([documentación de Docker](https://docs.docker.com/engine/install/ubuntu/#firewall-limitations)). HTTP no cifra credenciales ni cookies de aplicación; Tailscale protege el tráfico dentro de su túnel.
 
-`.github/workflows/container-image.yml` valida el Compose genérico en pull requests y está configurado para publicar la imagen en GHCR desde `main`. Cada publicación debe producir una referencia `sha-<commit>`, la etiqueta `latest` y un digest multi-arquitectura (`linux/amd64` y `linux/arm64`). La imagen genérica conserva HTTPS forzado. El workflow `arm64-image.yml` publica por separado la variante LAN HTTP.
+## Configuración y primera instalación
 
-La publicación y la descarga pública de GHCR están pendientes de verificación. Antes de instalar, confirma en CI que el manifiesto contiene ambas plataformas y prueba una descarga sin iniciar sesión. GHCR puede crear el primer paquete como privado; el mantenedor debe habilitar su visibilidad pública. Después, en `.env`, usa `latest` para probar el último build o fija `BOLOGNESA_IMAGE` al tag `sha-<commit>` o al digest que muestra el resumen de CI.
-
-## Primera instalación
-
-Desde la raíz del repositorio, prepara los archivos de configuración:
+Desde la raíz del repositorio:
 
 ```sh
-cd deploy/compose
-cp .env.example .env
-chmod 600 .env
-openssl rand -hex 64
-openssl rand -hex 32
+cp deploy/compose/deploy.env.example .env.deploy
+chmod 600 .env.deploy
 ```
 
-Guarda el primer valor en `SECRET_KEY_BASE` y el segundo en `POSTGRES_PASSWORD`. Edita también `BOLOGNESA_IMAGE`, `PHX_HOST`, `DATA_ROOT` y `MEDIA_PATH`. Los valores de `PHX_HOST` y `PUBLIC_PORT` deben representar la URL HTTPS pública, normalmente el dominio y `443`. Crea `DATA_ROOT` y su directorio `backups`, y asegúrate de que `MEDIA_PATH` ya existe y es legible. Compose rechazará una ruta de medios inexistente en vez de crear una carpeta vacía.
+`.env.deploy` es configuración Make del operador, no un archivo shell ni el `.env` runtime. Usa asignaciones `VARIABLE=valor`, sin comillas envolventes. Puedes cambiar de instalación con `DEPLOY_CONFIG=/ruta/configuracion`; los valores de la línea de comandos de Make tienen prioridad.
 
-La aplicación se ejecuta como usuario `nobody`. Comprueba que puede atravesar la ruta de medios y leer sus archivos. El contenedor monta esa carpeta como solo lectura en `/media`; registra `/media` como raíz de una biblioteca en Bolognesa.
-
-Configura el proxy inverso para enviar el tráfico HTTPS a `http://127.0.0.1:4000`, conservar el encabezado `Host` y reenviar `X-Forwarded-Proto: https`. Por ejemplo, con Caddy:
-
-```caddyfile
-bolognesa.example.com {
-    reverse_proxy 127.0.0.1:4000
-}
-```
-
-Cambia el dominio por el valor real de `PHX_HOST`. Si el proxy usa varios nombres de origen de WebSocket, configura `PHX_CHECK_ORIGIN=conn` en `.env`; por defecto Phoenix sigue validando el origen contra el host configurado.
-
-Inicia la base, ejecuta las migraciones y levanta la app:
+Configura `DEPLOY_TRANSPORT=local` para operar en este servidor o `ssh` para otro servidor. En SSH, indica `DEPLOY_HOST=user@server.local`, `DEPLOY_DIR`, `DOCKER_BIN` y `DEPLOY_HEALTH_URL`. La URL debe ser accesible **desde el servidor** y responder satisfactoriamente después de arrancar la app. Las rutas con espacios se admiten. `DOCKER_BIN` es un ejecutable, no un comando con argumentos.
 
 ```sh
-docker compose --env-file .env -f compose.yaml pull && \
-docker compose --env-file .env -f compose.yaml up -d --wait db && \
-docker compose --env-file .env -f compose.yaml run --rm --no-deps app /app/bin/migrate && \
-docker compose --env-file .env -f compose.yaml up -d app && \
-docker compose --env-file .env -f compose.yaml ps
+make deploy-init
 ```
 
-`--wait db` espera a que PostgreSQL aparezca como `healthy`. La cadena `&&` detiene el proceso si falla la descarga o una migración.
+El comando distribuye las recetas seleccionadas y los scripts, prepara el directorio y genera secretos si no existe `.env`. No sobrescribe los secretos de una instalación existente. Edita el `.env` **en el destino** antes de instalar: `PHX_HOST`, `BOLOGNESA_BIND_IP`, `MEDIA_PATH`, imagen y puerto. Los secretos deben permanecer privados; puedes generarlos manualmente con `openssl rand -hex 64` para Phoenix y `openssl rand -hex 32` para PostgreSQL. El formato hexadecimal evita caracteres reservados en `DATABASE_URL`.
 
-Abre `https://<PHX_HOST>`. El primer acceso lleva a `/setup` para crear la cuenta administradora. `TMDB_READ_TOKEN` es opcional para arrancar; se necesita para identificar automáticamente películas y series.
-
-## Copias de seguridad y actualizaciones
-
-La base usa un volumen Docker persistente. Guarda los backups en otra carpeta del host y cópialos también al sistema de backup que uses. Con los valores de ejemplo:
+Conserva `PUBLIC_PORT` y `BOLOGNESA_PORT` iguales para HTTP directo. `PHX_HOST` es el nombre/IP usado en el navegador. Si utilizas varios nombres privados, `PHX_CHECK_ORIGIN=conn` permite esos orígenes conservando la validación WebSocket; vacío valida contra `PHX_HOST`.
 
 ```sh
-backup_dir=/srv/bolognesa/backups
-mkdir -p "$backup_dir" && \
-docker compose --env-file .env -f compose.yaml up -d --wait db && \
-docker compose --env-file .env -f compose.yaml stop app && \
-backup_file="$backup_dir/pre-migration-$(date +%Y%m%d-%H%M%S).dump" && \
-docker compose --env-file .env -f compose.yaml exec -T db \
-  pg_dump -U bolognesa -d bolognesa -Fc > "$backup_file" && \
-test -s "$backup_file"
+make deploy-preflight
+make deploy-install
 ```
 
-No continúes con la actualización si el backup no se ha creado y validado.
+Install exige que no exista ya el servicio PostgreSQL de ese proyecto. Descarga la imagen, espera DB healthy, crea un backup, aplica migraciones, inicia la app y verifica HTTP. Abre `http://<PHX_HOST>:<PUBLIC_PORT>/setup` para crear la cuenta administradora. El token `TMDB_READ_TOKEN` es opcional para arrancar y necesario para identificar automáticamente obras.
 
-Edita `BOLOGNESA_IMAGE` en `.env` para indicar el tag `sha-<commit>` o digest que vas a instalar. Después:
+## Red, persistencia y bibliotecas
 
-```sh
-docker compose --env-file .env -f compose.yaml pull app && \
-docker compose --env-file .env -f compose.yaml run --rm --no-deps app /app/bin/migrate && \
-docker compose --env-file .env -f compose.yaml up -d --force-recreate app && \
-docker compose --env-file .env -f compose.yaml ps
-```
+La receta `compose.yaml` usa red bridge y volumen Docker. `DEPLOY_COMPOSE_FILES` permite agregar archivos **en orden**, separados por `:`. Los archivos relativos se buscan en `deploy/compose/`; `DEPLOY_SOURCE_DIR` permite cambiar ese directorio. Los archivos seleccionados se distribuyen al destino usando sus basenames, que deben ser únicos. No uses `:` dentro de un nombre de archivo.
 
-Espera a que la base de datos esté `healthy` antes de migrar. La cadena `&&` deja la aplicación detenida si falla la descarga o la migración.
-
-Comprueba la URL HTTPS a través del proxy, que PostgreSQL esté `healthy` y que el montaje de medios siga siendo de solo lectura:
-
-```sh
-docker inspect bolognesa-server-app-1 --format '{{json .Mounts}}'
-```
-
-El perfil usa recursos `bolognesa-server_*`, separados del Compose de desarrollo. Si ejecutas ambos perfiles a la vez, configura `BOLOGNESA_PORT` con un puerto local libre.
-
-Si la migración falla, mantén la app detenida y conserva el backup y el volumen original. Restaura el backup en la base persistente antes de volver a iniciar la app; después fija `BOLOGNESA_IMAGE` a la imagen anterior y recrea el servicio. Con el backup anterior disponible, la restauración en el volumen existente se realiza así:
-
-```sh
-docker compose --env-file .env -f compose.yaml up -d --wait db && \
-docker compose --env-file .env -f compose.yaml exec -T db dropdb -U bolognesa --if-exists bolognesa && \
-docker compose --env-file .env -f compose.yaml exec -T db createdb -U bolognesa -O bolognesa bolognesa && \
-docker compose --env-file .env -f compose.yaml exec -T db \
-  pg_restore -U bolognesa -d bolognesa --no-owner < "$backup_file"
-```
-
-`dropdb` elimina la base actual, pero no el volumen Docker. Úsalo solo después de comprobar que el archivo de backup no está vacío y corresponde a esta instalación. No uses `docker compose down -v` para actualizar o recuperar el servicio.
-
-## Configuración
-
-| Variable | Uso |
+| Opción | Archivos/configuración |
 | --- | --- |
-| `BOLOGNESA_IMAGE` | Imagen publicada; preferiblemente una etiqueta inmutable o digest. |
-| `SECRET_KEY_BASE` | Secreto Phoenix generado con `openssl rand -hex 64`. |
-| `POSTGRES_PASSWORD` | Contraseña PostgreSQL generada con `openssl rand -hex 32`. |
-| `PHX_HOST` | Dominio HTTPS atendido por el proxy. |
-| `PUBLIC_PORT` | Puerto público incluido en la URL; normalmente `443`. |
-| `BOLOGNESA_PORT` | Puerto local del host al que se conecta el proxy; predeterminado `4000`. |
-| `DATA_ROOT` | Carpeta del host para backups; PostgreSQL usa un volumen Docker nombrado. |
-| `MEDIA_PATH` | Carpeta multimedia existente del host, montada como `/media` read-only. |
-| `TMDB_READ_TOKEN` | Token opcional para identificación y metadatos de TMDb. |
-| `PHX_CHECK_ORIGIN` | Vacío conserva la validación contra `PHX_HOST`; `conn` permite varios hosts de origen. |
+| Bridge + volumen Docker | `DEPLOY_COMPOSE_FILES=compose.yaml` (o agregar `network.bridge.yaml`). DB no publica puertos. |
+| Red host | Agregar `network.host.yaml`. Configura `DB_PORT` y el bind/puerto de Phoenix. PostgreSQL escucha exclusivamente en loopback. No se usan mapeos `ports`. |
+| Directorio PostgreSQL | Agregar `storage.bind.yaml` y configurar `POSTGRES_DATA_PATH` en `.env`. Crear/verificar ese directorio explícitamente; no se crea al montar. |
+| Varias carpetas multimedia | Copiar `media.example.yaml` a `media.local.yaml`, editar los montajes y agregar ese archivo. Mantener todas las fuentes de solo lectura y configurar las raíces internas autorizadas. |
 
-Para consultar logs y detener los servicios:
+Ejemplo operativo con host networking, base en directorio y varias fuentes:
 
-```sh
-docker compose --env-file .env -f compose.yaml logs --tail 100 app db
-docker compose --env-file .env -f compose.yaml down
+```make
+DEPLOY_COMPOSE_FILES=compose.yaml:network.host.yaml:storage.bind.yaml:media.local.yaml
 ```
 
-`down` conserva el volumen nombrado. Borrar el volumen de PostgreSQL elimina la cuenta, bibliotecas registradas y catálogo; hazlo solo si quieres descartar los datos.
+El ejemplo de medios monta `/media/movies` y `/media/series`; puedes agregar cualquier número de fuentes. Registra las rutas **internas** en Bibliotecas. `BOLOGNESA_LIBRARY_ROOTS` debe corresponder a los montajes, separando raíces con `:`. Cambiar las rutas internas de una biblioteca existente puede hacer inaccesibles sus archivos; consérvalas al adoptar este sistema.
 
-Si ejecutas la restauración en una shell distinta de la que creó el backup, asigna antes `backup_file` a la ruta exacta del dump que vas a restaurar.
+`COMPOSE_PROJECT_NAME` identifica contenedores y volumen Docker. No cambies su valor para actualizar una instalación: otro nombre corresponde a otro proyecto y otros datos.
+
+## Imágenes y releases
+
+`.github/workflows/container-image.yml` publica en el namespace GHCR del repositorio GitHub, convertido a minúsculas. En este repositorio es `ghcr.io/avillen/bolognesa`. Publica variantes multi-arquitectura `linux/amd64` y `linux/arm64`: HTTP privado (`latest-lan` / `sha-<commit>-lan`) y HTTPS (`latest` / `sha-<commit>`). Este perfil necesita la **variante HTTP**; Docker selecciona la arquitectura del servidor.
+
+Antes de usar una publicación, verifica su manifiesto y acceso de descarga. El mantenedor debe configurar visibilidad pública del paquete para permitir instalaciones anónimas. Puedes fijar `BOLOGNESA_IMAGE` a un digest o tag inmutable.
+
+```sh
+make deploy-release
+# O seleccionar el SHA completo de un commit main publicado:
+make deploy-release COMMIT_SHA=<40-caracteres-hexadecimales>
+```
+
+Release espera el run de CI, comprueba SHA/rama/conclusión y el artefacto `server-image-ref`, y despliega su digest HTTP. Si existen runs repetidos, selecciona `DEPLOY_RUN_ID` explícitamente; la validación de SHA y rama sigue activa. Los artefactos caducan a los 30 días. Para un digest ya verificado:
+
+```sh
+make deploy-update IMAGE_REF=ghcr.io/avillen/bolognesa@sha256:<digest>
+```
+
+Para forks u otro registro, configura `IMAGE_REPOSITORY`; la operación con un digest explícito admite la referencia elegida por el operador. `DEPLOY_WORKFLOW` y `DEPLOY_ARTIFACT` son configurables.
+
+## Backup, actualización y recuperación
+
+```sh
+make deploy-backup
+make deploy-update
+make deploy-restore BACKUP_FILE=/ruta/del/servidor/backups/archivo.dump
+```
+
+Los backups quedan en `<DEPLOY_DIR>/backups` salvo `DEPLOY_BACKUP_DIR`. Cópialos también fuera del servidor. Se valida que el dump no esté vacío y que PostgreSQL pueda leer su índice antes de publicarlo con permisos privados.
+
+Update exige una base existente. Adquiere la imagen antes de detener la app, espera DB healthy, detiene la app, crea backup y referencia anterior, migra, recrea la app y verifica HTTP. Solo después persiste la imagen nueva en el `.env` del destino.
+
+Si falla antes de comenzar migraciones, intenta reactivar la imagen anterior. Si falla desde el comienzo de una migración, deja la app detenida: inspecciona esquema y backup antes de recuperar. Volver a una imagen antigua no revierte migraciones.
+
+La configuración de PostgreSQL queda registrada en `.database-config`. Un cambio de esa configuración o una instalación antigua sin ese registro bloquea la actualización. Después de comparar la receta resuelta con el almacenamiento real, adopta el cambio explícitamente:
+
+```sh
+make deploy-update ALLOW_DATABASE_CONFIG_CHANGE=yes EXPECTED_DATABASE_SOURCE=/ruta/postgres
+```
+
+Para un volumen Docker, `EXPECTED_DATABASE_SOURCE` es el nombre del volumen existente. Este permiso también cubre cambios deliberados de recursos/red de DB; no lo dejes activado permanentemente. No sustituye la comprobación de que la receta nueva apunta a los mismos datos.
+
+Restore valida el dump, pide escribir `RESTORE` y sustituye la base. La app queda detenida; elige una imagen compatible con el esquema restaurado antes de arrancarla. El script directo acepta `--yes` para automatización explícita. No uses `down -v` para recuperar o actualizar una instalación real.
+
+## Build local y operación diaria
+
+```sh
+make deploy-build DEPLOY_BUILD_PLATFORM=linux/arm64 DEPLOY_IMAGE_TAR=/tmp/bolognesa-image.tar
+make deploy-upload DEPLOY_IMAGE_TAR=/tmp/bolognesa-image.tar
+make deploy-update IMAGE_REF=bolognesa:lan
+```
+
+`deploy-upload` también carga el tar en Docker cuando se configura `DEPLOY_IMAGE_TAR`. `DEPLOY_IMAGE_NAME` elige la etiqueta exportada y `BUILD_DOCKER_BIN` el Docker local de construcción (predeterminado `docker`). La construcción ocurre en la máquina de operación; se requiere Buildx y capacidad de construir la plataforma elegida. No fijes plataforma para la imagen multi-arquitectura publicada salvo que quieras elegirla explícitamente.
+
+```sh
+make deploy-status
+make deploy-logs
+make deploy-console
+make deploy-psql
+make deploy-stop
+```
+
+La consola usa la instancia activa de la release. `deploy-stop` conserva datos y contenedores. Para usar scripts directamente en el servidor, configura `DEPLOY_DIR`, `DOCKER_BIN`, `COMPOSE_FILE` y `DEPLOY_HEALTH_URL`, y ejecuta `scripts/operate.sh` con la operación deseada.
+
+## Presupuestos configurables
+
+| Variable runtime | Predeterminado |
+| --- | --- |
+| `APP_MEMORY_LIMIT` / `APP_CPUS` | `1024m` / `2.0` |
+| `DB_MEMORY_LIMIT` / `DB_CPUS` | `256m` / `1.0` |
+| `TRANSCODE_TMPFS_SIZE` | `512m` |
+| `POOL_SIZE` | `10` |
+| `ERL_FLAGS` | Vacío; configurable, por ejemplo `+S 2:2`. |
+| `LOG_MAX_SIZE` / `LOG_MAX_FILES` | `10m` / `3` |
+
+Son presupuestos iniciales configurables, no requisitos mínimos ni capacidad medida. La memoria del contenedor incluye Phoenix, FFmpeg y tmpfs; observa consumo y reinicios durante uso real.

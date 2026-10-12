@@ -41,6 +41,20 @@ jobs:
           POSTGRES_PASSWORD: validation-only
         run: docker compose --env-file deploy/compose/.env.example -f deploy/compose/compose.yaml config --quiet
 
+      - name: Validate deployment script syntax
+        run: |
+          for script in deploy/compose/scripts/*.sh; do
+            bash -n "$script"
+          done
+
+      - name: Verify configurable deployment contracts
+        run: |
+          sh test/deploy/compose-config-test.sh
+          bash test/deploy/compose-update-test.sh
+          bash test/deploy/compose-database-test.sh
+          bash test/deploy/compose-transport-test.sh
+          bash test/deploy/compose-release-test.sh
+
   publish:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: validate-compose
@@ -50,6 +64,12 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v5
+
+      - name: Select image namespace
+        id: namespace
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: echo "image=ghcr.io/$(printf '%s' "$REPOSITORY" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-qemu-action@v3
 
@@ -69,24 +89,66 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/avillen/bolognesa:sha-${{ github.sha }}
-            ghcr.io/avillen/bolognesa:latest
+            ${{ steps.namespace.outputs.image }}:sha-${{ github.sha }}
+            ${{ steps.namespace.outputs.image }}:latest
           push: true
           provenance: false
           sbom: false
           cache-from: type=gha,scope=bolognesa-multiarch
           cache-to: type=gha,scope=bolognesa-multiarch,mode=max,ignore-error=true
 
+      - name: Build and publish private-network HTTP image
+        id: build-lan
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            BOLOGNESA_LAN_HTTP=true
+          tags: |
+            ${{ steps.namespace.outputs.image }}:sha-${{ github.sha }}-lan
+            ${{ steps.namespace.outputs.image }}:latest-lan
+          push: true
+          provenance: false
+          sbom: false
+          cache-from: type=gha,scope=bolognesa-lan-multiarch
+          cache-to: type=gha,scope=bolognesa-lan-multiarch,mode=max,ignore-error=true
+
       - name: Inspect immutable image and record digest
         env:
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
           COMMIT_SHA: ${{ github.sha }}
+          IMAGE_REPOSITORY: ${{ steps.namespace.outputs.image }}
         run: |
           set -eu
-          image="ghcr.io/avillen/bolognesa@${IMAGE_DIGEST}"
+          image="${IMAGE_REPOSITORY}@${IMAGE_DIGEST}"
           docker buildx imagetools inspect "$image"
           {
             echo "Commit: ${COMMIT_SHA}"
             echo "Image: ${image}"
             echo "Requested platforms: linux/amd64, linux/arm64"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Inspect private-network image and record digest
+        env:
+          IMAGE_DIGEST: ${{ steps.build-lan.outputs.digest }}
+          COMMIT_SHA: ${{ github.sha }}
+          IMAGE_REPOSITORY: ${{ steps.namespace.outputs.image }}
+        run: |
+          set -eu
+          image="${IMAGE_REPOSITORY}@${IMAGE_DIGEST}"
+          docker buildx imagetools inspect "$image"
+          {
+            echo "Private-network HTTP commit: ${COMMIT_SHA}"
+            echo "Image: ${image}"
+            echo "Tags: sha-${COMMIT_SHA}-lan, latest-lan"
+            echo "Requested platforms: linux/amd64, linux/arm64"
+          } >> "$GITHUB_STEP_SUMMARY"
+          printf 'variant=lan\ncommit=%s\nimage=%s\n' "$COMMIT_SHA" "$image" > image-ref.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: server-image-ref
+          path: image-ref.txt
+          if-no-files-found: error
+          retention-days: 30

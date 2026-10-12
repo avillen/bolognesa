@@ -41,12 +41,12 @@ chmod +x "$test_dir/bin/gh" "$test_dir/bin/make"
 export PATH="$test_dir/bin:$PATH" COMMIT_SHA="$sha" MOCK_DIGEST="$digest"
 export MOCK_MAKE_LOG="$test_dir/make.log"
 
-bash "$repo_dir/deploy/qnap/release.sh"
+bash "$repo_dir/deploy/qnap/scripts/release.sh"
 grep -qx "qnap-update-image IMAGE_REF=ghcr.io/avillen/bolognesa-lan@$digest" "$MOCK_MAKE_LOG"
 
 : > "$MOCK_MAKE_LOG"
 export MOCK_ARTIFACT_SHA=cccccccccccccccccccccccccccccccccccccccc
-if bash "$repo_dir/deploy/qnap/release.sh" > "$test_dir/rejected.log" 2>&1; then
+if bash "$repo_dir/deploy/qnap/scripts/release.sh" > "$test_dir/rejected.log" 2>&1; then
   echo 'Mismatched artifact SHA was accepted' >&2
   exit 1
 fi
@@ -54,7 +54,7 @@ test ! -s "$MOCK_MAKE_LOG"
 unset MOCK_ARTIFACT_SHA
 
 export MOCK_RUN_IDS=$'123\n456'
-if bash "$repo_dir/deploy/qnap/release.sh" > "$test_dir/rejected.log" 2>&1; then
+if bash "$repo_dir/deploy/qnap/scripts/release.sh" > "$test_dir/rejected.log" 2>&1; then
   echo 'Ambiguous CI runs were accepted' >&2
   exit 1
 fi
@@ -62,7 +62,7 @@ test ! -s "$MOCK_MAKE_LOG"
 unset MOCK_RUN_IDS
 
 export MOCK_CI_FAILED=1
-if bash "$repo_dir/deploy/qnap/release.sh" > "$test_dir/rejected.log" 2>&1; then
+if bash "$repo_dir/deploy/qnap/scripts/release.sh" > "$test_dir/rejected.log" 2>&1; then
   echo 'Failed CI run was accepted' >&2
   exit 1
 fi
