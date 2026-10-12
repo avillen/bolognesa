@@ -1,4 +1,6 @@
-# Boloñesa
+<p align="center"><img src="priv/static/images/bolognesa-cat.svg" alt="Boloñesa cat icon" width="88"></p>
+
+<h1 align="center">Boloñesa</h1>
 
 Boloñesa is a self-hosted media center built with Elixir, Phoenix and LiveView. It is named after my cat, and it started as a fun way to explore Elixir by building something I use at home.
 
