@@ -1,159 +1,70 @@
-# Frontend: arquitectura y convenciones
+# Frontend conventions
 
-Este documento recoge las convenciones acordadas para la presentación web de Bolognesa. Debe mantenerse actualizado cuando cambien. Complementa las reglas de Phoenix y LiveView de [Phoenix e interfaz](phoenix.md) y las [convenciones del backend](backend.md).
+This document defines Bolognesa's web presentation rules. It complements [Phoenix and UI](phoenix.md), [backend](backend.md), and [testing](testing.md) conventions.
 
-## Organización por pantalla
+## Organize by screen
 
-Cada pantalla agrupa su LiveView, template, reducers, modelos de presentación, formularios y componentes específicos. En `live/movie/`, los reducers viven en el directorio singular `reducer/`, con un archivo por operación pública. Los directorios y módulos se añaden cuando una funcionalidad los necesita, sin generar carpetas vacías por adelantado.
+Each screen owns its LiveView, template, reducers, view models, forms, and screen-specific components. Use one file per public reducer operation under a singular `reducer/` directory. Add directories only when a feature needs them.
 
 ```text
-lib/bolognesa_web/live/movie/
-  index/
-    live.ex
-    live.html.heex
-    reducer/
-      initialize.ex
-      load.ex
-      apply_result.ex
-    state/
-      movie.ex
-    forms/
-      filters.ex
-    components/
-      movie_card.ex
-  show/
-    live.ex
-    live.html.heex
-    reducer/
-      initialize.ex
-      apply_result.ex
-    state/
-    forms/
+lib/bolognesa_web/live/movie/index/
+  live.ex
+  live.html.heex
+  reducer/load.ex
+  state/movie.ex
+  forms/filters.ex
+  components/movie_card.ex
 ```
 
-Los módulos siguen la estructura:
+Module names follow the path, such as `BolognesaWeb.Movie.Index.Reducer.Load`. This screen-based structure replaces the generic `movie_live/index.ex` layout for new screens.
 
-| Archivo relativo a `live/movie/` | Módulo |
-| --- | --- |
-| `index/live.ex` | `BolognesaWeb.Movie.Index.Live` |
-| `index/reducer/load.ex` | `BolognesaWeb.Movie.Index.Reducer.Load` |
-| `index/state/movie.ex` | `BolognesaWeb.Movie.Index.State.Movie` |
-| `index/forms/filters.ex` | `BolognesaWeb.Movie.Index.Forms.Filters` |
-| `index/components/movie_card.ex` | `BolognesaWeb.Movie.Index.Components.MovieCard` |
+## LiveViews and reducers
 
-Esta convención específica sustituye para las nuevas pantallas la organización genérica `movie_live/index.ex`. Dentro del scope web, la ruta referencia `Movie.Index.Live`, sin repetir el prefijo `BolognesaWeb`.
+LiveViews handle lifecycle, params, events, messages, and async results, returning the tuples required by LiveView. Reducers coordinate presentation and call public backend facades.
 
-## LiveViews y reducers
+Each reducer exposes `call(socket, ...)`, takes the socket first, and always returns a socket. Extra arguments carry the data needed for the operation. A reducer may call the backend, update assigns or streams, and start LiveView effects; it is not necessarily a pure function.
 
-La LiveView recibe y delega los callbacks de ciclo de vida, parámetros, eventos, mensajes y resultados asíncronos. Devuelve las tuplas requeridas por LiveView. Los reducers coordinan la presentación e invocan las fachadas públicas del backend.
+- Reducers contain UI coordination, not business rules or direct queries to backend schemas and private repositories.
+- Backend use cases enforce rules and authorization.
+- Use a coordinator reducer when later steps depend on an earlier step's success.
+- A public reducer represents a coherent operation; do not make a module for each simple `assign`.
+- Keep reducers with their screen instead of creating a global reducer module.
 
-Cada reducer expone `call(socket, ...)`, recibe el socket como primer argumento y devuelve siempre un socket. Los argumentos adicionales contienen los datos necesarios para la operación. Las funciones privadas pueden transformar datos sin recibir un socket.
+## Presentation state and forms
 
-```elixir
-alias BolognesaWeb.Movie.Index.Reducer
+The socket owns screen state. Do not duplicate all assigns and streams in a parallel state struct. Put screen-specific view models in `state/`; they contain only prepared display data and remain independent of domain entities and persistence schemas. Stream items need stable identities. Use assigns for simple state and streams for collections; extract shared stream helpers only after real reuse appears.
 
-def handle_params(params, _uri, socket) do
-  query = Map.get(params, "query", "")
-  page = parse_page(Map.get(params, "page", "1"))
-  {:noreply, Reducer.Load.call(socket, query, page)}
-end
+Put presentation-only models and changesets in `forms/`, using embedded schemas or schema-less changesets. They validate input shape and required fields; the backend validates business rules again. Do not expose persistence schemas to the UI. Web params arrive with string keys; convert validated form data to the atom-keyed shape promised by the backend facade.
 
-def handle_async({:movies, request_id}, result, socket) do
-  {:noreply, Reducer.ApplyResult.call(socket, request_id, result)}
-end
-```
+## Loading, errors, and navigation
 
-El término reducer describe aquí una operación de presentación sobre el socket; no implica pureza funcional. Puede consultar el backend, actualizar assigns o streams e iniciar efectos propios de LiveView.
+- Run slow queries with LiveView async operations. Keep the async function's inputs small; do not capture the entire socket.
+- Discard stale responses so an older request cannot replace a newer result.
+- Keep loading, empty, and error states distinct. A failed refresh is not an empty collection.
+- Reducers translate backend results and async failures into visible UI state and feedback.
+- Put navigable filters, search, and sort in the URL and interpret them through `handle_params`.
+- Durable work such as library scans belongs to the backend and continues when a page closes.
 
-- Los reducers contienen coordinación de interfaz, no reglas de negocio ni consultas directas a schemas o repositorios internos del backend.
-- Las reglas y la autorización se ejecutan en los casos de uso del backend.
-- Un pipeline expresa pasos que pueden ejecutarse consecutivamente. Si un paso depende del éxito de otro, un reducer coordinador trata esa condición explícitamente.
-- Un reducer público representa una operación coherente. No se crea un módulo por cada `assign`; sus pasos internos pueden ser funciones privadas.
-- Se evita un módulo global de reducers. Las operaciones pertenecen a su pantalla.
+## Templates, components, and browser code
 
-## Estado de presentación
+The screen template lives beside its LiveView. Function components receive attributes and emit events; they do not query the backend. Use LiveComponents only when their own state or lifecycle is needed. Keep components within the screen until real reuse justifies a shared location.
 
-El socket es el contenedor del estado de la pantalla. No se introduce un struct paralelo que duplique todos sus assigns y streams.
+LiveView templates start with `<Layouts.app flash={@flash} ...>`. JavaScript hooks live in `assets/js/hooks/` and are imported by `assets/js/app.js`; additional styles are imported by `assets/css/app.css`. Do not add ordinary inline scripts or external scripts to templates.
 
-`state/` contiene modelos de vista específicos, independientes de las entidades del dominio y de los schemas de persistencia. Por ejemplo, `State.Movie` puede contener el identificador, título, imagen, disponibilidad y progreso necesarios para una tarjeta. La conversión desde la respuesta del backend es explícita y no consulta servicios por sí misma.
+The browser owns immediate player state such as position, volume, and fullscreen. Send meaningful actions and progress to the backend; do not send every visual update.
 
-Los modelos insertados en streams proporcionan una identidad estable. Los templates consumen datos preparados para la vista. No se crea un modelo adicional para cada assign sencillo.
+Support mouse, touch, keyboard, and remote control: essential actions must not depend on hover, focus stays visible, and dynamic dialogs handle focus predictably. Validate TV navigation and playback on the real device; a browser alone does not establish compatibility.
 
-- `assign` se utiliza para filtros, selección, formularios y estados de carga.
-- Las colecciones se gestionan con streams y las reglas de DOM indicadas en [Phoenix e interfaz](phoenix.md).
-- Los helpers compartidos de streams se extraen a `lib/bolognesa_web/live_support/` cuando exista repetición real.
-- Los helpers expresan operaciones concretas, como reiniciar una colección y actualizar su estado vacío. No deciden silenciosamente entre `assign` y `stream`.
-- El total de resultados y el número de elementos cargados son conceptos distintos al paginar.
-- Un cambio de estado que afecte a la representación de un elemento del stream debe volver a insertar o reiniciar los elementos afectados.
+## Visual design
 
-## Formularios
+Use semantic CSS tokens from `assets/css/app.css`. The current design uses a dark charcoal base, warm white text, and coral accents. Preserve contrast, visible focus, semantic error/success colors, and reduced-motion preferences. Missing poster art must have a useful fallback. Keep actions and data tied to existing behavior; presentation changes do not imply new product capabilities.
 
-`forms/` contiene modelos y changesets exclusivos de presentación, mediante schemas embebidos sin persistencia o changesets sin schema. Los nombres describen la finalidad: `Forms.Filters`, `Forms.Identification` o `Forms.Movie` cuando exista un formulario de edición de película.
+## Interface language
 
-Los changesets comprueban formato, campos obligatorios y coherencia de entrada. El backend valida de nuevo las reglas del dominio. No se exponen schemas Ecto de persistencia a la interfaz.
+Use Gettext for application-owned UI strings, with complete English and Spanish catalogs, pluralization, interpolation, and accessible labels. Do not translate backend reason codes or stored catalog data. Resolve locale at the web boundary using the signed-in account preference, browser language, then Spanish fallback. Never change process-global locale configuration per request.
 
-Los parámetros web llegan con claves string. Antes de llamar a la fachada, el reducer obtiene del formulario validado un mapa con las claves átomo que declara el contrato del backend; el dominio no necesita admitir ambos formatos por defecto.
+Translate changeset messages when displaying them, without translating them twice. Async work should return data; prepare localized text in the presentation process or pass an explicit locale. The account language setting requires a full reload; already open tabs update when reloaded. See [decision 0016](../decisions/0016-user-locale-and-settings.md).
 
-Los reducers convierten los changesets con `to_form/2` y asignan el resultado al socket. Los templates utilizan `<.form>` y `<.input>` sobre ese formulario, conforme a [Phoenix e interfaz](phoenix.md).
+## Verification
 
-## Cargas, errores y navegación
-
-- Las consultas lentas se ejecutan mediante los mecanismos asíncronos de LiveView. Un reducer inicia la carga y otro aplica el resultado.
-- La función asíncrona recibe únicamente los datos necesarios, extraídos antes de iniciarla; no captura el socket completo.
-- Las respuestas obsoletas no sustituyen peticiones más recientes. Se identifica la carga vigente y se aplican las garantías de cancelación o descarte del mecanismo utilizado.
-- Cargando, vacío y error son estados diferentes. Un fallo de actualización no presenta una colección vacía como resultado correcto.
-- Los reducers traducen los resultados del backend a contenido, formularios, estados y feedback de interfaz. También manejan la terminación fallida de las tareas asíncronas.
-- Los filtros navegables, búsqueda y orden se representan en la URL y se interpretan desde `handle_params`, de modo que recargar y volver atrás recuperen la vista.
-- Los trabajos duraderos, como escanear una biblioteca, pertenecen al backend. LiveView solicita su ejecución y observa el progreso; cerrar la página no los cancela.
-
-## Templates, componentes y navegador
-
-### Notificaciones del backend
-
-La LiveView se suscribe a los topics autorizados cuando está conectada y recibe las notificaciones mediante `handle_info/2`. Delega su tratamiento a un reducer que obtiene el estado actualizado mediante la fachada del backend y modifica la presentación. El frontend no publica los eventos de dominio; solicita acciones mediante los casos de uso.
-
-Al conectar o reconectar se recupera el estado del backend, sin depender de mensajes recibidos anteriormente. Suscribir antes de cargar el estado actualizado evita dejar un intervalo sin observar cambios; el manejo posterior debe tolerar notificaciones duplicadas y recargas concurrentes. Al cambiar el recurso observado se ajustan las suscripciones.
-
-El topic no concede permisos. Tanto la suscripción como las consultas y acciones deben respetar el acceso del usuario. Los resultados de tareas propias de la pantalla se reciben por `handle_async`, separados de las notificaciones PubSub.
-
-### Componentes e interacción
-
-El template principal se mantiene junto a la LiveView. Los componentes reciben atributos y emiten eventos; no consultan el backend. Se prefieren componentes de función y se reserva LiveComponent para necesidades concretas de estado y ciclo de vida propios.
-
-Los componentes específicos viven dentro de la pantalla. Cuando se comparten entre pantallas de películas pueden situarse en `live/movie/components/`; si se reutilizan entre funcionalidades, en `lib/bolognesa_web/components/`. La extracción responde a reutilización o responsabilidades claras.
-
-Todos los templates LiveView comienzan con `<Layouts.app flash={@flash} ...>`, pasando el scope cuando corresponda. Se mantienen las convenciones de formularios, iconos y componentes de [Phoenix e interfaz](phoenix.md).
-
-Los hooks viven en `assets/js/hooks/` y se importan desde `assets/js/app.js`. Los estilos adicionales se importan desde `assets/css/app.css`, conservando la configuración Tailwind existente. No se añaden scripts externos o scripts inline ordinarios a los templates.
-
-El navegador controla el estado inmediato del reproductor, como posición instantánea, volumen y pantalla completa. El hook comunica acciones y progreso relevante; el backend conserva el progreso duradero. No se envía cada actualización visual del vídeo al servidor.
-
-La interfaz debe contemplar ratón, pantalla táctil, teclado y mando: acciones esenciales sin depender de hover, foco visible y orden predecible. Los diálogos y actualizaciones dinámicas deben conservar o restaurar el foco de forma coherente. La navegación con el mando y la reproducción se validarán temprano en la televisión real; no se presupone compatibilidad por usar un navegador. Solo se añadirá navegación personalizada mediante hooks si la nativa resulta insuficiente.
-
-## Identidad visual
-
-La referencia vigente es el mediacenter oscuro aportado por el propietario el 2026-10-11: fondo casi negro (`#0e1113`), superficies (`#171b1e`), grafito (`#22272b`), blanco cálido (`#f4f1ed`) y gris secundario (`#a3a5a8`). El coral (`#e47755`) destaca acciones principales, selecciones, foco y progreso; los enlaces usan una variante clara para conservar contraste. Los botones coral llevan texto oscuro.
-
-Los colores se declaran como tokens semánticos en `assets/css/app.css` mediante `@theme`: `canvas`, `surface`, `raised`, `border`, `border-strong`, `ink`, `muted`, `accent`, `accent-hover` y `accent-soft`. Los templates consumen esas utilidades. Se conservan colores semánticos para errores y éxito.
-
-El layout compartido usa barra lateral fija al desplazamiento en escritorio y cabecera con navegación que se adapta al ancho en móvil. Cada pantalla indica `active_section` para señalar la sección vigente. El catálogo utiliza pósteres verticales 2:3; las fichas usan imágenes panorámicas con una capa oscura para mantener legibilidad y colocan temporadas, versiones y reproducción debajo. Se conserva espacio y una inicial cuando el póster falta o falla. El diseño solo presenta datos y acciones existentes: no introduce favoritos, progreso duradero ni valoraciones. Ajustes contiene inicialmente la preferencia de idioma de la cuenta.
-
-La marca visible sigue siendo «boloñesa», acompañada del gato vectorial en `priv/static/images/bolognesa-cat.svg`, también usado como favicon. Las imágenes aportan la variedad visual; los degradados se limitan a la legibilidad sobre imágenes de fichas. Se mantiene foco visible, acciones accesibles sin hover y respeto por la preferencia de movimiento reducido.
-
-## Idioma de la interfaz
-
-Los textos propios de la web utilizan Gettext con `BolognesaWeb.Gettext`: claves fuente españolas, interpolación y plurales para cantidades, y catálogos completos de español e inglés. También se traducen mensajes, títulos, estados y atributos accesibles. Los motivos del backend y los datos almacenados del catálogo no se traducen.
-
-El locale efectivo se resuelve en la frontera web: preferencia explícita del actor verificado, idioma del navegador y español como fallback. Los plugs y el hook de montaje establecen Gettext por proceso; nunca se modifica una configuración global por petición. El HTML declara el idioma efectivo. Las tareas asíncronas devuelven datos y se preparan sus textos en el proceso de presentación; si una tarea necesita traducir, recibe el locale explícitamente.
-
-Los mensajes propios de changesets se marcan con `dgettext_noop("errors", ...)` y se traducen al mostrar el formulario mediante CoreComponents, evitando doble traducción. La extracción y los catálogos se mantienen juntos; las pruebas comprueban cobertura, plurales, flags fuzzy y placeholders.
-
-Ajustes guarda el idioma en la cuenta mediante la fachada de Identidad y recarga el documento completo. Las pestañas ya abiertas mantienen su idioma hasta recargar. [Decisión 0016](../decisions/0016-user-locale-and-settings.md).
-
-## Verificación
-
-Las pruebas de interacción con LiveViewTest se organizan por pantalla, por ejemplo `test/bolognesa_web/live/movie/index/live_test.exs`. Se utilizan IDs y selectores estables y se comprueban resultados observables.
-
-Se añaden pruebas directas de reducers para transiciones complejas que lo justifiquen, sin duplicar automáticamente las pruebas de interacción. Los modelos de presentación y formularios pueden probarse de forma aislada cuando contengan transformaciones o validaciones relevantes.
-
-Se verifican los estados de carga, error y vacío, las respuestas obsoletas, los formularios y la actualización de streams según las necesidades de cada pantalla. Se aplican las [convenciones de testing](testing.md), priorizando comportamiento sobre detalles internos. Al finalizar cambios se ejecuta `mix precommit`.
+Organize LiveView tests by screen and assert stable selectors and user-visible results. Test reducers, view models, and forms directly when they contain meaningful transitions or transformations, without automatically duplicating every interaction test. Cover loading, error, empty, stale-response, form, and stream behavior where relevant.

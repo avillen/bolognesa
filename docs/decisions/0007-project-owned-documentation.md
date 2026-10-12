@@ -1,17 +1,17 @@
-# 0007. Documentación organizada por función
+# 0007. Documentation organized by purpose
 
-Estado: aceptada por el propietario el 2026-10-10.
+Status: Accepted on 2026-10-10; refined for public collaboration on 2026-10-12.
 
-## Contexto
+## Context
 
-Los diseños y planes de H1 y H3 vivían bajo `docs/superpowers/`, mientras que los de H2 y H4 estaban mezclados en `docs/plans/`. La ruta indicaba la herramienta usada para crearlos en vez de la función del documento. `AGENTS.md` reunía instrucciones de continuidad con reglas extensas de Phoenix y Elixir; `docs/status.md` mezclaba el estado vigente con verificaciones antiguas.
+Working designs, plans, validation notes, and history had accumulated across tool-specific and overlapping folders. This made it difficult to tell current rules from temporary execution details and made the documentation expensive to maintain.
 
-## Decisión
+## Decision
 
-Organizar la documentación por propósito: convenciones vigentes en `docs/conventions/`, decisiones y motivos en `docs/decisions/`, diseños acordados en `docs/designs/`, planes de implementación en `docs/plans/`, comprobaciones observadas en `docs/validation/` y antecedentes en `docs/history/`. Mantener `docs/status.md` como instantánea breve del trabajo y sus pendientes.
+Keep public documentation focused on product, status, roadmap, durable conventions, and decision records. Write it in English, use relative links, and keep private deployment evidence and personal media details out of the tracked tree. Temporary designs and plans belong to the change that uses them; remove them when complete or distill lasting rules into conventions or decisions.
 
-Las habilidades, incluida Superpowers, pueden guiar el proceso, pero guardan sus artefactos en esas rutas. `AGENTS.md` indica cómo localizar las convenciones y conserva el protocolo de sesión; `CLAUDE.md` remite a las instrucciones compartidas.
+Use the repository's documentation structure regardless of which skill or tool helped create a document. See [documentation conventions](../conventions/documentation.md).
 
-## Consecuencias y alternativas
+## Consequences
 
-Mover archivos obliga a actualizar sus enlaces, pero deja una ubicación predecible para cada tipo de contenido. El historial de Git conserva los nombres antiguos. Mantener `docs/superpowers/` con un índice habría conservado dos criterios de clasificación; renombrar solo esa carpeta habría dejado diseños mezclados con planes. Se elige una única estructura del proyecto sin duplicar reglas por herramienta.
+The public docs are smaller and distinguish current contracts from working notes. Removing temporary documents requires updating links; Git history retains removed content. Review the full history before the first public release and coordinate any history rewrite.

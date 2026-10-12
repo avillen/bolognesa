@@ -1,22 +1,18 @@
-# 0010. Modelos propios por contexto
+# 0010. Models owned by each context
 
-Estado: aceptada e implementada localmente el 2026-10-10; sin nuevo despliegue.
+Status: Accepted and implemented locally.
 
-## Contexto
+## Context
 
-Los lectores de Catálogo e Identificación componían respuestas con `MediaFile`, `Identification` o `Movie` de otros contextos y reutilizaban sus mappers. El repositorio de Identificación también devolvía `Libraries.MediaFile` para inferir un título. Esos contratos dependían de campos y módulos ajenos que podían cambiar por motivos propios del contexto propietario.
+Catalog and Identification readers had reused entities and mappers from other contexts. Those contracts depended on modules and fields that could change for reasons unrelated to the caller.
 
-## Decisión
+## Decision
 
-- Cada contexto representa sus lecturas y operaciones con modelos propios que contienen únicamente los datos necesarios. Repetir unos campos entre contextos es preferible a compartir una entidad por conveniencia.
-- Los módulos internos de un contexto no se llaman desde otro. Las operaciones entre contextos pasan por fachadas públicas y prefieren identificadores cuando son suficientes. La escritura de solicitudes de Identificación dentro de la transacción del inventario conserva su atomicidad mediante una operación de fachada.
-- Los schemas Ecto continúan en `Bolognesa.Infrastructure.Persistence` para consultas entre tablas. La validación física de rutas, que comparten Bibliotecas y Reproducción, se ubica en `Bolognesa.Infrastructure` como utilidad técnica neutral.
-- `Identity.Domain.Actor` continúa como contrato explícito de identidad autenticada para operaciones protegidas; no se usa para modelar datos de negocio de los otros contextos.
+- Each context owns models for its reads and operations, with only the data it needs. A small amount of duplicated data is preferable to sharing entities for convenience.
+- Cross-context calls go through public facades and use IDs when sufficient. Identification can write a request in the inventory transaction through an explicit facade operation.
+- Shared Ecto schemas remain in `Bolognesa.Infrastructure.Persistence`. Shared physical path validation belongs to neutral infrastructure.
+- `Identity.Domain.Actor` remains the explicit authenticated-identity contract for protected operations.
 
-## Consecuencias
+## Consequences
 
-Catálogo usa su propia versión de película; Identificación usa proyecciones locales para el archivo que identifica y las filas de revisión. Los lectores dejan de depender de mappers ajenos. Se duplican unos pocos campos y conversiones, pero los cambios de un modelo ya no obligan a modificar contratos de otros contextos. No cambian tablas, migraciones ni reglas de autorización.
-
-## Referencias
-
-- [Plan de adaptación](../plans/context-owned-models.md)
+Readers return local projections and no longer reuse another context's mappers. Some fields and conversions are duplicated, while changes to one context's model no longer force unrelated contract changes. Tables, migrations, and authorization rules are unchanged.

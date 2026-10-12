@@ -1,26 +1,21 @@
-# 0004. Inspección técnica por revisión con trabajos duraderos
+# 0004. Durable technical inspection by file revision
 
-Estado: aceptada por el propietario al aprobar la especificación H2c el 2026-10-05; implementada y desplegada; validación de recuperación parcial.
+Status: Accepted; implemented. Recovery behavior and playback compatibility are separate verification concerns.
 
-## Contexto
+## Context
 
-H2b inventaría archivos sin abrirlos. H2c debe extraer duración, contenedor y pistas sin modificar originales, recuperar trabajos interrumpidos y evitar que un resultado antiguo sobrescriba el vigente. El inventario identifica revisiones por tamaño y modificación con precisión de segundos: ciertos cambios de contenido pueden conservar ambos valores.
+Scanning discovers files without inspecting their media streams. Inspection must extract technical metadata without changing originals, recover after interruption, and reject stale results. File revisions use size and modification time, so some content changes may be invisible.
 
-## Decisión
+## Decision
 
-Solicitar inspección para archivos nuevos, aún sin análisis, modificados o restaurados. Un escaneo normal de archivos sin cambios reutiliza los datos técnicos; una opción explícita «Reanalizar» fuerza nuevas solicitudes durante el recorrido. Se acepta que una sustitución con igual tamaño y fecha puede pasar inadvertida; el análisis no acredita identidad criptográfica del contenido.
+Request inspection for new, changed, restored, or explicitly reanalyzed files. A normal scan reuses inspection for unchanged files. Persist each inventory batch, inspection state, and outbox event in one transaction. A recoverable dispatcher creates Oban jobs after commit.
 
-Confirmar cada lote del inventario, el estado de inspección y un evento de outbox en una misma transacción. Un despachador recuperable crea trabajos Oban desde eventos confirmados. Cada solicitud tiene un token nuevo; los resultados solo se guardan si token, revisión y disponibilidad siguen vigentes. Limitar la cola de inspección inicialmente a un trabajo simultáneo por instancia y medir antes de aumentarla.
+Give every inspection request a fresh token. Save a result only when token, revision, and availability are still current. Initially limit inspection concurrency to one per instance and measure before increasing it.
 
-El adaptador de `ffprobe` revalida la ruta física, lee únicamente metadatos técnicos permitidos y no persiste su salida completa ni datos privados. Se ejecuta fuera de transacciones con límites de tiempo y salida. Los fallos de un archivo no detienen los demás.
+The `ffprobe` adapter revalidates the physical path, reads only allowed technical metadata, and does not persist its full output or private data. Run it outside database transactions with time and output limits. A single-file failure must not stop the rest of the scan.
 
-## Consecuencias y alternativas
+## Consequences
 
-El outbox añade tabla y despachador, pero conserva la atomicidad acordada para consecuencias duraderas y permite recuperarlas tras reinicios. Insertar trabajos directamente en la transacción sería más corto, aunque haría del motor de trabajos el único registro del evento de descubrimiento. Inspeccionar todos los archivos en cada escaneo evitaría reutilizar datos ante cambios invisibles para H2b, a costa de leer repetidamente toda la biblioteca en el QNAP. Calcular huellas completas aumentaría lecturas y complejidad; se revisará si aparece una necesidad real.
+The outbox adds a table and dispatcher but keeps durable work atomic with the inventory update. Reinspecting every file would catch more changes but repeatedly read the entire library; full-content hashing would add I/O and complexity. Revisit these trade-offs if real needs arise.
 
-La decisión no valida recuperación en el QNAP ni compatibilidad de reproducción. Las garantías de carreras del sistema de archivos siguen limitadas por la falta de una instantánea atómica.
-
-## Referencias
-
-- [Especificación H2c](../designs/h2-media-inspection-design.md).
-- [Decisión 0003](0003-recoverable-library-scans.md) y [convención de backend](../conventions/backend.md).
+File-system changes are not atomic snapshots. This decision alone does not verify recovery on a deployment or establish playback compatibility.

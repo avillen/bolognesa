@@ -1,22 +1,15 @@
-# 0008. Schemas Ecto en un namespace de persistencia global
+# 0008. Global namespace for persistence schemas
 
-Estado: aceptada e implementada localmente el 2026-10-10; ubicación revisada el 2026-10-11, sin nuevo despliegue.
+Status: Accepted and implemented locally; namespace location updated on 2026-10-11.
 
-## Contexto
+## Context
 
-Los schemas Ecto estaban anidados en los módulos de repositorio de cada contexto. Los adaptadores de lectura de Catálogo, Identificación y Reproducción importan varios de esos schemas para consultas entre tablas. El namespace anterior hacía parecer que el schema pertenecía a un repositorio concreto, aunque representa una tabla compartida por la aplicación.
+Ecto schemas represent application tables, including tables joined by readers in several contexts. Nesting shared schemas under a repository made them appear owned by one repository.
 
-## Decisión
+## Decision
 
-- Situar los schemas Ecto en `lib/bolognesa/infrastructure/persistence/`, bajo `Bolognesa.Infrastructure.Persistence`, con un módulo por tabla y sin subcarpetas por contexto.
-- Usar nombres únicos en el namespace global. Las tablas de eventos se representan con `IdentificationEventSchema` e `InspectionEventSchema`.
-- Cada adaptador Ecto importa los schemas necesarios para sus consultas. Los mappers permanecen junto a los repositorios que los usan.
-- Mantener los puertos, fachadas y reglas de escritura de los contextos. Compartir un schema no autoriza a otro contexto a escribir sus datos.
+Place one schema module per table in `Bolognesa.Infrastructure.Persistence`, without context subdirectories. Give schemas globally unique names, including `IdentificationEventSchema` and `InspectionEventSchema`. Adapters import the schemas needed for their queries; mappers stay beside their adapters. Sharing a schema does not grant another context write ownership.
 
-## Consecuencias
+## Consequences
 
-Las consultas de infraestructura ya no dependen del namespace de un repositorio ajeno. El namespace global facilita joins y exige elegir nombres de schema únicos. El traslado cambia nombres de módulos y referencias en código y pruebas; no cambia tablas, campos, migraciones ni datos persistidos. Las proyecciones que cruzan contextos siguen encapsuladas en adaptadores de lectura.
-
-## Revisión de ubicación — 2026-10-11
-
-Por indicación del propietario, los schemas globales pasan de `lib/bolognesa/persistence/` y `Bolognesa.Persistence` a `lib/bolognesa/infrastructure/persistence/` y `Bolognesa.Infrastructure.Persistence`. La ubicación hace explícita su pertenencia a infraestructura; se conservan schemas compartidos, propietarios de escritura y mappers locales a cada adaptador. El cambio actualiza referencias de código y pruebas, sin migraciones de base de datos.
+Cross-table readers no longer depend on another repository's namespace. The move changes module names and references, but not tables, fields, migrations, or persisted data. Cross-context projections remain inside explicit read adapters.

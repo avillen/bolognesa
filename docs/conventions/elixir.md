@@ -1,62 +1,28 @@
-# Convenciones de Elixir
+# Elixir conventions
 
-## Contratos públicos
+## Public contracts
 
-- Declara un `@spec` para cada función pública (`def`) y macro público (`defmacro`). Sitúalo antes de la primera cláusula y cubre con un único contrato todas las cláusulas y argumentos por defecto.
-- Usa tipos que expresen las entradas admitidas y los resultados posibles, incluidos los errores. Define `@type` cuando un tipo propio haga el contrato más claro.
-- Evita tipos demasiado amplios como `term()` o `module()` en los contratos públicos. Usa tipos de dominio o de puerto con nombre (por ejemplo, `User.id()` o `UserRepository.adapter()`); para una struct, tipa sus campos con esos tipos propios.
-- Cuando un puerto recibe identificadores de entidades de otros contextos, nombra los argumentos en `@callback` (por ejemplo, `movie_id :: pos_integer()`) sin depender de sus módulos solo para reutilizar un alias `id()`. No crees alias locales equivalentes si no añaden una regla propia. Dentro del contexto propietario, usa el tipo de ID de la entidad.
-- Para dependencias inyectadas como módulos, define un tipo de adaptador en el puerto (por ejemplo, `UserRepository.adapter()`) y úsalo en los specs de los casos de uso. Su representación puede ser `atom()`: los typespecs de Elixir no pueden expresar ni comprobar que un módulo implemente un behaviour. Declara el `@behaviour` en cada adaptador y verifica sus callbacks al compilar; el tipo con nombre comunica el contrato, pero no sustituye esa comprobación.
-- Da a los tipos temporales un nombre acorde con su significado: el instante recibido al crear una sesión es `issued_at()`, mientras que `expires_at()` describe el valor calculado y almacenado.
-- Los tipos de estructuras reflejan sus etapas reales. Si un ID solo existe tras guardar, usa un tipo distinto para los datos previos y reserva el tipo de la entidad para los valores con ID; no amplíes el campo a `id() | nil` en ambos contratos.
-- Las funciones que implementan callbacks de un behaviour no necesitan un `@spec` propio: el contrato está en el `@callback` correspondiente. Marca esas implementaciones con `@impl true` cuando proceda.
-- No se exigen specs para funciones privadas (`defp`) ni para funciones generadas por macros o bibliotecas.
+- Add an `@spec` for every public function and macro. Place it before the first clause and cover all clauses and default arguments with one contract.
+- Use named domain and port types for inputs and results, including errors. Avoid overly broad public types such as `term()` and `module()`.
+- Name cross-context IDs in callbacks (for example, `movie_id :: pos_integer()`) instead of depending on another context's module only to reuse an `id()` alias. Inside the owning context, use the entity's ID type.
+- Define named adapter types on ports and use them in use-case specs. Keep `@behaviour` and `@impl true` on adapters; a typespec cannot verify that a module implements a behaviour.
+- Give time values names that distinguish their meaning, such as `issued_at()` and `expires_at()`.
+- Model lifecycle stages with distinct types when a value such as an ID exists only after persistence. Do not widen both stages to `id() | nil`.
+- Callback implementations do not need a duplicate `@spec`; private and macro-generated functions do not require specs.
 
-## Flujo de control
+## Control flow and language rules
 
-- No anides condicionales (`if`, `case`, `cond` o `with`) dentro de otros condicionales en una misma función. Extrae la decisión interior a una función privada con un nombre que explique su propósito.
-- Haz visible el flujo esperado de la función principal. Separa la validación, los casos de error y los efectos secundarios en pasos pequeños cuando una rama o una función anónima oculte ese recorrido. Conserva las mismas respuestas y efectos al refactorizar.
+- Do not nest conditionals (`if`, `case`, `cond`, or `with`) inside another conditional in the same function. Extract the inner decision into a well-named private function.
+- Keep the expected path visible. Separate validation, errors, and side effects when a branch or anonymous function hides the flow.
+- Lists do not support access syntax by index. Use `Enum.at/2`, pattern matching, or `List` functions.
+- Bind the result of block expressions when it is needed afterward; rebinding a variable inside an `if` or `case` branch does not update the outer binding.
+- Keep one module per file. Do not use map access syntax on structs; access fields directly or use the struct's API.
+- Do not create atoms from user input. Predicate names end in `?`; reserve `is_*` names for guards.
+- Prefer the standard `Time`, `Date`, `DateTime`, and `Calendar` modules. Add a dependency only when the task requires it.
+- Give named OTP processes explicit child-spec names. Use `Task.async_stream/3` for concurrent enumeration with back-pressure and select its timeout deliberately.
 
-## Reglas de Elixir y Mix
+## Mix
 
-- Elixir lists **do not support index based access via the access syntax**
-
-  **Never do this (invalid)**:
-
-      i = 0
-      mylist = ["blue", "green"]
-      mylist[i]
-
-  Instead, **always** use `Enum.at`, pattern matching, or `List` for index based list access, ie:
-
-      i = 0
-      mylist = ["blue", "green"]
-      Enum.at(mylist, i)
-
-- Elixir variables are immutable, but can be rebound, so for block expressions like `if`, `case`, `cond`, etc
-  you *must* bind the result of the expression to a variable if you want to use it and you CANNOT rebind the result inside the expression, ie:
-
-      # INVALID: we are rebinding inside the `if` and the result never gets assigned
-      if connected?(socket) do
-        socket = assign(socket, :val, val)
-      end
-
-      # VALID: we rebind the result of the `if` to a new variable
-      socket =
-        if connected?(socket) do
-          assign(socket, :val, val)
-        end
-
-- **Never** nest multiple modules in the same file as it can cause cyclic dependencies and compilation errors
-- **Never** use map access syntax (`changeset[:field]`) on structs as they do not implement the Access behaviour by default. For regular structs, you **must** access the fields directly, such as `my_struct.field` or use higher level APIs that are available on the struct if they exist, `Ecto.Changeset.get_field/2` for changesets
-- Elixir's standard library has everything necessary for date and time manipulation. Familiarize yourself with the common `Time`, `Date`, `DateTime`, and `Calendar` interfaces by accessing their documentation as necessary. **Never** install additional dependencies unless asked or for date/time parsing (which you can use the `date_time_parser` package)
-- Don't use `String.to_atom/1` on user input (memory leak risk)
-- Predicate function names should not start with `is_` and should end in a question mark. Names like `is_thing` should be reserved for guards
-- Elixir's builtin OTP primitives like `DynamicSupervisor` and `Registry`, require names in the child spec, such as `{DynamicSupervisor, name: MyApp.MyDynamicSup}`, then you can use `DynamicSupervisor.start_child(MyApp.MyDynamicSup, child_spec)`
-- Use `Task.async_stream(collection, callback, options)` for concurrent enumeration with back-pressure. The majority of times you will want to pass `timeout: :infinity` as option
-
-## Mix guidelines
-
-- Read the docs and options before using tasks (by using `mix help task_name`)
-- To debug test failures, run tests in a specific file with `mix test test/my_test.exs` or run all previously failed tests with `mix test --failed`
-- `mix deps.clean --all` is **almost never needed**. **Avoid** using it unless you have good reason
+- Read task options with `mix help TASK` before using unfamiliar tasks.
+- Run a focused test file with `mix test path/to/test.exs`; use `mix test --failed` to rerun prior failures.
+- Avoid `mix deps.clean --all` unless there is a specific reason.

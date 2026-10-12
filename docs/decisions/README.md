@@ -1,25 +1,23 @@
-# Decisiones del proyecto
+# Architecture decisions
 
-Las [convenciones](../conventions/backend.md) contienen las reglas vigentes. Los registros de esta carpeta explican por qué se tomaron decisiones significativas y qué costes se aceptaron.
+[Conventions](../conventions/backend.md) describe current rules. These records explain significant choices and their accepted costs. When a decision changes, mark the old record as superseded and link the replacement; update the current convention too.
 
-Crear un registro cuando se elija o cambie un límite arquitectónico, contrato, dependencia u organización documental relevante. No se necesita uno por cada detalle de implementación. Usar nombres `NNNN-tema.md` y documentar contexto, decisión, consecuencias y estado. Si una decisión cambia, marcarla como sustituida y enlazar la nueva; actualizar también la convención vigente.
-
-| Registro | Estado | Decisión |
+| Record | Status | Decision |
 | --- | --- | --- |
-| [0001](0001-architecture-foundation.md) | Aceptada | Aplicación única con DDD independiente de Ecto y frontend LiveView por pantalla |
-| [0002](0002-initial-access.md) | Aceptada | Alta inicial única y sesiones revocables limitadas a la LAN HTTP |
-| [0003](0003-recoverable-library-scans.md) | Aceptada; implementada, recuperación QNAP no validada | Escaneos Oban/PostgreSQL, identidad por ruta relativa y generaciones por invocación |
-| [0004](0004-technical-media-inspection.md) | Aceptada; desplegada, validación parcial | Inspección por revisión, outbox y token para descartar resultados antiguos |
-| [0005](0005-catalog-identification.md) | Parcialmente sustituida por 0012; revisión manual pendiente | Películas TMDb, solicitudes con inventario y corrección manual protegida |
-| [0006](0006-authorized-direct-playback.md) | Aceptada; desplegada, validación parcial | Ruta privada por sesión, descriptor validado y rangos HTTP |
-| [0007](0007-project-owned-documentation.md) | Aceptada | Documentos clasificados por función y rutas del proyecto para los artefactos de habilidades |
-| [0008](0008-global-persistence-schemas.md) | Aceptada; implementada localmente | Schemas Ecto en `Bolognesa.Infrastructure.Persistence` con nombres globales únicos |
-| [0009](0009-domain-results-from-repositories.md) | Aceptada; contratos identificados adaptados localmente | Resultados de dominio en repositorios, sin schemas, DTOs ni mapas libres |
-| [0010](0010-context-owned-models.md) | Aceptada; implementada localmente | Modelos propios por contexto y comunicación mediante fachadas |
-| [0011](0011-live-transcoding.md) | Implementada localmente; despliegue y capacidad pendientes | FFmpeg/HLS al vuelo, sesiones privadas y originales de solo lectura |
-| [0012](0012-catalog-entry-identity.md) | Implementada localmente; sin despliegue | Identidad común, detalles propios y escritura atómica desde Identificación |
-| [0013](0013-series-and-multiple-episode-associations.md) | Implementada localmente; sin despliegue | Tipo de biblioteca, jerarquía de series y conjuntos ordenados y atómicos por archivo |
-| [0014](0014-parallel-port-infrastructure-categories.md) | Implementada localmente; sin despliegue | Categorías paralelas para ports y adaptadores por responsabilidad |
-| [0015](0015-domain-concept-directories.md) | Implementada localmente en todos los contextos con dominio; sin despliegue | Directorios del dominio por tipo de concepto, con agrupación opcional por subdominio |
-| [0016](0016-user-locale-and-settings.md) | Implementada y desplegada; recorrido autenticado QNAP pendiente | Preferencia de idioma por cuenta, detección del navegador y Ajustes |
-| [0017](0017-generic-linux-compose-deployment.md) | Implementada y desplegada mediante el sistema común | Despliegue Compose configurable y operación local/SSH |
+| [0001](0001-architecture-foundation.md) | Accepted | One Phoenix application, bounded contexts, domain independent of Ecto |
+| [0002](0002-initial-access.md) | Accepted | One-time administrator setup and revocable sessions |
+| [0003](0003-recoverable-library-scans.md) | Accepted | Durable PostgreSQL-backed scans with per-attempt generations |
+| [0004](0004-technical-media-inspection.md) | Accepted | Durable revision-based inspection through an outbox |
+| [0005](0005-catalog-identification.md) | Partially superseded by 0012 | TMDb matching, review, and protected manual correction |
+| [0006](0006-authorized-direct-playback.md) | Accepted | Reauthorized direct delivery with descriptor validation and byte ranges |
+| [0007](0007-project-owned-documentation.md) | Accepted; refined for public use | Documentation organized by purpose and maintained in English |
+| [0008](0008-global-persistence-schemas.md) | Accepted | Shared Ecto schemas in a global persistence namespace |
+| [0009](0009-domain-results-from-repositories.md) | Accepted | Domain models returned from repositories |
+| [0010](0010-context-owned-models.md) | Accepted | Each context owns its models and read projections |
+| [0011](0011-live-transcoding.md) | Implemented | Optional FFmpeg/HLS compatible playback |
+| [0012](0012-catalog-entry-identity.md) | Implemented | Shared catalog identity and atomic identification writes |
+| [0013](0013-series-and-multiple-episode-associations.md) | Implemented locally | Series hierarchy and ordered multi-episode file associations |
+| [0014](0014-parallel-port-infrastructure-categories.md) | Implemented locally | Parallel categories for ports and adapters |
+| [0015](0015-domain-concept-directories.md) | Implemented | Domain directories by concept type |
+| [0016](0016-user-locale-and-settings.md) | Implemented | Per-account language preference and settings |
+| [0017](0017-generic-linux-compose-deployment.md) | Implemented | Configurable generic Linux Compose deployment |

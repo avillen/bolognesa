@@ -1,32 +1,22 @@
-# 0012. Identidad común del catálogo y escritura desde Identificación
+# 0012. Shared catalog identity and atomic identification writes
 
-Estado: implementada localmente el 2026-10-11; sin despliegue.
+Status: Implemented locally; deployment status is tracked in [project status](../status.md).
 
-## Contexto
+## Context
 
-Las asociaciones y la autorización de reproducción dependían de `movies`. Preparar series requiere una referencia única con integridad referencial y detalles propios de cada clase. La entrega mantiene únicamente películas.
+Movie associations and playback authorization depended directly on the `movies` table. Supporting series requires a stable identity shared by several kinds of catalog details.
 
-## Decisión
+## Decision
 
-- `catalog_entries` guarda ID, clase y referencia externa única `(provider, resource_type, provider_id)`. Los valores admitidos son `movie`, `tmdb`, `movie` y un entero positivo. Incorporar otra clase requiere una migración y contratos reales.
-- `movies.id` es PK y FK restrictiva de la identidad común, sin generación independiente. Sus columnas contienen únicamente metadatos específicos. Se preservan los IDs existentes y las URLs.
-- Identificación crea o reutiliza identidad y detalles mediante un colaborador privado de su repositorio, con entrada validada propia. La asociación `catalog_entry_id`, los detalles y la identidad se confirman en una única transacción. Los reintentos conservan los metadatos existentes; la unicidad resuelve versiones concurrentes.
-- Catálogo consulta las obras y reconstruye sus modelos y DTOs propios desde joins de schemas globales. No importa modelos ni mappers de Identificación. Se retiran el puerto/escritor de Catálogo y `Catalog.upsert_in_transaction!/2`.
-- Reproducción valida el par elemento–archivo contra identidad e identificación confirmada, sin depender de `MovieSchema`. HLS conserva actor, elemento, archivo y revisión en cada petición. Las rutas de película traducen `movie_id` en la frontera.
-- Tokens, estados, revisiones, correcciones, eventos y argumentos de Oban se preservan. Consultas externas quedan fuera de transacciones.
+- `catalog_entries` stores a shared ID, kind, and unique `(provider, resource_type, provider_id)` reference. Current provider data is explicitly constrained; new resource kinds require real use cases and migrations.
+- `movies.id` is a restrictive PK/FK to the shared identity, with movie-specific fields only. Existing IDs and URLs are preserved.
+- Identification creates or reuses identity and details through its own repository collaborator and commits them with the file association in one transaction. Retries preserve existing metadata; uniqueness handles concurrent versions.
+- Catalog reads identities and details through its own adapters and models. It does not import Identification models or mappers.
+- Playback validates a confirmed catalog/file relationship without depending on `MovieSchema`. Routes translate movie-specific IDs at the boundary.
+- Preserve request tokens, statuses, revisions, manual corrections, events, and job arguments. Keep external queries outside transactions.
 
-Esta decisión sustituye parcialmente la [0005](0005-catalog-identification.md) en identidad, referencia y propietario de escritura, incluida su excepción de transacción entre contextos. Permanecen sus reglas de proveedor, atomicidad, protección manual y recuperación.
+This partially supersedes [decision 0005](0005-catalog-identification.md) on identity and write ownership.
 
-## Consecuencias y operación
+## Consequences
 
-Las lecturas de película añaden un join y cada contexto mantiene representaciones locales. Si aparece un alta de obras independiente de identificar archivos, se revisará su propietario con ese caso concreto.
-
-Las tres migraciones y el código requieren una actualización coordinada: detener la aplicación antigua, migrar y reiniciar con la versión nueva. Los estados intermedios no son publicables. El rollback reconstruye referencias externas y asociaciones y ajusta la secuencia de películas, incluyendo altas posteriores a la migración.
-
-La comprobación usa exclusivamente `bolognesa_catalog_migration_check`, con datos sintéticos y Repo dedicado; no se ejecuta en QNAP. No se introducen series, progreso ni protocols. Un protocol requiere dos structs reales, operación común con la misma semántica y un consumidor que se simplifique.
-
-## Referencias
-
-- [Diseño](../designs/2026-10-11-catalog-expansion-design.md)
-- [Plan y verificaciones](../plans/2026-10-11-catalog-expansion.md)
-- [Modelos propios por contexto](0010-context-owned-models.md)
+Movie reads add a join, and each context maintains its own models. A standalone catalog-entry creation flow should revisit ownership with that specific use case. Schema migrations and application code must be activated together; rollback must preserve references and later-created movie IDs. No series behavior follows from this identity decision alone.

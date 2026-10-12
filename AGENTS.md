@@ -5,21 +5,14 @@ Aplicación web Phoenix para aprendizaje y uso doméstico. Las decisiones y conv
 ## Continuidad de sesión
 
 - Al comenzar, leer [producto](docs/product.md), [estado](docs/status.md), [roadmap](docs/roadmap.md) y las convenciones aplicables. Inspeccionar Git y conservar cambios ajenos.
-- Elegir una tarea acotada con criterios de aceptación; leer su diseño, plan y [decisiones](docs/decisions/README.md) relevantes. Comprobar el código antes de asumir que existe una función.
+- Elegir una tarea acotada con criterios de aceptación; leer las [decisiones](docs/decisions/README.md) y convenciones relevantes. Comprobar el código antes de asumir que existe una función.
 - Al terminar trabajo significativo, ejecutar `mix precommit` y los checks pertinentes; corregir fallos y actualizar `docs/status.md` con estado real, verificación, bloqueos y siguiente paso. No atribuir despliegue ni compatibilidad de dispositivos sin evidencia.
 - Si queda trabajo incompleto, registrar archivos o rama, pasos pendientes, comando fallido y síntomas reproducibles. No guardar credenciales ni inventarios privados de medios.
 - Marcar un hito completo solo al cumplir los criterios de `docs/roadmap.md`. Evitar planes vacíos o implementaciones especulativas.
 
 ## Organización documental
 
-- `docs/conventions/`: reglas técnicas vigentes. Actualizar la convención cuando cambie una regla acordada.
-- `docs/decisions/`: decisiones relevantes, motivos y costes aceptados; indexarlas en su README.
-- `docs/designs/`: comportamiento y contratos acordados, independientes de la herramienta usada para diseñarlos.
-- `docs/plans/`: pasos de implementación acotados. Crear planes solo cuando se vayan a ejecutar.
-- `docs/validation/`: comprobaciones reales de QNAP, navegadores y dispositivos. Separar observaciones de expectativas.
-- `docs/history/`: antecedentes y verificaciones anteriores. `docs/status.md` es una instantánea breve, no un historial.
-
-Si una habilidad sugiere `docs/superpowers/specs/` o `docs/superpowers/plans/`, usar respectivamente `docs/designs/` o `docs/plans/`. No crear directorios por herramienta ni duplicar instrucciones en archivos específicos de un agente.
+Consultar [docs/README.md](docs/README.md) y seguir la [convención documental](docs/conventions/documentation.md). Mantener el contenido público en inglés y sin detalles privados. El estado es una instantánea, no un historial; al terminar un trabajo temporal, retirar sus notas o resumir la información duradera en una convención o decisión. No crear directorios por herramienta ni duplicar instrucciones en archivos específicos de un agente.
 
 ## Convenciones por área
 
@@ -31,8 +24,9 @@ Si una habilidad sugiere `docs/superpowers/specs/` o `docs/superpowers/plans/`, 
 | Phoenix 1.8, HEEx, Ecto, Tailwind, hooks e interacción | [Phoenix e interfaz](docs/conventions/phoenix.md) |
 | Cambios funcionales, pruebas y refactors | [Testing](docs/conventions/testing.md) |
 | Logs, errores y trabajos de fondo | [Observabilidad](docs/conventions/observability.md) |
+| Documentación del proyecto | [Documentación](docs/conventions/documentation.md) |
 
-Leer todas las convenciones aplicables antes de modificar un área. Mantener los planes separados de las reglas duraderas.
+Leer todas las convenciones aplicables antes de modificar un área.
 
 ## Operación
 

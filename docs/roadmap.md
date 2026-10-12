@@ -1,31 +1,25 @@
 # Roadmap
 
-H0 (base de trabajo), P0 (prueba temprana de reproducción) y H1 (cuenta administradora) están implementados; H1 se publicó en QNAP el 2026-10-03 y el propietario confirmó alta, inicio de sesión, cierre y reingreso. La muestra MP4 de P0 funcionó en Hisense, móvil y ordenador; P0 no acredita los formatos de la biblioteca ni implementa el reproductor de H4. El [estado](status.md) recoge la situación real.
+This roadmap describes priorities and possibilities, not a release schedule or promise to implement every idea. See [status](status.md) for current implementation and verification evidence.
 
-| Hito | Resultado | Criterios de aceptación |
-| --- | --- | --- |
-| H0. Base de trabajo | Convenciones mínimas de testing y observabilidad; evaluación del entorno real | Documentos acordados e indexados; procedimiento local reproducible; despliegue y montaje de solo lectura en QNAP verificados; interfaz base comprobada en móvil e Hisense. |
-| P0. Prueba de reproducción (completa) | Viabilidad temprana del navegador y la entrega directa | Muestra pública servida por Bolognesa con rangos HTTP; imagen, sonido, pausa y salto observados en Hisense, móvil y ordenador; comportamiento del mando registrado; límites del resultado anotados. No acredita compatibilidad de toda la biblioteca. |
-| H1. Cuenta administradora (completa) | Primer acceso autenticado conforme a las capas acordadas | Arranque controlado sin registro público; iniciar y cerrar sesión; rechazo de acceso protegido sin sesión; identidad real del actor; pantalla inicial siguiendo frontend; pruebas relevantes y `mix precommit` correctos. Recorrido autenticado confirmado por el propietario en QNAP. |
-| H2. Bibliotecas | Configuración de fuentes, inventario y análisis técnico | Escanear sin duplicados; fuentes inaccesibles sin bajas masivas; archivos ausentes marcados; trabajos recuperables; concurrencia limitada; originales intactos |
-| H3. Catálogo e identificación | Películas reconocidas y corrección manual | Coincidencias y dudas visibles; corrección conservada ante reintentos y concurrencia; varias versiones de una obra; fallos del proveedor tratados |
-| H4. Reproducción y actividad | Primer recorrido doméstico completo | Entrega directa autorizada con rangos; posición recuperada por usuario; emparejamiento de la TV desde un móvil autenticado; error explícito ante incompatibilidad; pruebas reales en dispositivos previstas y resultados documentados |
+## Near-term focus
 
-## Después de la primera versión
+The application has the main home-media flows in place. The next useful work is to improve confidence in those flows through real use and focused contributions:
 
-Priorizar según el uso real: recuperación de acceso a la cuenta, series, música, cuentas adicionales, conversión de formatos, acceso remoto y aplicaciones específicas. H1 no incluye recuperación de contraseña; su mecanismo se decidirá cuando se aborde. No se fija todavía un calendario ni una secuencia detallada entre esas ampliaciones.
+- Make local setup easy to follow on common Docker and Linux environments.
+- Check scanning and inspection recovery, repeated scans, and failure feedback.
+- Verify that manual identification corrections survive later work.
+- Test authenticated playback controls, formats, and performance on different browsers and devices.
+- Keep the application responsive on modest hardware and improve accessibility and documentation as friction is found.
 
-## Ampliación priorizada: series
+These are areas to investigate and improve; current verification limits are listed in [status](status.md).
 
-El propietario priorizó series el 2026-10-11, sin cerrar las validaciones pendientes de H2, H3 ni H4. Alcance: bibliotecas separadas por tipo; identificación `S01E02` y `1x02`; especiales; selección íntegra de archivos múltiples; corrección manual protegida; navegación serie → temporada → episodio y entrega autorizada directa/HLS.
+## Possible later directions
 
-Criterios: películas previas conservadas, dudas y fallos visibles, ningún conjunto parcial confirmado, archivos múltiples sin duplicar catálogo, revocación efectiva al corregir, migraciones sintéticas de ida/vuelta y rollback rechazado sin pérdida. La implementación local se comprueba con pruebas y verificador dedicado. Despliegue, navegación con medios reales y validación de dispositivos se registrarán por separado; esta ampliación no acredita progreso ni emparejamiento de TV.
+Music, additional user accounts, general remote access, and dedicated clients may make sense if people need them and someone can maintain them. Discuss the problem and a small first step before starting substantial work. Their appearance here does not mean they are scheduled or accepted.
 
-## Cómo trabajar los hitos
+Series support is implemented in the codebase. A file containing multiple episodes is played in full from its beginning; the application does not cut it into episodes or automatically advance playback.
 
-1. Revisar requisitos y decisiones pendientes del hito.
-2. Crear un plan pequeño con archivos afectados, criterios de aceptación y verificaciones.
-3. Implementar y comprobar resultados; registrar limitaciones reales.
-4. Actualizar estado y marcar el hito terminado únicamente si satisface sus criterios.
+## Working on a roadmap item
 
-Las pruebas exploratorias de hardware no deben convertirse en una implementación improvisada del reproductor completo. P0 comprueba una muestra pública y los controles del navegador en los tres dispositivos; una película MP4 de la biblioteca se vio completa en ordenador. El propietario considera suficiente esa evidencia para avanzar con la estrategia de entrega directa en los tres clientes previstos. La compatibilidad de otros formatos y el recorrido autorizado se comprobarán al preparar H4. Esto no impide diseñar H1.
+Before implementation, check current code, the relevant [decisions](decisions/README.md), and [conventions](conventions/). Discuss substantial features first. Keep temporary design or implementation notes with the change that uses them, then remove them or distill lasting information into a convention or decision. Update [status](status.md) with verified results and remaining work.

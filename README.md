@@ -2,7 +2,9 @@
 
 Boloñesa is a self-hosted media center built with Elixir, Phoenix and LiveView. It is named after my cat, and it started as a fun way to explore Elixir by building something I use at home.
 
-This is an early, personal project and a place to learn in public. The goal is a working end-to-end experience that is easy to run and understand, not a production-ready Jellyfin replacement. Simplicity, performance and responsiveness on modest hardware guide the work. Contributions of all sizes are welcome, from experiments with OTP to a small UI fix.
+This is an early personal project developed in public. It began as a way to learn Elixir by building a media center for home use. The aim is to make that experience understandable, practical to run, and responsive on modest hardware. Boloñesa is not yet a mature, general-purpose alternative to established media servers.
+
+People can help most by trying the setup, reporting reproducible problems, and sharing what works on their hardware and browsers. Focused fixes to reliability, tests, documentation, accessibility, and performance fit especially well. Discuss larger features before investing in them; the maintainer will set the project's scope and may not be able to review or merge every proposal.
 
 ## What works today
 
@@ -15,7 +17,7 @@ This is an early, personal project and a place to learn in public. The goal is a
 
 ## Current limits
 
-Boloñesa is still changing quickly and has only been used as a personal project. Browser and codec compatibility varies; a file in the library is not guaranteed to play. The private QNAP validation recorded one MP4 playing in Chrome, but pause and seeking on the private route, mobile playback and the Hisense TV have not been fully verified. Playback progress is not saved after the player session. Transcoding exists for some cases, but performance depends on the hardware and format.
+Boloñesa is still changing quickly and has only been used as a personal project. Browser and codec compatibility varies; a file in the library is not guaranteed to play. One MP4 played in Chrome during a private deployment check, but pause and seeking on the authenticated route, mobile playback, and TV playback have not been fully verified. Playback progress is not saved after the player session. Transcoding exists for some cases, but performance depends on the hardware and format.
 
 Scanning discovers files; it does not by itself create catalog movies. Movie and series identification uses TMDb. The application starts without a TMDb token, but automatic identification and metadata lookup need one. A token is optional for startup and can be supplied locally through `.env`.
 
@@ -80,15 +82,15 @@ mix precommit
 
 ## Contributing
 
-Small, understandable changes are easiest to review and learn from. Bug fixes, performance improvements, refactors, experiments and UI details are all welcome. Please keep simplicity and responsiveness on modest hardware in mind. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and contribution notes.
+The most useful next contributions help make the existing journey reliable: first-run setup, scanning, identification and correction, and browser playback. Trying Boloñesa on another Linux setup, browser, or device and reporting the result is valuable even without a code change. See [CONTRIBUTING.md](CONTRIBUTING.md) for what to include in feedback and how to propose work.
 
-There is no license file yet. Please check with the maintainer before redistributing or building on this code until a license is chosen.
+The project is licensed under [MIT](LICENSE). Third-party components and media retain their own licenses and attribution; for example, the vendored hls.js license is in `assets/vendor/hls.LICENSE`.
 
 ## Project notes
 
+- [Documentation index](docs/README.md)
 - [Product and scope](docs/product.md)
 - [Current status and verification](docs/status.md)
 - [Roadmap](docs/roadmap.md)
 - [Architecture and project conventions](docs/conventions/)
 - [Generic Linux Docker Compose deployment](deploy/compose/README.md)
-- [Deployment transition history](docs/history/2026-10-12-unified-deployment-transition.md)

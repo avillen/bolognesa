@@ -1,56 +1,39 @@
-# Testing
+# Testing conventions
 
-Seguimos TDD centrado en comportamiento, con un esfuerzo proporcional al cambio. Las pruebas explican qué hace el sistema y protegen sus contratos observables; deben permitir refactorizar su implementación.
+Tests focus on observable behavior and protect contracts while allowing implementation changes. Keep the effort proportional to the change.
 
-## Flujo de trabajo
+## Workflow
 
-1. Revisar las pruebas existentes del comportamiento que se va a modificar.
-2. Para un cambio funcional, modificar una prueba relevante o añadir el escenario que falte y comprobar que falla por el motivo esperado.
-3. Implementar el cambio necesario y comprobar la prueba.
-4. Refactorizar implementación y pruebas, manteniendo el comportamiento verificado.
-5. Ejecutar las comprobaciones adecuadas al cambio y `mix precommit` al finalizar.
+1. Read existing tests for the behavior being changed.
+2. For functional changes, add or update a relevant scenario and verify that it fails for the expected reason.
+3. Implement the smallest change that makes it pass, then refactor while preserving verified behavior.
+4. Run checks appropriate to the change and `mix precommit` for meaningful implementation work.
 
-Los cambios exclusivamente documentales o de formato no requieren nuevas pruebas ni un ciclo rojo/verde artificial. Una refactorización que conserva comportamiento se apoya en pruebas existentes; se cubren antes las carencias relevantes que se detecten.
+Documentation-only and formatting changes do not need artificial red/green tests. Refactors rely on existing coverage; address relevant gaps when found.
 
-## Evolución de las pruebas
+## Test design
 
-- Modificar una prueba existente cuando cambie el comportamiento que describe. Añadir una cuando represente una situación distinta o una regresión todavía no cubierta.
-- Conservar las regresiones que sigan siendo válidas. No eliminar cobertura útil para reducir el número de pruebas ni alterar expectativas solo para conseguir que pasen.
-- Al añadir una prueba, revisar las cercanas para mejorar nombres, preparación y duplicación. Refactorizar localmente cuando aporte claridad, sin ampliar innecesariamente el alcance.
-- Evitar helpers y fixtures excesivamente genéricos que oculten los datos relevantes de cada escenario.
-- Nombrar las pruebas por el resultado o regla que verifican. Por ejemplo: «conserva la identificación manual al repetir el escaneo».
+- Update an existing test when its behavior changes. Add a test for a distinct scenario or uncovered regression.
+- Keep useful regression coverage. Do not weaken expectations just to make a test pass.
+- Name tests after the rule or result they verify. Keep fixtures and helpers local and clear.
+- Assert returned data, domain rules, authorization, persisted changes, and visible interface behavior. Avoid private functions, socket internals, and exact call order unless they are part of the contract.
+- Choose the lowest layer that protects the behavior. Do not duplicate every scenario across every layer.
 
-## Qué comprobar
-
-Comprobar datos devueltos, reglas e invariantes, autorización, cambios persistidos y respuesta observable de la interfaz. Evitar funciones privadas, estructura interna del socket y orden exacto de llamadas salvo que ese orden sea en sí un contrato funcional necesario.
-
-Elegir el nivel más directo que proteja el comportamiento y sus riesgos. No duplicar automáticamente cada escenario en todas las capas ni crear un archivo de pruebas por cada módulo de implementación.
-
-| Área | Enfoque |
+| Area | Focus |
 | --- | --- |
-| Dominio | Pruebas sin base de datos de invariantes, transiciones y errores |
-| Aplicación | Casos de uso mediante contratos públicos; dobles en puertos cuando ayuden a aislar efectos |
-| Persistencia e infraestructura | Integración con PostgreSQL para restricciones, mappers, transacciones y outbox; recursos externos controlados |
-| LiveView | Interacciones con LiveViewTest y selectores estables; resultados visibles y navegación |
-| Reducers, modelos de vista y forms | Pruebas directas cuando una transición, transformación o validación relevante lo justifique |
-| Trabajos y eventos | Recuperación, duplicados, resultados obsoletos y efectos duraderos; sincronización determinista |
+| Domain | Invariants, transitions, and errors without a database |
+| Application | Public use cases and ports; use doubles to isolate external effects |
+| Persistence and infrastructure | PostgreSQL constraints, mappers, transactions, and outbox; controlled external resources |
+| LiveView | LiveViewTest interactions, stable selectors, visible results, and navigation |
+| Reducers, view models, and forms | Direct tests when a meaningful transition or validation warrants them |
+| Jobs and events | Recovery, duplicates, stale results, durable effects, and deterministic synchronization |
 
-Los dobles se sitúan en los límites externos. No se simula cada módulo interno. Las pruebas de integración verifican lo que un doble no puede garantizar, como atomicidad o restricciones de base de datos. Las pruebas normales no dependen de proveedores públicos ni del NAS o televisor reales.
+Keep doubles at external boundaries. Integration tests verify guarantees doubles cannot provide, such as transaction atomicity and database constraints. Normal tests do not depend on public providers or real NAS/TV hardware. Do not change global configuration from concurrent tests.
 
-Se siguen las reglas de procesos supervisados y sincronización de este documento, y los selectores de las convenciones de Phoenix. No se modifica configuración global desde pruebas concurrentes.
+## Verification and processes
 
-## Verificación proporcional
+Run focused tests during development and broaden checks when risk or project requirements call for it. Record actual commands and distinguish automated checks from manual device verification. Unit tests do not establish hardware compatibility.
 
-Durante el desarrollo ejecutar las pruebas afectadas; ampliar cuando exista un riesgo concreto o una comprobación obligatoria. Registrar los comandos ejecutados y sus resultados, distinguiendo los tests automatizados de las verificaciones manuales en dispositivos. No asumir compatibilidad de hardware a partir de pruebas unitarias.
-
-## Procesos en pruebas
-
-- El pool de PostgreSQL en pruebas admite al menos cinco conexiones: las pruebas concurrentes con datos confirmados mantienen un owner sandbox, un coordinador y tres workers independientes. No reducirlo en runners con pocos schedulers ni sustituir esa capacidad por timeouts mayores.
-- **Always use `start_supervised!/1`** to start processes in tests as it guarantees cleanup between tests
-- **Avoid** `Process.sleep/1` and `Process.alive?/1` in tests
-  - Instead of sleeping to wait for a process to finish, **always** use `Process.monitor/1` and assert on the DOWN message:
-
-      ref = Process.monitor(pid)
-      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
-
-   - Instead of sleeping to synchronize before the next call, **always** use `_ = :sys.get_state/1` to ensure the process has handled prior messages
+- The test PostgreSQL pool must support at least five connections for concurrent tests: one sandbox owner, one coordinator, and three workers. Do not compensate for insufficient pool capacity with longer timeouts.
+- Start processes with `start_supervised!/1` so they are cleaned up between tests.
+- Avoid `Process.sleep/1` and `Process.alive?/1`. Monitor a process and assert on its `DOWN` message, or use `_ = :sys.get_state/1` to synchronize before a subsequent call.

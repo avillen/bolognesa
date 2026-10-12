@@ -1,6 +1,6 @@
-# Observabilidad
+# Observability conventions
 
-Por ahora la observabilidad propia de Bolognesa se basa en logs parametrizados con `Logger`: mensajes estables y campos de contexto como metadata. No se añaden plataformas de métricas ni trazas en esta fase. La instrumentación incluida en la base Phoenix puede permanecer.
+Bolognesa currently uses structured `Logger` messages with stable text and metadata fields. It does not add a separate metrics or tracing platform at this stage; Phoenix's existing instrumentation may remain.
 
 ```elixir
 Logger.info("Library scan completed",
@@ -11,20 +11,15 @@ Logger.info("Library scan completed",
 )
 ```
 
-## Convenciones
+- Keep message text stable. Put IDs, counters, durations, and bounded reason codes in metadata.
+- Configure the formatter to show approved fields; adding metadata alone does not guarantee that it appears in output.
+- Log meaningful job starts, outcomes, retries, and failures. Avoid logging every trivial operation or playback update.
+- Use `debug` for diagnostic detail, `info` for normal milestones, `warning` for degradation or retries, and `error` for terminal or unexpected failures.
+- Pass context explicitly to asynchronous work; process metadata is not automatically inherited.
+- Log a failure at the layer that understands its operational result. Avoid duplicate logs as errors propagate.
+- Never dump structs, external responses, parameters, or exceptions without checking for sensitive data. Exclude passwords, tokens, cookies, credentials, unnecessary full paths, and private media listings.
+- The domain does not depend on `Logger`; the application and adapters log at their boundaries.
 
-- Mantener mensajes estables; colocar identificadores, contadores, duraciones y motivos en metadata en lugar de interpolarlos en el texto.
-- Configurar el formatter para mostrar explícitamente los campos aprobados. Añadir metadata a una llamada no garantiza por sí solo que aparezca en la salida.
-- Registrar inicio y resultado de trabajos relevantes, reintentos y fallos que requieran diagnóstico. Evitar un mensaje por cada operación trivial o actualización de reproducción.
-- Usar `debug` para detalle de diagnóstico, `info` para hitos operativos normales, `warning` para degradaciones o reintentos y `error` para fallos definitivos o inesperados.
-- Relacionar mensajes mediante los identificadores disponibles: petición, trabajo, evento, escaneo o archivo. Pasar el contexto necesario explícitamente al iniciar trabajo asíncrono; no asumir que la metadata del proceso padre se hereda.
-- Registrar cada fallo en la capa que conoce su resultado operativo. Evitar que todas las capas registren el mismo error al propagarlo.
-- Usar motivos acotados y seguros. No volcar indiscriminadamente structs, respuestas externas, parámetros o excepciones con datos sensibles.
-- Excluir contraseñas, tokens, cookies, credenciales, rutas completas innecesarias y listados privados de contenido. Preferir identificadores internos.
-- El dominio no depende de `Logger`; la aplicación y los adaptadores registran los resultados en sus límites.
+Logs do not replace persisted job state, an outbox, or user-facing feedback. Test log contents only when they are part of an operational or confidentiality contract.
 
-Los logs no sustituyen los estados persistidos de trabajos, el outbox ni el feedback de la interfaz. Tampoco se convierten en requisitos de prueba para cada operación: comprobar su contenido solo cuando exista un contrato operativo o de confidencialidad relevante.
-
-Las búsquedas de películas usan el parámetro `query`, filtrado por Phoenix junto con contraseñas y tokens. Las consultas y escrituras Ecto que incluyen títulos, candidatos o rutas privadas emplean `log: false`; los diagnósticos operativos usan identificadores internos y motivos acotados.
-
-El formatter muestra request_id, library_id, scan_id, file_id, job_id, attempt, files_discovered, duration_ms y reason. H2b registra resultados con contadores confirmados y duración medida; la frontera del worker sanitiza excepciones. Las consultas de inventario con rutas privadas usan `log: false`.
+Movie searches use the `query` parameter, filtered by Phoenix along with passwords and tokens. Ecto queries and writes containing private titles, candidates, or paths use `log: false`. Operational diagnostics use internal IDs and bounded reason codes.

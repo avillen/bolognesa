@@ -1,28 +1,19 @@
-# 0016. Idioma por cuenta y pantalla de Ajustes
+# 0016. Per-account language preference and settings
 
-Estado: implementada, verificada localmente y desplegada mediante `bf6447a`. Guardado autenticado en QNAP y validación visual pendientes. [Evidencia](../validation/qnap.md#despliegue-de-ajustes-e-idioma).
+Status: Implemented and deployed; visual and authenticated-device checks remain separate.
 
-## Contexto
+## Context
 
-La interfaz tenía textos fijos en español y Gettext instalado para componentes comunes. El propietario solicita distintos idiomas según el locale y aprueba comenzar Ajustes con español e inglés, detección del navegador y una elección compartida entre dispositivos.
+The interface needed English and Spanish, browser-language detection, and a choice shared across a user's devices.
 
-## Decisión
+## Decision
 
-Identidad conserva la preferencia nullable `locale` del usuario. `nil` sigue el navegador; `es` y `en` son los valores explícitos. El dominio valida y la actualización solo utiliza el ID del actor verificado mediante fachada, caso de uso y repositorio existentes. La base de datos limita los valores admitidos.
+Identity stores a nullable `locale` preference. `nil` follows the browser; explicit values are `en` and `es`, validated by the domain and database. Only the verified actor's ID can update the preference.
 
-La presentación resuelve preferencia de la cuenta → `Accept-Language` → español. Gettext se establece por proceso en HTTP y LiveView. Las variantes regionales se normalizan a los idiomas disponibles; se respetan calidad, orden y exclusiones. El documento raíz declara el idioma efectivo.
+Resolve locale in this order: account preference, `Accept-Language`, then Spanish. Normalize regional variants and honor quality, order, and exclusions. Set Gettext per request/process; the HTML document declares the effective language.
 
-La ruta autenticada `/settings` contiene inicialmente el selector de idioma. Guardar fuerza recarga completa para actualizar también el documento HTML; la confirmación usa el idioma resultante. Otras pestañas y dispositivos recuperan la elección en la siguiente petición o montaje. No hay sincronización inmediata de pestañas.
+The authenticated `/settings` page initially contains the language selector. Saving reloads the full document so HTML and page text use the new locale. Other tabs and devices apply the preference on their next request or mount; there is no live cross-tab synchronization.
 
-Los textos propios se traducen en presentación con catálogos Gettext de español e inglés. Los motivos backend y los metadatos almacenados mantienen sus contratos. Los errores de formulario se extraen sin traducir y se traducen al mostrarlos. Las tareas asíncronas entregan datos y el proceso de la página prepara sus textos.
+## Consequences
 
-## Consecuencias
-
-La preferencia se comparte entre dispositivos sin modificar las sesiones. Se acepta una migración aditiva y una recarga al guardar. El rollback pierde únicamente la preferencia nueva y conserva cuentas y credenciales. Guardarla solo en una cookie no cumple la elección por cuenta; un contexto genérico de configuración no se justifica para esta única preferencia.
-
-Añadir otro idioma requiere definirlo en el objeto de valor, la restricción de persistencia, el resolver web y el selector, además de completar los catálogos. La cobertura automática comprueba traducciones y placeholders; no acredita apariencia ni funcionamiento de dispositivos reales.
-
-## Referencias
-
-- [Diseño](../designs/2026-10-11-settings-and-locale.md)
-- [Plan](../plans/2026-10-11-settings-and-locale.md)
+The setting is shared across devices without changing session semantics. Adding a language requires updating the domain value, persistence constraint, resolver, selector, and complete message catalogs. Automated translation coverage does not verify visual quality or device behavior.
