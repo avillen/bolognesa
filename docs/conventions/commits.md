@@ -26,6 +26,8 @@ Before committing, inspect the staged changes and check that they contain no cre
 
 Before pushing, scan the commits being introduced with Gitleaks. CI scans the same incoming commit range for pushes and pull requests, using a full Git checkout so the range can be compared reliably. This automated scan catches known secret patterns; it cannot recognize every kind of private information, so human review remains required. Review the full history separately before the first public release. Do not add blanket allowlist entries to make a finding pass without verifying that the value is safe and documenting why it is a false positive.
 
+The root `.gitleaksignore` contains only exact fingerprints for the fixed development and test `secret_key_base` values. These values are not used by production configuration. Reassess and remove the exceptions if those source lines or their history change; do not add path-wide or rule-wide exclusions.
+
 If a secret is committed, treat it as exposed: revoke or rotate it first, notify the maintainer privately, then coordinate history cleanup. Deleting it in a later commit does not remove it from earlier commits or existing clones, forks, caches, or artifacts. Do not publish the affected history until the maintainer has reviewed the cleanup.
 
 ## Local scan
