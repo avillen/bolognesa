@@ -37,6 +37,14 @@ defmodule BolognesaWeb.UserAuth do
     end
   end
 
+  @spec require_admin_user(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
+  def require_admin_user(conn, _opts) do
+    case conn.assigns.current_scope do
+      %{actor: %Actor{role: :admin}} -> conn
+      _ -> conn |> send_resp(403, "Forbidden") |> halt()
+    end
+  end
+
   @spec require_authenticated_media(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
   def require_authenticated_media(conn, _opts) do
     if conn.assigns.current_scope do
@@ -49,7 +57,12 @@ defmodule BolognesaWeb.UserAuth do
     end
   end
 
-  @spec on_mount(:require_authenticated, map(), map(), Phoenix.LiveView.Socket.t()) ::
+  @spec on_mount(
+          :require_authenticated | :require_admin,
+          map(),
+          map(),
+          Phoenix.LiveView.Socket.t()
+        ) ::
           {:cont, Phoenix.LiveView.Socket.t()} | {:halt, Phoenix.LiveView.Socket.t()}
   def on_mount(:require_authenticated, _params, session, socket) do
     browser =
@@ -79,6 +92,19 @@ defmodule BolognesaWeb.UserAuth do
           )
 
         {:halt, Phoenix.LiveView.redirect(socket, to: "/login")}
+    end
+  end
+
+  def on_mount(:require_admin, params, session, socket) do
+    case on_mount(:require_authenticated, params, session, socket) do
+      {:cont, %{assigns: %{current_scope: %{actor: %Actor{role: :admin}}}} = socket} ->
+        {:cont, socket}
+
+      {:cont, socket} ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: "/")}
+
+      {:halt, socket} ->
+        {:halt, socket}
     end
   end
 

@@ -4,8 +4,8 @@ defmodule Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepositor
   alias Bolognesa.Libraries.Domain.Entities.Inspection
   alias Bolognesa.Libraries.Domain.Entities.Library
   alias Bolognesa.Libraries.Domain.Entities.MediaFile
-  alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
+  alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
 
   @type adapter :: module()
