@@ -6,7 +6,8 @@ defmodule BolognesaWeb.Library.Index.Reducers.FetchScanStatuses do
   alias Bolognesa.Libraries
 
   @spec call(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
-  def call(%{assigns: %{scan_loading?: true}} = socket), do: socket
+  def call(%{assigns: %{scan_loading?: true}} = socket),
+    do: assign(socket, :scan_refresh_pending?, true)
 
   def call(socket) do
     if connected?(socket), do: fetch(socket), else: socket
@@ -15,10 +16,9 @@ defmodule BolognesaWeb.Library.Index.Reducers.FetchScanStatuses do
   defp fetch(socket) do
     actor = socket.assigns.current_scope.actor
     request_id = make_ref()
-    cancel_timer(socket.assigns.scan_timer_ref)
 
     socket
-    |> assign(:scan_timer_ref, nil)
+    |> assign(:scan_refresh_pending?, false)
     |> assign(:scan_request_id, request_id)
     |> assign(:scan_loading?, true)
     |> start_async({:scan_statuses, request_id}, fn -> load(actor) end)
@@ -44,6 +44,4 @@ defmodule BolognesaWeb.Library.Index.Reducers.FetchScanStatuses do
 
   defp ordered({:ok, rows}), do: {:ok, Enum.reverse(rows)}
   defp ordered(error), do: error
-  defp cancel_timer(nil), do: :ok
-  defp cancel_timer(ref), do: Process.cancel_timer(ref)
 end

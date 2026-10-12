@@ -9,6 +9,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries.Domain.Entities.Library
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
+  alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.InspectionMapper
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.MediaFileMapper
@@ -148,8 +149,11 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
 
   defp transaction(operation) do
     case Repo.transaction(operation) do
-      {:ok, result} -> result
-      {:error, _reason} -> {:error, :unavailable}
+      {:ok, result} ->
+        result
+
+      {:error, _reason} ->
+        {:error, :unavailable}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -163,16 +167,21 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
 
     ids = reconciliation_ids(cutoff)
 
-    Enum.reduce_while(ids, :ok, fn id, :ok -> reconcile_id(id, cutoff) end)
+    Enum.reduce_while(ids, %ReconciliationResult{}, fn id, result ->
+      reconcile_id(id, cutoff, result)
+    end)
   rescue
-    DBConnection.ConnectionError -> {:error, :unavailable}
-    Postgrex.Error -> {:error, :unavailable}
+    DBConnection.ConnectionError -> %ReconciliationResult{error: :unavailable}
+    Postgrex.Error -> %ReconciliationResult{error: :unavailable}
   end
 
-  defp reconcile_id(id, cutoff) do
+  defp reconcile_id(id, cutoff, result) do
     case transaction(fn -> reconcile_one(id, cutoff) end) do
-      :ok -> {:cont, :ok}
-      {:error, :unavailable} = error -> {:halt, error}
+      {:ok, library_ids} ->
+        {:cont, %{result | changed_library_ids: library_ids ++ result.changed_library_ids}}
+
+      {:error, :unavailable} ->
+        {:halt, %{result | error: :unavailable}}
     end
   end
 
@@ -208,9 +217,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
 
     if inspection && inspection.state in [:pending, :running] do
       reconcile_active(inspection, cutoff)
+    else
+      {:ok, []}
     end
-
-    :ok
   end
 
   defp reconcile_active(inspection, cutoff) do
@@ -220,6 +229,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
       inspection
       |> InspectionSchema.changeset(%{state: :pending, started_at: nil})
       |> Repo.update!()
+
+      reconciled(inspection)
     else
       fail_if_reason(inspection, job, cutoff)
     end
@@ -228,7 +239,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   defp fail_if_reason(inspection, job, cutoff) do
     case reconciliation_reason(inspection, job, cutoff) do
       nil ->
-        :ok
+        {:ok, []}
 
       reason ->
         inspection
@@ -238,7 +249,14 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
           finished_at: DateTime.utc_now()
         })
         |> Repo.update!()
+
+        reconciled(inspection)
     end
+  end
+
+  defp reconciled(inspection) do
+    file = Repo.get!(MediaFileSchema, inspection.media_file_id)
+    {:ok, [file.library_id]}
   end
 
   defp reconciliation_reason(_inspection, nil, _cutoff), do: :unexpected_failure

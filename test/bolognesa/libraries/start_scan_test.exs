@@ -1,5 +1,8 @@
 defmodule Bolognesa.Libraries.StartScanTest do
   use Bolognesa.DataCase, async: false
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
+
   alias Bolognesa.Identity.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
@@ -29,7 +32,10 @@ defmodule Bolognesa.Libraries.StartScanTest do
   end
 
   test "persists a queued scan and rejects another active request", %{library: library} do
+    :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
     assert {:ok, scan} = Libraries.start_scan(@admin, library.id)
+    library_id = library.id
+    assert_receive {:library_status_changed, ^library_id}
     assert scan.library_id == library.id
     assert scan.state == :queued
     assert scan.attempt == 0
@@ -46,6 +52,30 @@ defmodule Bolognesa.Libraries.StartScanTest do
     assert {:ok, status} = Libraries.get_scan_status(@admin, library.id)
     assert status.latest_scan == scan
     assert status.last_completed_at == nil
+    refute_receive {:library_status_changed, _}
+  end
+
+  test "unavailable notifications do not change a committed scan request", %{library: library} do
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        assert {:ok, scan} =
+                 StartScan.call(
+                   @admin,
+                   library.id,
+                   EctoScanRepository,
+                   Bolognesa.Libraries.Support.UnavailableLibraryStatusNotifier
+                 )
+
+        assert scan.state == :queued
+        assert Repo.get!(ScanSchema, scan.id).state == :queued
+
+        assert_enqueued(
+          worker: Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker,
+          args: %{scan_id: scan.id}
+        )
+      end)
+
+    assert log =~ "Library status notification unavailable"
   end
 
   test "persists an authorized forced inspection request", %{library: library} do
@@ -92,7 +122,9 @@ defmodule Bolognesa.Libraries.StartScanTest do
 
   test "authorizes before invoking the repository" do
     for actor <- [@member, nil] do
-      assert {:error, :forbidden} = StartScan.call(actor, 0, __MODULE__)
+      assert {:error, :forbidden} =
+               StartScan.call(actor, 0, __MODULE__, LibraryStatusNotifications)
+
       assert {:error, :forbidden} = GetScanStatus.call(actor, 0, __MODULE__)
     end
   end
@@ -245,7 +277,12 @@ defmodule Bolognesa.Libraries.StartScanTest do
   end
 
   test "job reconciliation is a no-op without active scans" do
-    assert :ok = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
+    assert :ok =
+             ReconcileScans.call(
+               DateTime.utc_now(),
+               EctoScanRepository,
+               LibraryStatusNotifications
+             )
   end
 
   defp request_terminal_scan(library_id, state, finished_at) do

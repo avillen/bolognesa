@@ -2,6 +2,7 @@ defmodule Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository do
   @moduledoc "Durable scan requests, generation-protected inventory writes and recovery."
   alias Bolognesa.Libraries.Domain.Entities.Library
   alias Bolognesa.Libraries.Domain.Entities.Scan
+  alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
@@ -23,5 +24,5 @@ defmodule Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository do
               {:ok, Scan.t()} | {:error, :stale_attempt | :unavailable}
   @callback fail(Scan.id(), Scan.generation(), Scan.reason(), :retrying | :failed) ::
               :ok | {:error, :stale_attempt | :unavailable}
-  @callback reconcile_jobs(DateTime.t()) :: :ok | {:error, :unavailable}
+  @callback reconcile_jobs(DateTime.t()) :: ReconciliationResult.t()
 end

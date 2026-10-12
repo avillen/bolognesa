@@ -5,15 +5,10 @@ defmodule BolognesaWeb.Library.Index.Reducers.CancelScanStatuses do
 
   @spec call(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def call(socket) do
-    cancel_timer(socket.assigns.scan_timer_ref)
-
     socket
     |> cancel_async({:scan_statuses, socket.assigns.scan_request_id})
     |> assign(:scan_request_id, make_ref())
     |> assign(:scan_loading?, false)
-    |> assign(:scan_timer_ref, nil)
+    |> assign(:scan_refresh_pending?, false)
   end
-
-  defp cancel_timer(nil), do: :ok
-  defp cancel_timer(ref), do: Process.cancel_timer(ref)
 end

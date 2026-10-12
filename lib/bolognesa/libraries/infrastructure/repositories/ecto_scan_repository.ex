@@ -8,6 +8,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Application.InventoryRequestPlan
   alias Bolognesa.Libraries.Domain.Entities.Scan
+  alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
@@ -157,23 +158,27 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
           where: scan.state in [:queued, :running, :retrying],
           where:
             is_nil(job.id) or job.state in ["retryable", "discarded", "cancelled", "completed"],
+          order_by: scan.id,
           select: scan.id
       )
 
-    Enum.reduce_while(candidates, :ok, fn id, :ok ->
-      reconcile_result(transaction(fn -> reconcile_locked(locked_scan(id, :not_found), now) end))
+    Enum.reduce_while(candidates, %ReconciliationResult{}, fn id, result ->
+      reconcile_result(
+        transaction(fn -> reconcile_locked(locked_scan(id, :not_found), now) end),
+        result
+      )
     end)
   rescue
-    DBConnection.ConnectionError -> {:error, :unavailable}
-    Postgrex.Error -> {:error, :unavailable}
+    DBConnection.ConnectionError -> %ReconciliationResult{error: :unavailable}
+    Postgrex.Error -> %ReconciliationResult{error: :unavailable}
   end
 
   defp reconcile_locked(%ScanSchema{state: state}, _now) when state in [:completed, :failed],
-    do: :ok
+    do: {:ok, []}
 
   defp reconcile_locked(scan, now) do
     if attempt_within_budget?(scan, now),
-      do: :ok,
+      do: {:ok, []},
       else: reconcile_job(scan, reconciliation_job(scan.job_id), now)
   end
 
@@ -197,12 +202,13 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   defp reconcile_job(scan, %{state: state}, now) when state in ["cancelled", "completed"],
     do: reconcile_transition(scan, :failed, :unexpected_failure, now)
 
-  defp reconcile_job(%ScanSchema{state: :retrying}, %{state: "retryable"}, _now), do: :ok
+  defp reconcile_job(%ScanSchema{state: :retrying}, %{state: "retryable"}, _now),
+    do: {:ok, []}
 
   defp reconcile_job(scan, %{state: "retryable"}, now),
     do: reconcile_transition(scan, :retrying, :unexpected_failure, now)
 
-  defp reconcile_job(_scan, _job, _now), do: :ok
+  defp reconcile_job(_scan, _job, _now), do: {:ok, []}
 
   defp reconcile_transition(scan, state, fallback, now) do
     reason = scan.failure_reason || fallback
@@ -210,21 +216,26 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
     case Scan.transition(ScanMapper.to_scan(scan), state, reason, now) do
       {:ok, transitioned} ->
         _stored = save_scan(scan, transitioned)
-        :ok
+        {:ok, [scan.library_id]}
 
       _ ->
         Repo.rollback(:unavailable)
     end
   end
 
-  defp reconcile_result(:ok), do: {:cont, :ok}
-  defp reconcile_result({:error, :not_found}), do: {:cont, :ok}
-  defp reconcile_result({:error, _reason}), do: {:halt, {:error, :unavailable}}
+  defp reconcile_result({:ok, library_ids}, result),
+    do: {:cont, %{result | changed_library_ids: library_ids ++ result.changed_library_ids}}
+
+  defp reconcile_result({:error, :not_found}, result), do: {:cont, result}
+  defp reconcile_result({:error, _reason}, result), do: {:halt, %{result | error: :unavailable}}
 
   defp transaction(operation) do
     case Repo.transaction(operation) do
-      {:ok, result} -> result
-      {:error, reason} -> {:error, reason}
+      {:ok, result} ->
+        result
+
+      {:error, reason} ->
+        {:error, reason}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -411,7 +422,10 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
     end
   end
 
-  defp request_result({:ok, %{referenced_scan: scan}}), do: {:ok, ScanMapper.to_scan(scan)}
+  defp request_result({:ok, %{referenced_scan: scan}}) do
+    {:ok, ScanMapper.to_scan(scan)}
+  end
+
   defp request_result({:error, :library, :not_found, _changes}), do: {:error, :not_found}
 
   defp request_result({:error, :scan, changeset, _changes}),

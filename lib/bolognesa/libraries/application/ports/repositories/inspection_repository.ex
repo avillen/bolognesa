@@ -5,6 +5,7 @@ defmodule Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepositor
   alias Bolognesa.Libraries.Domain.Entities.Library
   alias Bolognesa.Libraries.Domain.Entities.MediaFile
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
+  alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
 
   @type adapter :: module()
@@ -17,5 +18,5 @@ defmodule Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepositor
               :ok | {:ok, :stale} | {:error, :unavailable}
   @callback fail_inspection(MediaFile.id(), String.t(), Inspection.reason(), pos_integer()) ::
               :ok | {:ok, :stale} | {:error, :unavailable}
-  @callback reconcile_jobs(DateTime.t()) :: :ok | {:error, :unavailable}
+  @callback reconcile_jobs(DateTime.t()) :: ReconciliationResult.t()
 end

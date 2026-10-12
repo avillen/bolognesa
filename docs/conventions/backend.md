@@ -67,6 +67,8 @@ Run long tasks outside web requests with durable jobs, bounded retries, and meas
 
 When a durable side effect follows a database change, record its outbox event in the same transaction and dispatch it after commit. PubSub may notify connected clients but is not a source of truth or a recovery mechanism. Authorize subscriptions and actions independently; topic names do not grant access. Notifications contain minimal references, never private paths or media content.
 
+Application use cases signal confirmed status changes through a context-owned notification port after repository operations succeed. Repositories persist and return results; they do not publish PubSub hints. Recovery results retain the library IDs changed by successful transactions even when a later transaction fails, so application can notify those committed changes before returning the error. Notification adapters contain delivery failures and define topics and payloads; the shared `Infrastructure.Services.PubSubNotifications` provides transport and normalizes availability errors. Authorize subscriptions at the context facade and keep domain models independent of notification transport.
+
 Transient failures retry within a bound. Terminal failures remain visible and can be explicitly retried. Logs follow [observability conventions](observability.md).
 
 ## Use cases and verification

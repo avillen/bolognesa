@@ -2,15 +2,17 @@ defmodule BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
-  import Phoenix.LiveView, only: [stream: 4, connected?: 1]
+  import Phoenix.LiveView, only: [stream: 4]
 
   alias Bolognesa.Libraries.Domain.Entities.Library
+  alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
+  alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
 
   @refresh_failure "No se pudo actualizar el escaneo. Vuelve a intentarlo."
 
   @type result ::
-          {:ok, {:ok, [{Library.t(), ScanStatus.t()}]} | {:error, atom()}}
+          {:ok, {:ok, [{Library.t(), ScanStatus.t(), InspectionCounts.t()}]} | {:error, atom()}}
           | {:exit, term()}
   @spec call(Phoenix.LiveView.Socket.t(), reference(), result()) :: Phoenix.LiveView.Socket.t()
   def call(%{assigns: %{scan_request_id: current}} = socket, request_id, result)
@@ -18,7 +20,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses do
     socket
     |> assign(:scan_loading?, false)
     |> apply_result(result)
-    |> schedule()
+    |> refresh_pending()
   end
 
   def call(socket, _request_id, _result), do: socket
@@ -29,11 +31,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses do
         BolognesaWeb.Library.Index.State.Library.from_domain(library, status, counts)
       end)
 
-    active_ids =
-      for row <- rows, row.active? or row.inspection_active?, into: MapSet.new(), do: row.id
-
     socket
-    |> assign(:scan_active_ids, active_ids)
     |> clear_refresh_failure()
     |> stream(:libraries, rows, reset: true)
   end
@@ -48,10 +46,8 @@ defmodule BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses do
       else: socket
   end
 
-  defp schedule(socket) do
-    if connected?(socket) and MapSet.size(socket.assigns.scan_active_ids) > 0,
-      do:
-        assign(socket, :scan_timer_ref, Process.send_after(self(), :refresh_scan_statuses, 2_000)),
-      else: socket
-  end
+  defp refresh_pending(%{assigns: %{scan_refresh_pending?: true}} = socket),
+    do: FetchScanStatuses.call(socket)
+
+  defp refresh_pending(socket), do: socket
 end

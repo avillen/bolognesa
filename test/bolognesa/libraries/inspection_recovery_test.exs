@@ -1,6 +1,9 @@
 defmodule Bolognesa.Libraries.InspectionRecoveryTest do
   use Bolognesa.DataCase, async: false
 
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
+
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
   alias Bolognesa.Libraries.Infrastructure.Jobs.{
@@ -58,10 +61,31 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     |> Ecto.Changeset.change(state: "completed")
     |> Repo.update!()
 
-    assert :ok = EctoInspectionRepository.reconcile_jobs(DateTime.utc_now())
+    :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
+
+    assert :ok =
+             ReconcileInspections.call(
+               DateTime.utc_now(),
+               EctoInspectionRepository,
+               LibraryStatusNotifications
+             )
+
+    library_id =
+      Repo.get!(Bolognesa.Infrastructure.Persistence.MediaFileSchema, inspection.media_file_id).library_id
+
+    assert_receive {:library_status_changed, ^library_id}
 
     assert %{state: :failed, failure_reason: :unexpected_failure} =
              Repo.get!(InspectionSchema, inspection.id)
+
+    assert :ok =
+             ReconcileInspections.call(
+               DateTime.utc_now(),
+               EctoInspectionRepository,
+               LibraryStatusNotifications
+             )
+
+    refute_receive {:library_status_changed, _}
   end
 
   test "reconciles an exhausted job and leaves success intact", %{inspection: inspection} do
@@ -84,7 +108,13 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
 
   test "reconciles a lost job", %{inspection: inspection} do
     Repo.delete!(Repo.get!(Oban.Job, inspection.job_id))
-    assert :ok = EctoInspectionRepository.reconcile_jobs(DateTime.utc_now())
+
+    assert :ok =
+             ReconcileInspections.call(
+               DateTime.utc_now(),
+               EctoInspectionRepository,
+               LibraryStatusNotifications
+             )
 
     assert %{state: :failed, failure_reason: :unexpected_failure} =
              Repo.get!(InspectionSchema, inspection.id)
@@ -104,7 +134,12 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     |> Ecto.Changeset.change(state: :running, started_at: old)
     |> Repo.update!()
 
-    assert :ok = EctoInspectionRepository.reconcile_jobs(DateTime.utc_now())
+    assert :ok =
+             ReconcileInspections.call(
+               DateTime.utc_now(),
+               EctoInspectionRepository,
+               LibraryStatusNotifications
+             )
 
     assert %{state: :failed, failure_reason: :timeout} =
              Repo.get!(InspectionSchema, inspection.id)
@@ -128,8 +163,30 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     |> Ecto.Changeset.change(state: :running, started_at: old)
     |> Repo.update!()
 
-    assert :ok = EctoInspectionRepository.reconcile_jobs(DateTime.utc_now())
+    :ok = LibraryStatusNotifications.subscribe()
+
+    assert :ok =
+             ReconcileInspections.call(
+               DateTime.utc_now(),
+               EctoInspectionRepository,
+               LibraryStatusNotifications
+             )
+
     assert %{state: :pending, failure_reason: nil} = Repo.get!(InspectionSchema, inspection.id)
+
+    library_id =
+      Repo.get!(Bolognesa.Infrastructure.Persistence.MediaFileSchema, inspection.media_file_id).library_id
+
+    assert_receive {:library_status_changed, ^library_id}
+
+    assert :ok =
+             ReconcileInspections.call(
+               DateTime.utc_now(),
+               EctoInspectionRepository,
+               LibraryStatusNotifications
+             )
+
+    refute_receive {:library_status_changed, _}
 
     assert {:ok, _file, _library} =
              EctoInspectionRepository.begin_inspection(
@@ -155,7 +212,13 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     |> Ecto.Changeset.change(state: :running, started_at: old)
     |> Repo.update!()
 
-    assert :ok = EctoInspectionRepository.reconcile_jobs(DateTime.utc_now())
+    assert :ok =
+             ReconcileInspections.call(
+               DateTime.utc_now(),
+               EctoInspectionRepository,
+               LibraryStatusNotifications
+             )
+
     assert Repo.get!(InspectionSchema, inspection.id).state == :running
   end
 

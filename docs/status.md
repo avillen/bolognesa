@@ -6,10 +6,15 @@ Bolognesa is an early self-hosted media center built with Phoenix LiveView, Ecto
 
 The sidebar lists configured libraries by their stored names with movie or series icons, including empty libraries. Catalog lists, searches, pagination, and availability counts are scoped to the selected library. Detail navigation retains that selection; work details and playback versions remain shared across libraries. Creating a library updates the sidebar immediately.
 
+The library screen refreshes scan progress and inspection counts asynchronously after hints explicitly emitted by application use cases through `LibraryStatusNotifier`, following successful persistence. Recovery use cases also notify changes confirmed before a later recovery transaction fails. Repositories return persisted results and never publish PubSub hints. Subscriptions and reads are independently authorized; PostgreSQL remains authoritative. Hints are best effort: a lost notification or interrupted subscription can leave an open tab stale until another hint or reload/reconnect.
+
+The shared `Infrastructure.Services.PubSubNotifications` transport accepts context-owned topics and messages and normalizes availability errors. Libraries retains its status payload, logging, and best-effort delivery policy.
+
 ## Verification and limits
 
 - Local Docker Compose startup, database migrations, and the first setup page have been verified on an x86_64 host. This does not verify native ARM64 behavior.
-- `mix precommit` passed locally with 381 tests passing and one skipped. Coverage includes library-specific movie and series catalogs, navigation, empty libraries, creation, and failed library-read feedback. README screenshots were regenerated, visually reviewed for the library catalogs, and verified with `make check-screenshots`. CI configuration is present; its latest GitHub run should be checked before relying on it for a release.
+- `mix precommit` passed locally with 400 tests passing and one skipped. Coverage includes library-specific catalogs and navigation, library creation and read failures, application-owned notification delivery after commit, silent repository writes and stale attempts, cross-tab updates, inspection completion and recovery back to pending, follow-up reads for hints received during a refresh, partial recovery failures retaining earlier commits, and shared PubSub topic isolation. Committed recovery fixtures have independent cleanup assertions. README screenshots were regenerated, visually reviewed for the library catalogs, and verified with `make check-screenshots`. CI configuration is present; its latest GitHub run should be checked before relying on it for a release.
+- An unavailable notification adapter is verified to preserve a successfully persisted scan request and its queued job. Subscription failure during connected mount is not directly simulated.
 - A compatible MP4 has played in Chrome on the private deployment. Playback controls, mobile and TV playback, and performance across media formats still need hands-on verification.
 - Scanning discovers files; identification is a separate step. Automatic metadata lookup requires a TMDb read token.
 - Playback progress is not persisted across sessions. Multi-episode files play in full from the beginning.

@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.Initialize do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
-  import Phoenix.LiveView, only: [stream: 4]
+  import Phoenix.LiveView, only: [stream: 4, connected?: 1]
 
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
@@ -21,10 +21,10 @@ defmodule BolognesaWeb.Library.Index.Reducers.Initialize do
       |> assign(:success, nil)
       |> assign(:scan_request_id, make_ref())
       |> assign(:scan_loading?, false)
-      |> assign(:scan_timer_ref, nil)
-      |> assign(:scan_active_ids, MapSet.new())
+      |> assign(:scan_refresh_pending?, false)
       |> assign(:scan_feedback, nil)
       |> assign(:reinspect_library_id, nil)
+      |> subscribe_status_updates()
 
     case Libraries.list_libraries(socket.assigns.current_scope.actor) do
       {:ok, libraries} ->
@@ -38,6 +38,24 @@ defmodule BolognesaWeb.Library.Index.Reducers.Initialize do
           gettext("No se pudieron cargar las bibliotecas. Recarga para reintentar.")
         )
         |> stream(:libraries, [], reset: true)
+    end
+  end
+
+  defp subscribe_status_updates(socket) do
+    if connected?(socket), do: subscribe(socket), else: socket
+  end
+
+  defp subscribe(socket) do
+    case Libraries.subscribe_status_updates(socket.assigns.current_scope.actor) do
+      :ok ->
+        socket
+
+      {:error, _reason} ->
+        assign(
+          socket,
+          :scan_feedback,
+          gettext("No se pudieron cargar las bibliotecas. Recarga para reintentar.")
+        )
     end
   end
 end

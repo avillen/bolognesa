@@ -5,9 +5,11 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker do
   use Oban.Worker, queue: :library_scans, max_attempts: ScanPolicy.max_attempts()
 
   require Logger
-  alias Bolognesa.Libraries.Application.Ports.{FileDiscovery, ScanRepository}
+  alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
+  alias Bolognesa.Libraries.Application.Ports.Services.{FileDiscovery, LibraryStatusNotifier}
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
   alias Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery
 
   @impl Oban.Worker
@@ -17,18 +19,39 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker do
   def perform(job), do: perform(job, EctoScanRepository, LocalFileDiscovery)
 
   @doc "Runs the same safe boundary with explicit port adapters, including controlled integrations."
-  @spec perform(Oban.Job.t(), ScanRepository.adapter(), FileDiscovery.adapter()) ::
+  @spec perform(
+          Oban.Job.t(),
+          ScanRepository.adapter(),
+          FileDiscovery.adapter(),
+          LibraryStatusNotifier.adapter()
+        ) ::
           DiscoverFiles.result()
-  def perform(%Oban.Job{args: %{"scan_id" => id}, attempt: attempt} = job, repository, discovery)
+  def perform(job, repository, discovery, notifications \\ LibraryStatusNotifications)
+
+  def perform(
+        %Oban.Job{args: %{"scan_id" => id}, attempt: attempt} = job,
+        repository,
+        discovery,
+        notifications
+      )
       when is_integer(id) and id > 0 do
     metadata = [scan_id: id, job_id: job.id, attempt: attempt]
-    execute(id, attempt, repository, discovery, metadata, System.monotonic_time(:millisecond))
+
+    execute(
+      id,
+      attempt,
+      repository,
+      discovery,
+      notifications,
+      metadata,
+      System.monotonic_time(:millisecond)
+    )
   end
 
-  def perform(_job, _repository, _discovery), do: {:cancel, :unexpected_failure}
+  def perform(_job, _repository, _discovery, _notifications), do: {:cancel, :unexpected_failure}
 
-  defp execute(id, attempt, repository, discovery, metadata, started) do
-    DiscoverFiles.call(id, attempt, repository, discovery)
+  defp execute(id, attempt, repository, discovery, notifications, metadata, started) do
+    DiscoverFiles.call(id, attempt, repository, discovery, notifications)
   rescue
     _exception -> unexpected_failure(metadata, started)
   catch

@@ -6,9 +6,12 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker do
 
   require Logger
 
+  alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
+  alias Bolognesa.Libraries.Application.Ports.Services.{LibraryStatusNotifier, MediaProbe}
   alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
   @impl Oban.Worker
   def timeout(_job), do: InspectionPolicy.timeout_ms()
@@ -19,21 +22,29 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker do
     perform(job, EctoInspectionRepository, probe)
   end
 
-  @spec perform(Oban.Job.t(), module(), module()) :: :ok | {:cancel, atom()} | {:error, atom()}
+  @spec perform(
+          Oban.Job.t(),
+          InspectionRepository.adapter(),
+          MediaProbe.adapter(),
+          LibraryStatusNotifier.adapter()
+        ) :: InspectMediaFile.result() | {:cancel, :unexpected_failure}
+  def perform(job, repository, probe, notifications \\ LibraryStatusNotifications)
+
   def perform(
         %Oban.Job{args: %{"media_file_id" => id, "token" => token}, attempt: attempt} = job,
         repository,
-        probe
+        probe,
+        notifications
       )
       when is_integer(id) and id > 0 and is_binary(token) do
-    InspectMediaFile.call(id, token, attempt, repository, probe, job.id)
+    InspectMediaFile.call(id, token, attempt, repository, probe, notifications, job.id)
   rescue
     _exception -> unexpected_failure(id, job.id, attempt)
   catch
     _kind, _value -> unexpected_failure(id, job.id, attempt)
   end
 
-  def perform(_job, _repository, _probe), do: {:cancel, :unexpected_failure}
+  def perform(_job, _repository, _probe, _notifications), do: {:cancel, :unexpected_failure}
 
   defp unexpected_failure(id, job_id, attempt) do
     Logger.warning("Technical inspection failed",

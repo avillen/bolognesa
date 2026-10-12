@@ -34,7 +34,6 @@ defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
 
       socket
       |> assign(:scan_feedback, nil)
-      |> assign(:scan_active_ids, MapSet.put(socket.assigns.scan_active_ids, id))
       |> stream_insert(:libraries, row)
     else
       _ ->

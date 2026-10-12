@@ -3,16 +3,26 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionReconciler do
   use GenServer
   require Logger
 
+  alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
+  alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
-  @spec start_link(keyword()) :: GenServer.on_start()
+  @type option ::
+          {:repository, InspectionRepository.adapter()}
+          | {:notifications, LibraryStatusNotifier.adapter()}
+          | {:interval_ms, pos_integer()}
+          | {:name, GenServer.name()}
+
+  @spec start_link([option()]) :: GenServer.on_start()
   def start_link(opts) do
     {name, opts} = Keyword.pop(opts, :name, __MODULE__)
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
-  @spec child_spec(keyword()) :: Supervisor.child_spec()
+  @spec child_spec([option()]) :: Supervisor.child_spec()
   def child_spec(opts) do
     %{id: Keyword.get(opts, :name, __MODULE__), start: {__MODULE__, :start_link, [opts]}}
   end
@@ -21,6 +31,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionReconciler do
   def init(opts) do
     state = %{
       repository: Keyword.get(opts, :repository, EctoInspectionRepository),
+      notifications: Keyword.get(opts, :notifications, LibraryStatusNotifications),
       interval_ms: Keyword.get(opts, :interval_ms, InspectionPolicy.reconcile_interval_ms())
     }
 
@@ -34,13 +45,13 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionReconciler do
   def handle_info(:reconcile, state), do: {:noreply, reconcile_and_schedule(state)}
 
   defp reconcile_and_schedule(state) do
-    run(state.repository)
+    run(state.repository, state.notifications)
     Process.send_after(self(), :reconcile, state.interval_ms)
     state
   end
 
-  defp run(repository) do
-    case repository.reconcile_jobs(DateTime.utc_now()) do
+  defp run(repository, notifications) do
+    case ReconcileInspections.call(DateTime.utc_now(), repository, notifications) do
       :ok ->
         :ok
 

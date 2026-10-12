@@ -10,9 +10,9 @@ defmodule Bolognesa.Application do
     children = [
       BolognesaWeb.Telemetry,
       Bolognesa.Repo,
+      {Phoenix.PubSub, name: Bolognesa.PubSub},
       {Oban, Application.fetch_env!(:bolognesa, Oban)},
       {DNSCluster, query: Application.get_env(:bolognesa, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: Bolognesa.PubSub},
       Bolognesa.Playback.Infrastructure.TranscodeManager,
       # Start a worker by calling: Bolognesa.Worker.start_link(arg)
       # {Bolognesa.Worker, arg},

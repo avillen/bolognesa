@@ -1,6 +1,8 @@
 defmodule Bolognesa.Libraries.InspectMediaFileTest do
   use Bolognesa.DataCase, async: false
 
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
+
   alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
   alias Bolognesa.Libraries.Domain.Entities.Inspection
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
@@ -43,14 +45,21 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
   end
 
   test "stores normalized success and ignores repeated or stale jobs", %{inspection: inspection} do
+    :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
+
     assert :ok =
              InspectMediaFile.call(
                inspection.media_file_id,
                inspection.token,
                1,
                EctoInspectionRepository,
-               SuccessfulMediaProbe
+               SuccessfulMediaProbe,
+               LibraryStatusNotifications
              )
+
+    library_id = running_library_id(inspection.media_file_id)
+    assert_receive {:library_status_changed, ^library_id}
+    assert_receive {:library_status_changed, ^library_id}
 
     assert {:ok, %{state: :succeeded, format: "matroska", duration_ms: 2_500} = result} =
              EctoInspectionRepository.get(inspection.media_file_id)
@@ -67,7 +76,8 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
                inspection.token,
                1,
                EctoInspectionRepository,
-               SuccessfulMediaProbe
+               SuccessfulMediaProbe,
+               LibraryStatusNotifications
              )
 
     assert :ok =
@@ -76,13 +86,15 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
                Ecto.UUID.generate(),
                1,
                EctoInspectionRepository,
-               FailingMediaProbe
+               FailingMediaProbe,
+               LibraryStatusNotifications
              )
 
     assert %{state: :succeeded, token: token} =
              Repo.get_by!(InspectionSchema, media_file_id: inspection.media_file_id)
 
     assert token == inspection.token
+    refute_receive {:library_status_changed, _}
   end
 
   test "records permanent failure without private output", %{inspection: inspection} do
@@ -92,7 +104,8 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
                inspection.token,
                1,
                EctoInspectionRepository,
-               FailingMediaProbe
+               FailingMediaProbe,
+               LibraryStatusNotifications
              )
 
     assert {:ok, %{state: :failed, failure_reason: :invalid_output} = result} =
@@ -116,7 +129,8 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
                inspection.token,
                1,
                EctoInspectionRepository,
-               SuccessfulMediaProbe
+               SuccessfulMediaProbe,
+               LibraryStatusNotifications
              )
 
     refute Repo.get_by!(InspectionSchema, media_file_id: inspection.media_file_id).state ==
@@ -137,7 +151,8 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
           inspection.token,
           1,
           EctoInspectionRepository,
-          BlockingMediaProbe
+          BlockingMediaProbe,
+          LibraryStatusNotifications
         )
       end)
 
@@ -172,7 +187,8 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
                inspection.token,
                1,
                EctoInspectionRepository,
-               TimeoutMediaProbe
+               TimeoutMediaProbe,
+               LibraryStatusNotifications
              )
 
     assert Repo.get!(InspectionSchema, inspection.id).state == :running
@@ -183,10 +199,15 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
                inspection.token,
                3,
                EctoInspectionRepository,
-               TimeoutMediaProbe
+               TimeoutMediaProbe,
+               LibraryStatusNotifications
              )
 
     assert %{state: :failed, failure_reason: :timeout} =
              Repo.get!(InspectionSchema, inspection.id)
+  end
+
+  defp running_library_id(file_id) do
+    Repo.get!(Bolognesa.Infrastructure.Persistence.MediaFileSchema, file_id).library_id
   end
 end

@@ -26,7 +26,7 @@ defmodule BolognesaWeb.Library.Index.Live do
     do: {:noreply, Reducers.Reinspect.confirm(socket, id)}
 
   @impl true
-  def handle_info(:refresh_scan_statuses, socket),
+  def handle_info({:library_status_changed, _library_id}, socket),
     do: {:noreply, Reducers.FetchScanStatuses.call(socket)}
 
   @impl true

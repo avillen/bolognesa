@@ -1,5 +1,8 @@
 defmodule Bolognesa.Libraries.DiscoverFilesTest do
   use Bolognesa.DataCase, async: false
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
+
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
@@ -37,7 +40,13 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
     assert before.latest_scan.files_discovered == 1
 
     assert :ok =
-             DiscoverFiles.call(context.scan.id, 2, EctoScanRepository, ControlledFileDiscovery)
+             DiscoverFiles.call(
+               context.scan.id,
+               2,
+               EctoScanRepository,
+               ControlledFileDiscovery,
+               LibraryStatusNotifications
+             )
 
     assert {:ok, ^before} = EctoScanRepository.status(context.scan.library_id)
   end
@@ -71,7 +80,12 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
     |> Ecto.Changeset.change(state: "discarded")
     |> Repo.update!()
 
-    assert :ok = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
+    assert :ok =
+             ReconcileScans.call(
+               DateTime.utc_now(),
+               EctoScanRepository,
+               LibraryStatusNotifications
+             )
 
     assert %{state: :failed, failure_reason: :storage_unavailable} =
              Repo.get!(ScanSchema, context.scan.id)
@@ -163,7 +177,13 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
 
   defp start_discovery(context, attempt \\ 1, repository \\ EctoScanRepository) do
     start_task(context, fn ->
-      DiscoverFiles.call(context.scan.id, attempt, repository, ControlledFileDiscovery)
+      DiscoverFiles.call(
+        context.scan.id,
+        attempt,
+        repository,
+        ControlledFileDiscovery,
+        LibraryStatusNotifications
+      )
     end)
   end
 

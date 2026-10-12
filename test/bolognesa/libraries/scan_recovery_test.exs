@@ -1,6 +1,11 @@
 defmodule Bolognesa.Libraries.ScanRecoveryTest do
   use Bolognesa.DataCase, async: false
 
+  alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
+
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
+
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.{ScanPolicy, ScanReconciler, ScanWorker}
@@ -35,7 +40,11 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
       job_state(scan, state)
 
       assert :ok =
-               EctoScanRepository.reconcile_jobs(DateTime.add(current.attempt_started_at, 599))
+               ReconcileScans.call(
+                 DateTime.add(current.attempt_started_at, 599),
+                 EctoScanRepository,
+                 LibraryStatusNotifications
+               )
 
       assert {:ok, %{latest_scan: ^current}} = EctoScanRepository.status(scan.library_id)
     end
@@ -51,12 +60,17 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
       {:ok, current, _} = EctoScanRepository.begin_attempt(scan.id, 3)
       job_state(scan, unquote(job_state))
       now = DateTime.add(current.attempt_started_at, 600)
-      assert :ok = EctoScanRepository.reconcile_jobs(now)
+      :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
+      assert :ok = ReconcileScans.call(now, EctoScanRepository, LibraryStatusNotifications)
+      library_id = scan.library_id
+      assert_receive {:library_status_changed, ^library_id}
 
       assert %{state: unquote(domain_state), failure_reason: unquote(reason)} =
                Repo.get!(ScanSchema, scan.id)
 
       assert {:error, :stale_attempt} = EctoScanRepository.complete(scan.id, current.generation)
+      assert :ok = ReconcileScans.call(now, EctoScanRepository, LibraryStatusNotifications)
+      refute_receive {:library_status_changed, _}
     end
   end
 
@@ -64,11 +78,11 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     {:ok, current, _} = EctoScanRepository.begin_attempt(scan.id, 1)
     job_state(scan, "executing")
     now = DateTime.add(current.attempt_started_at, 2_000)
-    assert :ok = EctoScanRepository.reconcile_jobs(now)
+    assert :ok = ReconcileScans.call(now, EctoScanRepository, LibraryStatusNotifications)
     assert {:ok, %{latest_scan: ^current}} = EctoScanRepository.status(scan.library_id)
     {:ok, completed} = EctoScanRepository.complete(scan.id, current.generation)
     job_state(scan, "discarded")
-    assert :ok = EctoScanRepository.reconcile_jobs(now)
+    assert :ok = ReconcileScans.call(now, EctoScanRepository, LibraryStatusNotifications)
     assert {:ok, %{latest_scan: ^completed}} = EctoScanRepository.status(scan.library_id)
   end
 
@@ -77,25 +91,59 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
   } do
     {:ok, current, _} = EctoScanRepository.begin_attempt(scan.id, 1)
     Repo.delete!(Repo.get!(Oban.Job, scan.job_id))
-    assert :ok = EctoScanRepository.reconcile_jobs(current.attempt_started_at)
+
+    assert :ok =
+             ReconcileScans.call(
+               current.attempt_started_at,
+               EctoScanRepository,
+               LibraryStatusNotifications
+             )
+
     assert Repo.get!(ScanSchema, scan.id).state == :running
-    assert :ok = EctoScanRepository.reconcile_jobs(DateTime.add(current.attempt_started_at, 600))
+
+    assert :ok =
+             ReconcileScans.call(
+               DateTime.add(current.attempt_started_at, 600),
+               EctoScanRepository,
+               LibraryStatusNotifications
+             )
+
     assert %{state: :failed, failure_reason: :unexpected_failure} = Repo.get!(ScanSchema, scan.id)
     {:ok, queued} = EctoScanRepository.request(scan.library_id)
     Repo.delete!(Repo.get!(Oban.Job, queued.job_id))
-    assert :ok = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
+
+    assert :ok =
+             ReconcileScans.call(
+               DateTime.utc_now(),
+               EctoScanRepository,
+               LibraryStatusNotifications
+             )
+
     assert Repo.get!(ScanSchema, queued.id).state == :failed
   end
 
   test "queued and retrying states reconcile terminal outcomes without a deadline", %{scan: scan} do
     job_state(scan, "discarded")
-    assert :ok = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
+
+    assert :ok =
+             ReconcileScans.call(
+               DateTime.utc_now(),
+               EctoScanRepository,
+               LibraryStatusNotifications
+             )
+
     assert %{state: :failed, failure_reason: :attempts_exhausted} = Repo.get!(ScanSchema, scan.id)
     {:ok, next} = EctoScanRepository.request(scan.library_id)
     {:ok, current, _} = EctoScanRepository.begin_attempt(next.id, 3)
     :ok = EctoScanRepository.fail(next.id, current.generation, :storage_unavailable, :retrying)
     job_state(next, "discarded")
-    assert :ok = EctoScanRepository.reconcile_jobs(current.attempt_started_at)
+
+    assert :ok =
+             ReconcileScans.call(
+               current.attempt_started_at,
+               EctoScanRepository,
+               LibraryStatusNotifications
+             )
 
     assert %{state: :failed, failure_reason: :storage_unavailable} =
              Repo.get!(ScanSchema, next.id)
@@ -127,7 +175,14 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     task =
       Task.Supervisor.async_nolink(supervisor, fn ->
         ControlledFileDiscovery.configure(owner)
-        DiscoverFiles.call(scan.id, 1, EctoScanRepository, ControlledFileDiscovery)
+
+        DiscoverFiles.call(
+          scan.id,
+          1,
+          EctoScanRepository,
+          ControlledFileDiscovery,
+          LibraryStatusNotifications
+        )
       end)
 
     assert_receive {:walking, pid}
@@ -187,7 +242,13 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     assert log =~ "library_id=#{scan.library_id}"
     assert Repo.get!(Oban.Job, scan.job_id).state == "discarded"
     assert Repo.get!(ScanSchema, scan.id).state == :retrying
-    assert :ok = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
+
+    assert :ok =
+             ReconcileScans.call(
+               DateTime.utc_now(),
+               EctoScanRepository,
+               LibraryStatusNotifications
+             )
 
     assert %{state: :failed, failure_reason: :storage_unavailable} =
              Repo.get!(ScanSchema, scan.id)
@@ -208,7 +269,14 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     start_engine(lifeline: true)
     assert_receive {:engine_event, [:oban, :plugin, :stop], %{discarded_jobs: [%{id: id}]}}, 2_000
     assert id == scan.job_id
-    assert :ok = EctoScanRepository.reconcile_jobs(DateTime.add(current.attempt_started_at, 600))
+
+    assert :ok =
+             ReconcileScans.call(
+               DateTime.add(current.attempt_started_at, 600),
+               EctoScanRepository,
+               LibraryStatusNotifications
+             )
+
     assert %{state: :failed, failure_reason: :attempts_exhausted} = Repo.get!(ScanSchema, scan.id)
   end
 
@@ -224,7 +292,14 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     assert_job_event(scan.job_id, :exception)
     assert Repo.get!(Oban.Job, scan.job_id).state == "discarded"
     current = Repo.get!(ScanSchema, scan.id)
-    assert :ok = EctoScanRepository.reconcile_jobs(DateTime.add(current.attempt_started_at, 600))
+
+    assert :ok =
+             ReconcileScans.call(
+               DateTime.add(current.attempt_started_at, 600),
+               EctoScanRepository,
+               LibraryStatusNotifications
+             )
+
     assert Repo.get!(ScanSchema, scan.id).state == :failed
     assert ScanWorker.timeout(%Oban.Job{}) == 600_000
   end
@@ -293,17 +368,17 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
 
     assert_receive {:reconciliation, ^pid, %DateTime{}}
     refute_receive {:reconciliation, ^pid, _}, 30
-    send(pid, {:reconciled, :ok})
+    send(pid, {:reconciled, %ReconciliationResult{}})
     assert_receive {:reconciliation, ^pid, %DateTime{}}, 1_000
 
     log =
       ExUnit.CaptureLog.capture_log(fn ->
-        send(pid, {:reconciled, {:error, :unavailable}})
+        send(pid, {:reconciled, %ReconciliationResult{error: :unavailable}})
         assert_receive {:reconciliation, ^pid, %DateTime{}}, 1_000
       end)
 
     assert log =~ "Library scan reconciliation unavailable"
-    send(pid, {:reconciled, :ok})
+    send(pid, {:reconciled, %ReconciliationResult{}})
   end
 
   defp prepare_job(scan, mode, attrs \\ []) do

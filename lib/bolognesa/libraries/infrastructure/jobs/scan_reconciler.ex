@@ -4,11 +4,15 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler do
   require Logger
 
   alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
+  alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
   @type option ::
           {:repository, ScanRepository.adapter()}
+          | {:notifications, LibraryStatusNotifier.adapter()}
           | {:interval_ms, pos_integer()}
           | {:name, GenServer.name()}
 
@@ -27,6 +31,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler do
   def init(opts) do
     state = %{
       repository: Keyword.get(opts, :repository, EctoScanRepository),
+      notifications: Keyword.get(opts, :notifications, LibraryStatusNotifications),
       interval_ms: Keyword.get(opts, :interval_ms, ScanPolicy.reconcile_interval_ms())
     }
 
@@ -40,13 +45,13 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler do
   def handle_info(:reconcile, state), do: {:noreply, reconcile_and_schedule(state)}
 
   defp reconcile_and_schedule(state) do
-    run(state.repository)
+    run(state.repository, state.notifications)
     Process.send_after(self(), :reconcile, state.interval_ms)
     state
   end
 
-  defp run(repository) do
-    case repository.reconcile_jobs(DateTime.utc_now()) do
+  defp run(repository, notifications) do
+    case ReconcileScans.call(DateTime.utc_now(), repository, notifications) do
       :ok ->
         :ok
 

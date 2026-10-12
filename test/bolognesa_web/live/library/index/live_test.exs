@@ -1,12 +1,26 @@
 defmodule BolognesaWeb.Library.Index.LiveTest do
   use BolognesaWeb.ConnCase, async: false
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
+
   alias BolognesaWeb.Library.Index.Live
+  alias BolognesaWeb.Library.Index.Reducers.Initialize
+  alias Phoenix.LiveView.Channel
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Libraries
+  alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
+
+  alias Bolognesa.Libraries.Infrastructure.Repositories.{
+    EctoInspectionRepository,
+    EctoOutboxRepository,
+    EctoScanRepository
+  }
+
+  alias Bolognesa.Libraries.Support.SuccessfulMediaProbe
   alias Bolognesa.Repo
   use Oban.Testing, repo: Bolognesa.Repo
 
@@ -99,18 +113,18 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
 
     conn = init_test_session(conn, user_token: token)
     {:ok, view, _} = live(conn, ~p"/libraries")
-    render_async(view)
+    await_status_updates(view)
     view |> element("#library-scan-#{library.id}") |> render_click()
     assert has_element?(view, "#library-scan-#{library.id}[disabled]")
     assert has_element?(view, "#library-scan-state-#{library.id}[data-state='queued']")
     assert {:ok, %{latest_scan: scan}} = Libraries.get_scan_status(actor, library.id)
     assert_enqueued(worker: ScanWorker, args: %{scan_id: scan.id})
     {:ok, reopened, _} = live(conn, ~p"/libraries")
-    render_async(reopened)
+    await_status_updates(reopened)
     assert has_element?(reopened, "#library-scan-state-#{library.id}[data-state='queued']")
   end
 
-  test "manual drain completes discovery and refresh shows the last success", %{
+  test "manual drain updates discovery through notifications", %{
     conn: conn,
     token: token,
     path: path,
@@ -122,12 +136,12 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
       Libraries.create_library(actor, %{name: "Complete", path: path, content_type: :movie})
 
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
-    render_async(view)
+    await_status_updates(view)
     view |> element("#library-scan-#{library.id}") |> render_click()
-    render_async(view)
+    await_status_updates(view)
     assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
-    send(view.pid, :refresh_scan_statuses)
-    render_async(view)
+    render(view)
+    await_status_updates(view)
     assert has_element?(view, "#library-scan-state-#{library.id}[data-state='completed']")
     assert has_element?(view, "#library-scan-count-#{library.id}", "1 archivo")
     assert has_element?(view, "#library-scan-completed-#{library.id}")
@@ -149,7 +163,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
 
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
-    render_async(view)
+    await_status_updates(view)
     assert has_element?(view, "#library-inspection-counts-#{library.id}[data-pending='1']")
     view |> element("#library-reinspect-#{library.id}") |> render_click()
     assert has_element?(view, "#library-reinspect-confirm-#{library.id}")
@@ -161,7 +175,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     assert forced.force_inspection?
 
     {:ok, reopened, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
-    render_async(reopened)
+    await_status_updates(reopened)
     assert has_element?(reopened, "#library-inspection-counts-#{library.id}")
     assert has_element?(reopened, "#library-reinspect-#{library.id}[disabled]")
   end
@@ -195,7 +209,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
 
     conn = init_test_session(conn, user_token: token)
     {:ok, view, _} = live(conn, ~p"/libraries")
-    render_async(view)
+    await_status_updates(view)
 
     assert has_element?(
              view,
@@ -222,7 +236,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
            )
 
     {:ok, reopened, _} = live(conn, ~p"/libraries")
-    render_async(reopened)
+    await_status_updates(reopened)
     assert has_element?(reopened, "#library-inspection-counts-#{library.id}[data-failed='3']")
     assert has_element?(reopened, "#library-inspection-failure-#{library.id}-invalid_output")
     assert has_element?(reopened, "#library-inspection-failure-#{library.id}-source_changed")
@@ -250,7 +264,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     |> Repo.update!()
 
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
-    render_async(view)
+    await_status_updates(view)
     selector = "#library-scan-error-#{library.id}"
     assert has_element?(view, selector, "Inventario incompleto")
     assert has_element?(view, selector, "1 archivo registrado antes del fallo")
@@ -258,12 +272,14 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     assert has_element?(view, selector, "El análisis de los archivos ya registrados continúa")
 
     Repo.update_all(InspectionSchema, set: [state: :succeeded])
-    send(view.pid, :refresh_scan_statuses)
-    render_async(view)
+    send(view.pid, {:library_status_changed, library.id})
+    render(view)
+    await_status_updates(view)
     refute has_element?(view, selector, "El análisis de los archivos ya registrados continúa")
     assert has_element?(view, selector, "Inventario incompleto")
   end
 
+  @tag capture_log: true
   test "failed scan can be retried and leaving the page does not cancel its job", %{
     conn: conn,
     token: token,
@@ -274,13 +290,13 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
       Libraries.create_library(actor, %{name: "Retry", path: path, content_type: :movie})
 
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
-    render_async(view)
+    await_status_updates(view)
     view |> element("#library-scan-#{library.id}") |> render_click()
-    render_async(view)
+    await_status_updates(view)
     File.rmdir!(path)
     assert %{cancelled: 1} = Oban.drain_queue(queue: :library_scans)
-    send(view.pid, :refresh_scan_statuses)
-    render_async(view)
+    render(view)
+    await_status_updates(view)
     assert has_element?(view, "#library-scan-error-#{library.id}")
     assert has_element?(view, "#library-scan-#{library.id}", "Reintentar")
     File.mkdir_p!(path)
@@ -289,10 +305,179 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     assert {:ok, %{latest_scan: %{state: :queued} = scan}} =
              Libraries.get_scan_status(actor, library.id)
 
+    await_status_updates(view)
     ref = Process.monitor(view.pid)
     GenServer.stop(view.pid)
     assert_receive {:DOWN, ^ref, :process, _, _}
     assert_enqueued(worker: ScanWorker, args: %{scan_id: scan.id})
+  end
+
+  test "a scan requested in another tab updates an already open library screen", %{
+    conn: conn,
+    token: token,
+    path: path,
+    actor: actor
+  } do
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Shared", path: path, content_type: :movie})
+
+    conn = init_test_session(conn, user_token: token)
+    {:ok, first, _} = live(conn, ~p"/libraries")
+    {:ok, second, _} = live(conn, ~p"/libraries")
+    await_status_updates(first)
+    await_status_updates(second)
+
+    first |> element("#library-scan-#{library.id}") |> render_click()
+    await_status_updates(first)
+    render(second)
+    await_status_updates(second)
+    assert has_element?(second, "#library-scan-state-#{library.id}[data-state='queued']")
+    assert has_element?(second, "#library-scan-#{library.id}[disabled]")
+  end
+
+  test "inspection completion updates counts after the scan has finished", %{
+    conn: conn,
+    token: token,
+    path: path,
+    actor: actor
+  } do
+    File.write!(Path.join(path, "movie.mkv"), "video")
+
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Inspected", path: path, content_type: :movie})
+
+    {:ok, _} = Libraries.start_scan(actor, library.id)
+    assert %{success: 1} = Oban.drain_queue(queue: :library_scans)
+    inspection = Repo.one!(InspectionSchema)
+
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+    await_status_updates(view)
+    assert has_element?(view, "#library-inspection-counts-#{library.id}[data-pending='1']")
+
+    assert :ok =
+             InspectMediaFile.call(
+               inspection.media_file_id,
+               inspection.token,
+               1,
+               EctoInspectionRepository,
+               SuccessfulMediaProbe,
+               LibraryStatusNotifications
+             )
+
+    render(view)
+    await_status_updates(view)
+
+    assert has_element?(
+             view,
+             "#library-inspection-counts-#{library.id}[data-succeeded='1'][data-pending='0']"
+           )
+
+    refute has_element?(view, "#library-reinspect-#{library.id}[disabled]")
+  end
+
+  test "inspection recovery updates failure feedback after the scan has finished", %{
+    conn: conn,
+    token: token,
+    path: path,
+    actor: actor
+  } do
+    File.write!(Path.join(path, "movie.mkv"), "video")
+
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Recovered", path: path, content_type: :movie})
+
+    {:ok, _} = Libraries.start_scan(actor, library.id)
+    assert %{success: 1} = Oban.drain_queue(queue: :library_scans)
+    assert {:ok, 1} = EctoOutboxRepository.dispatch_batch(25)
+    inspection = Repo.one!(InspectionSchema)
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+    await_status_updates(view)
+
+    Repo.get!(Oban.Job, inspection.job_id)
+    |> Ecto.Changeset.change(state: "discarded")
+    |> Repo.update!()
+
+    assert :ok =
+             ReconcileInspections.call(
+               DateTime.utc_now(),
+               EctoInspectionRepository,
+               LibraryStatusNotifications
+             )
+
+    render(view)
+    await_status_updates(view)
+    assert has_element?(view, "#library-inspection-counts-#{library.id}[data-failed='1']")
+    assert has_element?(view, "#library-inspection-failure-#{library.id}-attempts_exhausted")
+  end
+
+  test "hints received during a status read cause a following read of completion", %{
+    path: path,
+    actor: actor
+  } do
+    alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
+
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Current", path: path, content_type: :movie})
+
+    {:ok, scan} = Libraries.start_scan(actor, library.id)
+    {:ok, old_status} = Libraries.get_scan_status(actor, library.id)
+    {:ok, counts} = Libraries.get_inspection_counts(actor, library.id)
+    socket = status_socket(actor)
+    socket = %{socket | transport_pid: self()}
+    socket = Phoenix.Component.assign(socket, :scan_loading?, true)
+    old_request = socket.assigns.scan_request_id
+    {:noreply, socket} = Live.handle_info({:library_status_changed, library.id}, socket)
+    {:noreply, socket} = Live.handle_info({:library_status_changed, library.id}, socket)
+    assert socket.assigns.scan_refresh_pending?
+    socket = ApplyScanStatuses.call(socket, make_ref(), {:ok, {:ok, []}})
+    assert socket.assigns.scan_refresh_pending?
+    assert socket.assigns.scan_loading?
+
+    {:ok, running, _} = EctoScanRepository.begin_attempt(scan.id, 1)
+    {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
+
+    socket =
+      ApplyScanStatuses.call(socket, old_request, {:ok, {:ok, [{library, old_status, counts}]}})
+
+    new_request = socket.assigns.scan_request_id
+    refute new_request == old_request
+    assert socket.assigns.scan_loading?
+    refute socket.assigns.scan_refresh_pending?
+
+    assert_receive {:phoenix, :async_result,
+                    {:start, {_ref, nil, {:scan_statuses, ^new_request}, result}}}
+
+    {:noreply, socket} = Live.handle_async({:scan_statuses, new_request}, result, socket)
+    refute socket.assigns.scan_loading?
+    html = render_component(&Live.render/1, Map.put(socket.assigns, :__changed__, nil))
+
+    assert LazyHTML.query(
+             LazyHTML.from_fragment(html),
+             "#library-scan-state-#{library.id}[data-state='completed']"
+           )
+           |> LazyHTML.to_tree() != []
+  end
+
+  test "a failed refresh consumes a pending hint without retrying indefinitely", %{actor: actor} do
+    alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
+    socket = status_socket(actor)
+    socket = %{socket | transport_pid: self()}
+    socket = Phoenix.Component.assign(socket, :current_scope, %{actor: nil})
+    socket = Phoenix.Component.assign(socket, :scan_loading?, true)
+    request = socket.assigns.scan_request_id
+    {:noreply, socket} = Live.handle_info({:library_status_changed, 1}, socket)
+    socket = ApplyScanStatuses.call(socket, request, {:ok, {:error, :unavailable}})
+    retry_request = socket.assigns.scan_request_id
+    refute retry_request == request
+
+    assert_receive {:phoenix, :async_result,
+                    {:start, {_ref, nil, {:scan_statuses, ^retry_request}, result}}}
+
+    {:noreply, socket} = Live.handle_async({:scan_statuses, retry_request}, result, socket)
+    refute socket.assigns.scan_loading?
+    refute socket.assigns.scan_refresh_pending?
+    assert socket.assigns.scan_feedback
+    assert socket.assigns.scan_request_id == retry_request
   end
 
   test "invalid and missing library clicks produce feedback without a job", %{
@@ -300,12 +485,12 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     token: token
   } do
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
-    render_async(view)
+    await_status_updates(view)
 
     for id <- ["0", "-1", "1oops", "999999999"] do
       render_click(view, "scan", %{"library_id" => id})
       assert has_element?(view, "#library-scan-feedback")
-      render_async(view)
+      await_status_updates(view)
     end
 
     refute_enqueued(worker: ScanWorker)
@@ -410,6 +595,27 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     assert LazyHTML.from_fragment(html)
            |> LazyHTML.query("#library-list [data-library-name='New source']")
            |> LazyHTML.to_tree() != []
+  end
+
+  # render_async/1 waits for a snapshot; an incoming hint can start a following read.
+  defp await_status_updates(view) do
+    html = Phoenix.LiveViewTest.render_async(view)
+
+    case Channel.async_pids(view.pid) do
+      {:ok, []} -> html
+      {:ok, [_ | _]} -> await_status_updates(view)
+    end
+  end
+
+  defp status_socket(actor) do
+    %Phoenix.LiveView.Socket{
+      endpoint: BolognesaWeb.Endpoint,
+      private: %{live_temp: %{}, lifecycle: %Phoenix.LiveView.Lifecycle{}},
+      assigns: %{__changed__: %{}, flash: %{}}
+    }
+    |> Phoenix.Component.assign(:current_scope, %{actor: actor})
+    |> with_navigation()
+    |> Initialize.call()
   end
 
   defp with_navigation(socket) do

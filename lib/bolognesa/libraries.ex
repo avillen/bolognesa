@@ -23,6 +23,15 @@ defmodule Bolognesa.Libraries do
   }
 
   alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
+
+  @spec subscribe_status_updates(Actor.t() | nil) ::
+          :ok | {:error, :forbidden | :unavailable}
+  def subscribe_status_updates(actor) do
+    with :ok <- Bolognesa.Identity.authorize(actor, :admin) do
+      LibraryStatusNotifications.subscribe()
+    end
+  end
 
   @spec create_library(Actor.t(), NewLibrary.attrs()) ::
           {:ok, Library.t()}
@@ -43,7 +52,7 @@ defmodule Bolognesa.Libraries do
   @spec start_scan(Actor.t(), Library.id(), keyword()) ::
           {:ok, Scan.t()} | {:error, :forbidden | :not_found | :scan_in_progress | :unavailable}
   def start_scan(actor, library_id, opts \\ []),
-    do: StartScan.call(actor, library_id, EctoScanRepository, opts)
+    do: StartScan.call(actor, library_id, EctoScanRepository, LibraryStatusNotifications, opts)
 
   @spec get_scan_status(Actor.t(), Library.id()) ::
           {:ok, ScanStatus.t()} | {:error, :forbidden | :not_found | :unavailable}

@@ -4,15 +4,166 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   alias Bolognesa.Infrastructure.Persistence.{InspectionEventSchema, InspectionSchema}
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
+  alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoOutboxRepository
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
+  alias Bolognesa.Libraries.Support.ControlledFileDiscovery
   alias Ecto.Adapters.SQL
   alias EctoScanRepository.{MediaFileMapper, ScanMapper}
   alias SQL.Sandbox
 
   @modified ~U[2026-10-03 00:00:00Z]
+
+  @tag committed: true
+  test "application scan hints expose committed completion to another connection" do
+    parent = self()
+    supervisor = start_supervised!(Task.Supervisor)
+    :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
+
+    with_committed_scan(fn scan ->
+      library_id = scan.library_id
+      refute_receive {:library_status_changed, _}
+
+      scanner =
+        Task.Supervisor.async_nolink(supervisor, fn ->
+          Sandbox.unboxed_run(Repo, fn ->
+            ControlledFileDiscovery.configure(parent)
+
+            DiscoverFiles.call(
+              scan.id,
+              1,
+              EctoScanRepository,
+              ControlledFileDiscovery,
+              LibraryStatusNotifications
+            )
+          end)
+        end)
+
+      assert_receive {:walking, scanner_pid}
+      assert_receive {:library_status_changed, ^library_id}
+      send(scanner_pid, {:batch, [entry("a.mp4")]})
+      assert_receive {:batch_result, ^scanner_pid, :ok}
+      assert_receive {:library_status_changed, ^library_id}
+
+      reader =
+        Task.Supervisor.async_nolink(supervisor, fn ->
+          Sandbox.unboxed_run(Repo, fn ->
+            :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
+            send(parent, :status_reader_ready)
+
+            receive do
+              {:library_status_changed, ^library_id} -> EctoScanRepository.status(library_id)
+            end
+          end)
+        end)
+
+      assert_receive :status_reader_ready
+      send(scanner_pid, {:finish, :ok})
+      assert :ok = Task.await(scanner)
+      assert_receive {:library_status_changed, ^library_id}
+      assert {:ok, %{latest_scan: %{state: :completed, files_discovered: 1}}} = Task.await(reader)
+      assert {:ok, :terminal} = EctoScanRepository.begin_attempt(scan.id, 2)
+      refute_receive {:library_status_changed, _}
+    end)
+  end
+
+  test "persisting scan progress does not publish interface notifications", %{scan: scan} do
+    :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
+    running = start(scan)
+    save(running, [entry("a.mp4")])
+    assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
+    refute_receive {:library_status_changed, _}
+
+    assert {:ok, %{latest_scan: %{state: :completed, files_discovered: 1}}} =
+             EctoScanRepository.status(scan.library_id)
+  end
+
+  @tag committed: true
+  test "scan recovery reports earlier commits when a later transaction fails" do
+    library_ids =
+      with_committed_scans(2, fn [first, second] ->
+        for scan <- [first, second] do
+          Repo.get!(Oban.Job, scan.job_id)
+          |> Ecto.Changeset.change(state: "discarded")
+          |> Repo.update!()
+        end
+
+        SQL.query!(Repo, """
+        ALTER TABLE library_scans ADD CONSTRAINT notification_test_reject_scan_recovery
+        CHECK (id <> #{second.id} OR state <> 'failed') NOT VALID
+        """)
+
+        try do
+          :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
+          result = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
+          assert result.error == :unavailable
+          assert result.changed_library_ids == [first.library_id]
+          assert stored_scan(first.id).state == :failed
+          assert stored_scan(second.id).state == :queued
+          refute_receive {:library_status_changed, _}
+        after
+          SQL.query!(
+            Repo,
+            "ALTER TABLE library_scans DROP CONSTRAINT notification_test_reject_scan_recovery"
+          )
+        end
+
+        [first.library_id, second.library_id]
+      end)
+
+    assert_committed_fixtures_removed(library_ids)
+  end
+
+  @tag committed: true
+  test "inspection recovery reports earlier commits when a later transaction fails" do
+    library_ids =
+      with_committed_scans(2, fn [first, second] ->
+        for scan <- [first, second], do: save(start(scan), [entry("a.mp4")])
+
+        assert {:ok, 2} =
+                 EctoOutboxRepository.dispatch_batch(25)
+
+        [first_file] = files(first.library_id)
+        [second_file] = files(second.library_id)
+        first_inspection = inspection(first_file.id)
+        second_inspection = inspection(second_file.id)
+        job_ids = [first_inspection.job_id, second_inspection.job_id]
+
+        for id <- job_ids do
+          Repo.get!(Oban.Job, id) |> Ecto.Changeset.change(state: "discarded") |> Repo.update!()
+        end
+
+        SQL.query!(Repo, """
+        ALTER TABLE media_inspections ADD CONSTRAINT notification_test_reject_inspection_recovery
+        CHECK (id <> #{second_inspection.id} OR state <> 'failed') NOT VALID
+        """)
+
+        try do
+          :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
+          result = EctoInspectionRepository.reconcile_jobs(DateTime.utc_now())
+          assert result.error == :unavailable
+          assert result.changed_library_ids == [first.library_id]
+          assert inspection(first_file.id).state == :failed
+          assert inspection(second_file.id).state == :pending
+          refute_receive {:library_status_changed, _}
+        after
+          SQL.query!(
+            Repo,
+            "ALTER TABLE media_inspections DROP CONSTRAINT notification_test_reject_inspection_recovery"
+          )
+
+          Repo.delete_all(from job in Oban.Job, where: job.id in ^job_ids)
+        end
+
+        [first.library_id, second.library_id]
+      end)
+
+    assert_committed_fixtures_removed(library_ids)
+  end
 
   setup context do
     case context[:committed] do
@@ -32,9 +183,12 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     entry = entry("a.mp4")
 
     assert old.generation != current.generation
+    :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
 
     assert {:error, :stale_attempt} =
              EctoScanRepository.save_batch(scan.id, old.generation, [entry])
+
+    refute_receive {:library_status_changed, _}
 
     assert {:ok, saved = %{files_discovered: 1}} =
              EctoScanRepository.save_batch(scan.id, current.generation, [entry, entry])
@@ -102,11 +256,15 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       """)
 
       try do
+        :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
+
         assert {:error, :unavailable} =
                  EctoScanRepository.save_batch(scan.id, running.generation, [
                    entry("existing.mp4", 6),
                    entry("new.mp4")
                  ])
+
+        refute_receive {:library_status_changed, _}
 
         assert [unchanged] = files(scan.library_id)
         assert unchanged.revision == file.revision
@@ -686,23 +844,40 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   end
 
   defp with_committed_scan(callback) do
+    with_committed_scans(1, fn [scan] -> callback.(scan) end)
+  end
+
+  defp with_committed_scans(count, callback) do
     Sandbox.unboxed_run(Repo, fn ->
-      library = library_fixture()
-      {:ok, scan} = EctoScanRepository.request(library.id)
+      fixtures =
+        for _ <- 1..count do
+          library = library_fixture()
+          {:ok, scan} = EctoScanRepository.request(library.id)
+          {library, scan}
+        end
 
       try do
-        callback.(scan)
+        callback.(Enum.map(fixtures, fn {_library, scan} -> scan end))
       after
-        job_ids =
-          Repo.all(
-            from row in ScanSchema, where: row.library_id == ^library.id, select: row.job_id
-          )
+        Enum.each(fixtures, fn {library, _scan} ->
+          job_ids =
+            Repo.all(
+              from row in ScanSchema, where: row.library_id == ^library.id, select: row.job_id
+            )
 
-        Repo.delete_all(from row in MediaFileSchema, where: row.library_id == ^library.id)
-        Repo.delete_all(from row in ScanSchema, where: row.library_id == ^library.id)
-        Repo.delete_all(from job in Oban.Job, where: job.id in ^job_ids)
-        Repo.delete!(library)
+          Repo.delete_all(from row in MediaFileSchema, where: row.library_id == ^library.id)
+          Repo.delete_all(from row in ScanSchema, where: row.library_id == ^library.id)
+          Repo.delete_all(from job in Oban.Job, where: job.id in ^job_ids)
+          Repo.delete!(library)
+        end)
       end
+    end)
+  end
+
+  defp assert_committed_fixtures_removed(library_ids) do
+    Sandbox.unboxed_run(Repo, fn ->
+      query = from library in LibrarySchema, where: library.id in ^library_ids
+      assert Repo.aggregate(query, :count, :id) == 0
     end)
   end
 end

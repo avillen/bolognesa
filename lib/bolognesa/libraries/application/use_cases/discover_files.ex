@@ -3,51 +3,61 @@ defmodule Bolognesa.Libraries.Application.UseCases.DiscoverFiles do
 
   require Logger
 
-  alias Bolognesa.Libraries.Application.Ports.{FileDiscovery, ScanRepository}
+  alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
+  alias Bolognesa.Libraries.Application.Ports.Services.{FileDiscovery, LibraryStatusNotifier}
   alias Bolognesa.Libraries.Domain.Entities.Scan
 
   @type result :: :ok | {:cancel, Scan.reason()} | {:error, Scan.reason()}
 
-  @spec call(Scan.id(), pos_integer(), ScanRepository.adapter(), FileDiscovery.adapter()) ::
+  @spec call(
+          Scan.id(),
+          pos_integer(),
+          ScanRepository.adapter(),
+          FileDiscovery.adapter(),
+          LibraryStatusNotifier.adapter()
+        ) ::
           result()
-  def call(scan_id, attempt, repository, discovery) do
+  def call(scan_id, attempt, repository, discovery, notifications) do
     case repository.begin_attempt(scan_id, attempt) do
       {:ok, :terminal} -> :ok
-      {:ok, scan, library} -> run(scan, library.path, repository, discovery)
+      {:ok, scan, library} -> run(scan, library.path, repository, discovery, notifications)
       {:error, :not_found} -> {:cancel, :unexpected_failure}
       {:error, :unavailable} -> {:error, :storage_unavailable}
     end
   end
 
-  defp run(scan, path, repository, discovery) do
+  defp run(scan, path, repository, discovery, notifications) do
+    notifications.notify(scan.library_id)
     started = System.monotonic_time(:millisecond)
     Logger.info("Library scan started", metadata(scan))
-    discover(scan, path, repository, discovery, started)
+    discover(scan, path, repository, discovery, notifications, started)
   end
 
-  defp discover(scan, path, repository, discovery, started) do
-    with :ok <- discovery.walk(path, &save_batch(scan, &1, repository)),
+  defp discover(scan, path, repository, discovery, notifications, started) do
+    with :ok <- discovery.walk(path, &save_batch(scan, &1, repository, notifications)),
          {:ok, completed} <- repository.complete(scan.id, scan.generation) do
+      notifications.notify(completed.library_id)
       Logger.info("Library scan completed", result_metadata(completed, started))
       :ok
     else
       {:error, :stale_attempt} -> :ok
-      {:error, reason} -> record_failure(scan, reason, repository, started)
+      {:error, reason} -> record_failure(scan, reason, repository, notifications, started)
     end
   end
 
-  defp save_batch(scan, entries, repository) do
+  defp save_batch(scan, entries, repository, notifications) do
     case repository.save_batch(scan.id, scan.generation, entries) do
-      {:ok, _scan} -> :ok
+      {:ok, saved} -> notifications.notify(saved.library_id)
       {:error, _reason} = error -> error
     end
   end
 
-  defp record_failure(scan, error, repository, started) do
+  defp record_failure(scan, error, repository, notifications, started) do
     {state, result, reason} = classify(error)
 
     case repository.fail(scan.id, scan.generation, reason, state) do
       :ok ->
+        notifications.notify(scan.library_id)
         log_failure(result, reason, failure_metadata(scan, repository, started))
         {result, reason}
 
