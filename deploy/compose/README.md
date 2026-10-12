@@ -1,8 +1,8 @@
 # Despliegue genérico en Linux con Docker Compose
 
-Este perfil ejecuta Bolognesa y PostgreSQL en un único servidor Linux con Docker Compose v2. El workflow está configurado para publicar imágenes `linux/amd64` y `linux/arm64`; hasta completar una publicación y verificar que GHCR permite descargarlas sin iniciar sesión, el perfil no puede descargarse desde el registro. Este procedimiento no depende de QNAP.
+Este perfil ejecuta Bolognesa y PostgreSQL en un único servidor Linux con Docker Compose v2. El workflow está configurado para publicar imágenes `linux/amd64` y `linux/arm64`; hasta completar una publicación y verificar que GHCR permite descargarlas sin iniciar sesión, el perfil no puede descargarse desde el registro. Este procedimiento no depende del fabricante del servidor.
 
-El servicio web se enlaza a `127.0.0.1` y la imagen aplica HTTPS. Colócalo detrás de un proxy inverso con TLS. No publiques el puerto 4000 directamente en Internet ni habilites HTTP directo: ese modo pertenece al perfil LAN de QNAP.
+El servicio web se enlaza a `127.0.0.1` y la imagen aplica HTTPS. Colócalo detrás de un proxy inverso con TLS. No publiques el puerto 4000 directamente en Internet ni habilites HTTP directo: ese modo pertenece al perfil LAN.
 
 ## Requisitos
 
@@ -14,7 +14,7 @@ El servicio web se enlaza a `127.0.0.1` y la imagen aplica HTTPS. Colócalo detr
 
 ## Imagen publicada
 
-`.github/workflows/container-image.yml` valida el Compose genérico en pull requests y está configurado para publicar la imagen en GHCR desde `main`. Cada publicación debe producir una referencia `sha-<commit>`, la etiqueta `latest` y un digest multi-arquitectura (`linux/amd64` y `linux/arm64`). La imagen genérica conserva HTTPS forzado. El workflow `arm64-image.yml` sigue publicando por separado la variante LAN HTTP para QNAP.
+`.github/workflows/container-image.yml` valida el Compose genérico en pull requests y está configurado para publicar la imagen en GHCR desde `main`. Cada publicación debe producir una referencia `sha-<commit>`, la etiqueta `latest` y un digest multi-arquitectura (`linux/amd64` y `linux/arm64`). La imagen genérica conserva HTTPS forzado. El workflow `arm64-image.yml` publica por separado la variante LAN HTTP.
 
 La publicación y la descarga pública de GHCR están pendientes de verificación. Antes de instalar, confirma en CI que el manifiesto contiene ambas plataformas y prueba una descarga sin iniciar sesión. GHCR puede crear el primer paquete como privado; el mantenedor debe habilitar su visibilidad pública. Después, en `.env`, usa `latest` para probar el último build o fija `BOLOGNESA_IMAGE` al tag `sha-<commit>` o al digest que muestra el resumen de CI.
 
