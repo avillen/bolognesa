@@ -8,16 +8,22 @@ defmodule Bolognesa.Catalog.Application.UseCases.ListMovies do
           Bolognesa.Identity.Domain.Entities.Actor.t(),
           binary(),
           MoviesReader.page_number(),
-          MoviesReader.adapter()
+          MoviesReader.adapter(),
+          MoviesReader.library_id()
         ) ::
           {:ok, MoviePage.t()} | {:error, :forbidden | :invalid_query | :unavailable}
-  def call(actor, query, page, reader) do
+  def call(actor, query, page, reader, library_id \\ nil) do
     with :ok <- Identity.authorize(actor, :admin),
+         :ok <- validate_library(library_id),
          :ok <- validate(query, page),
-         {:ok, result} <- reader.list_movies(String.trim(query), page) do
+         {:ok, result} <- reader.list_movies(String.trim(query), page, library_id) do
       {:ok, MoviePage.from_domain(result)}
     end
   end
+
+  defp validate_library(nil), do: :ok
+  defp validate_library(id) when is_integer(id) and id > 0, do: :ok
+  defp validate_library(_), do: {:error, :invalid_query}
 
   defp validate(query, page)
        when is_binary(query) and is_integer(page) and page > 0 and page <= 100_000 do

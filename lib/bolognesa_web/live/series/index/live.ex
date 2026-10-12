@@ -15,7 +15,8 @@ defmodule BolognesaWeb.Series.Index.Live do
 
   @impl true
   def handle_event("search", %{"search" => %{"query" => query}}, socket) do
-    {:noreply, push_patch(socket, to: ~p"/series?#{%{query: query}}")}
+    {:noreply,
+     push_patch(socket, to: ~p"/series?#{Map.put(socket.assigns.library_params, :query, query)}")}
   end
 
   @impl true

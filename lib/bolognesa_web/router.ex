@@ -47,7 +47,11 @@ defmodule BolognesaWeb.Router do
     delete "/logout", SessionController, :delete
 
     live_session :authenticated,
-      on_mount: [{BolognesaWeb.UserAuth, :require_authenticated}, {BolognesaWeb.Locale, :default}] do
+      on_mount: [
+        {BolognesaWeb.UserAuth, :require_authenticated},
+        {BolognesaWeb.Locale, :default},
+        {BolognesaWeb.LibraryNavigation, :default}
+      ] do
       live "/", Home.Live, :index
       live "/libraries", Library.Index.Live, :index
       live "/movies", Movie.Index.Live, :index

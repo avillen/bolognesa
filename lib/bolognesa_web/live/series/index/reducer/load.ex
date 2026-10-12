@@ -8,6 +8,7 @@ defmodule BolognesaWeb.Series.Index.Reducer.Load do
           Phoenix.LiveView.Socket.t()
   def call(socket, query, page) do
     actor = socket.assigns.current_scope.actor
+    library_id = socket.assigns.active_library_id
     request_id = make_ref()
 
     socket
@@ -17,6 +18,8 @@ defmodule BolognesaWeb.Series.Index.Reducer.Load do
     |> assign(:error, nil)
     |> assign(:request_id, request_id)
     |> assign(:form, to_form(%{"query" => query}, as: :search))
-    |> start_async({:series, request_id}, fn -> Catalog.search_series(actor, query, page) end)
+    |> start_async({:series, request_id}, fn ->
+      Catalog.search_series(actor, query, page, library_id)
+    end)
   end
 end

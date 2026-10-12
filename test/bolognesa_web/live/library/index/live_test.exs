@@ -45,6 +45,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     |> render_submit()
 
     assert has_element?(view, "#library-list [data-library-name='Series']", "Series")
+    assert has_element?(view, "nav a[id^=nav-library-] .hero-tv")
+    assert has_element?(view, "nav a[id^=nav-library-]", "Series")
     {:ok, reopened, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
     assert has_element?(reopened, "#library-list [data-content-type='series']")
   end
@@ -330,6 +332,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
         assigns: %{__changed__: %{}, flash: %{}}
       }
       |> Phoenix.Component.assign(:current_scope, %{actor: actor})
+      |> with_navigation()
       |> Initialize.call()
 
     request_id = socket.assigns.scan_request_id
@@ -362,6 +365,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
         assigns: %{__changed__: %{}, flash: %{}}
       }
       |> Phoenix.Component.assign(:current_scope, %{actor: actor})
+      |> with_navigation()
       |> Initialize.call()
       |> Phoenix.Component.assign(:current_scope, %{actor: nil})
       |> StartScan.call(Integer.to_string(library.id))
@@ -389,6 +393,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
         assigns: %{__changed__: %{}, flash: %{}}
       }
       |> Phoenix.Component.assign(:current_scope, %{actor: actor})
+      |> with_navigation()
       |> Initialize.call()
 
     old_request = socket.assigns.scan_request_id
@@ -405,5 +410,15 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     assert LazyHTML.from_fragment(html)
            |> LazyHTML.query("#library-list [data-library-name='New source']")
            |> LazyHTML.to_tree() != []
+  end
+
+  defp with_navigation(socket) do
+    {:cont, socket} =
+      BolognesaWeb.LibraryNavigation.on_mount(:default, %{}, %{}, %{
+        socket
+        | router: BolognesaWeb.Router
+      })
+
+    socket
   end
 end

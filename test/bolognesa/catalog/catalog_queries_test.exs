@@ -87,6 +87,44 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
     assert {:ok, %MoviePage{items: [], total: 0}} = Catalog.list_movies(actor, "No existe", 1)
   end
 
+  test "library catalogs isolate titles, counts and pagination while retaining missing files" do
+    actor = %Actor{id: 1, role: :admin}
+    first = Bolognesa.SeriesFixtures.library(:movie)
+    second = Bolognesa.SeriesFixtures.library(:movie)
+    shared = Repo.insert!(movie_changeset(%{provider_id: 901, title: "Shared"}))
+    other = Repo.insert!(movie_changeset(%{provider_id: 902, title: "Other"}))
+
+    for {library, movie, availability} <- [
+          {first, shared, :missing},
+          {second, shared, :available},
+          {second, other, :available}
+        ] do
+      file = Bolognesa.SeriesFixtures.file(library.id, "#{movie.id}.mkv")
+      Repo.update!(Ecto.Changeset.change(file, availability: availability))
+
+      Bolognesa.IdentificationFixtures.insert_decision!(
+        %{
+          media_file_id: file.id,
+          observed_revision: 1,
+          token: Ecto.UUID.generate(),
+          state: :manual,
+          origin: :manual
+        },
+        [movie.id]
+      )
+    end
+
+    assert {:ok, %{total: 1, items: [item]}} = Catalog.list_movies(actor, "", 1, first.id)
+    assert item.id == shared.id
+    assert item.version_count == 1
+    assert item.available_count == 0
+    assert {:ok, %{total: 1, items: []}} = Catalog.list_movies(actor, "", 2, first.id)
+    assert {:ok, %{total: 0, items: []}} = Catalog.list_movies(actor, "Other", 1, first.id)
+    assert {:ok, %{total: 2}} = Catalog.list_movies(actor, "", 1, second.id)
+    assert {:error, :forbidden} = Catalog.list_movies(nil, "", 1, first.id)
+    assert {:error, :invalid_query} = Catalog.list_movies(actor, "", 1, -1)
+  end
+
   defp movie_changeset(attrs) do
     entry =
       Repo.insert!(

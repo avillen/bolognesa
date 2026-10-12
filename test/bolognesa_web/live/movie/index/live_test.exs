@@ -52,6 +52,49 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     assert has_element?(view, "#movies-empty")
   end
 
+  test "sidebar uses library names and types, including empty libraries", %{
+    conn: conn,
+    token: token
+  } do
+    movies = Bolognesa.SeriesFixtures.library(:movie)
+    series = Bolognesa.SeriesFixtures.library(:series)
+    Repo.update!(Ecto.Changeset.change(movies, name: "Family movies"))
+    Repo.update!(Ecto.Changeset.change(series, name: "Documentaries"))
+
+    {:ok, view, _} =
+      live(init_test_session(conn, user_token: token), "/movies?library_id=#{movies.id}")
+
+    render_async(view)
+    assert has_element?(view, "#nav-library-#{movies.id}[aria-current='page']", "Family movies")
+    assert has_element?(view, "#nav-library-#{movies.id} .hero-film")
+
+    assert has_element?(
+             view,
+             "#nav-library-#{series.id}[href='/series?library_id=#{series.id}']",
+             "Documentaries"
+           )
+
+    assert has_element?(view, "#nav-library-#{series.id} .hero-tv")
+    refute has_element?(view, "nav a[href='/movies']")
+    refute has_element?(view, "nav a[href='/series']")
+    assert has_element?(view, "h1", "Family movies")
+    assert has_element?(view, "#movies-empty")
+    view |> form("#movie-search-form", search: %{query: "test"}) |> render_submit()
+    assert_patch(view, "/movies?library_id=#{movies.id}&query=test")
+  end
+
+  test "invalid or wrong-type library never opens the global movie catalog", %{
+    conn: conn,
+    token: token
+  } do
+    series = Bolognesa.SeriesFixtures.library(:series)
+
+    for id <- ["invalid", "9999999", "#{series.id}"] do
+      assert {:error, {:live_redirect, %{to: "/libraries"}}} =
+               live(init_test_session(conn, user_token: token), "/movies?library_id=#{id}")
+    end
+  end
+
   defp movie_changeset(attrs) do
     entry =
       Repo.insert!(

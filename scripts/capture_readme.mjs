@@ -184,9 +184,9 @@ try {
 
     await capture("home.png", "/");
     await capture("libraries.png", "/libraries");
-    await capture("library.png", "/movies", "main h1", "#movies-loading");
+    await capture("library.png", `/movies?library_id=${ids.movie_library}`, "main h1", "#movies-loading");
     await capture("movie-review.png", "/movies/review");
-    await capture("movie.png", `/movies/${ids.movie}`);
+    await capture("movie.png", `/movies/${ids.movie}?library_id=${ids.movie_library}`);
     await page.locator('[id^="movie-play-"]').first().click();
     const video = page.locator("video[id^='movie-video-']");
     try {
@@ -252,11 +252,11 @@ try {
     await page.mouse.move(1430, 990);
     await page.screenshot({ path: screenshotPath("player.png"), fullPage: true });
 
-    await capture("series.png", "/series", "main h1", "#series-loading");
+    await capture("series.png", `/series?library_id=${ids.series_library}`, "main h1", "#series-loading");
     await capture("series-review.png", "/series/review");
-    await capture("series-detail.png", `/series/${ids.series}`);
-    await capture("season.png", `/series/seasons/${ids.season}`);
-    await capture("episode.png", `/episodes/${ids.episode}`);
+    await capture("series-detail.png", `/series/${ids.series}?library_id=${ids.series_library}`);
+    await capture("season.png", `/series/seasons/${ids.season}?library_id=${ids.series_library}`);
+    await capture("episode.png", `/episodes/${ids.episode}?library_id=${ids.series_library}`);
     await capture("settings.png", "/settings");
     await capture("about.png", "/about");
   }

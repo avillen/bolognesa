@@ -212,6 +212,8 @@ ReadmeScreenshotSeed.insert_identification!(series_review_file.id, :pending)
 System.fetch_env!("BOLOGNESA_SCREENSHOT_IDS")
 |> File.write!(
   Jason.encode!(%{
+    movie_library: movie_library.id,
+    series_library: series_library.id,
     movie: movie.id,
     series: series.id,
     season: season.id,

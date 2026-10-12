@@ -1,4 +1,11 @@
-<Layouts.app flash={@flash} current_scope={@current_scope} active_section={:series}>
+<Layouts.app
+  navigation_libraries={@navigation_libraries}
+  navigation_error={@navigation_error}
+  active_library_id={@active_library_id}
+  flash={@flash}
+  current_scope={@current_scope}
+  active_section={:series}
+>
   <div class="mx-auto max-w-5xl space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <h1 class="text-3xl font-bold">{gettext("Revisión de series")}</h1>

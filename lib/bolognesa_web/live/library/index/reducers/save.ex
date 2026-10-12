@@ -24,6 +24,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.Save do
     case Libraries.create_library(socket.assigns.current_scope.actor, attrs) do
       {:ok, library} ->
         socket
+        |> BolognesaWeb.LibraryNavigation.refresh()
         |> CancelScanStatuses.call()
         |> assign(:form, to_form(Library.changeset()))
         |> assign(:error, nil)

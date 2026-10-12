@@ -1,4 +1,11 @@
-<Layouts.app flash={@flash} current_scope={@current_scope} active_section={:settings}>
+<Layouts.app
+  navigation_libraries={@navigation_libraries}
+  navigation_error={@navigation_error}
+  active_library_id={@active_library_id}
+  flash={@flash}
+  current_scope={@current_scope}
+  active_section={:settings}
+>
   <section id="settings-screen" class="mx-auto max-w-2xl space-y-8">
     <header>
       <h1 class="text-3xl font-semibold text-ink">{gettext("Ajustes")}</h1>

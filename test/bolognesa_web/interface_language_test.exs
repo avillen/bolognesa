@@ -58,9 +58,10 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
 
   test "LiveView navigation retains the negotiated locale", %{conn: conn} do
     conn = put_req_header(conn, "accept-language", "en")
+    library = Bolognesa.SeriesFixtures.library(:movie)
     {:ok, view, _} = live(conn, "/settings")
-    result = view |> element("a[href='/movies']") |> render_click()
-    {:ok, movies, _} = follow_redirect(result, conn, "/movies")
+    result = view |> element("#nav-library-#{library.id}") |> render_click()
+    {:ok, movies, _} = follow_redirect(result, conn, "/movies?library_id=#{library.id}")
     render_async(movies)
     assert has_element?(movies, "#movies-empty", "No movies")
     result = movies |> element("#nav-settings") |> render_click()

@@ -1,4 +1,11 @@
-<Layouts.app flash={@flash} current_scope={@current_scope} active_section={:about}>
+<Layouts.app
+  navigation_libraries={@navigation_libraries}
+  navigation_error={@navigation_error}
+  active_library_id={@active_library_id}
+  flash={@flash}
+  current_scope={@current_scope}
+  active_section={:about}
+>
   <section id="about-screen" class="mx-auto max-w-3xl space-y-8">
     <header>
       <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">

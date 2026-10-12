@@ -1,4 +1,11 @@
-<Layouts.app flash={@flash} current_scope={@current_scope} active_section={:movies}>
+<Layouts.app
+  navigation_libraries={@navigation_libraries}
+  navigation_error={@navigation_error}
+  active_library_id={@active_library_id}
+  flash={@flash}
+  current_scope={@current_scope}
+  active_section={:movies}
+>
   <section id="movies-screen" class="mx-auto max-w-6xl space-y-8">
     <header class="flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -6,7 +13,7 @@
           {gettext("Colección")}
         </p>
         <h1 class="mt-3 text-4xl font-semibold tracking-tight text-ink">
-          {gettext("Películas")}
+          {@library_name || gettext("Películas")}
         </h1>
         <p class="mt-3 text-sm text-muted">
           {gettext("Obras identificadas de tus bibliotecas.")}
@@ -61,7 +68,7 @@
         class="poster-card group"
       >
         <.link
-          navigate={~p"/movies/#{movie.id}"}
+          navigate={~p"/movies/#{movie.id}?#{@library_params}"}
           id={"movie-link-#{movie.id}"}
           class="block h-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
@@ -111,13 +118,13 @@
     >
       <.link
         :if={@page > 1}
-        patch={~p"/movies?#{%{query: @query, page: @page - 1}}"}
+        patch={~p"/movies?#{Map.merge(@library_params, %{query: @query, page: @page - 1})}"}
         class="rounded-xl border border-border-strong px-4 py-3 text-ink"
       >{gettext("Anterior")}</.link>
       <span class="text-sm text-muted">{gettext("Página %{page}", page: @page)}</span>
       <.link
         :if={@page * 24 < @total}
-        patch={~p"/movies?#{%{query: @query, page: @page + 1}}"}
+        patch={~p"/movies?#{Map.merge(@library_params, %{query: @query, page: @page + 1})}"}
         class="rounded-xl border border-border-strong px-4 py-3 text-ink"
       >{gettext("Siguiente")}</.link>
     </nav>

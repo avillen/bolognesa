@@ -33,6 +33,10 @@ defmodule BolognesaWeb.Layouts do
 
   attr :active_section, :atom, default: nil
 
+  attr :navigation_libraries, :list, default: []
+  attr :navigation_error, :string, default: nil
+  attr :active_library_id, :integer, default: nil
+
   slot :inner_block, required: true
 
   @spec app(map()) :: Phoenix.LiveView.Rendered.t()
@@ -52,22 +56,28 @@ defmodule BolognesaWeb.Layouts do
           >
             <.icon name="hero-home" class="size-5" /> <span>{gettext("Inicio")}</span>
           </.link>
-          <.link
-            navigate={~p"/movies"}
-            class={["app-nav-link", @active_section == :movies && "is-active"]}
-            aria-current={@active_section == :movies && "page"}
-          >
-            <.icon name="hero-film" class="size-5" /> <span>{gettext("Películas")}</span>
-          </.link>
-          <.link
-            navigate={~p"/series"}
-            id="nav-series"
-            class={["app-nav-link", @active_section == :series && "is-active"]}
-            aria-current={@active_section == :series && "page"}
-          >
-            <.icon name="hero-tv" class="size-5" /> <span>{gettext("Series")}</span>
-          </.link>
           <p class="app-nav-caption">{gettext("Mi biblioteca")}</p>
+          <.link
+            :for={library <- @navigation_libraries}
+            id={"nav-library-#{library.id}"}
+            navigate={library_path(library)}
+            class={["app-nav-link", @active_library_id == library.id && "is-active"]}
+            aria-current={@active_library_id == library.id && "page"}
+          >
+            <.icon
+              name={if library.content_type == :movie, do: "hero-film", else: "hero-tv"}
+              class="size-5 shrink-0"
+            />
+            <span class="min-w-0 break-words">{library.name}</span>
+          </.link>
+          <p
+            :if={@navigation_error}
+            id="navigation-error"
+            role="alert"
+            class="px-3 text-sm text-muted"
+          >
+            {@navigation_error}
+          </p>
           <.link
             navigate={~p"/libraries"}
             class={["app-nav-link", @active_section == :libraries && "is-active"]}
@@ -102,6 +112,9 @@ defmodule BolognesaWeb.Layouts do
     <.flash_group flash={@flash} />
     """
   end
+
+  defp library_path(%{content_type: :movie, id: id}), do: ~p"/movies?#{%{library_id: id}}"
+  defp library_path(%{content_type: :series, id: id}), do: ~p"/series?#{%{library_id: id}}"
 
   @doc """
   Shows the flash group with standard titles and content.

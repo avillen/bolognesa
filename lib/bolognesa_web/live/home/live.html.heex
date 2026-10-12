@@ -1,4 +1,11 @@
-<Layouts.app flash={@flash} current_scope={@current_scope} active_section={:home}>
+<Layouts.app
+  navigation_libraries={@navigation_libraries}
+  navigation_error={@navigation_error}
+  active_library_id={@active_library_id}
+  flash={@flash}
+  current_scope={@current_scope}
+  active_section={:home}
+>
   <section id="home-screen" class="mx-auto max-w-5xl">
     <div class="welcome-panel p-7 sm:p-12">
       <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">

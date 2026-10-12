@@ -5,8 +5,9 @@ defmodule Bolognesa.Catalog.Application.Ports.Readers.SeriesReader do
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Season
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
   @type adapter :: atom()
+  @type library_id :: pos_integer() | nil
   @type page_number :: pos_integer()
-  @callback list_series(query :: binary(), page :: page_number()) ::
+  @callback list_series(query :: binary(), page :: page_number(), library_id :: library_id()) ::
               {:ok, {[{Series.t(), Episode.count(), Episode.count()}], Series.count()}}
               | {:error, :unavailable}
   @callback get_series(series_id :: Series.id()) ::

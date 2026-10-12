@@ -1,7 +1,14 @@
-<Layouts.app flash={@flash} current_scope={@current_scope} active_section={:series}>
+<Layouts.app
+  navigation_libraries={@navigation_libraries}
+  navigation_error={@navigation_error}
+  active_library_id={@active_library_id}
+  flash={@flash}
+  current_scope={@current_scope}
+  active_section={:series}
+>
   <section id="episode-detail" class="mx-auto max-w-5xl space-y-8">
     <.link
-      navigate={~p"/series"}
+      navigate={~p"/series?#{@library_params}"}
       class="inline-flex min-h-11 items-center text-sm font-medium text-accent-soft hover:text-accent-soft"
     >{gettext("← Todas las series")}</.link>
     <p :if={@loading?} id="episode-loading" role="status" class="text-muted">
@@ -60,7 +67,7 @@
               )}
             </p>
             <.link
-              navigate={~p"/series/seasons/#{@detail.season.id}"}
+              navigate={~p"/series/seasons/#{@detail.season.id}?#{@library_params}"}
               class="mt-4 inline-flex min-h-11 items-center text-accent-soft"
             >{gettext("Volver a la temporada")}</.link>
           </div>

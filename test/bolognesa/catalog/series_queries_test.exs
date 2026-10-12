@@ -31,6 +31,24 @@ defmodule Bolognesa.Catalog.SeriesQueriesTest do
     assert {:ok, %{total: 2, items: []}} = Catalog.list_episodes(@actor, season.id, 2)
   end
 
+  test "library series counts include only its identified episodes without duplicates" do
+    first = SeriesFixtures.library()
+    second = SeriesFixtures.library()
+    SeriesFixtures.identify(SeriesFixtures.file(first.id, "S01E01E02.mkv"), 1, [1, 2])
+    SeriesFixtures.identify(SeriesFixtures.file(first.id, "S01E01.mp4"), 1, [1])
+    SeriesFixtures.identify(SeriesFixtures.file(second.id, "S00E01.mkv"), 0, [1])
+    assert {:ok, %{total: 1, items: [item]}} = Catalog.search_series(@actor, "", 1, first.id)
+    assert item.episode_count == 2
+    assert item.available_episode_count == 2
+    assert {:ok, %{items: [other]}} = Catalog.search_series(@actor, "", 1, second.id)
+    assert other.episode_count == 1
+    empty = SeriesFixtures.library()
+    assert {:ok, %{total: 0, items: []}} = Catalog.search_series(@actor, "", 1, empty.id)
+    assert {:ok, %{total: 1, items: []}} = Catalog.search_series(@actor, "", 2, first.id)
+    assert {:error, :forbidden} = Catalog.search_series(nil, "", 1, first.id)
+    assert {:error, :invalid_query} = Catalog.search_series(@actor, "", 1, "bad")
+  end
+
   test "movie and series resources with the same external ID remain separate" do
     library = SeriesFixtures.library()
     file = SeriesFixtures.file(library.id, "Serie S01E01.mkv")

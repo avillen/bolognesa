@@ -5,17 +5,28 @@ defmodule Bolognesa.Catalog.Application.UseCases.SearchSeries do
   alias Bolognesa.Identity
   alias Bolognesa.Identity.Domain.Entities.Actor
 
-  @spec call(Actor.t(), binary(), SeriesReader.page_number(), SeriesReader.adapter()) ::
+  @spec call(
+          Actor.t(),
+          binary(),
+          SeriesReader.page_number(),
+          SeriesReader.adapter(),
+          SeriesReader.library_id()
+        ) ::
           {:ok, SeriesPage.t()}
           | {:error, :forbidden | :invalid_query | :invalid_page | :unavailable}
-  def call(actor, query, page, reader) do
+  def call(actor, query, page, reader, library_id \\ nil) do
     with :ok <- Identity.authorize(actor, :admin),
+         :ok <- validate_library(library_id),
          :ok <- query_valid(query),
          :ok <- page_valid(page),
-         {:ok, result} <- reader.list_series(String.trim(query), page) do
+         {:ok, result} <- reader.list_series(String.trim(query), page, library_id) do
       {:ok, SeriesPage.from_domain(result)}
     end
   end
+
+  defp validate_library(nil), do: :ok
+  defp validate_library(id) when is_integer(id) and id > 0, do: :ok
+  defp validate_library(_), do: {:error, :invalid_query}
 
   defp query_valid(query) when is_binary(query),
     do:

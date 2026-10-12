@@ -4,10 +4,12 @@ Last reviewed: 2026-10-12.
 
 Bolognesa is an early self-hosted media center built with Phoenix LiveView, Ecto, PostgreSQL, and Oban. The repository includes local Docker Compose development and a generic Linux Compose deployment. Movie and series libraries, scanning, technical inspection, TMDb identification, catalog browsing, authorized direct playback, and an optional FFmpeg/HLS path are implemented.
 
+The sidebar lists configured libraries by their stored names with movie or series icons, including empty libraries. Catalog lists, searches, pagination, and availability counts are scoped to the selected library. Detail navigation retains that selection; work details and playback versions remain shared across libraries. Creating a library updates the sidebar immediately.
+
 ## Verification and limits
 
 - Local Docker Compose startup, database migrations, and the first setup page have been verified on an x86_64 host. This does not verify native ARM64 behavior.
-- `mix precommit` and the project test suite have passed in recent local runs. CI configuration is present; its latest GitHub run should be checked before relying on it for a release.
+- `mix precommit` passed locally with 381 tests passing and one skipped. Coverage includes library-specific movie and series catalogs, navigation, empty libraries, creation, and failed library-read feedback. README screenshots were regenerated, visually reviewed for the library catalogs, and verified with `make check-screenshots`. CI configuration is present; its latest GitHub run should be checked before relying on it for a release.
 - A compatible MP4 has played in Chrome on the private deployment. Playback controls, mobile and TV playback, and performance across media formats still need hands-on verification.
 - Scanning discovers files; identification is a separate step. Automatic metadata lookup requires a TMDb read token.
 - Playback progress is not persisted across sessions. Multi-episode files play in full from the beginning.

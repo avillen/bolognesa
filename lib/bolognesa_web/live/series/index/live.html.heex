@@ -1,7 +1,14 @@
-<Layouts.app flash={@flash} current_scope={@current_scope} active_section={:series}>
+<Layouts.app
+  navigation_libraries={@navigation_libraries}
+  navigation_error={@navigation_error}
+  active_library_id={@active_library_id}
+  flash={@flash}
+  current_scope={@current_scope}
+  active_section={:series}
+>
   <section id="series-screen" class="mx-auto max-w-5xl space-y-7">
     <header class="flex flex-wrap items-center justify-between gap-4">
-      <h1 class="text-4xl font-semibold text-ink">{gettext("Series")}</h1>
+      <h1 class="text-4xl font-semibold text-ink">{@library_name || gettext("Series")}</h1>
       <.link
         id="series-review-link"
         navigate={~p"/series/review"}
@@ -24,7 +31,9 @@
     </p>
     <p :if={@error} id="series-error" role="alert" class="text-red-200">
       {@error}
-      <.link patch={~p"/series?#{%{query: @query, page: @page}}"}>{gettext("Reintentar")}</.link>
+      <.link patch={~p"/series?#{Map.merge(@library_params, %{query: @query, page: @page})}"}>{gettext(
+        "Reintentar"
+      )}</.link>
     </p>
     <p
       :if={!@loading? && !@error && @total == 0}
@@ -41,7 +50,7 @@
         id={id}
         class="poster-card"
       >
-        <.link navigate={~p"/series/#{series.id}"} class="block rounded-lg">
+        <.link navigate={~p"/series/#{series.id}?#{@library_params}"} class="block rounded-lg">
           <div class="poster-art relative flex aspect-[2/3] items-center justify-center overflow-hidden rounded-lg bg-raised text-4xl text-muted">
             <span aria-hidden="true">{String.first(series.title)}</span>
             <img
@@ -71,13 +80,13 @@
       <.link
         :if={@page > 1}
         id="series-previous"
-        patch={~p"/series?#{%{query: @query, page: @page - 1}}"}
+        patch={~p"/series?#{Map.merge(@library_params, %{query: @query, page: @page - 1})}"}
         class="min-h-11 py-3"
       >{gettext("Anterior")}</.link>
       <.link
         :if={@page * 24 < @total}
         id="series-next"
-        patch={~p"/series?#{%{query: @query, page: @page + 1}}"}
+        patch={~p"/series?#{Map.merge(@library_params, %{query: @query, page: @page + 1})}"}
         class="min-h-11 py-3"
       >{gettext("Siguiente")}</.link>
     </nav>

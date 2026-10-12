@@ -20,10 +20,12 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoSeriesReader do
   @page_size 24
 
   @impl true
-  def list_series(query, page) do
+  def list_series(query, page, library_id \\ nil) do
     base =
       from series in SeriesSchema,
         where: fragment("strpos(lower(?), lower(?)) > 0", series.title, ^query)
+
+    base = restrict_library(base, library_id)
 
     total = Repo.aggregate(base, :count, :id, log: false)
 
@@ -42,6 +44,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoSeriesReader do
           on:
             decision.id == relation.identification_id and decision.state in [:automatic, :manual],
           left_join: file in MediaFileSchema,
+          as: :file,
           on: file.id == decision.media_file_id,
           group_by: [series.id, entry.id],
           order_by: [asc: series.title, asc: series.id],
@@ -50,7 +53,8 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoSeriesReader do
           select:
             {series, entry, count(episode.id, :distinct),
              filter(count(episode.id, :distinct), file.availability == :available)}
-        ),
+        )
+        |> restrict_files(library_id),
         log: false
       )
 
@@ -62,6 +66,30 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoSeriesReader do
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
+
+  defp restrict_library(query, nil), do: query
+
+  defp restrict_library(query, library_id) do
+    ids =
+      from episode in EpisodeSchema,
+        join: season in SeasonSchema,
+        on: season.id == episode.season_id,
+        join: relation in IdentificationEntrySchema,
+        on: relation.catalog_entry_id == episode.id,
+        join: decision in IdentificationSchema,
+        on: decision.id == relation.identification_id,
+        join: file in MediaFileSchema,
+        on: file.id == decision.media_file_id,
+        where: file.library_id == ^library_id and decision.state in [:automatic, :manual],
+        select: season.series_id
+
+    from entry in query, where: entry.id in subquery(ids)
+  end
+
+  defp restrict_files(query, nil), do: query
+
+  defp restrict_files(query, library_id),
+    do: from([file: file] in query, where: file.library_id == ^library_id)
 
   @impl true
   def get_series(id) do

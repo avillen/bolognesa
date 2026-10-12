@@ -21,4 +21,32 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
   test "rejects anonymous visitors", %{conn: _conn} do
     assert {:error, {:redirect, %{to: "/login"}}} = live(Phoenix.ConnTest.build_conn(), "/series")
   end
+
+  test "library search and detail navigation retain the selected library", ctx do
+    route = "/series?library_id=#{ctx.library.id}"
+    {:ok, view, _} = live(ctx.conn, route)
+    render_async(view)
+    assert has_element?(view, "#nav-library-#{ctx.library.id}[aria-current=page]")
+    view |> form("#series-search", search: %{query: "Serie"}) |> render_submit()
+    assert_patch(view, route <> "&query=Serie")
+    render_async(view)
+    result = view |> element("#series-list a") |> render_click()
+    {:ok, detail, _} = follow_redirect(result, ctx.conn)
+    render_async(detail)
+    assert has_element?(detail, "#nav-library-#{ctx.library.id}[aria-current=page]")
+    assert has_element?(detail, "a[href='/series?library_id=#{ctx.library.id}']")
+
+    assert has_element?(
+             detail,
+             "a[href='/series/seasons/#{ctx.season_id}?library_id=#{ctx.library.id}']"
+           )
+  end
+
+  test "an empty series library excludes titles from other sources", ctx do
+    library = Bolognesa.SeriesFixtures.library()
+    {:ok, view, _} = live(ctx.conn, "/series?library_id=#{library.id}")
+    render_async(view)
+    assert has_element?(view, "#series-empty")
+    refute has_element?(view, "#series-list a")
+  end
 end

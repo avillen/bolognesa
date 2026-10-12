@@ -16,10 +16,12 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoMoviesReader do
   @page_size 24
 
   @impl true
-  def list_movies(query, page) do
+  def list_movies(query, page, library_id \\ nil) do
     filtered =
       from movie in MovieSchema,
         where: fragment("strpos(lower(?), lower(?)) > 0", movie.title, ^query)
+
+    filtered = restrict_library(filtered, library_id)
 
     total = Repo.aggregate(filtered, :count, :id, log: false)
     offset = (page - 1) * @page_size
@@ -36,6 +38,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoMoviesReader do
             identification.id == relation.identification_id and
               identification.state in [:automatic, :manual],
           left_join: file in MediaFileSchema,
+          as: :file,
           on: file.id == identification.media_file_id,
           group_by: [movie.id, entry.id],
           order_by: [asc: movie.title, asc: movie.id],
@@ -44,7 +47,8 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoMoviesReader do
           select:
             {movie, entry, count(file.id),
              filter(count(file.id), file.availability == :available)}
-        ),
+        )
+        |> restrict_files(library_id),
         log: false
       )
 
@@ -58,6 +62,26 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoMoviesReader do
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
+
+  defp restrict_library(query, nil), do: query
+
+  defp restrict_library(query, library_id) do
+    ids =
+      from relation in IdentificationEntrySchema,
+        join: decision in IdentificationSchema,
+        on: decision.id == relation.identification_id,
+        join: file in MediaFileSchema,
+        on: file.id == decision.media_file_id,
+        where: file.library_id == ^library_id and decision.state in [:automatic, :manual],
+        select: relation.catalog_entry_id
+
+    from entry in query, where: entry.id in subquery(ids)
+  end
+
+  defp restrict_files(query, nil), do: query
+
+  defp restrict_files(query, library_id),
+    do: from([file: file] in query, where: file.library_id == ^library_id)
 
   @impl true
   def get_movie(id) do
