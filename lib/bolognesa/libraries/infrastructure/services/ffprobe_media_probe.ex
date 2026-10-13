@@ -2,6 +2,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
   @moduledoc "Probes a validated physical file and rechecks it after the command."
   @behaviour Bolognesa.Libraries.Application.Ports.Services.MediaProbe
 
+  require Logger
+
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Libraries.Infrastructure.Services.BoundedCommand
   alias Bolognesa.Libraries.Infrastructure.Services.FfprobeJson
@@ -42,10 +44,28 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
          {:ok, media} <- FfprobeJson.parse(output, library.content_type || :movie) do
       {:ok, media}
     else
-      {:error, :failed} -> {:error, :unreadable}
-      {:error, :too_large} -> {:error, :invalid_output}
-      {:error, reason} -> {:error, reason}
+      {:error, :failed} ->
+        log_read_failure(file, :ffprobe)
+        {:error, :unreadable}
+
+      {:error, :unreadable} = error ->
+        log_read_failure(file, :file_access)
+        error
+
+      {:error, :too_large} ->
+        {:error, :invalid_output}
+
+      {:error, reason} ->
+        {:error, reason}
     end
+  end
+
+  defp log_read_failure(file, stage) do
+    Logger.warning("Technical media inspection failed",
+      file_id: file.id,
+      failure_stage: stage,
+      failure_reason: :unreadable
+    )
   end
 
   defp args(:music) do

@@ -83,6 +83,8 @@ config :logger, :default_formatter,
     :job_id,
     :attempt,
     :reason,
+    :failure_stage,
+    :failure_reason,
     :files_discovered,
     :duration_ms
   ]
