@@ -1,33 +1,33 @@
-# Bolognesa: instrucciones compartidas
+# Bolognesa: shared instructions
 
-Aplicación web Phoenix para aprendizaje y uso doméstico. Las decisiones y convenciones de Bolognesa gobiernan el proyecto. Superpowers y otras herramientas pueden ayudar al proceso, pero deben guardar sus artefactos en la estructura de este repositorio y respetar las instrucciones del usuario.
+A Phoenix web application for learning and home use. Bolognesa's decisions and conventions govern the project. Superpowers and other tools can help with the process, but they must store their artifacts within this repository's structure and respect the user's instructions.
 
-## Continuidad de sesión
+## Session continuity
 
-- Al comenzar, leer [producto](docs/product.md), [estado](docs/status.md), [roadmap](docs/roadmap.md) y las convenciones aplicables. Inspeccionar Git y conservar cambios ajenos.
-- Elegir una tarea acotada con criterios de aceptación; leer las [decisiones](docs/decisions/README.md) y convenciones relevantes. Comprobar el código antes de asumir que existe una función.
-- Al terminar trabajo significativo, ejecutar `mix precommit` y los checks pertinentes; corregir fallos y actualizar `docs/status.md` con estado real, verificación, bloqueos y siguiente paso. No atribuir despliegue ni compatibilidad de dispositivos sin evidencia.
-- Si queda trabajo incompleto, registrar archivos o rama, pasos pendientes, comando fallido y síntomas reproducibles. No guardar credenciales ni inventarios privados de medios.
-- Marcar un hito completo solo al cumplir los criterios de `docs/roadmap.md`. Evitar planes vacíos o implementaciones especulativas.
+- At the start, read the [product overview](docs/product.md), [status](docs/status.md), [roadmap](docs/roadmap.md), and applicable conventions. Inspect Git and preserve others' changes.
+- Choose a bounded task with acceptance criteria; read the relevant [decisions](docs/decisions/README.md) and conventions. Check the code before assuming a feature exists.
+- After significant work, run `mix precommit` and the relevant checks; fix failures and update `docs/status.md` with the actual status, verification, blockers, and next step. Do not claim deployment or device compatibility without evidence.
+- If work remains incomplete, record the files or branch, pending steps, failed command, and reproducible symptoms. Do not store credentials or private media inventories.
+- Mark a milestone complete only when the criteria in `docs/roadmap.md` are met. Avoid empty plans or speculative implementations.
 
-## Organización documental
+## Documentation organization
 
-Consultar [docs/README.md](docs/README.md) y seguir la [convención documental](docs/conventions/documentation.md). Mantener el contenido público en inglés y sin detalles privados. El estado es una instantánea, no un historial; al terminar un trabajo temporal, retirar sus notas o resumir la información duradera en una convención o decisión. No crear directorios por herramienta ni duplicar instrucciones en archivos específicos de un agente.
+Consult [docs/README.md](docs/README.md) and follow the [documentation convention](docs/conventions/documentation.md). Keep public content in English and free of private details. Status is a snapshot, not a history; when temporary work is finished, remove its notes or summarize lasting information in a convention or decision. Do not create directories for individual tools or duplicate instructions in agent-specific files.
 
-## Convenciones por área
+## Conventions by area
 
-| Área | Referencia |
+| Area | Reference |
 | --- | --- |
-| Módulos Elixir, APIs públicas y Mix | [Elixir](docs/conventions/elixir.md) |
-| Dominio, aplicación, persistencia, integraciones y autorización | [Backend](docs/conventions/backend.md) |
-| LiveViews, reducers, forms y estado de vista | [Frontend](docs/conventions/frontend.md) |
-| Phoenix 1.8, HEEx, Ecto, Tailwind, hooks e interacción | [Phoenix e interfaz](docs/conventions/phoenix.md) |
-| Cambios funcionales, pruebas y refactors | [Testing](docs/conventions/testing.md) |
-| Logs, errores y trabajos de fondo | [Observabilidad](docs/conventions/observability.md) |
-| Documentación del proyecto | [Documentación](docs/conventions/documentation.md) |
+| Elixir modules, public APIs, and Mix | [Elixir](docs/conventions/elixir.md) |
+| Domain, application, persistence, integrations, and authorization | [Backend](docs/conventions/backend.md) |
+| LiveViews, reducers, forms, and view state | [Frontend](docs/conventions/frontend.md) |
+| Phoenix 1.8, HEEx, Ecto, Tailwind, hooks, and interaction | [Phoenix and UI](docs/conventions/phoenix.md) |
+| Functional changes, tests, and refactors | [Testing](docs/conventions/testing.md) |
+| Logs, errors, and background jobs | [Observability](docs/conventions/observability.md) |
+| Project documentation | [Documentation](docs/conventions/documentation.md) |
 
-Leer todas las convenciones aplicables antes de modificar un área.
+Read all applicable conventions before modifying an area.
 
-## Operación
+## Operations
 
-Antes de desplegar, leer `make help` y [la guía de despliegue común](deploy/compose/README.md). Configurar la instalación con `.env.deploy` y usar `make deploy-release` para un commit `main` publicado. Registrar el run de CI, digest de imagen, backup y verificación reales; conservar proyecto, datos y rutas internas al actualizar.
+Before deploying, read `make help` and the [shared deployment guide](deploy/compose/README.md). Configure the installation with `.env.deploy` and use `make deploy-release` for a published commit on `main`. Record the actual CI run, image digest, backup, and verification; preserve the project, data, and internal paths when updating.
