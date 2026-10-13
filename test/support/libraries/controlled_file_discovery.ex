@@ -9,9 +9,10 @@ defmodule Bolognesa.Libraries.Support.ControlledFileDiscovery do
   end
 
   @impl true
-  def walk(_path, sink) do
+  def walk(request, sink) do
     owner = Process.get(__MODULE__)
     send(owner, {:walking, self()})
+    send(owner, {:discovery_request, request})
     consume(owner, sink)
   end
 

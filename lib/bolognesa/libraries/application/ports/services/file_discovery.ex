@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.Application.Ports.Services.FileDiscovery do
   @moduledoc "Read-only file discovery, validating the source before and after all batches."
 
-  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.{DiscoveryRequest, NewMediaFile}
 
   @type adapter :: atom()
   @type error ::
@@ -15,5 +15,5 @@ defmodule Bolognesa.Libraries.Application.Ports.Services.FileDiscovery do
   @type sink :: ([NewMediaFile.t()] -> :ok | {:error, error()})
 
   @doc "A failed final validation must not authorize scan completion."
-  @callback walk(String.t(), sink()) :: :ok | {:error, error()}
+  @callback walk(DiscoveryRequest.t(), sink()) :: :ok | {:error, error()}
 end

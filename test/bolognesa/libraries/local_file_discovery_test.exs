@@ -2,6 +2,8 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
   use ExUnit.Case, async: true
 
   alias Bolognesa.Infrastructure.LocalSourcePath
+  alias Bolognesa.Libraries.Domain.Entities.Library
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.DiscoveryRequest
   alias Bolognesa.Libraries.Infrastructure.Services.{LocalFileDiscovery, LocalFileSource}
 
   setup do
@@ -16,7 +18,8 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
   test "discovers candidates without changing their bytes", %{path: path} do
     File.write!(Path.join(path, "MOVIE.MP4"), "original")
     File.write!(Path.join(path, "cover.jpg"), "image")
-    assert :ok = LocalFileDiscovery.walk(path, capture_sink())
+    File.write!(Path.join(path, "song.mp3"), "audio")
+    assert :ok = LocalFileDiscovery.walk(request(path), capture_sink())
     assert_receive {:entries, [entry]}
     assert entry.relative_path == "MOVIE.MP4"
     assert entry.size_bytes == 8
@@ -25,6 +28,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
              DateTime.from_unix!(File.stat!(Path.join(path, "MOVIE.MP4"), time: :posix).mtime)
 
     assert File.read!(Path.join(path, "MOVIE.MP4")) == "original"
+    assert File.read!(Path.join(path, "song.mp3")) == "audio"
     refute_receive {:entries, _}
   end
 
@@ -42,7 +46,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
       end
 
     File.write!(Path.join(path, "movie.txt"), "ignored")
-    assert :ok = LocalFileDiscovery.walk(path, capture_sink())
+    assert :ok = LocalFileDiscovery.walk(request(path), capture_sink())
     assert_receive {:entries, entries}
     assert Enum.sort(Enum.map(entries, & &1.relative_path)) == Enum.sort(expected)
     refute_receive {:entries, _}
@@ -50,7 +54,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
 
   test "emits batches of 100, 100 and 1 for 201 candidates", %{path: path} do
     write_candidates(path, 201)
-    assert :ok = LocalFileDiscovery.walk(path, capture_sink())
+    assert :ok = LocalFileDiscovery.walk(request(path), capture_sink())
     assert_receive {:entries, first}
     assert_receive {:entries, second}
     assert_receive {:entries, last}
@@ -60,7 +64,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
   end
 
   test "empty sources do not emit an empty batch", %{path: path} do
-    assert :ok = LocalFileDiscovery.walk(path, capture_sink())
+    assert :ok = LocalFileDiscovery.walk(request(path), capture_sink())
     refute_receive {:entries, _}
   end
 
@@ -72,7 +76,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
     File.write!(Path.join(path, name), "original")
     assert {:ok, canonical} = LocalFileSource.canonical_directory(path)
     assert {:ok, ^canonical} = LocalSourcePath.canonical_directory(path)
-    assert :ok = LocalFileDiscovery.walk(path, capture_sink())
+    assert :ok = LocalFileDiscovery.walk(request(path), capture_sink())
     assert_receive {:entries, [entry]}
     assert entry.relative_path == name
     assert File.read!(Path.join(path, name)) == "original"
@@ -82,7 +86,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
     for target <- [path, System.tmp_dir!()] do
       link = Path.join(path, "link")
       File.ln_s!(target, link)
-      assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(path, capture_sink())
+      assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(request(path), capture_sink())
       File.rm!(link)
     end
 
@@ -92,22 +96,22 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
   test "rejects descendant links to regular files even with an ignored extension", %{path: path} do
     File.write!(Path.join(path, "original.txt"), "original")
     File.ln_s!(Path.join(path, "original.txt"), Path.join(path, "link.txt"))
-    assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(path, capture_sink())
+    assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(request(path), capture_sink())
     refute_receive {:entries, _}
   end
 
   test "rejects special files without trying to read their contents", %{path: path} do
     assert {_, 0} = System.cmd("mkfifo", [Path.join(path, "special.mp4")])
-    assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(path, capture_sink())
+    assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(request(path), capture_sink())
     refute_receive {:entries, _}
   end
 
   test "rejects missing and out-of-root sources before delivering entries", %{path: path} do
     assert {:error, :source_inaccessible} =
-             LocalFileDiscovery.walk(path <> "/missing", capture_sink())
+             LocalFileDiscovery.walk(request(path <> "/missing"), capture_sink())
 
     assert {:error, :source_outside_roots} =
-             LocalFileDiscovery.walk(System.tmp_dir!(), capture_sink())
+             LocalFileDiscovery.walk(request(System.tmp_dir!()), capture_sink())
 
     refute_receive {:entries, _}
   end
@@ -116,7 +120,9 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
     File.chmod!(path, 0o000)
 
     try do
-      assert {:error, :source_inaccessible} = LocalFileDiscovery.walk(path, capture_sink())
+      assert {:error, :source_inaccessible} =
+               LocalFileDiscovery.walk(request(path), capture_sink())
+
       refute_receive {:entries, _}
     after
       File.chmod!(path, 0o700)
@@ -129,7 +135,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
     File.chmod!(nested, 0o000)
 
     try do
-      assert {:error, :entry_unreadable} = LocalFileDiscovery.walk(path, capture_sink())
+      assert {:error, :entry_unreadable} = LocalFileDiscovery.walk(request(path), capture_sink())
       refute_receive {:entries, _}
     after
       File.chmod!(nested, 0o700)
@@ -142,7 +148,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
     File.chmod!(candidate, 0o000)
 
     try do
-      assert {:error, :entry_unreadable} = LocalFileDiscovery.walk(path, capture_sink())
+      assert {:error, :entry_unreadable} = LocalFileDiscovery.walk(request(path), capture_sink())
       refute_receive {:entries, _}
     after
       File.chmod!(candidate, 0o600)
@@ -159,7 +165,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
         {:error, reason}
       end
 
-      assert {:error, ^reason} = LocalFileDiscovery.walk(path, sink)
+      assert {:error, ^reason} = LocalFileDiscovery.walk(request(path), sink)
       assert_receive {:entries, entries}
       assert length(entries) == 100
       refute_receive {:entries, _}
@@ -175,7 +181,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
         :ok
       end
 
-      assert {:error, :source_inaccessible} = LocalFileDiscovery.walk(path, sink)
+      assert {:error, :source_inaccessible} = LocalFileDiscovery.walk(request(path), sink)
     after
       File.chmod!(path, 0o700)
     end
@@ -191,7 +197,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
         :ok
       end
 
-      assert {:error, :source_inaccessible} = LocalFileDiscovery.walk(path, sink)
+      assert {:error, :source_inaccessible} = LocalFileDiscovery.walk(request(path), sink)
     after
       File.rename(moved, path)
     end
@@ -208,7 +214,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
         :ok
       end
 
-      assert {:error, :source_changed} = LocalFileDiscovery.walk(path, sink)
+      assert {:error, :source_changed} = LocalFileDiscovery.walk(request(path), sink)
     after
       File.rmdir(path)
       File.rename(moved, path)
@@ -226,7 +232,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
         :ok
       end
 
-      assert {:error, :source_changed} = LocalFileDiscovery.walk(path, sink)
+      assert {:error, :source_changed} = LocalFileDiscovery.walk(request(path), sink)
     after
       File.rm(path)
       File.rename(moved, path)
@@ -244,7 +250,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
     File.ln_s!(replacement, path)
 
     try do
-      assert {:error, :source_changed} = LocalFileDiscovery.walk(path, capture_sink())
+      assert {:error, :source_changed} = LocalFileDiscovery.walk(request(path), capture_sink())
       refute_receive {:entries, _}
     after
       File.rm!(path)
@@ -272,7 +278,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
         :ok
       end
 
-      assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(path, sink)
+      assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(request(path), sink)
       assert_receive {:entries, entries}
       assert length(entries) == 100
       assert Enum.all?(entries, &(:binary.match(&1.relative_path, "a-first/") == {0, 8}))
@@ -297,7 +303,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
       :ok
     end
 
-    assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(path, sink)
+    assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(request(path), sink)
     assert_receive {:entries, entries}
     assert length(entries) == 100
     refute_receive {:entries, _}
@@ -315,7 +321,7 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
       :ok
     end
 
-    assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(path, sink)
+    assert {:error, :unsafe_entry} = LocalFileDiscovery.walk(request(path), sink)
   end
 
   test "rechecks physical ancestors above the source after the final sink", %{path: path} do
@@ -331,7 +337,12 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
       :ok
     end
 
-    assert {:error, :source_changed} = LocalFileDiscovery.walk(source, sink)
+    assert {:error, :source_changed} = LocalFileDiscovery.walk(request(source), sink)
+  end
+
+  defp request(path) do
+    {:ok, request} = DiscoveryRequest.new(%Library{path: path, content_type: :movie})
+    request
   end
 
   defp capture_sink do

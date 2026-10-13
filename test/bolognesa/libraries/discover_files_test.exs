@@ -30,6 +30,8 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
 
   test "completes only after a successful walk and completed replay has no effect", context do
     task = start_discovery(context)
+    assert_receive {:discovery_request, %{content_type: :movie, path: path}}
+    assert path == Repo.get!(LibrarySchema, context.scan.library_id).path
     send(task.pid, {:batch, [entry()]})
     assert_receive {:batch_result, _, :ok}
     assert Repo.get!(ScanSchema, context.scan.id).state == :running

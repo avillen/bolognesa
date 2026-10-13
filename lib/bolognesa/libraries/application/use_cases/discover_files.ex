@@ -6,6 +6,7 @@ defmodule Bolognesa.Libraries.Application.UseCases.DiscoverFiles do
   alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
   alias Bolognesa.Libraries.Application.Ports.Services.{FileDiscovery, LibraryStatusNotifier}
   alias Bolognesa.Libraries.Domain.Entities.Scan
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.DiscoveryRequest
 
   @type result :: :ok | {:cancel, Scan.reason()} | {:error, Scan.reason()}
 
@@ -20,21 +21,29 @@ defmodule Bolognesa.Libraries.Application.UseCases.DiscoverFiles do
   def call(scan_id, attempt, repository, discovery, notifications) do
     case repository.begin_attempt(scan_id, attempt) do
       {:ok, :terminal} -> :ok
-      {:ok, scan, library} -> run(scan, library.path, repository, discovery, notifications)
+      {:ok, scan, library} -> run(scan, library, repository, discovery, notifications)
       {:error, :not_found} -> {:cancel, :unexpected_failure}
       {:error, :unavailable} -> {:error, :storage_unavailable}
     end
   end
 
-  defp run(scan, path, repository, discovery, notifications) do
+  defp run(scan, library, repository, discovery, notifications) do
     notifications.notify(scan.library_id)
     started = System.monotonic_time(:millisecond)
     Logger.info("Library scan started", metadata(scan))
-    discover(scan, path, repository, discovery, notifications, started)
+    discover(scan, DiscoveryRequest.new(library), repository, discovery, notifications, started)
   end
 
-  defp discover(scan, path, repository, discovery, notifications, started) do
-    with :ok <- discovery.walk(path, &save_batch(scan, &1, repository, notifications)),
+  defp discover(
+         scan,
+         request_result,
+         repository,
+         discovery,
+         notifications,
+         started
+       ) do
+    with {:ok, request} <- request_result,
+         :ok <- discovery.walk(request, &save_batch(scan, &1, repository, notifications)),
          {:ok, completed} <- repository.complete(scan.id, scan.generation) do
       notifications.notify(completed.library_id)
       Logger.info("Library scan completed", result_metadata(completed, started))

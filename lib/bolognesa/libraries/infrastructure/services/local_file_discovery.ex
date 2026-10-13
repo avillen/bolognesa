@@ -9,17 +9,21 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery do
   @behaviour Bolognesa.Libraries.Application.Ports.Services.FileDiscovery
 
   alias Bolognesa.Infrastructure.LocalSourcePath
-  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
+  alias Bolognesa.Libraries.Domain.Policies.MediaExtensions
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.{DiscoveryRequest, NewMediaFile}
 
   @batch_size Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy.batch_size()
-  @extensions ~w(.mp4 .m4v .mkv .avi .mov .webm .mpeg .mpg .ts .m2ts)
 
   @impl true
-  def walk(path, sink) do
+  def walk(%DiscoveryRequest{path: path, content_type: type}, sink) do
     with {:ok, root} <- LocalSourcePath.canonical_directory(path),
          :ok <- same_identity(path, root),
          {:ok, stat} <- source_stat(root),
-         source = %{root: root, identity: identity(stat)},
+         source = %{
+           root: root,
+           identity: identity(stat),
+           extensions: MediaExtensions.for_type(type)
+         },
          {:ok, entries} <- list_directory(source, ""),
          :ok <- traverse(source, [{"", entries}], [], 0, sink) do
       revalidate_source(path, source)
@@ -51,7 +55,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery do
   end
 
   defp visit(source, path, %{type: :regular} = stat, stack, batch, count, sink) do
-    if ascii_lower(Path.extname(path)) in @extensions,
+    if ascii_lower(Path.extname(path)) in source.extensions,
       do: add_candidate(source, path, stat, stack, batch, count, sink),
       else: traverse(source, stack, batch, count, sink)
   end
