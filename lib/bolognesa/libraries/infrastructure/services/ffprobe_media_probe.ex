@@ -29,7 +29,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
          {:ok, output} <-
            BoundedCommand.run(
              Keyword.get(opts, :executable, System.find_executable("ffprobe") || "ffprobe"),
-             @args ++ [path],
+             args(library.content_type) ++ [path],
              Keyword.get(opts, :timeout_ms, @timeout_ms),
              Keyword.get(opts, :max_bytes, @max_bytes)
            ),
@@ -39,7 +39,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
          {:ok, after_path, after_identity} <- physical_file(after_root, file),
          :ok <- same?(path, after_path),
          :ok <- same?(before_identity, after_identity),
-         {:ok, media} <- FfprobeJson.parse(output) do
+         {:ok, media} <- FfprobeJson.parse(output, library.content_type || :movie) do
       {:ok, media}
     else
       {:error, :failed} -> {:error, :unreadable}
@@ -47,6 +47,19 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
       {:error, reason} -> {:error, reason}
     end
   end
+
+  defp args(:music) do
+    Enum.map(@args, fn
+      "format=" <> _ = entries ->
+        entries <>
+          ":format_tags=title,artist,album_artist,albumartist,album,disc,discnumber,track,tracknumber,date,year"
+
+      arg ->
+        arg
+    end)
+  end
+
+  defp args(_type), do: @args
 
   defp source(path) do
     with {:ok, root} <- LocalSourcePath.canonical_directory(path),

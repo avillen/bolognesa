@@ -2,7 +2,7 @@ defmodule Bolognesa.Libraries.Domain.Entities.Inspection do
   @moduledoc "Rules for requesting and recording technical media inspection."
   alias Bolognesa.Libraries.Domain.Entities.MediaFile
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.{MusicTags, TechnicalTrack}
 
   @type reason ::
           :source_changed
@@ -28,6 +28,7 @@ defmodule Bolognesa.Libraries.Domain.Entities.Inspection do
           job_id: pos_integer() | nil,
           format: String.t() | nil,
           duration_ms: non_neg_integer() | nil,
+          music_tags: MusicTags.t() | nil,
           tracks: [TechnicalTrack.t()]
         }
 
@@ -39,6 +40,7 @@ defmodule Bolognesa.Libraries.Domain.Entities.Inspection do
     :job_id,
     :format,
     :duration_ms,
+    :music_tags,
     tracks: [],
     state: :pending
   ]

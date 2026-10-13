@@ -7,13 +7,13 @@ defmodule Bolognesa.Infrastructure.Persistence.LibrarySchema do
           id: integer() | nil,
           name: String.t() | nil,
           path: String.t() | nil,
-          content_type: :movie | :series | nil
+          content_type: :movie | :series | :music | nil
         }
 
   schema "libraries" do
     field :name, :string
     field :path, :string
-    field :content_type, Ecto.Enum, values: [:movie, :series], default: :movie
+    field :content_type, Ecto.Enum, values: [:movie, :series, :music], default: :movie
     timestamps(type: :utc_datetime_usec)
   end
 

@@ -7,7 +7,7 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Files.DiscoveryRequest do
   @type error :: :invalid_request
   @spec new(Library.t()) :: {:ok, t()} | {:error, error()}
   def new(%Library{path: path, content_type: type})
-      when is_binary(path) and byte_size(path) > 0 and type in [:movie, :series] do
+      when is_binary(path) and byte_size(path) > 0 and type in [:movie, :series, :music] do
     {:ok, %__MODULE__{path: path, content_type: type}}
   end
 

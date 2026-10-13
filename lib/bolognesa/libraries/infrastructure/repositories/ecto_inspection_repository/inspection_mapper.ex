@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
 
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Libraries.Domain.Entities.Inspection
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.{MusicTags, TechnicalTrack}
 
   @spec to_inspection(InspectionSchema.t()) :: Inspection.t()
   def to_inspection(schema) do
@@ -16,7 +16,22 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
       job_id: schema.job_id,
       format: schema.format,
       duration_ms: schema.duration_ms,
+      music_tags: music_tags(schema.music_tags),
       tracks: Enum.map(schema.tracks["items"] || [], &to_track/1)
+    }
+  end
+
+  defp music_tags(nil), do: nil
+
+  defp music_tags(tags) do
+    %MusicTags{
+      title: tags["title"],
+      artist: tags["artist"],
+      album: tags["album"],
+      album_artist: tags["album_artist"],
+      disc_number: tags["disc_number"],
+      track_number: tags["track_number"],
+      year: tags["year"]
     }
   end
 

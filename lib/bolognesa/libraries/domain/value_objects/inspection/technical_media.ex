@@ -1,13 +1,14 @@
 defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia do
   @moduledoc "Normalized technical media properties from a probe."
 
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.{MusicTags, TechnicalTrack}
 
-  defstruct [:format, :duration_ms, tracks: []]
+  defstruct [:format, :duration_ms, :music_tags, tracks: []]
 
   @type t :: %__MODULE__{
           format: String.t() | nil,
           duration_ms: non_neg_integer() | nil,
+          music_tags: MusicTags.t() | nil,
           tracks: [TechnicalTrack.t()]
         }
 
@@ -18,8 +19,15 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia do
 
     with true <- valid_format?(format),
          true <- valid_duration?(duration_ms),
+         true <- is_nil(attrs[:music_tags]) or is_struct(attrs[:music_tags], MusicTags),
          {:ok, normalized_tracks} <- normalize_tracks(tracks) do
-      {:ok, %__MODULE__{format: format, duration_ms: duration_ms, tracks: normalized_tracks}}
+      {:ok,
+       %__MODULE__{
+         format: format,
+         duration_ms: duration_ms,
+         tracks: normalized_tracks,
+         music_tags: attrs[:music_tags]
+       }}
     else
       _ -> {:error, :invalid_data}
     end

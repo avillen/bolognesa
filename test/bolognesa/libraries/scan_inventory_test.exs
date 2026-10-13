@@ -786,6 +786,18 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     end)
   end
 
+  test "music inventory schedules inspection without identification" do
+    library = library_fixture()
+    Repo.update!(Ecto.Changeset.change(library, content_type: :music))
+    running = next_scan(library.id)
+    save(running, [entry("song.mp3")])
+    [file] = files(library.id)
+    assert inspection(file.id).state == :pending
+    assert length(events(file.id)) == 1
+    assert identification_events(file.id) == []
+    assert Repo.get_by(IdentificationSchema, media_file_id: file.id) == nil
+  end
+
   defp library_fixture do
     %LibrarySchema{}
     |> LibrarySchema.changeset(%{

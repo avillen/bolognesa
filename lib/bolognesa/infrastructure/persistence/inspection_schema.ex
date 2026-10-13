@@ -27,6 +27,7 @@ defmodule Bolognesa.Infrastructure.Persistence.InspectionSchema do
     field :job_id, :integer
     field :format, :string
     field :duration_ms, :integer
+    field :music_tags, :map
     field :tracks, :map, default: %{"items" => []}
     field :started_at, :utc_datetime_usec
     field :finished_at, :utc_datetime_usec

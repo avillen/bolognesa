@@ -7,11 +7,11 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-  alias Bolognesa.Libraries.Domain.Entities.Library
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.InspectionMapper
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository.LibraryMapper
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.MediaFileMapper
   alias Bolognesa.Repo
 
@@ -91,10 +91,11 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
             format: media.format,
             duration_ms: media.duration_ms,
             tracks: tracks,
+            music_tags: if(media.music_tags, do: Map.from_struct(media.music_tags), else: nil),
             failure_reason: nil,
             finished_at: DateTime.utc_now()
           })
-          |> Repo.update!()
+          |> Repo.update!(log: false)
 
           :ok
 
@@ -191,8 +192,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
     attrs = if job_id, do: Map.put(attrs, :job_id, job_id), else: attrs
     Repo.update!(InspectionSchema.changeset(inspection, attrs))
 
-    {:ok, MediaFileMapper.to_media_file(file),
-     %Library{id: library.id, name: library.name, path: library.path}}
+    {:ok, MediaFileMapper.to_media_file(file), LibraryMapper.to_library(library)}
   end
 
   defp reconciliation_ids(cutoff) do

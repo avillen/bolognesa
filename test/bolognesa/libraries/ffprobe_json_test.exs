@@ -17,6 +17,25 @@ defmodule Bolognesa.Libraries.FfprobeJsonTest do
     refute inspect(media) =~ "secret"
   end
 
+  test "music requires audio and retains only sanitized format tags" do
+    json =
+      Jason.encode!(%{
+        "format" => %{"tags" => %{"title" => "Sample Song"}},
+        "streams" => [
+          %{"codec_type" => "video", "codec_name" => "mjpeg"},
+          %{"codec_type" => "audio", "codec_name" => "mp3"}
+        ]
+      })
+
+    assert {:ok, media} = FfprobeJson.parse(json, :music)
+    assert media.music_tags.title == "Sample Song"
+    assert {:ok, video} = FfprobeJson.parse(json)
+    assert video.music_tags == nil
+
+    assert {:error, :invalid_output} =
+             FfprobeJson.parse(~s({"format":{},"streams":[{"codec_type":"video"}]}), :music)
+  end
+
   test "allows absent duration and rejects malformed or unbounded fields" do
     assert {:ok, %{duration_ms: nil}} = FfprobeJson.parse(~s({"format":{},"streams":[]}))
     assert {:error, :invalid_output} = FfprobeJson.parse("not json")

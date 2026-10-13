@@ -340,6 +340,18 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
     assert {:error, :source_changed} = LocalFileDiscovery.walk(request(source), sink)
   end
 
+  test "music discovers uppercase audio candidates and excludes video", %{path: path} do
+    extensions = ~w(mp3 m4a aac flac ogg opus wav)
+    for ext <- extensions, do: File.write!(Path.join(path, "song.#{String.upcase(ext)}"), "audio")
+    File.write!(Path.join(path, "film.mp4"), "video")
+    {:ok, request} = DiscoveryRequest.new(%Library{path: path, content_type: :music})
+    assert :ok = LocalFileDiscovery.walk(request, capture_sink())
+    assert_receive {:entries, entries}
+    assert length(entries) == 7
+    assert Enum.all?(entries, &(Path.extname(&1.relative_path) != ".mp4"))
+    assert File.read!(Path.join(path, "film.mp4")) == "video"
+  end
+
   defp request(path) do
     {:ok, request} = DiscoveryRequest.new(%Library{path: path, content_type: :movie})
     request

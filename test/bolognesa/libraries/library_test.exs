@@ -17,6 +17,15 @@ defmodule Bolognesa.Libraries.LibraryTest do
     %{path: path}
   end
 
+  test "creates and lists music libraries", %{path: path} do
+    assert {:ok, library} =
+             Libraries.create_library(@admin, %{name: "Music", path: path, content_type: :music})
+
+    assert library.content_type == :music
+    assert {:ok, [listed]} = Libraries.list_libraries(@admin)
+    assert listed.content_type == :music
+  end
+
   test "requires a known content type and persists series", %{path: path} do
     assert {:error, :invalid_content_type} =
              Libraries.create_library(@admin, %{name: "Series", path: path})

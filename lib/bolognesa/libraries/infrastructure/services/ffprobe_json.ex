@@ -1,22 +1,27 @@
 defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
   @moduledoc false
 
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.{MusicTags, TechnicalMedia}
 
   @max_bytes 262_144
   @max_tracks 128
 
-  @spec parse(binary()) :: {:ok, TechnicalMedia.t()} | {:error, :invalid_output}
-  def parse(output) when is_binary(output) and byte_size(output) <= @max_bytes do
+  @spec parse(binary(), Bolognesa.Libraries.Domain.Entities.Library.content_type()) ::
+          {:ok, TechnicalMedia.t()} | {:error, :invalid_output}
+  def parse(output, content_type \\ :movie)
+
+  def parse(output, content_type) when is_binary(output) and byte_size(output) <= @max_bytes do
     with {:ok, %{"format" => format, "streams" => streams}} <- Jason.decode(output),
          true <- is_map(format) and is_list(streams) and length(streams) <= @max_tracks,
          {:ok, duration_ms} <- duration(Map.get(format, "duration")),
          {:ok, tracks} <- tracks(streams),
+         true <- content_type != :music or Enum.any?(tracks, &(&1.kind == :audio)),
          {:ok, media} <-
            TechnicalMedia.new(%{
              format: Map.get(format, "format_name"),
              duration_ms: duration_ms,
-             tracks: tracks
+             tracks: tracks,
+             music_tags: music_tags(format, content_type)
            }) do
       {:ok, media}
     else
@@ -24,7 +29,10 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
     end
   end
 
-  def parse(_), do: {:error, :invalid_output}
+  def parse(_, _), do: {:error, :invalid_output}
+
+  defp music_tags(format, :music), do: MusicTags.from_raw(Map.get(format, "tags"))
+  defp music_tags(_format, _type), do: nil
 
   defp duration(nil), do: {:ok, nil}
 

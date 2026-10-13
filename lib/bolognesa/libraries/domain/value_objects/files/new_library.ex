@@ -21,7 +21,7 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Files.NewLibrary do
 
   def new(_), do: {:error, :invalid_name}
 
-  defp validate_content_type(type) when type in [:movie, :series], do: {:ok, type}
+  defp validate_content_type(type) when type in [:movie, :series, :music], do: {:ok, type}
   defp validate_content_type(_), do: {:error, :invalid_content_type}
 
   defp validate_name(name) when is_binary(name) do

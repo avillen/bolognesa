@@ -110,7 +110,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
 
       saved = load_batch_files(scan.library_id, entries)
       schedule_inspections(entries, saved, inspections, existing, plans)
-      schedule_identifications(entries, saved, plans)
+      schedule_identifications(scan.library_id, entries, saved, plans)
 
       added = Enum.count(plans, fn {_path, plan} -> plan.new_discovery? end)
 
@@ -369,6 +369,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
       format: nil,
       duration_ms: nil,
       tracks: %{"items" => []},
+      music_tags: nil,
       started_at: nil,
       finished_at: nil
     }
@@ -386,7 +387,14 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
     )
   end
 
-  defp schedule_identifications(entries, saved, plans) do
+  defp schedule_identifications(library_id, entries, saved, plans) do
+    case Repo.get!(LibrarySchema, library_id).content_type do
+      :music -> :ok
+      _type -> schedule_video_identifications(entries, saved, plans)
+    end
+  end
+
+  defp schedule_video_identifications(entries, saved, plans) do
     requests =
       Enum.map(entries, fn entry ->
         file = Map.fetch!(saved, entry.relative_path)

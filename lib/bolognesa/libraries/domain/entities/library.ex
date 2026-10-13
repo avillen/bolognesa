@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.Domain.Entities.Library do
   defstruct [:id, :name, :path, :content_type]
 
   @type id :: pos_integer()
-  @type content_type :: :movie | :series
+  @type content_type :: :movie | :series | :music
   @type t :: %__MODULE__{
           id: id(),
           name: String.t(),

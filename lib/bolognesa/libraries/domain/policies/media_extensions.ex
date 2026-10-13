@@ -4,4 +4,5 @@ defmodule Bolognesa.Libraries.Domain.Policies.MediaExtensions do
   @video ~w(.mp4 .m4v .mkv .avi .mov .webm .mpeg .mpg .ts .m2ts)
   @spec for_type(Library.content_type()) :: [String.t()]
   def for_type(type) when type in [:movie, :series], do: @video
+  def for_type(:music), do: ~w(.mp3 .m4a .aac .flac .ogg .opus .wav)
 end
