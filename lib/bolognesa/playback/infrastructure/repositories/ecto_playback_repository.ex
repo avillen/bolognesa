@@ -10,6 +10,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.{MusicImportSchema, MusicTrackSchema}
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ReadModels.TechnicalTrack
   alias Bolognesa.Repo
@@ -69,6 +70,64 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
+  end
+
+  @impl true
+  def find_track_source(track_id, file_id) do
+    query =
+      from(track in MusicTrackSchema,
+        join: file in MediaFileSchema,
+        on: file.id == track.media_file_id,
+        join: library in LibrarySchema,
+        on: library.id == file.library_id,
+        join: inspection in InspectionSchema,
+        on: inspection.media_file_id == file.id,
+        join: import_state in MusicImportSchema,
+        on: import_state.media_file_id == file.id,
+        where: track.id == ^track_id,
+        where: file.id == ^file_id,
+        where:
+          library.content_type == :music and
+            track.library_id == library.id,
+        where: inspection.state == :succeeded,
+        where:
+          inspection.observed_revision == file.revision and
+            track.observed_revision == file.revision and
+            track.inspection_token == inspection.token,
+        where:
+          import_state.state == :succeeded and
+            import_state.inspection_token == inspection.token and
+            import_state.observed_revision == file.revision,
+        select: {file, library.path, inspection}
+      )
+
+    music_source(Repo.one(query, log: false))
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp music_source(nil), do: {:error, :not_found}
+  defp music_source({%{availability: :missing}, _path, _inspection}), do: {:error, :missing}
+
+  defp music_source({file, path, inspection}) do
+    source_tracks = tracks(inspection.tracks)
+
+    if Enum.any?(source_tracks, &(&1.kind == :audio)) do
+      {:ok,
+       %Source{
+         path: path,
+         relative_path: file.relative_path,
+         size_bytes: file.size_bytes,
+         modified_at: file.modified_at,
+         revision: file.revision,
+         format: inspection.format,
+         duration_ms: inspection.duration_ms,
+         tracks: source_tracks
+       }}
+    else
+      {:error, :not_found}
+    end
   end
 
   defp tracks(%{"items" => items}) when is_list(items) do

@@ -2,7 +2,7 @@ defmodule Bolognesa.Playback do
   @moduledoc "Authorize a movie version for direct or compatible playback."
 
   alias Bolognesa.Identity.Domain.Entities.Actor
-  alias Bolognesa.Playback.Application.UseCases.StartPlayback
+  alias Bolognesa.Playback.Application.UseCases.{StartPlayback, StartTrackPlayback}
   alias Bolognesa.Playback.Domain.Policies.TranscodeProfile
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
@@ -13,6 +13,11 @@ defmodule Bolognesa.Playback do
           {:ok, Source.t()} | {:error, :forbidden | :not_found | :missing | :unavailable}
   def start(actor, catalog_entry_id, file_id),
     do: StartPlayback.call(actor, catalog_entry_id, file_id, EctoPlaybackRepository)
+
+  @spec start_track(Actor.t() | nil, integer(), integer()) ::
+          {:ok, Source.t()} | {:error, :forbidden | :not_found | :missing | :unavailable}
+  def start_track(actor, track_id, file_id),
+    do: StartTrackPlayback.call(actor, track_id, file_id, EctoPlaybackRepository)
 
   @spec prepare(Actor.t(), integer(), integer()) ::
           :ok

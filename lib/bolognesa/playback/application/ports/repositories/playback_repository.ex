@@ -6,4 +6,6 @@ defmodule Bolognesa.Playback.Application.Ports.Repositories.PlaybackRepository d
 
   @callback find_source(catalog_entry_id :: pos_integer(), file_id :: pos_integer()) ::
               {:ok, Source.t()} | {:error, :not_found | :missing | :unavailable}
+  @callback find_track_source(track_id :: pos_integer(), file_id :: pos_integer()) ::
+              {:ok, Source.t()} | {:error, :not_found | :missing | :unavailable}
 end

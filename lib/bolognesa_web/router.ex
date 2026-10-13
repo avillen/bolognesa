@@ -75,6 +75,8 @@ defmodule BolognesaWeb.Router do
   scope "/", BolognesaWeb do
     pipe_through :media
 
+    get "/music/tracks/:track_id/media/:file_id", MusicMediaController, :show
+
     get "/episodes/:episode_id/media/:file_id", MediaController, :episode
 
     get "/episodes/:episode_id/media/:file_id/hls/:session_id/index.m3u8",
