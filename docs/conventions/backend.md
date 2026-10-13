@@ -55,9 +55,17 @@ Owns file-to-work decisions, candidates, provenance, and manual corrections. Eve
 
 Manual corrections must survive later automatic results, retries, and concurrent work. Persisted request tokens and revisions reject stale responses. External provider calls happen outside transactions. TMDb receives only the inferred title and year, not local paths or library names; enabling lookup requires a runtime read token.
 
+### Music
+
+Owns library-local tracks, artists, albums, file associations, import attempts, and musical read models. Tracks have stable database IDs and one association per inventory file; copies remain distinct. Artists use trimmed Unicode case-folded names within a library. Albums additionally include the raw source parent directory and credited album artist, so unrelated releases and libraries do not merge. Missing album tags leave tracks ungrouped.
+
+Libraries owns sanitized observations and refresh outbox events, including job references for recovery. Music reads current successful audio observations and locks inventory, inspection, then import state when accepting metadata. File revision, inspection token, availability, and music library type are rechecked before writes. A forced reinspection at the same revision invalidates earlier tokens. Duplicate delivery is harmless; terminal imports remain visible and can be explicitly retried. Recovery filters obsolete observations before applying batch limits and includes jobs that failed before import state was written.
+
+Musical reads are authorized, library-scoped, asynchronous at the web boundary, and bounded to 50 items per page. Search treats wildcard characters literally. The first delivery uses a screen-local native audio element; it does not preserve listening across navigation.
+
 ### Playback
 
-Owns authorization, file selection, delivery strategy, and temporary playback sessions. Only confirmed movies and episodes are playable; series and seasons are containers. Direct delivery and the optional FFmpeg/HLS path both revalidate the actor, current association, file availability, and revision. Byte-range requests support seeking. A file linked to several episodes plays in full and the UI explains that limitation.
+Owns authorization, file selection, delivery strategy, and temporary playback sessions. Confirmed movies and episodes, and music tracks imported from a current successful audio inspection, are playable; series and seasons are containers. Music uses a separate track/file selector and endpoint so its numeric IDs cannot resolve video catalog entries. Direct delivery and the optional FFmpeg/HLS path both revalidate the actor, current association, file availability, and revision. Byte-range requests support seeking. A file linked to several episodes plays in full and the UI explains that limitation.
 
 Do not assume a server can transcode fast enough or that a browser supports a given container and codec. Verify real formats and devices separately.
 

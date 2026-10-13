@@ -8,11 +8,13 @@ Playback must keep private libraries out of `Plug.Static`, support browser seeki
 
 ## Decision
 
-- Let the user select an available file explicitly. Use the native `<video>` element without autoplay. Durable playback progress is a separate feature.
-- Media URLs contain catalog and file IDs, never disk paths or credentials. Resolve the current session and reauthorize the relationship on every `GET` and `HEAD`. An unauthenticated request returns an empty `401` response.
+- Let the user select an available file explicitly. Use the native `<video>` or music `<audio>` element without autoplay. Durable playback progress is a separate feature.
+- Video media URLs contain catalog and file IDs; music URLs contain track and file IDs. Both selectors recheck their own current associations. URLs contain IDs, never disk paths or credentials. Resolve the current session and reauthorize the relationship on every `GET` and `HEAD`. An unauthenticated request returns an empty `401` response.
 - Validate the source, relative path, physical ancestors, regular file, size, modification time, and identity. Open the file and compare its descriptor with the validated state; stream bounded chunks from that descriptor instead of reopening the path.
-- Support a full response and one byte range. Return `400` for invalid syntax, `416` for an unsatisfiable range, and no body for `HEAD`. Use a closed list of video MIME types.
+- Support a full response and one byte range. Return `400` for invalid syntax, `416` for an unsatisfiable range, and no body for `HEAD`. Use separate closed video/audio MIME policies with shared descriptor and range delivery.
 - A preflight check may report a missing file, but every content request validates and authorizes again.
+
+The music extension uses `/music/tracks/:track_id/media/:file_id`, requires a current successful audio inspection and imported token, and remains direct-only. Browser audio errors are visible; music does not use the video HLS profile. Local identity and durable import ownership are recorded in [decision 0018](0018-local-music-catalog.md).
 
 ## Consequences
 
