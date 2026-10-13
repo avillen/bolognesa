@@ -54,3 +54,11 @@ jobs:
 
       - name: Verify README screenshots
         run: make check-screenshots
+
+      - name: Preserve failed synthetic captures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: readme-capture-failure
+          path: /tmp/bolognesa-screenshots.*/output/*.png
+          retention-days: 3
