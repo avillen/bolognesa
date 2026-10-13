@@ -1,6 +1,6 @@
 # 0018. Local music identities and durable import
 
-Status: Implemented and deployed. Synthetic PCM WAV playback is verified in screenshot Chromium; other formats and devices remain unverified.
+Status: Local import and direct listening are implemented and deployed. Artist/album browsing and ordered album playback are implemented locally; deployment of this extension is pending. Synthetic PCM WAV playback is verified in screenshot Chromium; other formats and devices remain unverified.
 
 ## Context
 
@@ -14,10 +14,10 @@ Music needs local identities independent of TMDb, musical grouping, and recovery
 - Successful current music inspection and a refresh event commit together. Libraries dispatches minimal file/revision jobs and records their IDs with delivered events atomically. Music owns import state and retries, and may read event references to recover jobs that never wrote import state.
 - Import locks inventory, inspection, then its own state. It rechecks revision, successful token, availability, library type, and audio presence. Duplicate/stale delivery cannot replace current metadata or downgrade a successful import. Recovery uses batches of 100, three attempts, a single import worker per instance, five-second dispatch, and thirty-second reconciliation; stale executing work requires both timestamps older than sixty seconds.
 - Authorized reads include pending and failed files without tracks, bounded pagination, literal search, and library scope. Explicit retries recover terminal import errors; probe failures use library reanalysis.
-- Playback selects music separately and serves authorized direct audio with shared descriptor validation and byte ranges. The native player belongs to the music page and does not autoplay or survive navigation.
+- Playback selects music separately and serves authorized direct audio with shared descriptor validation and byte ranges. The native player belongs to the music page. Individual selection requires native play; explicit album playback requests browser playback and advances on completion, with visible feedback if autoplay is blocked. Album queues contain at most 500 tracks, preserve the album order, reauthorize each selected track, and stop on an unavailable item with a next control. URL patches within the music page preserve listening; full navigation or reload ends the queue.
 
 ## Consequences
 
 The extra music tables and outbox preserve identity and recoverable failures without a generic media framework or new runtime dependency. Conservative album grouping leaves disc-subfolder consolidation, cross-library merging, and recording deduplication for later work. Schema rollback refuses while music libraries exist rather than dropping their records implicitly.
 
-Automated tests establish metadata, persistence, concurrency, and HTTP delivery; they do not establish decoding. Artist/album pages, queue, continuous navigation playback, audio conversion, external artwork/identification, manual metadata editing, and saved progress remain separate work. Original files stay read-only.
+Automated tests establish metadata, persistence, concurrency, and HTTP delivery; they do not establish decoding. Artist and album browsing reuse existing library-local identities. An artist sees albums credited to them or containing their tracks; missing album tags leave songs accessible in the flat list. Album tracks sort by disc number, track number, raw relative path, then track ID, with missing numbers last. Queue editing, continuous playback across other screens, audio conversion, external artwork/identification, manual metadata editing, and saved progress remain separate work. Original files stay read-only.

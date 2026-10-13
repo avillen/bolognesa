@@ -1,4 +1,4 @@
-"""Compare captures, allowing only tiny native-audio rasterization differences."""
+"""Compare captures, allowing bounded audio-control and icon rasterization differences."""
 import struct
 import sys
 import zlib
@@ -9,6 +9,7 @@ MAX_CHANNEL_DELTA = 64
 RASTER_LIMITS = {
     "music-player.png": (MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA),
     "music.png": (16, 1),
+    "episode.png": (32, 2),
 }
 
 

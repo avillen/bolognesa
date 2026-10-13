@@ -16,10 +16,11 @@ These are areas to investigate and improve; current verification limits are list
 
 ## Next music deliveries
 
-Individual local tracks can be scanned, imported, searched, and selected for direct audio playback. Future music work has separate acceptance outcomes:
+Local music supports individual listening, library-scoped artist/album browsing, and ordered album playback. Artist and album browsing uses the existing local identities; album playback follows disc number, track number, relative path, then track ID, with missing numbers last.
 
-- Artist and album browsing: library-scoped views use the existing local identities; album playback follows disc number, track number, relative path, then track ID, with missing numbers last.
-- Queue: bounded album queues, previous/next, enqueue/remove, and automatic advance give visible feedback for unavailable items and browser playback restrictions. Duplicate queue entries have distinct IDs.
+Album queues currently support previous/next and automatic advance, with visible feedback for unavailable items and browser playback restrictions. Further music work has separate acceptance outcomes:
+
+- Queue editing: enqueue/remove extends the current bounded album queue. Duplicate queue entries have distinct IDs.
 - Continuous playback: the audio element survives authenticated LiveView navigation. A per-tab queue ends on full reload, logout, or tab closure; playback continuity needs a real browser check.
 
 Audio conversion, external identification/artwork, manual music metadata editing, saved playlists/progress, and cross-device synchronization remain later possibilities.

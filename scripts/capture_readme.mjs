@@ -227,8 +227,11 @@ try {
       const frame = document.createElement("div");
       frame.setAttribute("aria-hidden", "true");
       frame.style.cssText = `position:absolute;z-index:1;left:${videoRect.left - playerRect.left}px;top:${videoRect.top - playerRect.top}px;width:${videoRect.width}px;height:${videoRect.height}px;background:#10191e url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720"><rect width="1440" height="720" fill="#10191e"/><circle cx="1050" cy="260" r="220" fill="#e47755" opacity=".42"/><path d="m0 530 260-210 190 142 210-232 230 302 180-165 370 260v93H0Z" fill="#283239"/><path d="m0 620 350-190 220 168 260-210 260 170 190-132 160 112v182H0Z" fill="#171f24"/><text x="110" y="565" fill="#f4f1ed" font-family="Arial,sans-serif" font-size="55" font-weight="700">AFTER THE SIGNAL</text></svg>')}" center / 100% 100% no-repeat;pointer-events:none;`;
+      // Keep the verified video's layout while removing its compositor surface.
+      const spacer = document.createElement("div");
+      spacer.style.cssText = `display:block;width:${videoRect.width}px;height:${videoRect.height}px;`;
+      element.replaceWith(spacer);
       player.append(frame);
-      element.style.visibility = "hidden";
     });
     await page.addStyleTag({
       content: `
@@ -248,14 +251,22 @@ try {
           color: #fff;
           font: 13px Arial, sans-serif;
           white-space: pre;
-          background:
-            linear-gradient(#e47755, #e47755) 116px calc(100% - 12px) / 50% 3px no-repeat,
-            linear-gradient(#aaa, #aaa) 116px calc(100% - 12px) / calc(100% - 180px) 3px no-repeat,
-            linear-gradient(transparent, rgba(0, 0, 0, .9));
+          background: linear-gradient(transparent, rgba(0, 0, 0, .9));
           pointer-events: none;
           z-index: 2;
         }
       `
+    });
+    await page.evaluate(() => {
+      // Separate the progress track from the gradient to avoid Chromium's
+      // intermittent clipping of the last background layer in a multi-layer background.
+      const progress = document.createElement("div");
+      progress.setAttribute("aria-hidden", "true");
+      progress.style.cssText = "position:absolute;z-index:3;left:132px;right:80px;bottom:12px;height:3px;background:#aaa;pointer-events:none;";
+      const played = document.createElement("div");
+      played.style.cssText = "width:calc(50% + 90px);height:100%;background:#e47755;";
+      progress.append(played);
+      document.querySelector("#movie-player").append(progress);
     });
     await normalizeDemoDetails();
     await page.evaluate(() => document.activeElement?.blur());
@@ -288,6 +299,47 @@ try {
     await page.mouse.move(1430, 990);
     await page.screenshot({ path: screenshotPath("music-player.png"), fullPage: true });
     console.log(`Verified synthetic PCM WAV audio: play, seek, pause and refresh in Chromium ${browser.version()}.`);
+
+    // Exercise artist -> album navigation and native ended-driven playback.
+    await page.locator("#music-artists-link").click();
+    await page.locator(`#artist-${ids.music_artist}`).click();
+    await page.locator(`#album-${ids.music_album}`).click();
+    await page.locator("#play-album").click();
+    await page.waitForFunction((id) => {
+      const audio = document.querySelector("#music-player");
+      return audio?.querySelector("source")?.src.includes(`/tracks/${id}/`) && !audio.paused && audio.currentTime > 0;
+    }, ids.music_track);
+    await audio.evaluate((element) => { window.albumPlayerUnderTest = element; element.currentTime = element.duration - 0.2; });
+    await page.waitForFunction((id) => {
+      const audio = document.querySelector("#music-player");
+      return audio?.querySelector("source")?.src.includes(`/tracks/${id}/`) && !audio.paused && audio.currentTime > 0;
+    }, ids.music_second_track);
+    await page.locator("#music-artists-link").click();
+    await page.locator(`#artist-${ids.music_artist}`).waitFor();
+    if (!await audio.evaluate((element) => element === window.albumPlayerUnderTest && !element.paused)) {
+      throw new Error("Album player did not survive music patch navigation.");
+    }
+    await page.locator("#queue-previous").click();
+    await page.waitForFunction((id) => document.querySelector("#music-player source")?.src.includes(`/tracks/${id}/`), ids.music_track);
+    await page.locator("#queue-next").click();
+    await page.waitForFunction((id) => {
+      const audio = document.querySelector("#music-player");
+      return audio?.querySelector("source")?.src.includes(`/tracks/${id}/`) && audio.readyState >= 2 && !audio.paused;
+    }, ids.music_second_track);
+    await audio.evaluate((element) => { element.currentTime = element.duration - 0.2; });
+    await page.locator("#queue-finished").waitFor();
+    if (!await audio.evaluate((element) => element.paused)) throw new Error("Album did not stop after the last track.");
+    await page.locator("#queue-previous").click();
+    await page.waitForFunction(() => {
+      const audio = document.querySelector("#music-player");
+      return audio && !audio.paused && audio.currentTime > 0;
+    });
+    await page.locator(`#nav-library-${ids.series_library}`).click();
+    await page.locator("#series-loading").waitFor({state: "detached"});
+    if (!await page.evaluate(() => window.albumPlayerUnderTest.paused)) {
+      throw new Error("Music kept playing after navigating to another screen.");
+    }
+    console.log("Verified artist/album navigation, automatic album advance, previous/next, music navigation continuity, final stop and stop on leaving music with synthetic WAV audio.");
 
     await capture("series.png", `/series?library_id=${ids.series_library}`, "main h1", "#series-loading");
     await capture("series-review.png", "/series/review");

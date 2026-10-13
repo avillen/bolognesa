@@ -4,4 +4,11 @@ defmodule Bolognesa.Music.Application.Ports.Readers.TracksReader do
   @type adapter :: atom()
   @callback list_tracks(String.t(), pos_integer(), library_id :: pos_integer() | nil) ::
               {:ok, TrackPage.t()} | {:error, :not_found | :unavailable}
+  @callback list_album_tracks(
+              album_id :: pos_integer(),
+              String.t(),
+              pos_integer(),
+              library_id :: pos_integer() | nil,
+              limit :: 50 | 501
+            ) :: {:ok, TrackPage.t()} | {:error, :not_found | :unavailable}
 end

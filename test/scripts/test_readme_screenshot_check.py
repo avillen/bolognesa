@@ -37,6 +37,18 @@ class ScreenshotCheckTest(unittest.TestCase):
             (actual / 'music.png').write_bytes(png(8, 8, [101] * 192))
             self.assertEqual(checker.differences(expected, actual), ['music.png'])
 
+    def test_episode_play_icon_allows_bounded_antialiasing(self):
+        with tempfile.TemporaryDirectory() as folder:
+            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
+            expected.mkdir(); actual.mkdir()
+            (expected / 'episode.png').write_bytes(png(8, 8, [100] * 192))
+            (actual / 'episode.png').write_bytes(png(8, 8, [102] + [100] * 191))
+            self.assertEqual(checker.differences(expected, actual), [])
+            (actual / 'episode.png').write_bytes(png(8, 8, [103] + [100] * 191))
+            self.assertEqual(checker.differences(expected, actual), ['episode.png'])
+            (actual / 'episode.png').write_bytes(png(8, 8, [101] * 192))
+            self.assertEqual(checker.differences(expected, actual), ['episode.png'])
+
     def test_visual_changes_and_size_changes_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             first, second = Path(folder) / 'first.png', Path(folder) / 'second.png'

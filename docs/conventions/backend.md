@@ -61,7 +61,7 @@ Owns library-local tracks, artists, albums, file associations, import attempts, 
 
 Libraries owns sanitized observations and refresh outbox events, including job references for recovery. Music reads current successful audio observations and locks inventory, inspection, then import state when accepting metadata. File revision, inspection token, availability, and music library type are rechecked before writes. A forced reinspection at the same revision invalidates earlier tokens. Duplicate delivery is harmless; terminal imports remain visible and can be explicitly retried. Recovery filters obsolete observations before applying batch limits and includes jobs that failed before import state was written.
 
-Musical reads are authorized, library-scoped, asynchronous at the web boundary, and bounded to 50 items per page. Search treats wildcard characters literally. The first delivery uses a screen-local native audio element; it does not preserve listening across navigation.
+Musical reads are authorized, library-scoped, asynchronous at the web boundary, and bounded to 50 items per page. Search treats wildcard characters literally. Artist and album browsing reuse local identities and omit groups with no available files. Artist albums include both album credits and contributing track artists. Album tracks sort by disc number, track number, raw relative path, then track ID, with missing numbers last. Album queues are bounded to 500 entries and include pending/failed tracks so playback can report unavailable entries; each selected entry is reauthorized by Playback. The screen-local native audio element survives music URL patches, but full navigation or reload ends the queue.
 
 ### Playback
 

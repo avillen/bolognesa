@@ -19,32 +19,74 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   def list_tracks(query, page, library_id) do
     with :ok <- library_scope(library_id) do
       base = base_query(library_id) |> search(query)
-      total = Repo.aggregate(base, :count, :id, log: false)
-
-      rows =
-        Repo.all(
-          from([file, _library, inspection, track, artist, album, import_state] in base,
-            order_by: [
-              asc:
-                fragment(
-                  "COALESCE(?, regexp_replace(regexp_replace(encode(?, 'escape'), '^.*/', ''), '(.+)\\.[^.]*$', '\\1'))",
-                  track.title,
-                  file.relative_path
-                ),
-              asc: file.id
-            ],
-            limit: 50,
-            offset: ^((page - 1) * 50),
-            select: {file, inspection, track, artist.name, album.title, import_state}
-          ),
-          log: false
-        )
-
-      {:ok, %TrackPage{items: Enum.map(rows, &row/1), total: total, page: page}}
+      {:ok, read_page(base, page, 50, :title)}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
+  end
+
+  @impl true
+  def list_album_tracks(album_id, query, page, library_id, limit) do
+    with :ok <- library_scope(library_id),
+         :ok <- album_scope(album_id, library_id) do
+      base =
+        base_query(library_id)
+        |> where([_file, _library, _inspection, track], track.album_id == ^album_id)
+        |> search(query)
+
+      result = read_page(base, page, limit, :album)
+      album = Repo.get!(MusicAlbumSchema, album_id, log: false)
+      {:ok, %{result | heading: album.title}}
+    end
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp album_scope(id, library_id) do
+    case Repo.get(MusicAlbumSchema, id, log: false) do
+      %{library_id: library} when is_nil(library_id) or library_id == library -> :ok
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp read_page(base, page, limit, order) do
+    total = Repo.aggregate(base, :count, :id, log: false)
+
+    rows =
+      base
+      |> ordered(order)
+      |> limit(^limit)
+      |> offset(^((page - 1) * limit))
+      |> select(
+        [file, _library, inspection, track, artist, album, import_state],
+        {file, inspection, track, artist.name, album.title, import_state}
+      )
+      |> Repo.all(log: false)
+
+    %TrackPage{items: Enum.map(rows, &row/1), total: total, page: page}
+  end
+
+  defp ordered(query, :album),
+    do:
+      order_by(query, [file, _library, _inspection, track],
+        asc_nulls_last: track.disc_number,
+        asc_nulls_last: track.track_number,
+        asc: file.relative_path,
+        asc: track.id
+      )
+
+  defp ordered(query, :title) do
+    order_by(query, [file, _library, _inspection, track],
+      asc:
+        fragment(
+          "COALESCE(?, regexp_replace(regexp_replace(encode(?, 'escape'), '^.*/', ''), '(.+)\\.[^.]*$', '\\1'))",
+          track.title,
+          file.relative_path
+        ),
+      asc: file.id
+    )
   end
 
   defp library_scope(nil), do: :ok
@@ -115,7 +157,9 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
       album: album,
       duration_ms: inspection && inspection.duration_ms,
       state: state,
-      failure_reason: failure(state, inspection, import_state)
+      failure_reason: failure(state, inspection, import_state),
+      disc_number: track && track.disc_number,
+      track_number: track && track.track_number
     }
   end
 

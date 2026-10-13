@@ -11,7 +11,19 @@ defmodule BolognesaWeb.Music.Index.Reducer.Play do
          {:ok, _source} <-
            Playback.start_track(socket.assigns.current_scope.actor, track_id, file_id) do
       socket
-      |> assign(:selected, %{track_id: track_id, file_id: file_id})
+      |> assign(:selected, %{
+        track_id: track_id,
+        file_id: file_id,
+        title: Map.get(socket.assigns.page_titles, track_id)
+      })
+      |> assign(:queue, [])
+      |> assign(:queue_position, 0)
+      |> assign(:queue_request, nil)
+      |> assign(:queue_loading?, false)
+      |> assign(:queue_finished?, false)
+      |> assign(:player_generation, socket.assigns.player_generation + 1)
+      |> assign(:player_stopped?, false)
+      |> assign(:play_requested?, false)
       |> assign(:audio_error, nil)
     else
       _error ->

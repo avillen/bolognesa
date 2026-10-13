@@ -6,7 +6,7 @@ Bolognesa is a self-hosted media center built with Elixir and Phoenix. It began 
 
 Bolognesa is an early, personal project. The target first complete journey is to create an administrator account, add a media folder, scan and identify files, correct matches, play a browser-compatible file, and eventually resume playback later. Original media files are read-only: Bolognesa does not move, rename, or delete them.
 
-Movies, series, and individual local music tracks are supported. Music uses embedded tags with a filename fallback and authenticated direct audio delivery. Artist/album browsing, a queue, continuous playback during navigation, independent accounts, general remote access, and dedicated clients remain future work. The generic Compose deployment is intended for trusted private networks; it must not be exposed directly to the public Internet.
+Movies, series, and local music are supported. Music uses embedded tags with a filename fallback, artist/album browsing, and authenticated direct audio delivery. Albums play in order with automatic advance and previous/next controls; listening survives browsing within the music screen. Queue editing, playback across other screens, independent accounts, general remote access, and dedicated clients remain future work. The generic Compose deployment is intended for trusted private networks; it must not be exposed directly to the public Internet.
 
 ## Community and growth
 

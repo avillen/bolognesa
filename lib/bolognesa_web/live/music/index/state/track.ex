@@ -2,7 +2,19 @@ defmodule BolognesaWeb.Music.Index.State.Track do
   @moduledoc "Localized music list presentation."
   use Gettext, backend: BolognesaWeb.Gettext
   alias Bolognesa.Music.Application.Dto
-  defstruct [:id, :track_id, :title, :artist, :album, :duration, :state, :state_label]
+
+  defstruct [
+    :id,
+    :track_id,
+    :title,
+    :artist,
+    :album,
+    :duration,
+    :state,
+    :state_label,
+    :disc_number,
+    :track_number
+  ]
 
   @type t :: %__MODULE__{
           id: pos_integer(),
@@ -12,7 +24,9 @@ defmodule BolognesaWeb.Music.Index.State.Track do
           album: String.t(),
           duration: String.t(),
           state: atom(),
-          state_label: String.t()
+          state_label: String.t(),
+          disc_number: pos_integer() | nil,
+          track_number: pos_integer() | nil
         }
   @spec from_dto(Dto.Track.t()) :: t()
   def from_dto(track),
@@ -24,7 +38,9 @@ defmodule BolognesaWeb.Music.Index.State.Track do
       album: track.album || gettext("Sin álbum"),
       duration: duration(track.duration_ms),
       state: track.state,
-      state_label: label(track.state)
+      state_label: label(track.state),
+      disc_number: track.disc_number,
+      track_number: track.track_number
     }
 
   defp duration(nil), do: "—"
