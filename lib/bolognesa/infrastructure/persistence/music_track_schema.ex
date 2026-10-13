@@ -2,6 +2,7 @@ defmodule Bolognesa.Infrastructure.Persistence.MusicTrackSchema do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
+  @type t :: %__MODULE__{}
 
   schema "music_tracks" do
     field :media_file_id, :id

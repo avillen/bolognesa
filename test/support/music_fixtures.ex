@@ -12,7 +12,9 @@ defmodule Bolognesa.MusicFixtures do
           name: "Sample music",
           path: "/sample-music-#{System.unique_integer([:positive])}",
           content_type: :music
-        }), log: false)
+        }),
+        log: false
+      )
 
     file =
       Repo.insert!(
@@ -24,7 +26,9 @@ defmodule Bolognesa.MusicFixtures do
           availability: Keyword.get(opts, :availability, :available),
           revision: Keyword.get(opts, :revision, 1),
           last_seen_generation: Ecto.UUID.generate()
-        }), log: false)
+        }),
+        log: false
+      )
 
     tags = MusicTags.from_raw(Keyword.get(opts, :tags, %{}))
 
@@ -39,8 +43,24 @@ defmodule Bolognesa.MusicFixtures do
           duration_ms: 2500,
           tracks: %{"items" => [%{"kind" => "audio", "codec" => "mp3"}]},
           music_tags: Map.from_struct(tags)
-        }), log: false)
+        }),
+        log: false
+      )
 
     %{actor: %Actor{id: 1, role: :admin}, library: library, file: file, inspection: inspection}
+  end
+
+  @spec refresh_fixture(keyword()) :: map()
+  def refresh_fixture(opts \\ []) do
+    fixture = music_fixture(opts)
+    :ok = Bolognesa.Music.refresh_track(fixture.file.id, fixture.file.revision)
+
+    Map.put(
+      fixture,
+      :track,
+      Repo.get_by!(Bolognesa.Infrastructure.Persistence.MusicTrackSchema,
+        media_file_id: fixture.file.id
+      )
+    )
   end
 end

@@ -30,7 +30,7 @@ defmodule Bolognesa.Music.PersistenceTest do
              Repo.insert(
                MusicTrackSchema.changeset(
                  %MusicTrackSchema{},
-                 Map.merge(attrs, %{media_file_id: music_fixture().file.id, track_number: 10000})
+                 Map.merge(attrs, %{media_file_id: music_fixture().file.id, track_number: 10_000})
                )
              )
 
