@@ -335,10 +335,12 @@ try {
       return audio && !audio.paused && audio.currentTime > 0;
     });
     await page.locator(`#nav-library-${ids.series_library}`).click();
+    await page.locator("#series-screen").waitFor({state: "visible"});
     await page.locator("#series-loading").waitFor({state: "detached"});
-    if (!await page.evaluate(() => window.albumPlayerUnderTest.paused)) {
-      throw new Error("Music kept playing after navigating to another screen.");
-    }
+    await page.waitForFunction(() => {
+      const previousAudio = window.albumPlayerUnderTest;
+      return !previousAudio.isConnected && previousAudio.paused;
+    });
     console.log("Verified artist/album navigation, automatic album advance, previous/next, music navigation continuity, final stop and stop on leaving music with synthetic WAV audio.");
 
     await capture("series.png", `/series?library_id=${ids.series_library}`, "main h1", "#series-loading");
