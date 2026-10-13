@@ -1,59 +1,59 @@
-# Despliegue Linux con Docker Compose
+# Linux deployment with Docker Compose
 
-Este despliegue ejecuta Bolognesa y PostgreSQL en un servidor Linux, con HTTP privado por LAN/Tailscale. Los mismos comandos funcionan en el servidor o desde otra máquina por SSH. No abras el puerto en el router ni uses acceso público para este perfil.
+This deployment runs Bolognesa and PostgreSQL on a Linux server, with private HTTP access over LAN/Tailscale. The same commands work locally on the server or remotely from another machine over SSH. Do not open the port on your router or use public Internet access for this profile.
 
-## Requisitos
+## Requirements
 
-- Docker Engine y Docker Compose **2.24.4 o posterior** en el servidor. Los overrides utilizan [las reglas de sustitución de Compose](https://docs.docker.com/reference/compose-file/merge/).
-- `curl`, shell POSIX y `openssl` en el servidor; Bash y Make en la máquina de operación.
-- Para SSH: claves configuradas y acceso Docker desde el usuario remoto. No se requieren Python ni jq en el servidor.
-- Para `deploy-release`: Git y `gh` autenticado en la máquina de operación, y acceso de descarga a GHCR desde el servidor.
-- Carpetas multimedia existentes y legibles para el contenedor, que ejecuta la app como `nobody`.
+- Docker Engine and Docker Compose **2.24.4 or later** on the server. Overrides use [Compose file merge rules](https://docs.docker.com/reference/compose-file/merge/).
+- `curl`, a POSIX shell, and `openssl` on the server; Bash and Make on the operator machine.
+- For SSH: configured SSH keys and Docker group/access for the remote user. Neither Python nor jq is required on the server.
+- For `deploy-release`: Git and authenticated `gh` on the operator machine, and GHCR pull access on the server.
+- Existing multimedia directories readable by the container, which runs the application as `nobody`.
 
-El puerto se enlaza a loopback por defecto. Para acceso desde otros dispositivos, elige la IP privada LAN o Tailscale en `BOLOGNESA_BIND_IP`. Para escuchar en ambas interfaces mediante `0.0.0.0`, configura filtrado adecuado: los puertos Docker publicados pueden eludir reglas habituales de UFW/firewalld ([documentación de Docker](https://docs.docker.com/engine/install/ubuntu/#firewall-limitations)). HTTP no cifra credenciales ni cookies de aplicación; Tailscale protege el tráfico dentro de su túnel.
+The port binds to loopback by default. To allow access from other devices, specify the private LAN or Tailscale IP in `BOLOGNESA_BIND_IP`. To listen on all interfaces via `0.0.0.0`, configure appropriate firewall filtering: Docker published ports can bypass regular UFW/firewalld rules ([Docker documentation](https://docs.docker.com/engine/install/ubuntu/#firewall-limitations)). HTTP does not encrypt credentials or application cookies; Tailscale protects traffic within its tunnel.
 
-## Configuración y primera instalación
+## Configuration and initial installation
 
-Desde la raíz del repositorio:
+From the repository root:
 
 ```sh
 cp deploy/compose/deploy.env.example .env.deploy
 chmod 600 .env.deploy
 ```
 
-`.env.deploy` es configuración Make del operador, no un archivo shell ni el `.env` runtime. Usa asignaciones `VARIABLE=valor`, sin comillas envolventes. Puedes cambiar de instalación con `DEPLOY_CONFIG=/ruta/configuracion`; los valores de la línea de comandos de Make tienen prioridad.
+`.env.deploy` is operator Make configuration, not a shell script or the runtime `.env`. Use `VARIABLE=value` assignments without enclosing quotes. You can switch installations with `DEPLOY_CONFIG=/path/to/config`; Make command-line values take precedence.
 
-Configura `DEPLOY_TRANSPORT=local` para operar en este servidor o `ssh` para otro servidor. En SSH, indica `DEPLOY_HOST=user@server.local`, `DEPLOY_DIR`, `DOCKER_BIN` y `DEPLOY_HEALTH_URL`. La URL debe ser accesible **desde el servidor** y responder satisfactoriamente después de arrancar la app. Las rutas con espacios se admiten. `DOCKER_BIN` es un ejecutable, no un comando con argumentos.
+Set `DEPLOY_TRANSPORT=local` to operate locally on the server, or `ssh` for a remote host. Over SSH, configure `DEPLOY_HOST=user@server.local`, `DEPLOY_DIR`, `DOCKER_BIN`, and `DEPLOY_HEALTH_URL`. The health URL must be reachable **from the server** and respond successfully after the app starts. Paths with spaces are supported. `DOCKER_BIN` must be an executable binary, not a command with arguments.
 
 ```sh
 make deploy-init
 ```
 
-El comando distribuye las recetas seleccionadas y los scripts, prepara el directorio y genera secretos si no existe `.env`. No sobrescribe los secretos de una instalación existente. Edita el `.env` **en el destino** antes de instalar: `PHX_HOST`, `BOLOGNESA_BIND_IP`, `MEDIA_PATH`, imagen y puerto. Los secretos deben permanecer privados; puedes generarlos manualmente con `openssl rand -hex 64` para Phoenix y `openssl rand -hex 32` para PostgreSQL. El formato hexadecimal evita caracteres reservados en `DATABASE_URL`.
+This command distributes the selected recipes and scripts, prepares the directory, and generates secrets if `.env` does not already exist. It does not overwrite secrets on an existing installation. Edit `.env` **on the target server** before installing: `PHX_HOST`, `BOLOGNESA_BIND_IP`, `MEDIA_PATH`, image, and port. Secrets must remain private; generate them manually with `openssl rand -hex 64` for Phoenix and `openssl rand -hex 32` for PostgreSQL. The hexadecimal format avoids reserved characters in `DATABASE_URL`.
 
-Preflight comprueba espacio disponible para imágenes y backups: `DEPLOY_MIN_FREE_KIB` configura el presupuesto mínimo (predeterminado `262144`, 256 MiB). Ajusta ese presupuesto al tamaño real de la base; no garantiza que cualquier backup quepa. La carpeta PostgreSQL puede seguir privada y pertenecer a PostgreSQL: el usuario SSH no necesita leerla.
+Preflight verifies storage budgets for images and backups: `DEPLOY_MIN_FREE_KIB` sets the minimum free space budget (default `262144`, 256 MiB). Adjust that budget to your actual database size; it does not guarantee every backup will fit. The PostgreSQL data directory can remain private and owned by PostgreSQL: the SSH operator user does not need to read it.
 
-Conserva `PUBLIC_PORT` y `BOLOGNESA_PORT` iguales para HTTP directo. `PHX_HOST` es el nombre/IP usado en el navegador. Si utilizas varios nombres privados, `PHX_CHECK_ORIGIN=conn` permite esos orígenes conservando la validación WebSocket; vacío valida contra `PHX_HOST`.
+Keep `PUBLIC_PORT` and `BOLOGNESA_PORT` matching for direct HTTP. `PHX_HOST` is the hostname or IP accessed in the browser. If multiple private hostnames are used, `PHX_CHECK_ORIGIN=conn` permits those origins while preserving WebSocket validation; an empty value validates strictly against `PHX_HOST`.
 
 ```sh
 make deploy-preflight
 make deploy-install
 ```
 
-Install exige que no exista ya el servicio PostgreSQL de ese proyecto. Descarga la imagen, espera DB healthy, crea un backup, aplica migraciones, inicia la app y verifica HTTP. Abre `http://<PHX_HOST>:<PUBLIC_PORT>/setup` para crear la cuenta administradora. El token `TMDB_READ_TOKEN` es opcional para arrancar y necesario para identificar automáticamente obras.
+Install requires that the PostgreSQL service for that project does not already exist. It pulls the image, waits for a healthy database, creates an initial backup, runs migrations, starts the application, and verifies HTTP health. Open `http://<PHX_HOST>:<PUBLIC_PORT>/setup` to create the initial administrator account. The TMDb token `TMDB_READ_TOKEN` is optional at boot and required for automatic work identification.
 
-## Red, persistencia y bibliotecas
+## Networking, persistence, and libraries
 
-La receta `compose.yaml` usa red bridge y volumen Docker. `DEPLOY_COMPOSE_FILES` permite agregar archivos **en orden**, separados por `:`. Los archivos relativos se buscan en `deploy/compose/`; `DEPLOY_SOURCE_DIR` permite cambiar ese directorio. Los archivos seleccionados se distribuyen al destino usando sus basenames, que deben ser únicos. No uses `:` dentro de un nombre de archivo.
+The base `compose.yaml` recipe uses a bridge network and a Docker volume. `DEPLOY_COMPOSE_FILES` allows appending override files **in order**, separated by `:`. Relative file paths are resolved relative to `deploy/compose/`; `DEPLOY_SOURCE_DIR` allows changing that base directory. Selected files are uploaded to the destination using their basenames, which must be unique. Do not use `:` inside filenames.
 
-| Opción | Archivos/configuración |
+| Option | Files/configuration |
 | --- | --- |
-| Bridge + volumen Docker | `DEPLOY_COMPOSE_FILES=compose.yaml`. DB no publica puertos. |
-| Red host | Agregar `network.host.yaml`. Configura `DB_PORT` y el bind/puerto de Phoenix. PostgreSQL escucha exclusivamente en loopback. No se usan mapeos `ports`. |
-| Directorio PostgreSQL | Agregar `storage.bind.yaml` y configurar `POSTGRES_DATA_PATH` en `.env`. Crear/verificar ese directorio explícitamente; no se crea al montar. |
-| Varias carpetas multimedia | Copiar `media.example.yaml` a `media.local.yaml`, editar los montajes y agregar ese archivo. Mantener todas las fuentes de solo lectura y configurar las raíces internas autorizadas. |
+| Bridge + Docker volume | `DEPLOY_COMPOSE_FILES=compose.yaml`. The database does not publish ports. |
+| Host networking | Append `network.host.yaml`. Configure `DB_PORT` and the Phoenix bind/port. PostgreSQL listens strictly on loopback. No `ports` mappings are used. |
+| PostgreSQL host directory | Append `storage.bind.yaml` and set `POSTGRES_DATA_PATH` in `.env`. Create and verify that directory explicitly; it is not created automatically on mount. |
+| Multiple media directories | Copy `media.example.yaml` to `media.local.yaml`, edit the mounts, and append that file. Keep all sources read-only and configure authorized internal roots. |
 
-Ejemplo operativo con host networking, base en directorio y varias fuentes:
+Operational example with host networking, directory database storage, and multiple media sources:
 
 ```make
 DEPLOY_COMPOSE_FILES=compose.yaml:network.host.yaml:storage.bind.yaml:media.local.yaml
@@ -61,53 +61,61 @@ DEPLOY_COMPOSE_FILES=compose.yaml:network.host.yaml:storage.bind.yaml:media.loca
 
 The media example mounts `/media/movies`, `/media/series`, and `/media/music`; set `MOVIES_PATH`, `SERIES_PATH`, and `MUSIC_PATH` in the server's `.env`. Add more sources or remove unused mounts and update the authorized roots accordingly. Register the **internal** paths in Libraries. `BOLOGNESA_LIBRARY_ROOTS` must match those mount targets, separated with `:`. Preserve existing library paths when adopting this setup; changing them can make their files inaccessible.
 
-`COMPOSE_PROJECT_NAME` identifica contenedores y volumen Docker. No cambies su valor para actualizar una instalación: otro nombre corresponde a otro proyecto y otros datos.
+`COMPOSE_PROJECT_NAME` identifies containers and Docker volumes. Do not change its value when updating an existing installation: a different project name corresponds to a different project and separate data.
 
-## Imágenes y releases
+## Images and releases
 
-`.github/workflows/container-image.yml` publica en el namespace GHCR del repositorio GitHub, convertido a minúsculas. En este repositorio es `ghcr.io/avillen/bolognesa`. Está configurado para publicar una imagen HTTP privada multi-arquitectura (`linux/amd64` y `linux/arm64`) con etiquetas `latest-lan` y `sha-<commit>-lan`. Los dos builds se ejecutan en paralelo en runners nativos y se unen en un manifiesto verificado; Docker selecciona la arquitectura del servidor. Las etiquetas HTTPS anteriores (`latest` / `sha-<commit>`) dejan de actualizarse y conservan su significado.
+`.github/workflows/container-image.yml` publishes to the repository's GHCR namespace in lowercase (`ghcr.io/avillen/bolognesa`). It is configured to publish a private multi-architecture HTTP image (`linux/amd64` and `linux/arm64`) with `latest-lan` and `sha-<commit>-lan` tags. The two builds run in parallel on native runners and assemble into a verified manifest; Docker selects the server's native architecture. Older HTTPS tags (`latest` / `sha-<commit>`) are no longer updated and retain their meaning.
 
-La publicación y el despliegue HTTP en el servidor real están verificados. La consulta anónima a GHCR devolvió HTTP 401: para descargar este paquete actualmente necesitas autenticar Docker en el destino con permiso de lectura de paquetes (`read:packages`) o usar una imagen de tu propio registro/build local. El mantenedor debe configurar visibilidad pública del paquete para permitir instalaciones anónimas. Puedes fijar `BOLOGNESA_IMAGE` a un digest o tag inmutable.
+Multi-architecture image publishing and private server deployment are verified. Anonymous queries to GHCR return HTTP 401: pulling this package currently requires authenticating Docker on the target host with package read permission (`read:packages`) or using an image from your own registry/local build. The maintainer can configure public package visibility to allow anonymous pulls. You can pin `BOLOGNESA_IMAGE` to an immutable digest or tag.
+
+To deploy a release, ensure local checks pass (`mix precommit` and `make check-screenshots`) and the commit is pushed to `main` (`git push origin main`):
 
 ```sh
 make deploy-release
-# O seleccionar el SHA completo de un commit main publicado:
-make deploy-release COMMIT_SHA=<40-caracteres-hexadecimales>
+# Or select the full SHA of a published commit on main:
+make deploy-release COMMIT_SHA=<40-hex-characters>
 ```
 
-Release espera el run de CI, comprueba SHA/rama/conclusión y el artefacto `server-image-ref`, y despliega su digest HTTP. Si existen runs repetidos, selecciona `DEPLOY_RUN_ID` explícitamente; la validación de SHA y rama sigue activa. Los artefactos caducan a los 30 días. Para un digest ya verificado:
+Release monitors the `container-image.yml` GitHub Actions run for the requested commit on `main`, validates the run SHA, branch, and success conclusion, downloads the `server-image-ref` artifact, and deploys its verified HTTP digest. If repeated CI runs exist, select `DEPLOY_RUN_ID` explicitly; SHA and branch validation remains active. Workflow artifacts expire after 30 days. To deploy an already verified digest directly:
 
 ```sh
 make deploy-update IMAGE_REF=ghcr.io/avillen/bolognesa@sha256:<digest>
 ```
 
-Para forks u otro registro, configura `IMAGE_REPOSITORY`; la operación con un digest explícito admite la referencia elegida por el operador. `DEPLOY_WORKFLOW` y `DEPLOY_ARTIFACT` son configurables.
+For forks or alternative registries, set `IMAGE_REPOSITORY`; deploying with an explicit digest accepts the operator's chosen reference. `DEPLOY_WORKFLOW` and `DEPLOY_ARTIFACT` are configurable.
 
-## Backup, actualización y recuperación
+## Backup, update, and recovery
 
 ```sh
 make deploy-backup
 make deploy-update
-make deploy-restore BACKUP_FILE=/ruta/del/servidor/backups/archivo.dump
+make deploy-restore BACKUP_FILE=/path/on/server/backups/file.dump
 ```
 
-Los backups quedan en `<DEPLOY_DIR>/backups` salvo `DEPLOY_BACKUP_DIR`. Cópialos también fuera del servidor. Se valida que el dump no esté vacío y que PostgreSQL pueda leer su índice antes de publicarlo con permisos privados.
+Backups are saved in `<DEPLOY_DIR>/backups` unless `DEPLOY_BACKUP_DIR` is set. Store copies outside the server as well. Dumps are verified to be non-empty and readable by PostgreSQL before being saved with private file permissions.
 
-Update exige una base existente. Adquiere la imagen antes de detener la app, espera DB healthy, detiene la app, crea backup y referencia anterior, migra, recrea la app y verifica HTTP. Solo después persiste la imagen nueva en el `.env` del destino.
+Update requires an existing database. It pulls the image before stopping the app, waits for healthy database status, stops the app, creates a backup and records the previous image reference, applies migrations, recreates the app container, and verifies HTTP health. Only then does it persist the new image in the server's `.env`.
 
-Si falla antes de comenzar migraciones, intenta reactivar la imagen anterior. Si falla desde el comienzo de una migración, deja la app detenida: inspecciona esquema y backup antes de recuperar. Volver a una imagen antigua no revierte migraciones.
+During HTTP verification, Phoenix may take several seconds to boot and bind the port. You may see transient connection errors on the console:
+```text
+curl: (7) Failed to connect to <host> port <port> after 0 ms: Couldn't connect to server
+```
+This is expected behavior. The verification script polls `DEPLOY_HEALTH_URL` up to `DEPLOY_HTTP_RETRIES` times (default `20`) with a `DEPLOY_WAIT_INTERVAL` delay (default `2` seconds) until the endpoint responds successfully or the 3-minute deadline expires.
 
-La configuración de PostgreSQL queda registrada en `.database-config`. Un cambio de esa configuración o una instalación antigua sin ese registro bloquea la actualización. Después de comparar la receta resuelta con el almacenamiento real, adopta el cambio explícitamente:
+If update fails before migrations begin, it attempts to restore the previous image. If it fails once migrations have started, it leaves the app stopped: inspect the database schema and backup before recovering. Rolling back to an older image does not revert applied migrations.
+
+The PostgreSQL configuration is tracked in `.database-config`. Changes to that configuration, or updating an older installation without that file, block the update. After comparing the resolved Compose definition with actual storage, adopt the change explicitly:
 
 ```sh
-make deploy-update ALLOW_DATABASE_CONFIG_CHANGE=yes EXPECTED_DATABASE_SOURCE=/ruta/postgres
+make deploy-update ALLOW_DATABASE_CONFIG_CHANGE=yes EXPECTED_DATABASE_SOURCE=/path/to/postgres
 ```
 
-Para un volumen Docker, `EXPECTED_DATABASE_SOURCE` es el nombre del volumen existente. Este permiso también cubre cambios deliberados de recursos/red de DB; no lo dejes activado permanentemente. No sustituye la comprobación de que la receta nueva apunta a los mismos datos.
+For a Docker volume, `EXPECTED_DATABASE_SOURCE` is the existing volume name. This permission also covers intentional database resource/network changes; do not leave it enabled permanently. It does not replace verifying that the new recipe points to the same underlying data.
 
-Restore valida el dump, pide escribir `RESTORE` y sustituye la base. La app queda detenida; elige una imagen compatible con el esquema restaurado antes de arrancarla. El script directo acepta `--yes` para automatización explícita. No uses `down -v` para recuperar o actualizar una instalación real.
+Restore verifies the dump, prompts the operator to type `RESTORE`, and replaces the database. The app remains stopped; select an image compatible with the restored schema before starting it. The direct script accepts `--yes` for automated workflows. Never use `down -v` to update or recover a live installation.
 
-## Build local y operación diaria
+## Local build and daily operation
 
 ```sh
 make deploy-build DEPLOY_BUILD_PLATFORM=linux/arm64 DEPLOY_IMAGE_TAR=/tmp/bolognesa-image.tar
@@ -115,7 +123,7 @@ make deploy-upload DEPLOY_IMAGE_TAR=/tmp/bolognesa-image.tar
 make deploy-update IMAGE_REF=bolognesa:lan
 ```
 
-`deploy-upload` también carga el tar en Docker cuando se configura `DEPLOY_IMAGE_TAR`. `DEPLOY_IMAGE_NAME` elige la etiqueta exportada y `BUILD_DOCKER_BIN` el Docker local de construcción (predeterminado `docker`). La construcción ocurre en la máquina de operación; se requiere Buildx y capacidad de construir la plataforma elegida. No fijes plataforma para la imagen multi-arquitectura publicada salvo que quieras elegirla explícitamente.
+`deploy-upload` also loads the tar into Docker when `DEPLOY_IMAGE_TAR` is set. `DEPLOY_IMAGE_NAME` selects the exported tag, and `BUILD_DOCKER_BIN` sets the local Docker build binary (default `docker`). Image building occurs on the operator machine; Buildx and the capability to build the target platform are required. Do not pin the platform for the published multi-architecture image unless you intentionally want to force it.
 
 ```sh
 make deploy-status
@@ -125,17 +133,19 @@ make deploy-psql
 make deploy-stop
 ```
 
-La consola usa la instancia activa de la release. `deploy-stop` conserva datos y contenedores. Para usar scripts directamente en el servidor, configura `DEPLOY_DIR`, `DOCKER_BIN`, `COMPOSE_FILE` y `DEPLOY_HEALTH_URL`, y ejecuta `scripts/operate.sh` con la operación deseada.
+The console connects to the running release container. `deploy-stop` preserves containers and data. To execute scripts directly on the server, configure `DEPLOY_DIR`, `DOCKER_BIN`, `COMPOSE_FILE`, and `DEPLOY_HEALTH_URL`, and run `scripts/operate.sh` with the desired operation.
 
-## Presupuestos configurables
+## Configurable budgets
 
-| Variable runtime | Predeterminado |
-| --- | --- |
-| `APP_MEMORY_LIMIT` / `APP_CPUS` | `1024m` / `2.0` |
-| `DB_MEMORY_LIMIT` / `DB_CPUS` | `256m` / `1.0` |
-| `TRANSCODE_TMPFS_SIZE` | `512m` |
-| `POOL_SIZE` | `10` |
-| `ERL_FLAGS` | Vacío; configurable, por ejemplo `+S 2:2`. |
-| `LOG_MAX_SIZE` / `LOG_MAX_FILES` | `10m` / `3` |
+| Runtime variable | Default | Description |
+| --- | --- | --- |
+| `APP_MEMORY_LIMIT` / `APP_CPUS` | `1024m` / `2.0` | Application container resource limits. |
+| `DB_MEMORY_LIMIT` / `DB_CPUS` | `256m` / `1.0` | Database container resource limits. |
+| `TRANSCODE_TMPFS_SIZE` | `512m` | Tmpfs storage for FFmpeg transcoding. |
+| `POOL_SIZE` | `10` | Database connection pool size. |
+| `ERL_FLAGS` | Empty | Optional Erlang VM flags, e.g. `+S 2:2`. |
+| `LOG_MAX_SIZE` / `LOG_MAX_FILES` | `10m` / `3` | Container log rotation size and count. |
+| `DEPLOY_HTTP_RETRIES` | `20` | Number of HTTP health check retry attempts. |
+| `DEPLOY_WAIT_INTERVAL` | `2` | Interval in seconds between health check retries. |
 
-Son presupuestos iniciales configurables, no requisitos mínimos ni capacidad medida. La memoria del contenedor incluye Phoenix, FFmpeg y tmpfs; observa consumo y reinicios durante uso real.
+These are configurable initial budgets, not strict minimum requirements or benchmarked capacity. Container memory includes Phoenix, FFmpeg, and tmpfs; monitor usage and container restarts during real-world operation.
