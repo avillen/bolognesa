@@ -7,13 +7,16 @@
 # General application configuration
 import Config
 
+config :bolognesa, :music_refresh_dispatcher, true
+config :bolognesa, :music_import_reconciler, true
+
 config :bolognesa,
   ecto_repos: [Bolognesa.Repo],
   generators: [timestamp_type: :utc_datetime]
 
 config :bolognesa, Oban,
   repo: Bolognesa.Repo,
-  queues: [library_scans: 1, media_inspections: 1, identifications: 1],
+  queues: [library_scans: 1, media_inspections: 1, identifications: 1, music_imports: 1],
   plugins: [{Oban.Plugins.Lifeline, rescue_after: 900_000, interval: 60_000}]
 
 config :bolognesa, :scan_reconciler, true

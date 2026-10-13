@@ -28,7 +28,7 @@ defmodule Bolognesa.Application do
         outbox_dispatcher_children() ++
         inspection_reconciler_children() ++
         identification_outbox_children() ++
-        identification_reconciler_children()
+        identification_reconciler_children() ++ music_children()
 
     opts = [strategy: :one_for_one, name: Bolognesa.Supervisor]
     Supervisor.start_link(children, opts)
@@ -62,6 +62,20 @@ defmodule Bolognesa.Application do
     if Application.get_env(:bolognesa, :identification_reconciler, true),
       do: [Bolognesa.Identification.Infrastructure.Jobs.IdentificationReconciler],
       else: []
+  end
+
+  defp music_children do
+    dispatcher =
+      if Application.get_env(:bolognesa, :music_refresh_dispatcher, true),
+        do: [Bolognesa.Libraries.Infrastructure.Jobs.MusicRefreshDispatcher],
+        else: []
+
+    reconciler =
+      if Application.get_env(:bolognesa, :music_import_reconciler, true),
+        do: [Bolognesa.Music.Infrastructure.Jobs.ImportReconciler],
+        else: []
+
+    dispatcher ++ reconciler
   end
 
   # Tell Phoenix to update the endpoint configuration

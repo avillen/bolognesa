@@ -39,14 +39,18 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository do
         from(row in InspectionSchema,
           where: row.media_file_id == ^observation.file_id,
           lock: "FOR UPDATE"
-        ), log: false)
+        ),
+        log: false
+      )
 
     import_state =
       Repo.one(
         from(row in MusicImportSchema,
           where: row.media_file_id == ^observation.file_id,
           lock: "FOR UPDATE"
-        ), log: false)
+        ),
+        log: false
+      )
 
     if current?(file, inspection, observation) do
       persist(observation, metadata, import_state)
@@ -131,7 +135,11 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository do
         library_id: library_id,
         name: name,
         normalized_name: key
-      }), on_conflict: :nothing, conflict_target: [:library_id, :normalized_name], log: false)
+      }),
+      on_conflict: :nothing,
+      conflict_target: [:library_id, :normalized_name],
+      log: false
+    )
 
     Repo.get_by!(MusicArtistSchema, [library_id: library_id, normalized_name: key], log: false).id
   end

@@ -7,6 +7,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicRefreshEventSchema
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
@@ -82,7 +83,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   def complete_inspection(file_id, token, media) do
     transaction(fn ->
       case current(file_id, token) do
-        {:ok, inspection, _file} when inspection.state == :running ->
+        {:ok, inspection, file} when inspection.state == :running ->
           tracks = %{"items" => Enum.map(media.tracks, &stringify_track/1)}
 
           inspection
@@ -97,6 +98,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
           })
           |> Repo.update!(log: false)
 
+          refresh_music(file, inspection)
           :ok
 
         _ ->
@@ -138,6 +140,20 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
          file.revision == inspection.observed_revision,
        do: {:ok, inspection, file},
        else: :stale
+  end
+
+  defp refresh_music(file, inspection) do
+    if Repo.get!(LibrarySchema, file.library_id).content_type == :music do
+      Repo.insert!(
+        MusicRefreshEventSchema.changeset(%MusicRefreshEventSchema{}, %{
+          media_file_id: file.id,
+          revision: file.revision,
+          inspection_token: inspection.token
+        }),
+        on_conflict: :nothing,
+        conflict_target: [:media_file_id, :inspection_token]
+      )
+    end
   end
 
   defp stringify_track(track) do
