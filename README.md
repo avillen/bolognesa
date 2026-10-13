@@ -88,7 +88,7 @@ The captures below show a sample movie library, a movie detail page, the player 
   | [<img src="docs/screenshots/settings.png" alt="Settings screen" width="260">](docs/screenshots/settings.png) | [<img src="docs/screenshots/about.png" alt="About screen" width="260">](docs/screenshots/about.png) |
 </details>
 
-The complete gallery of 17 captures is regenerated with `make screenshots`. The capture workflow verifies play, pause, seeking, and retained position after a list refresh using generated PCM WAV audio in Chromium; it does not establish other audio formats or device compatibility. All captures use byte-exact comparison except the native music player, which permits up to 128 pixels with channel differences no greater than 64 for observed antialiasing variation. Interface and application changes are checked in CI; if the rendered screens change, include the regenerated images in the same pull request.
+The complete gallery of 17 captures is regenerated with `make screenshots`. The capture workflow verifies play, pause, seeking, and retained position after a list refresh using generated PCM WAV audio in Chromium; it does not establish other audio formats or device compatibility. Captures use byte-exact comparison with two observed antialiasing exceptions: the native music player permits at most 128 pixels with channel differences no greater than 64, and the music list permits at most 16 pixels differing by one channel level. Interface and application changes are checked in CI; if the rendered screens change, include the regenerated images in the same pull request.
 
 ## Quick start with Docker
 

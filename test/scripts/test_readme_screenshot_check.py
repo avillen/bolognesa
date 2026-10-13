@@ -25,6 +25,18 @@ class ScreenshotCheckTest(unittest.TestCase):
                 (actual / name).write_bytes(png(2, 2, [101] + [100] * 11))
             self.assertEqual(checker.differences(expected, actual), ['home.png'])
 
+    def test_music_list_allows_only_tiny_navigation_antialiasing(self):
+        with tempfile.TemporaryDirectory() as folder:
+            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
+            expected.mkdir(); actual.mkdir()
+            (expected / 'music.png').write_bytes(png(8, 8, [100] * 192))
+            (actual / 'music.png').write_bytes(png(8, 8, [101] + [100] * 191))
+            self.assertEqual(checker.differences(expected, actual), [])
+            (actual / 'music.png').write_bytes(png(8, 8, [102] + [100] * 191))
+            self.assertEqual(checker.differences(expected, actual), ['music.png'])
+            (actual / 'music.png').write_bytes(png(8, 8, [101] * 192))
+            self.assertEqual(checker.differences(expected, actual), ['music.png'])
+
     def test_visual_changes_and_size_changes_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             first, second = Path(folder) / 'first.png', Path(folder) / 'second.png'

@@ -6,6 +6,10 @@ from pathlib import Path
 
 MAX_NATIVE_PIXELS = 128
 MAX_CHANNEL_DELTA = 64
+RASTER_LIMITS = {
+    "music-player.png": (MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA),
+    "music.png": (16, 1),
+}
 
 
 def _png_rows(path):
@@ -60,6 +64,10 @@ def _png_rows(path):
 
 def native_audio_matches(expected, actual):
     """Allow small native rasterization differences; reject larger visual changes."""
+    return _raster_matches(expected, actual, MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA)
+
+
+def _raster_matches(expected, actual, max_pixels, max_channel_delta):
     try:
         first, second = _png_rows(expected), _png_rows(actual)
         if first[:3] != second[:3]:
@@ -72,7 +80,7 @@ def native_audio_matches(expected, actual):
                 if a == b:
                     continue
                 changed += 1
-                if changed > MAX_NATIVE_PIXELS or any(abs(x - y) > MAX_CHANNEL_DELTA for x, y in zip(a, b)):
+                if changed > max_pixels or any(abs(x - y) > max_channel_delta for x, y in zip(a, b)):
                     return False
         return True
     except (ValueError, KeyError, struct.error, zlib.error, UnboundLocalError):
@@ -87,7 +95,8 @@ def differences(expected, actual):
         if name not in first or name not in second:
             changed.append(name)
         elif first[name].read_bytes() != second[name].read_bytes():
-            if name != 'music-player.png' or not native_audio_matches(first[name], second[name]):
+            limits = RASTER_LIMITS.get(name)
+            if limits is None or not _raster_matches(first[name], second[name], *limits):
                 changed.append(name)
     return changed
 
