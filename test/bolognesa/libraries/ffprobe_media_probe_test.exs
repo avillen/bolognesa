@@ -56,6 +56,22 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
              FfprobeMediaProbe.inspect(library(root), file(path, root), executable: executable)
   end
 
+  test "requests attached picture disposition when inspecting music", %{root: root} do
+    path = Path.join(root, "song.mp3")
+    File.write!(path, "audio")
+
+    executable =
+      fake(
+        root,
+        "case \"$6\" in *stream_disposition=attached_pic*) ;; *) exit 7 ;; esac\nprintf '{\"format\":{\"format_name\":\"mp3\"},\"streams\":[{\"codec_type\":\"audio\",\"codec_name\":\"mp3\",\"channels\":2},{\"codec_type\":\"video\",\"codec_name\":\"mjpeg\",\"width\":0,\"height\":0,\"disposition\":{\"attached_pic\":1}}]}'"
+      )
+
+    assert {:ok, %{tracks: [%{kind: :audio, codec: "mp3", channels: 2}]}} =
+             FfprobeMediaProbe.inspect(library(root, :music), file(path, root),
+               executable: executable
+             )
+  end
+
   test "rejects descendant symlinks and changed observations", %{root: root} do
     target = Path.join(root, "target.mkv")
     File.write!(target, "video")
@@ -178,7 +194,8 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
     path
   end
 
-  defp library(root), do: %Library{id: 1, name: "Test", path: root}
+  defp library(root, content_type \\ nil),
+    do: %Library{id: 1, name: "Test", path: root, content_type: content_type}
 
   defp file(path, root) do
     {:ok, stat} = File.stat(path, time: :posix)

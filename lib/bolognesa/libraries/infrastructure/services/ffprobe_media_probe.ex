@@ -74,7 +74,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
         String.replace(
           entries,
           "stream_tags=language",
-          "stream_tags=language,title,artist,album_artist,albumartist,album,disc,discnumber,track,tracknumber,date,year"
+          "stream_disposition=attached_pic:stream_tags=language,title,artist,album_artist,albumartist,album,disc,discnumber,track,tracknumber,date,year"
         ) <>
           ":format_tags=title,artist,album_artist,albumartist,album,disc,discnumber,track,tracknumber,date,year"
 
