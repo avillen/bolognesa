@@ -12,13 +12,13 @@ defmodule Bolognesa.Music.Domain.Entities.Album do
   ]
 
   @type t :: %__MODULE__{
-          id: pos_integer() | nil,
-          library_id: pos_integer() | nil,
+          id: pos_integer(),
+          library_id: pos_integer(),
           source_parent: binary(),
-          title: String.t() | nil,
-          normalized_title: String.t() | nil,
-          artist_id: pos_integer() | nil,
-          album_artist_key: String.t() | nil,
+          title: String.t(),
+          normalized_title: String.t(),
+          artist_id: pos_integer(),
+          album_artist_key: String.t(),
           year: pos_integer() | nil
         }
 end

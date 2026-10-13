@@ -12,6 +12,7 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.EctoRequestWriter
   alias Bolognesa.Identification.Infrastructure.Repositories.IdentificationMapper
   alias Bolognesa.Infrastructure.Persistence.IdentificationEventSchema
 
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Repo
 
@@ -49,6 +50,9 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.EctoRequestWriter
     files =
       Repo.all(
         from(file in MediaFileSchema,
+          join: library in LibrarySchema,
+          on: library.id == file.library_id,
+          where: library.content_type in [:movie, :series],
           where: file.id > ^cursor_id and file.availability == :available,
           order_by: file.id,
           limit: ^limit,
@@ -75,6 +79,19 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.EctoRequestWriter
   end
 
   defp request_one!(repo, file_id, revision) do
+    eligible =
+      repo.exists?(
+        from(file in MediaFileSchema,
+          join: library in LibrarySchema,
+          on: library.id == file.library_id,
+          where: file.id == ^file_id and library.content_type in [:movie, :series]
+        )
+      )
+
+    if eligible, do: request_video!(repo, file_id, revision), else: false
+  end
+
+  defp request_video!(repo, file_id, revision) do
     case DecisionStore.lock(repo, file_id) do
       nil -> insert_request!(repo, file_id, revision)
       %{origin: :manual} -> false

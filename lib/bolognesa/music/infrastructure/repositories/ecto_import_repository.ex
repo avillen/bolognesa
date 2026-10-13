@@ -10,6 +10,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
     MusicImportSchema
   }
 
+  alias Bolognesa.Infrastructure.Persistence.MusicRefreshEventSchema
   alias Bolognesa.Music.Domain.Entities.ImportState
   alias Bolognesa.Music.Infrastructure.Jobs.RefreshWorker
   alias Bolognesa.Repo
@@ -177,7 +178,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   def reconcile_jobs(now) do
     cutoff = DateTime.add(now, -60, :second)
 
-    ids = reconciliation_ids(cutoff)
+    ids = Enum.uniq(reconciliation_ids(cutoff) ++ unstarted_ids())
 
     Enum.reduce_while(ids, :ok, &reconcile_id(&1, cutoff, &2))
   rescue
@@ -185,9 +186,102 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
     Postgrex.Error -> {:error, :unavailable}
   end
 
+  defp unstarted_ids do
+    Repo.all(
+      from(event in MusicRefreshEventSchema,
+        join: file in MediaFileSchema,
+        on: file.id == event.media_file_id,
+        join: library in LibrarySchema,
+        on: library.id == file.library_id,
+        join: inspection in InspectionSchema,
+        on:
+          inspection.media_file_id == event.media_file_id and
+            inspection.token == event.inspection_token,
+        left_join: import_state in MusicImportSchema,
+        on:
+          import_state.media_file_id == event.media_file_id and
+            import_state.inspection_token == event.inspection_token,
+        left_join: job in Oban.Job,
+        on: job.id == event.job_id,
+        where: file.availability == :available,
+        where: library.content_type == :music,
+        where: inspection.state == :succeeded,
+        where: inspection.observed_revision == file.revision,
+        where: event.revision == file.revision,
+        where: fragment(~s|? @> '{"items":[{"kind":"audio"}]}'::jsonb|, inspection.tracks),
+        where: not is_nil(event.delivered_at),
+        where: is_nil(import_state.id),
+        where: is_nil(job.id) or job.state in ["discarded", "cancelled", "completed"],
+        order_by: event.id,
+        limit: 100,
+        select: event.media_file_id
+      )
+    )
+  end
+
+  defp job(nil), do: nil
+  defp job(id), do: Repo.get(Oban.Job, id)
+
+  defp recover_unstarted(file, inspection) do
+    event =
+      Repo.get_by(MusicRefreshEventSchema,
+        media_file_id: file.id,
+        inspection_token: inspection.token
+      )
+
+    recover_event(file, inspection, event)
+  end
+
+  defp recover_event(_file, _inspection, nil), do: :ok
+  defp recover_event(_file, _inspection, %{delivered_at: nil}), do: :ok
+
+  defp recover_event(file, inspection, event) do
+    case recovery_reason(job(event.job_id), DateTime.utc_now()) do
+      reason when reason in [:attempts_exhausted, :unexpected_failure] ->
+        existing = Repo.get_by(MusicImportSchema, media_file_id: file.id)
+
+        save(existing, %{
+          media_file_id: file.id,
+          observed_revision: file.revision,
+          inspection_token: inspection.token,
+          state: :failed,
+          job_id: event.job_id,
+          failure_reason: reason,
+          finished_at: DateTime.utc_now()
+        })
+
+        :ok
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp reconcile_existing(state, inspection, cutoff) do
+    if state.inspection_token == inspection.token do
+      reconcile_state(state, inspection, cutoff)
+    else
+      file = Repo.get!(MediaFileSchema, state.media_file_id)
+      recover_unstarted(file, inspection)
+    end
+  end
+
   defp reconciliation_ids(cutoff) do
     Repo.all(
       from(row in MusicImportSchema,
+        join: file in MediaFileSchema,
+        on: file.id == row.media_file_id,
+        join: library in LibrarySchema,
+        on: library.id == file.library_id,
+        join: inspection in InspectionSchema,
+        on: inspection.media_file_id == file.id,
+        where: file.availability == :available,
+        where: library.content_type == :music,
+        where: inspection.state == :succeeded,
+        where: inspection.observed_revision == file.revision,
+        where: row.observed_revision == file.revision,
+        where: row.inspection_token == inspection.token,
+        where: fragment(~s|? @> '{"items":[{"kind":"audio"}]}'::jsonb|, inspection.tracks),
         left_join: job in Oban.Job,
         on: job.id == row.job_id,
         where: row.state in [:pending, :running],
@@ -213,7 +307,10 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   defp reconcile(id, cutoff) do
     case locked(id) do
       {:ok, _file, inspection, state} when not is_nil(state) ->
-        reconcile_state(state, inspection, cutoff)
+        reconcile_existing(state, inspection, cutoff)
+
+      {:ok, file, inspection, nil} ->
+        recover_unstarted(file, inspection)
 
       _ ->
         :ok
@@ -222,7 +319,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
 
   defp reconcile_state(state, inspection, cutoff) do
     if state.state in [:pending, :running] && state.inspection_token == inspection.token do
-      update_recovery(state, Repo.get(Oban.Job, state.job_id), cutoff)
+      update_recovery(state, job(state.job_id), cutoff)
     end
 
     :ok

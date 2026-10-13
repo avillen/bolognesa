@@ -4,6 +4,16 @@ defmodule BolognesaWeb.MediaDelivery do
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ValueObjects.ByteRange
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
+
+  @type error ::
+          :forbidden
+          | :not_found
+          | :missing
+          | :unavailable
+          | :unsupported
+          | :invalid_range
+          | :unsatisfiable
+          | LocalMediaFile.failure()
   @chunk_size 65_536
   @spec serve(Plug.Conn.t(), Source.t(), String.t()) :: Plug.Conn.t()
   def serve(conn, source, mime_type) do
@@ -86,7 +96,7 @@ defmodule BolognesaWeb.MediaDelivery do
     end
   end
 
-  @spec error_response(Plug.Conn.t(), atom()) :: Plug.Conn.t()
+  @spec error_response(Plug.Conn.t(), error()) :: Plug.Conn.t()
   def error_response(conn, reason) do
     status =
       case reason do

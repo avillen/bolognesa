@@ -27,9 +27,9 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
             order_by: [
               asc:
                 fragment(
-                  "COALESCE(?, convert_from(?, 'UTF8'))",
+                  "COALESCE(?, regexp_replace(regexp_replace(encode(?, 'escape'), '^.*/', ''), '(.+)\\.[^.]*$', '\\1'))",
                   track.title,
-                  fragment("convert_to(encode(?, 'escape'), 'UTF8')", file.relative_path)
+                  file.relative_path
                 ),
               asc: file.id
             ],

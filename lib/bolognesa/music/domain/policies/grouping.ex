@@ -7,7 +7,7 @@ defmodule Bolognesa.Music.Domain.Policies.Grouping do
   def artist_key(name) do
     case String.trim(name) do
       "" -> nil
-      value -> String.downcase(value)
+      value -> :string.casefold(value)
     end
   end
 

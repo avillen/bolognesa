@@ -2,8 +2,9 @@ defmodule BolognesaWeb.MusicMediaControllerTest do
   use BolognesaWeb.ConnCase, async: false
 
   alias Bolognesa.Identity
-
   alias Bolognesa.Infrastructure.LocalSourcePath
+
+  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
   alias Bolognesa.Repo
 
   import Bolognesa.MusicFixtures
@@ -132,6 +133,90 @@ defmodule BolognesaWeb.MusicMediaControllerTest do
 
     assert :ok = Identity.end_session(token)
     assert conn |> init_test_session(user_token: token) |> get(path) |> response(401) == ""
+  end
+
+  test "audio MIME mappings are explicit and video extensions are rejected", %{
+    conn: conn,
+    token: token,
+    movie: track,
+    media_file: file,
+    physical_file: physical_file
+  } do
+    for {extension, mime} <- [
+          {"mp3", "audio/mpeg"},
+          {"m4a", "audio/mp4"},
+          {"aac", "audio/aac"},
+          {"flac", "audio/flac"},
+          {"ogg", "audio/ogg"},
+          {"opus", "audio/ogg"},
+          {"wav", "audio/wav"}
+        ] do
+      name = "sample.#{extension}"
+      File.write!(Path.join(Path.dirname(physical_file), name), "abcdefgh")
+
+      File.touch!(
+        Path.join(Path.dirname(physical_file), name),
+        DateTime.to_unix(file.modified_at)
+      )
+
+      Repo.update!(Ecto.Changeset.change(file, relative_path: name))
+
+      result =
+        conn
+        |> init_test_session(user_token: token)
+        |> get(~p"/music/tracks/#{track.id}/media/#{file.id}")
+
+      assert response(result, 200) == "abcdefgh"
+      assert get_resp_header(result, "content-type") == [mime]
+    end
+
+    Repo.update!(Ecto.Changeset.change(file, relative_path: "sample.mp4"))
+
+    assert conn
+           |> init_test_session(user_token: token)
+           |> get(~p"/music/tracks/#{track.id}/media/#{file.id}")
+           |> response(415) == ""
+  end
+
+  test "unsafe, removed and stale audio sources are rejected", %{
+    conn: conn,
+    token: token,
+    movie: track,
+    media_file: file,
+    physical_file: physical_file
+  } do
+    path = ~p"/music/tracks/#{track.id}/media/#{file.id}"
+    File.rm!(physical_file)
+    assert conn |> init_test_session(user_token: token) |> get(path) |> response(404) == ""
+    File.ln_s!("/etc/hosts", physical_file)
+    unsafe = conn |> init_test_session(user_token: token) |> get(path)
+    assert unsafe.status in [404, 409]
+    Repo.update!(Ecto.Changeset.change(file, revision: 2))
+    assert conn |> init_test_session(user_token: token) |> get(path) |> response(404) == ""
+  end
+
+  test "overlapping numeric video IDs never select a music track", %{
+    conn: conn,
+    token: token,
+    movie: track,
+    media_file: file
+  } do
+    Repo.insert!(
+      CatalogEntrySchema.changeset(
+        %CatalogEntrySchema{id: track.id},
+        %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: 90_802}
+      )
+    )
+
+    assert conn
+           |> init_test_session(user_token: token)
+           |> get(~p"/movies/#{track.id}/media/#{file.id}")
+           |> response(404) == ""
+
+    assert conn
+           |> init_test_session(user_token: token)
+           |> get(~p"/music/tracks/#{track.id}/media/#{file.id}")
+           |> response(200) == "abcdefgh"
   end
 
   test "does not serve a file changed after inventory", %{

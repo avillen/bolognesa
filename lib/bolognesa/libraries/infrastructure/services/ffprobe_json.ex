@@ -21,7 +21,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
              format: Map.get(format, "format_name"),
              duration_ms: duration_ms,
              tracks: tracks,
-             music_tags: music_tags(format, content_type)
+             music_tags: music_tags(format, streams, content_type)
            }) do
       {:ok, media}
     else
@@ -31,8 +31,24 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
 
   def parse(_, _), do: {:error, :invalid_output}
 
-  defp music_tags(format, :music), do: MusicTags.from_raw(Map.get(format, "tags"))
-  defp music_tags(_format, _type), do: nil
+  defp music_tags(format, streams, :music) do
+    stream_tags =
+      streams
+      |> Enum.filter(&(&1["codec_type"] == "audio"))
+      |> Enum.reduce(%{}, fn stream, tags -> Map.merge(tags, tag_map(stream["tags"])) end)
+
+    stream_tags |> Map.merge(tag_map(format["tags"])) |> MusicTags.from_raw()
+  end
+
+  defp music_tags(_format, _streams, _type), do: nil
+
+  defp tag_map(tags) when is_map(tags) do
+    tags
+    |> Enum.filter(fn {key, _value} -> is_binary(key) and String.valid?(key) end)
+    |> Map.new(fn {key, value} -> {String.downcase(key), value} end)
+  end
+
+  defp tag_map(_tags), do: %{}
 
   defp duration(nil), do: {:ok, nil}
 

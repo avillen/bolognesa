@@ -5,6 +5,7 @@ defmodule Bolognesa.Infrastructure.Persistence.MusicRefreshEventSchema do
 
   schema "music_refresh_events" do
     field :media_file_id, :id
+    field :job_id, :integer
     field :revision, :integer
     field :inspection_token, Ecto.UUID
     field :delivered_at, :utc_datetime_usec

@@ -15,7 +15,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoMusicRefreshOutbox
     Ecto.Multi.new()
     |> Ecto.Multi.run(:events, fn repo, _changes -> {:ok, lock_pending_events(repo, limit)} end)
     |> Oban.insert_all(:jobs, fn %{events: events} -> Enum.map(events, &inspection_job/1) end)
-    |> Ecto.Multi.run(:delivered, fn repo, %{events: events} -> mark_delivered(repo, events) end)
+    |> Ecto.Multi.run(:delivered, fn repo, %{events: events, jobs: jobs} ->
+      mark_delivered(repo, events, jobs)
+    end)
     |> Repo.transaction()
     |> case do
       {:ok, %{events: events}} -> {:ok, length(events)}
@@ -46,15 +48,14 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoMusicRefreshOutbox
     )
   end
 
-  defp mark_delivered(repo, events) do
-    ids = Enum.map(events, & &1.id)
-
-    {count, _} =
-      repo.update_all(
-        from(event in MusicRefreshEventSchema, where: event.id in ^ids),
-        set: [delivered_at: DateTime.utc_now()]
+  defp mark_delivered(repo, events, jobs) do
+    Enum.zip(events, jobs)
+    |> Enum.each(fn {event, job} ->
+      repo.update_all(from(row in MusicRefreshEventSchema, where: row.id == ^event.id),
+        set: [delivered_at: DateTime.utc_now(), job_id: job.id]
       )
+    end)
 
-    {:ok, count}
+    {:ok, length(events)}
   end
 end

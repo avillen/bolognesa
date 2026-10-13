@@ -15,16 +15,16 @@ defmodule Bolognesa.Music.Domain.Entities.Track do
   ]
 
   @type t :: %__MODULE__{
-          id: pos_integer() | nil,
-          media_file_id: pos_integer() | nil,
-          library_id: pos_integer() | nil,
-          title: String.t() | nil,
-          artist_id: pos_integer() | nil,
-          album_id: pos_integer() | nil,
+          id: pos_integer(),
+          media_file_id: pos_integer(),
+          library_id: pos_integer(),
+          title: String.t(),
+          artist_id: pos_integer(),
+          album_id: pos_integer(),
           disc_number: pos_integer() | nil,
           track_number: pos_integer() | nil,
           year: pos_integer() | nil,
-          observed_revision: pos_integer() | nil,
-          inspection_token: String.t() | nil
+          observed_revision: pos_integer(),
+          inspection_token: String.t()
         }
 end

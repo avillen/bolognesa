@@ -17,6 +17,34 @@ defmodule Bolognesa.Libraries.FfprobeJsonTest do
     refute inspect(media) =~ "secret"
   end
 
+  test "music imports stream tags used by Ogg and Opus without artwork credits" do
+    json =
+      Jason.encode!(%{
+        "format" => %{"format_name" => "ogg"},
+        "streams" => [
+          %{"codec_type" => "video", "tags" => %{"title" => "Artwork"}},
+          %{
+            "codec_type" => "audio",
+            "codec_name" => "opus",
+            "tags" => %{
+              "TITLE" => "Song",
+              "ARTIST" => "Ensemble",
+              "ALBUM" => "Release",
+              "TRACKNUMBER" => "3/12"
+            }
+          }
+        ]
+      })
+
+    assert {:ok, media} = FfprobeJson.parse(json, :music)
+    assert media.music_tags.title == "Song"
+    assert media.music_tags.artist == "Ensemble"
+    assert media.music_tags.album == "Release"
+    assert media.music_tags.track_number == 3
+    assert {:ok, video} = FfprobeJson.parse(json)
+    assert video.music_tags == nil
+  end
+
   test "music requires audio and retains only sanitized format tags" do
     json =
       Jason.encode!(%{

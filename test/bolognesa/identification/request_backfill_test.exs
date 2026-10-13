@@ -13,6 +13,24 @@ defmodule Bolognesa.Identification.RequestBackfillTest do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
 
+  test "music is excluded at explicit and backfill request boundaries" do
+    fixture = Bolognesa.MusicFixtures.music_fixture()
+    assert {:ok, _cursor, 0} = EctoRequestWriter.backfill_batch(0, 100)
+
+    assert {:ok, 0} =
+             Repo.transaction(fn ->
+               EctoRequestWriter.request_batch!(Repo, [
+                 %{file_id: fixture.file.id, revision: 1, requested?: true}
+               ])
+             end)
+
+    assert Repo.get_by(Bolognesa.Infrastructure.Persistence.IdentificationSchema,
+             media_file_id: fixture.file.id
+           ) == nil
+
+    assert Repo.all(Bolognesa.Infrastructure.Persistence.IdentificationEventSchema) == []
+  end
+
   test "backfills existing available files in bounded id order and is idempotent" do
     first = file_fixture("first.mp4")
     second = file_fixture("second.mp4", first.library_id)

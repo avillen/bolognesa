@@ -1,10 +1,83 @@
 defmodule Bolognesa.Music.ImportRecoveryTest do
   use Bolognesa.DataCase, async: true
   import Bolognesa.MusicFixtures
-  alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, MusicImportSchema}
+
+  alias Bolognesa.Infrastructure.Persistence.{
+    InspectionSchema,
+    MusicImportSchema,
+    MusicRefreshEventSchema
+  }
+
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoMusicRefreshOutboxRepository
   alias Bolognesa.Music
   alias Bolognesa.Music.Infrastructure.Jobs.RefreshWorker
   alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository
+
+  test "obsolete missing-file imports cannot starve current recovery batches" do
+    for _ <- 1..100 do
+      fixture = music_fixture()
+      {:ok, job} = Oban.insert(RefreshWorker.new(%{file_id: fixture.file.id, revision: 1}))
+      {:ok, _attempt} = EctoImportRepository.begin_attempt(fixture.file.id, 1, job.id)
+      Repo.update!(change(fixture.file, availability: :missing))
+      Repo.update!(change(job, state: "discarded"))
+    end
+
+    current = music_fixture()
+    {:ok, job} = Oban.insert(RefreshWorker.new(%{file_id: current.file.id, revision: 1}))
+    {:ok, _attempt} = EctoImportRepository.begin_attempt(current.file.id, 1, job.id)
+    Repo.update!(change(job, state: "discarded"))
+    assert :ok = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
+    assert Repo.get_by!(MusicImportSchema, media_file_id: current.file.id).state == :failed
+  end
+
+  test "historical delivered events with no job ID recover without crashing" do
+    fixture = music_fixture()
+
+    Repo.insert!(
+      MusicRefreshEventSchema.changeset(
+        %MusicRefreshEventSchema{},
+        %{
+          media_file_id: fixture.file.id,
+          revision: 1,
+          inspection_token: fixture.inspection.token,
+          delivered_at: DateTime.utc_now()
+        }
+      )
+    )
+
+    assert :ok = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
+    assert Repo.get_by!(MusicImportSchema, media_file_id: fixture.file.id).state == :failed
+  end
+
+  test "terminal jobs are recovered even when import never started" do
+    fixture = music_fixture(inspection_state: :running)
+
+    {:ok, media} =
+      TechnicalMedia.new(%{
+        format: "mp3",
+        tracks: [%{kind: :audio, codec: "mp3"}]
+      })
+
+    assert :ok =
+             EctoInspectionRepository.complete_inspection(
+               fixture.file.id,
+               fixture.inspection.token,
+               media
+             )
+
+    assert {:ok, 1} =
+             EctoMusicRefreshOutboxRepository.dispatch_batch(100)
+
+    job = Repo.one!(from(job in Oban.Job, where: job.queue == "music_imports"))
+    Repo.update!(change(job, state: "discarded"))
+    assert Repo.get_by(MusicImportSchema, media_file_id: fixture.file.id) == nil
+    assert :ok = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
+    state = Repo.get_by!(MusicImportSchema, media_file_id: fixture.file.id)
+    assert state.state == :failed
+    assert state.failure_reason == :attempts_exhausted
+  end
 
   test "duplicate jobs and late failures cannot downgrade successful imports" do
     fixture = music_fixture()

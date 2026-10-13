@@ -30,6 +30,42 @@ defmodule Bolognesa.Music.ListTracksTest do
     end
   end
 
+  test "pending tracks sort by displayed filename" do
+    first = music_fixture(relative_path: "z/Alpha.mp3", inspection_state: :pending)
+    second = music_fixture(relative_path: "a/Zeta.mp3", inspection_state: :pending)
+    assert {:ok, %{items: [alpha, zeta]}} = Music.list_tracks(first.actor, "", 1, nil)
+    assert alpha.file_id == first.file.id
+    assert zeta.file_id == second.file.id
+  end
+
+  test "pagination is bounded and non-music libraries are rejected" do
+    fixture = music_fixture()
+
+    attrs =
+      Map.take(Map.from_struct(fixture.file), [
+        :library_id,
+        :size_bytes,
+        :modified_at,
+        :availability,
+        :revision,
+        :last_seen_generation
+      ])
+
+    rows = for number <- 1..50, do: Map.put(attrs, :relative_path, "song-#{number}.mp3")
+    Repo.insert_all(Bolognesa.Infrastructure.Persistence.MediaFileSchema, rows, log: false)
+
+    assert {:ok, %{items: first, total: 51, page_size: 50}} =
+             Music.list_tracks(fixture.actor, "", 1, fixture.library.id)
+
+    assert length(first) == 50
+
+    assert {:ok, %{items: [_last], total: 51}} =
+             Music.list_tracks(fixture.actor, "", 2, fixture.library.id)
+
+    Repo.update!(change(fixture.library, content_type: :movie))
+    assert {:error, :not_found} = Music.list_tracks(fixture.actor, "", 1, fixture.library.id)
+  end
+
   test "missing files are excluded and stale observations are processing" do
     fixture = refresh_fixture()
     Repo.update!(change(fixture.file, revision: 2))

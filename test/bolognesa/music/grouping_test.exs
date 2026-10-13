@@ -11,6 +11,7 @@ defmodule Bolognesa.Music.GroupingTest do
     refute first == Grouping.album_key(2, "a", "sample album", nil)
     assert nil == Grouping.album_key(1, "a", nil, "Sample Artist")
     assert Grouping.artist_key("  Élan!  ") == "élan!"
+    assert Grouping.artist_key("Straße") == Grouping.artist_key("STRASSE")
   end
 
   test "compilation credit, numbers and ungrouped filename fallback" do

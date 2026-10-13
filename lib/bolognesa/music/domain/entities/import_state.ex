@@ -12,9 +12,9 @@ defmodule Bolognesa.Music.Domain.Entities.ImportState do
   ]
 
   @type t :: %__MODULE__{
-          media_file_id: pos_integer() | nil,
-          observed_revision: pos_integer() | nil,
-          inspection_token: String.t() | nil,
+          media_file_id: pos_integer(),
+          observed_revision: pos_integer(),
+          inspection_token: String.t(),
           state: :pending | :running | :succeeded | :failed,
           job_id: pos_integer() | nil,
           failure_reason: :storage_unavailable | :attempts_exhausted | :unexpected_failure | nil,

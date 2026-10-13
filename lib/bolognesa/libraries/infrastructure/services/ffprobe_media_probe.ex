@@ -51,7 +51,11 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
   defp args(:music) do
     Enum.map(@args, fn
       "format=" <> _ = entries ->
-        entries <>
+        String.replace(
+          entries,
+          "stream_tags=language",
+          "stream_tags=language,title,artist,album_artist,albumartist,album,disc,discnumber,track,tracknumber,date,year"
+        ) <>
           ":format_tags=title,artist,album_artist,albumartist,album,disc,discnumber,track,tracknumber,date,year"
 
       arg ->

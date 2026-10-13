@@ -1,7 +1,7 @@
 defmodule Bolognesa.Repo.Migrations.CreateMusicRecords do
   use Ecto.Migration
 
-  def change do
+  def up do
     create table(:music_artists) do
       add :library_id, references(:libraries, on_delete: :restrict), null: false
       add :name, :text, null: false
@@ -82,5 +82,13 @@ defmodule Bolognesa.Repo.Migrations.CreateMusicRecords do
              check:
                "failure_reason IN ('storage_unavailable','attempts_exhausted','unexpected_failure')"
            )
+  end
+
+  def down do
+    execute "DO $$ BEGIN IF EXISTS (SELECT 1 FROM libraries WHERE content_type = 'music') THEN RAISE EXCEPTION 'Remove music libraries explicitly before rollback'; END IF; END $$"
+    drop table(:music_imports)
+    drop table(:music_tracks)
+    drop table(:music_albums)
+    drop table(:music_artists)
   end
 end
