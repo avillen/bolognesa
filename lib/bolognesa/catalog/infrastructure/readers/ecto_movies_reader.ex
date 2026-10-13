@@ -16,7 +16,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoMoviesReader do
   @page_size 24
 
   @impl true
-  def list_movies(query, page, library_id \\ nil) do
+  def list_movies(query, page, library_id) do
     filtered =
       from movie in MovieSchema,
         where: fragment("strpos(lower(?), lower(?)) > 0", movie.title, ^query)

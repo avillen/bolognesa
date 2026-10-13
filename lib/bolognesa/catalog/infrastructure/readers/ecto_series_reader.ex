@@ -20,7 +20,7 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoSeriesReader do
   @page_size 24
 
   @impl true
-  def list_series(query, page, library_id \\ nil) do
+  def list_series(query, page, library_id) do
     base =
       from series in SeriesSchema,
         where: fragment("strpos(lower(?), lower(?)) > 0", series.title, ^query)

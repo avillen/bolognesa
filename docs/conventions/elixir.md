@@ -4,7 +4,8 @@
 
 - Add an `@spec` for every public function and macro. Place it before the first clause and cover all clauses and default arguments with one contract.
 - Use named domain and port types for inputs and results, including errors. Avoid overly broad public types such as `term()` and `module()`.
-- Name cross-context IDs in callbacks (for example, `movie_id :: pos_integer()`) instead of depending on another context's module only to reuse an `id()` alias. Inside the owning context, use the entity's ID type.
+- Use `String.t()` for text when its string meaning is clear; use `binary()` for opaque byte data.
+- Name cross-context IDs in callbacks (for example, `library_id :: pos_integer()`). Inside the owning context, use the domain entity's ID type directly without a redundant parameter name (for example, `Movie.id()`).
 - Define named adapter types on ports and use them in use-case specs. Keep `@behaviour` and `@impl true` on adapters; a typespec cannot verify that a module implements a behaviour.
 - Give time values names that distinguish their meaning, such as `issued_at()` and `expires_at()`.
 - Model lifecycle stages with distinct types when a value such as an ID exists only after persistence. Do not widen both stages to `id() | nil`.

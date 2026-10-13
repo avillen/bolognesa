@@ -15,6 +15,6 @@ defmodule Bolognesa.Catalog.Application.Ports.Readers.MoviesReader do
   @callback list_movies(query :: String.t(), page :: page_number(), library_id :: library_id()) ::
               {:ok, {[listed_movie()], Movie.count()}} | {:error, :unavailable}
 
-  @callback get_movie(movie_id :: Movie.id()) ::
+  @callback get_movie(Movie.id()) ::
               {:ok, {Movie.t(), [MovieVersion.t()]}} | {:error, :not_found | :unavailable}
 end

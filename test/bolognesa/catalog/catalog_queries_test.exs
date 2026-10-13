@@ -69,7 +69,7 @@ defmodule Bolognesa.Catalog.CatalogQueriesTest do
 
     assert id == movie.id
 
-    assert {:ok, {[{%Movie{id: ^id}, 2, 1}], 1}} = EctoMoviesReader.list_movies("Mi", 1)
+    assert {:ok, {[{%Movie{id: ^id}, 2, 1}], 1}} = EctoMoviesReader.list_movies("Mi", 1, nil)
 
     assert {:ok, {%Movie{id: ^id}, [version | _]}} =
              EctoMoviesReader.get_movie(id)
