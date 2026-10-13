@@ -241,7 +241,11 @@
             id="library-content-type"
             type="select"
             label={gettext("Contenido")}
-            options={[{gettext("Películas"), :movie}, {gettext("Series"), :series}]}
+            options={[
+              {gettext("Películas"), :movie},
+              {gettext("Series"), :series},
+              {gettext("Música"), :music}
+            ]}
             required
           />
           <.input

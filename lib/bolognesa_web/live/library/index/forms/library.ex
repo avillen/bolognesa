@@ -8,7 +8,7 @@ defmodule BolognesaWeb.Library.Index.Forms.Library do
   embedded_schema do
     field :name, :string
     field :path, :string
-    field :content_type, Ecto.Enum, values: [:movie, :series], default: :movie
+    field :content_type, Ecto.Enum, values: [:movie, :series, :music], default: :movie
   end
 
   @spec changeset(map()) :: Ecto.Changeset.t()

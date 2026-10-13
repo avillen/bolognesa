@@ -1,0 +1,118 @@
+<Layouts.app
+  flash={@flash}
+  current_scope={@current_scope}
+  navigation_libraries={@navigation_libraries}
+  navigation_error={@navigation_error}
+  active_library_id={@active_library_id}
+>
+  <section class="space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p class="text-xs text-accent-soft">{gettext("Biblioteca local")}</p><h1 class="text-3xl font-semibold">
+          {@library_name || gettext("Música")}
+        </h1>
+      </div>
+      <button
+        id="refresh-music"
+        type="button"
+        phx-click="refresh"
+        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+        disabled={@loading?}
+      >{gettext("Actualizar")}</button>
+    </div>
+    <.form
+      for={@form}
+      id="music-search"
+      phx-submit="search"
+      class="flex flex-wrap items-end gap-3"
+    >
+      <.input
+        field={@form[:query]}
+        type="search"
+        label={gettext("Buscar canciones, artistas o álbumes")}
+      />
+      <button
+        type="submit"
+        class="min-h-11 rounded-lg bg-accent px-4 py-2 font-semibold text-canvas hover:bg-accent-hover disabled:opacity-50"
+      >{gettext("Buscar")}</button>
+    </.form>
+    <div :if={@selected} id="music-playback" class="rounded-xl border border-border p-4 space-y-3">
+      <h2 class="font-semibold">{gettext("Reproductor de música")}</h2>
+      <audio
+        id="music-player"
+        controls
+        preload="metadata"
+        phx-hook="AudioError"
+        class="w-full"
+        aria-label={gettext("Reproductor de música")}
+      >
+        <source src={"/music/tracks/#{@selected.track_id}/media/#{@selected.file_id}"} />
+      </audio>
+      <p :if={@audio_error} id="audio-error" role="alert" class="text-red-100">{@audio_error}</p>
+    </div>
+    <p :if={@loading?} id="music-loading" role="status">{gettext("Cargando música…")}</p>
+    <div :if={@error} id="music-read-error" role="alert">
+      <p>{@error}</p><button
+        type="button"
+        phx-click="refresh"
+        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+      >{gettext("Reintentar")}</button>
+    </div>
+    <p :if={!@loading? && !@error && @total == 0} id="music-empty">
+      {gettext("No hay canciones. Añade una biblioteca de música y escanéala.")}
+    </p>
+    <div id="music-tracks" phx-update="stream" class="space-y-3">
+      <article
+        :for={{dom_id, track} <- @streams.tracks}
+        id={dom_id}
+        data-state={track.state}
+        class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border p-4"
+      >
+        <div class="min-w-0 flex-1">
+          <h2 class="font-semibold break-words">{track.title}</h2><p class="text-sm break-words">
+            {track.artist} · {track.album}
+          </p><p class="text-sm text-muted">{track.duration} · {track.state_label}</p>
+        </div>
+        <button
+          :if={track.state == :ready}
+          id={"play-track-#{track.track_id}"}
+          type="button"
+          phx-click="play"
+          phx-value-track_id={track.track_id}
+          phx-value-file_id={track.id}
+          class="min-h-11 rounded-lg bg-accent px-4 py-2 font-semibold text-canvas hover:bg-accent-hover disabled:opacity-50"
+          aria-label={gettext("Reproducir %{title}", title: track.title)}
+        >{gettext("Reproducir")}</button>
+        <button
+          :if={track.state == :import_failed}
+          type="button"
+          phx-click="retry-import"
+          phx-value-file_id={track.id}
+          class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+        >{gettext("Reintentar importación")}</button>
+        <.link
+          :if={track.state == :inspection_failed}
+          navigate={~p"/libraries"}
+          class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+        >{gettext("Reanalizar en bibliotecas")}</.link>
+      </article>
+    </div>
+    <nav
+      :if={@total > @page_size}
+      aria-label={gettext("Paginación de música")}
+      class="flex items-center justify-between gap-3"
+    >
+      <.link
+        :if={@page > 1}
+        patch={~p"/music?#{Map.merge(@library_params, %{query: @query, page: @page - 1})}"}
+        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+      >{gettext("Anterior")}</.link>
+      <span>{gettext("Página %{page}", page: @page)}</span>
+      <.link
+        :if={@page * @page_size < @total}
+        patch={~p"/music?#{Map.merge(@library_params, %{query: @query, page: @page + 1})}"}
+        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+      >{gettext("Siguiente")}</.link>
+    </nav>
+  </section>
+</Layouts.app>

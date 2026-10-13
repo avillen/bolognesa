@@ -41,6 +41,22 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     %{token: token, path: path, actor: actor}
   end
 
+  test "creates a music library and updates its navigation immediately", %{
+    conn: conn,
+    token: token,
+    path: path
+  } do
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+
+    view
+    |> form("#library-form", library: %{name: "Music", path: path, content_type: "music"})
+    |> render_submit()
+
+    assert has_element?(view, "#library-list [data-content-type='music']")
+    assert has_element?(view, "nav a[id^=nav-library-] .hero-musical-note")
+    assert has_element?(view, "nav a[href^='/music?library_id=']", "Music")
+  end
+
   test "creates a series library and rejects an unknown form type", %{
     conn: conn,
     token: token,

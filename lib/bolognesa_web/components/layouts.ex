@@ -65,7 +65,7 @@ defmodule BolognesaWeb.Layouts do
               aria-current={@active_library_id == library.id && "page"}
             >
               <.icon
-                name={if library.content_type == :movie, do: "hero-film", else: "hero-tv"}
+                name={library_icon(library.content_type)}
                 class="size-5 shrink-0"
               />
               <span class="min-w-0 break-words">{library.name}</span>
@@ -117,6 +117,11 @@ defmodule BolognesaWeb.Layouts do
     """
   end
 
+  defp library_icon(:movie), do: "hero-film"
+  defp library_icon(:series), do: "hero-tv"
+  defp library_icon(:music), do: "hero-musical-note"
+
+  defp library_path(%{content_type: :music, id: id}), do: ~p"/music?#{%{library_id: id}}"
   defp library_path(%{content_type: :movie, id: id}), do: ~p"/movies?#{%{library_id: id}}"
   defp library_path(%{content_type: :series, id: id}), do: ~p"/series?#{%{library_id: id}}"
 

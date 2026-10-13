@@ -63,8 +63,7 @@ defmodule BolognesaWeb.Library.Index.State.Library do
       name: library.name,
       path: library.path,
       content_type: library.content_type,
-      content_type_label:
-        if(library.content_type == :series, do: gettext("Series"), else: gettext("Películas")),
+      content_type_label: content_type_label(library.content_type),
       state: state(scan),
       state_label: label(state(scan)),
       active?: scan != nil and Scan.active?(scan),
@@ -80,6 +79,10 @@ defmodule BolognesaWeb.Library.Index.State.Library do
         if(state(scan) == :failed, do: gettext("Reintentar"), else: gettext("Escanear"))
     }
   end
+
+  defp content_type_label(:movie), do: gettext("Películas")
+  defp content_type_label(:series), do: gettext("Series")
+  defp content_type_label(:music), do: gettext("Música")
 
   defp summary(counts) do
     gettext(

@@ -32,7 +32,7 @@ body {
   color: var(--color-ink);
 }
 
-input, select, video {
+input, select, video, audio {
   accent-color: var(--color-accent);
 }
 
@@ -59,7 +59,7 @@ input, select, video {
 .app-content h2 { letter-spacing: -.02em; }
 .app-content button, .app-content input, .app-content select { border-radius: 7px; }
 .app-content button { cursor: pointer; }
-a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--color-accent-soft); outline-offset: 4px; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, audio:focus-visible { outline: 2px solid var(--color-accent-soft); outline-offset: 4px; }
 .poster-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
 .poster-card { min-width: 0; }
 .poster-art { box-shadow: 0 8px 24px #0004; transition: transform .18s, box-shadow .18s; }

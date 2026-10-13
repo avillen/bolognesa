@@ -59,6 +59,7 @@ defmodule BolognesaWeb.Router do
       ] do
       live "/", Home.Live, :index
       live "/libraries", Library.Index.Live, :index
+      live "/music", Music.Index.Live, :index
       live "/movies", Movie.Index.Live, :index
       live "/movies/review", Movie.Review.Live, :index
       live "/series", Series.Index.Live, :index

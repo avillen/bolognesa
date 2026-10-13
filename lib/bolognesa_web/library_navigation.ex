@@ -83,6 +83,7 @@ defmodule BolognesaWeb.LibraryNavigation do
     end
   end
 
+  defp matching_type?(:music, "/music"), do: true
   defp matching_type?(:movie, "/movies" <> _), do: true
   defp matching_type?(:series, "/series" <> _), do: true
   defp matching_type?(:series, "/episodes/" <> _), do: true
