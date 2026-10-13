@@ -144,7 +144,8 @@ start_server
 run_capture app
 
 if [[ "$mode" == "--check" ]]; then
-  if ! diff -qr "$repo_root/docs/screenshots" "$output_dir"; then
+  python3 -B -m unittest discover -s test/scripts -p 'test_readme_screenshot_check.py'
+  if ! python3 scripts/check_readme_screenshots.py "$repo_root/docs/screenshots" "$output_dir"; then
     echo "README screenshots are out of date. Run 'make screenshots' and commit the updated images." >&2
     exit 1
   fi

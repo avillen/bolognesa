@@ -59,7 +59,7 @@ Ejemplo operativo con host networking, base en directorio y varias fuentes:
 DEPLOY_COMPOSE_FILES=compose.yaml:network.host.yaml:storage.bind.yaml:media.local.yaml
 ```
 
-El ejemplo de medios monta `/media/movies` y `/media/series`; puedes agregar cualquier número de fuentes. Registra las rutas **internas** en Bibliotecas. `BOLOGNESA_LIBRARY_ROOTS` debe corresponder a los montajes, separando raíces con `:`. Cambiar las rutas internas de una biblioteca existente puede hacer inaccesibles sus archivos; consérvalas al adoptar este sistema.
+The media example mounts `/media/movies`, `/media/series`, and `/media/music`; set `MOVIES_PATH`, `SERIES_PATH`, and `MUSIC_PATH` in the server's `.env`. Add more sources or remove unused mounts and update the authorized roots accordingly. Register the **internal** paths in Libraries. `BOLOGNESA_LIBRARY_ROOTS` must match those mount targets, separated with `:`. Preserve existing library paths when adopting this setup; changing them can make their files inaccessible.
 
 `COMPOSE_PROJECT_NAME` identifica contenedores y volumen Docker. No cambies su valor para actualizar una instalación: otro nombre corresponde a otro proyecto y otros datos.
 

@@ -1031,7 +1031,7 @@ msgstr ""
 
 #: lib/bolognesa_web/live/library/index/live.html.heex:19
 #, elixir-autogen, elixir-format
-msgid "Registra una carpeta y escanéala para descubrir sus archivos de vídeo. Puedes salir de esta pantalla mientras continúa."
+msgid "Registra una carpeta y escanéala para descubrir sus archivos multimedia. Puedes salir de esta pantalla mientras continúa."
 msgstr ""
 
 #: lib/bolognesa_web/live/library/index/state/library.ex:79

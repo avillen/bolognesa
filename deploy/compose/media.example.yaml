@@ -2,7 +2,7 @@
 services:
   app:
     environment:
-      BOLOGNESA_LIBRARY_ROOTS: /media/movies:/media/series
+      BOLOGNESA_LIBRARY_ROOTS: /media/movies:/media/series:/media/music
     volumes: !override
       - type: bind
         source: ${MOVIES_PATH:?Set MOVIES_PATH}
@@ -13,6 +13,12 @@ services:
       - type: bind
         source: ${SERIES_PATH:?Set SERIES_PATH}
         target: /media/series
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${MUSIC_PATH:?Set MUSIC_PATH}
+        target: /media/music
         read_only: true
         bind:
           create_host_path: false

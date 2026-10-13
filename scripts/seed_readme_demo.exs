@@ -6,6 +6,7 @@ alias Bolognesa.Infrastructure.Persistence.{
   EpisodeSchema,
   IdentificationEntrySchema,
   IdentificationSchema,
+  InspectionSchema,
   LibrarySchema,
   MediaFileSchema,
   MovieSchema,
@@ -13,6 +14,7 @@ alias Bolognesa.Infrastructure.Persistence.{
   SeriesSchema
 }
 
+alias Bolognesa.Music
 alias Bolognesa.Repo
 
 defmodule ReadmeScreenshotSeed do
@@ -45,6 +47,25 @@ defmodule ReadmeScreenshotSeed do
     })
   end
 
+  @spec write_sample_audio!(String.t()) :: :ok
+  def write_sample_audio!(path) do
+    File.mkdir_p!(Path.dirname(path))
+    sample_rate = 16_000
+
+    pcm =
+      for frame <- 0..(sample_rate * 10 - 1), into: <<>> do
+        sample = round(:math.sin(2 * :math.pi() * 220 * frame / sample_rate) * 1600)
+        <<sample::little-signed-16>>
+      end
+
+    File.write!(
+      path,
+      <<"RIFF", 36 + byte_size(pcm)::little-32, "WAVEfmt ", 16::little-32, 1::little-16,
+        1::little-16, sample_rate::little-32, sample_rate * 2::little-32, 2::little-16,
+        16::little-16, "data", byte_size(pcm)::little-32, pcm::binary>>
+    )
+  end
+
   def insert_identification!(media_file_id, state, catalog_entry_id \\ nil) do
     identification =
       Repo.insert!(%IdentificationSchema{
@@ -73,10 +94,13 @@ end
 root = System.fetch_env!("BOLOGNESA_LIBRARY_ROOTS") |> String.split(":") |> hd()
 movie_directory = Path.join(root, "movies")
 series_directory = Path.join(root, "series")
+music_directory = Path.join(root, "music")
 File.mkdir_p!(movie_directory)
 File.mkdir_p!(series_directory)
+File.mkdir_p!(music_directory)
 {:ok, movie_directory} = LocalSourcePath.canonical_directory(movie_directory)
 {:ok, series_directory} = LocalSourcePath.canonical_directory(series_directory)
+{:ok, music_directory} = LocalSourcePath.canonical_directory(music_directory)
 
 movie_path = System.fetch_env!("BOLOGNESA_SCREENSHOT_VIDEO")
 movie_name = "After the Signal.webm"
@@ -209,11 +233,56 @@ series_review_file =
 
 ReadmeScreenshotSeed.insert_identification!(series_review_file.id, :pending)
 
+music_library =
+  Repo.insert!(%LibrarySchema{name: "Music", path: music_directory, content_type: :music})
+
+music_tracks =
+  for {name, tags} <- [
+        {"Sample Ensemble/Night Signals/Northern Lights.wav",
+         %{
+           "title" => "Northern Lights",
+           "artist" => "Sample Ensemble",
+           "album" => "Night Signals",
+           "track" => "1"
+         }},
+        {"Sample Ensemble/Night Signals/After Rain.wav",
+         %{
+           "title" => "After Rain",
+           "artist" => "Sample Ensemble",
+           "album" => "Night Signals",
+           "track" => "2"
+         }},
+        {"Evening Sketch.wav", %{}}
+      ] do
+    ReadmeScreenshotSeed.write_sample_audio!(Path.join(music_directory, name))
+    file = ReadmeScreenshotSeed.insert_media_file!(music_library.id, music_directory, name)
+    tags = Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags.from_raw(tags)
+
+    Repo.insert!(
+      %InspectionSchema{
+        media_file_id: file.id,
+        token: Ecto.UUID.generate(),
+        observed_revision: 1,
+        state: :succeeded,
+        format: "wav",
+        duration_ms: 10_000,
+        tracks: %{"items" => [%{"kind" => "audio", "codec" => "pcm_s16le"}]},
+        music_tags: Map.from_struct(tags)
+      },
+      log: false
+    )
+
+    :ok = Music.refresh_track(file.id, 1)
+    Repo.get_by!(Bolognesa.Infrastructure.Persistence.MusicTrackSchema, media_file_id: file.id)
+  end
+
 System.fetch_env!("BOLOGNESA_SCREENSHOT_IDS")
 |> File.write!(
   Jason.encode!(%{
     movie_library: movie_library.id,
     series_library: series_library.id,
+    music_library: music_library.id,
+    music_track: hd(music_tracks).id,
     movie: movie.id,
     series: series.id,
     season: season.id,

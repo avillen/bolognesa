@@ -1023,8 +1023,8 @@ msgstr "Inspect again"
 
 #: lib/bolognesa_web/live/library/index/live.html.heex:19
 #, elixir-autogen, elixir-format
-msgid "Registra una carpeta y escanéala para descubrir sus archivos de vídeo. Puedes salir de esta pantalla mientras continúa."
-msgstr "Register a folder and scan it to discover its video files. You can leave this page while it continues."
+msgid "Registra una carpeta y escanéala para descubrir sus archivos multimedia. Puedes salir de esta pantalla mientras continúa."
+msgstr "Register a folder and scan it to discover its media files. You can leave this page while it continues."
 
 #: lib/bolognesa_web/live/library/index/state/library.ex:79
 #: lib/bolognesa_web/live/movie/review/live.html.heex:82

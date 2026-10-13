@@ -21,4 +21,4 @@
 | [0015](0015-domain-concept-directories.md) | Implemented | Domain directories by concept type |
 | [0016](0016-user-locale-and-settings.md) | Implemented | Per-account language preference and settings |
 | [0017](0017-generic-linux-compose-deployment.md) | Implemented | Configurable generic Linux Compose deployment |
-| [0018](0018-local-music-catalog.md) | Implemented locally | Local music identity, durable inspection handoff, and direct audio |
+| [0018](0018-local-music-catalog.md) | Implemented and deployed | Local music identity, durable inspection handoff, and direct audio |

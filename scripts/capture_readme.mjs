@@ -155,9 +155,14 @@ try {
         await page.addStyleTag({
           content: `
             [data-library-name="Movies"] > p:nth-of-type(2),
-            [data-library-name="Series"] > p:nth-of-type(2) { font-size: 0; }
+            [data-library-name="Series"] > p:nth-of-type(2),
+            [data-library-name="Music"] > p:nth-of-type(2) { font-size: 0; }
             [data-library-name="Movies"] > p:nth-of-type(2)::after {
               content: "/media/movies";
+              font-size: 14px;
+            }
+            [data-library-name="Music"] > p:nth-of-type(2)::after {
+              content: "/media/music";
               font-size: 14px;
             }
             [data-library-name="Series"] > p:nth-of-type(2)::after {
@@ -256,6 +261,33 @@ try {
     await page.evaluate(() => document.activeElement?.blur());
     await page.mouse.move(1430, 990);
     await page.screenshot({ path: screenshotPath("player.png"), fullPage: true });
+
+    await capture("music.png", `/music?library_id=${ids.music_library}`, "main h1", "#music-loading");
+    await page.locator(`#play-track-${ids.music_track}`).click();
+    const audio = page.locator("audio#music-player");
+    await audio.waitFor({ state: "attached" });
+    await audio.evaluate((element) => element.play());
+    await page.waitForFunction(() => {
+      const element = document.querySelector("audio#music-player");
+      return element && element.readyState >= 2 && !element.paused && element.currentTime > 0;
+    });
+    await audio.evaluate(async (element) => {
+      element.pause();
+      const seeked = new Promise((resolve) => element.addEventListener("seeked", resolve, { once: true }));
+      element.currentTime = 2;
+      await seeked;
+    });
+    await page.locator("#refresh-music").click();
+    await page.locator("#music-loading").waitFor({ state: "detached" });
+    const audioState = await audio.evaluate((element) => ({paused: element.paused, position: element.currentTime, error: element.error?.code}));
+    if (!audioState.paused || Math.abs(audioState.position - 2) > 0.1 || audioState.error) {
+      throw new Error(`Music playback/refresh verification failed: ${JSON.stringify(audioState)}`);
+    }
+    await waitForStablePage();
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.mouse.move(1430, 990);
+    await page.screenshot({ path: screenshotPath("music-player.png"), fullPage: true });
+    console.log(`Verified synthetic PCM WAV audio: play, seek, pause and refresh in Chromium ${browser.version()}.`);
 
     await capture("series.png", `/series?library_id=${ids.series_library}`, "main h1", "#series-loading");
     await capture("series-review.png", "/series/review");

@@ -11,11 +11,12 @@ People can help most by trying the setup, reporting reproducible problems, and s
 ## What works today
 
 - Create the first administrator account and sign in.
-- Register movie and series folders, scan them, and inspect discovered video files.
+- Register movie, series, and music folders, scan them, and inspect discovered files.
 - Identify movies and series with TMDb, review matches, and browse the catalog.
 - Open movie and episode pages and choose an available file version.
 - Play directly when the browser supports the file's container and codecs. The server streams bounded byte ranges, so browser seeking does not load the whole file into memory.
-- Use the existing optional HLS/FFmpeg compatibility path for some unsupported combinations.
+- Use the existing optional HLS/FFmpeg compatibility path for some unsupported video combinations.
+- Browse local songs by embedded tags or filename fallbacks and select individual tracks for direct audio playback.
 
 ## Current limits
 
@@ -35,7 +36,7 @@ Screenshots should come from a real running Boloñesa instance. The most useful 
 2. A movie detail page with an available version.
 3. The video player after playback starts.
 
-The captures below show a sample movie library, a movie detail page, and the player with a generated sample video. Playback support still depends on each file's format and the browser.
+The captures below show a sample movie library, a movie detail page, the player with a generated sample video, and local music with generated WAV audio. Playback support still depends on each file's format and the browser.
 
 <table>
   <tr>
@@ -45,6 +46,13 @@ The captures below show a sample movie library, a movie detail page, and the pla
 </table>
 
 <a href="docs/screenshots/player.png"><img src="docs/screenshots/player.png" alt="Generated sample video in the Bolognesa movie player" width="860"></a>
+
+<table>
+  <tr>
+    <td align="center"><a href="docs/screenshots/music.png"><img src="docs/screenshots/music.png" alt="Local music library with tagged and untagged synthetic songs" width="420"></a><br><strong>Music library</strong></td>
+    <td align="center"><a href="docs/screenshots/music-player.png"><img src="docs/screenshots/music-player.png" alt="Native audio player with a generated WAV paused after seeking" width="420"></a><br><strong>Music player</strong></td>
+  </tr>
+</table>
 
 <details>
   <summary>Explore screenshots of every screen</summary>
@@ -67,6 +75,12 @@ The captures below show a sample movie library, a movie detail page, and the pla
   | --- | --- | --- | --- | --- |
   | [<img src="docs/screenshots/series.png" alt="Series library screen" width="190">](docs/screenshots/series.png) | [<img src="docs/screenshots/series-review.png" alt="Series identification review screen" width="190">](docs/screenshots/series-review.png) | [<img src="docs/screenshots/series-detail.png" alt="Series details screen" width="190">](docs/screenshots/series-detail.png) | [<img src="docs/screenshots/season.png" alt="Season screen" width="190">](docs/screenshots/season.png) | [<img src="docs/screenshots/episode.png" alt="Episode details screen" width="190">](docs/screenshots/episode.png) |
 
+  **Music**
+
+  | Music library | Music player |
+  | --- | --- |
+  | [<img src="docs/screenshots/music.png" alt="Local music library" width="260">](docs/screenshots/music.png) | [<img src="docs/screenshots/music-player.png" alt="Native audio player" width="260">](docs/screenshots/music-player.png) |
+
   **Account**
 
   | Settings | About |
@@ -74,7 +88,7 @@ The captures below show a sample movie library, a movie detail page, and the pla
   | [<img src="docs/screenshots/settings.png" alt="Settings screen" width="260">](docs/screenshots/settings.png) | [<img src="docs/screenshots/about.png" alt="About screen" width="260">](docs/screenshots/about.png) |
 </details>
 
-The complete gallery is regenerated with `make screenshots`. Interface and application changes are checked in CI; if the rendered screens change, include the regenerated images in the same pull request.
+The complete gallery of 17 captures is regenerated with `make screenshots`. The capture workflow verifies play, pause, seeking, and retained position after a list refresh using generated PCM WAV audio in Chromium; it does not establish other audio formats or device compatibility. All captures use byte-exact comparison except the native music player, which permits up to 128 pixels with channel differences no greater than 64 for observed antialiasing variation. Interface and application changes are checked in CI; if the rendered screens change, include the regenerated images in the same pull request.
 
 ## Quick start with Docker
 

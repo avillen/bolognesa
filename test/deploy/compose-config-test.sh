@@ -7,7 +7,7 @@ from pathlib import Path
 root = Path('deploy/compose')
 env = dict(os.environ, SECRET_KEY_BASE='synthetic', POSTGRES_PASSWORD='synthetic',
            POSTGRES_DATA_PATH='/srv/example/postgres', MOVIES_PATH='/srv/movies',
-           SERIES_PATH='/srv/series', DB_PORT='55432', BOLOGNESA_PORT='4400')
+           SERIES_PATH='/srv/series', MUSIC_PATH='/srv/music', DB_PORT='55432', BOLOGNESA_PORT='4400')
 for network in ('bridge', 'host'):
     for storage in ('volume', 'bind'):
         files = [root/'compose.yaml']
@@ -22,8 +22,8 @@ for network in ('bridge', 'host'):
         c = json.loads(result.stdout); app=c['services']['app']; db=c['services']['db']
         assert not db.get('ports'), db
         assert all(v['read_only'] for v in app['volumes']), app['volumes']
-        assert {v['target'] for v in app['volumes']} == {'/media/movies','/media/series'}
-        assert app['environment']['BOLOGNESA_LIBRARY_ROOTS'] == '/media/movies:/media/series'
+        assert {v['target'] for v in app['volumes']} == {'/media/movies','/media/series','/media/music'}
+        assert app['environment']['BOLOGNESA_LIBRARY_ROOTS'] == '/media/movies:/media/series:/media/music'
         assert db['volumes'][0]['type'] == storage
         # Compose 2 omits false JSON fields; Compose 5 serializes them explicitly.
         if storage == 'bind': assert not db['volumes'][0].get('bind', {}).get('create_host_path', False)

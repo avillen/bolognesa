@@ -1,6 +1,6 @@
 # 0018. Local music identities and durable import
 
-Status: Implemented locally; browser decoding and device compatibility remain unverified.
+Status: Implemented and deployed. Synthetic PCM WAV playback is verified in screenshot Chromium; other formats and devices remain unverified.
 
 ## Context
 
