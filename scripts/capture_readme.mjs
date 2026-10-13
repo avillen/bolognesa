@@ -277,7 +277,10 @@ try {
     await page.locator(`#play-track-${ids.music_track}`).click();
     const audio = page.locator("audio#music-player");
     await audio.waitFor({ state: "attached" });
-    await audio.evaluate((element) => element.play());
+    await audio.evaluate((element) => {
+      element.preload = "auto";
+      return element.play();
+    });
     await page.waitForFunction(() => {
       const element = document.querySelector("audio#music-player");
       return element && element.readyState >= 2 && !element.paused && element.currentTime > 0;
@@ -294,6 +297,12 @@ try {
     if (!audioState.paused || Math.abs(audioState.position - 2) > 0.1 || audioState.error) {
       throw new Error(`Music playback/refresh verification failed: ${JSON.stringify(audioState)}`);
     }
+    // The native buffered-range bar must be complete before capturing it.
+    await page.waitForFunction(() => {
+      const audio = document.querySelector("#music-player");
+      return audio && Number.isFinite(audio.duration) && audio.buffered.length === 1
+        && audio.buffered.start(0) <= 0.01 && audio.buffered.end(0) >= audio.duration - 0.01;
+    });
     await waitForStablePage();
     await page.evaluate(() => document.activeElement?.blur());
     await page.mouse.move(1430, 990);

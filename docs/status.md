@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-13.
+Last reviewed: 2026-10-14.
 
 Bolognesa is an early self-hosted media center built with Phoenix LiveView, Ecto, PostgreSQL, and Oban. The repository includes local Docker Compose development and a generic Linux Compose deployment. Movie and series libraries, scanning, technical inspection, TMDb identification, catalog browsing, authorized direct playback, an optional FFmpeg/HLS path, and local music browsing/listening are implemented.
 
