@@ -2,10 +2,12 @@ defmodule Bolognesa.Infrastructure.Persistence.EpisodeSchema do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  @primary_key {:id, :id, autogenerate: false}
+
   @type t :: %__MODULE__{}
 
   schema "episodes" do
+    field :provider, Ecto.Enum, values: [:tmdb], default: :tmdb
+    field :provider_id, :integer
     field :season_id, :id
     field :number, :integer
     field :title, :string
@@ -19,8 +21,10 @@ defmodule Bolognesa.Infrastructure.Persistence.EpisodeSchema do
   def changeset(row, attrs) do
     row
     |> change(attrs)
-    |> validate_required([:id, :season_id, :number, :title])
-    |> foreign_key_constraint(:id)
+    |> unique_constraint([:provider, :provider_id])
+    |> check_constraint(:provider, name: :episodes_provider_valid)
+    |> check_constraint(:provider_id, name: :episodes_provider_id_positive)
+    |> validate_required([:season_id, :number, :title])
     |> foreign_key_constraint(:season_id)
     |> unique_constraint([:season_id, :number])
     |> check_constraint(:number, name: :episodes_number_valid)

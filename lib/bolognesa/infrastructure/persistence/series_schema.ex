@@ -2,10 +2,12 @@ defmodule Bolognesa.Infrastructure.Persistence.SeriesSchema do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  @primary_key {:id, :id, autogenerate: false}
+
   @type t :: %__MODULE__{}
 
   schema "series" do
+    field :provider, Ecto.Enum, values: [:tmdb], default: :tmdb
+    field :provider_id, :integer
     field :title, :string
     field :year, :integer
     field :overview, :string
@@ -18,7 +20,9 @@ defmodule Bolognesa.Infrastructure.Persistence.SeriesSchema do
   def changeset(row, attrs) do
     row
     |> change(attrs)
-    |> validate_required([:id, :title])
-    |> foreign_key_constraint(:id)
+    |> unique_constraint([:provider, :provider_id])
+    |> check_constraint(:provider, name: :series_provider_valid)
+    |> check_constraint(:provider_id, name: :series_provider_id_positive)
+    |> validate_required([:title, :provider, :provider_id])
   end
 end
