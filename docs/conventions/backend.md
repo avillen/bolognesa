@@ -31,6 +31,14 @@ Organize domain modules by concept type where useful: `entities/`, `value_object
 - Entities are values, not OTP processes. Use processes for coordination, supervision, concurrency, and temporary state.
 - Do not introduce event sourcing or full CQRS without a concrete requirement.
 
+## Queries and migrations
+
+- Select only the data the operation needs. Load related records in batches or joins instead of issuing one query per result; add a query-count regression when collection growth could reintroduce an N+1 problem.
+- Bound collection reads and background batches. Paginated queries need deterministic ordering with a unique tie-breaker, such as title followed by ID. Define ordering and missing-value behavior in the read contract when callers depend on them.
+- Review indexes against actual filters, joins, and ordering. Use query plans and representative data when investigating expensive reads; avoid adding indexes solely because a column exists.
+- Review migrations for table size, lock duration, backfill cost, and compatibility with application activation. Choose staged changes or bounded backfills when a single migration would hold locks or run for too long.
+- Preserve existing identities and durable user data. Make rollback behavior explicit; refuse a destructive rollback when later-created data cannot be represented safely. Verify migrations and relevant constraints with PostgreSQL, following the [deployment guide](../../deploy/compose/README.md) for release operations.
+
 ## Context responsibilities
 
 ### Identity
@@ -45,7 +53,7 @@ Only a complete successful scan can mark unseen files as absent. An inaccessible
 
 ### Catalog
 
-Owns media works independently of physical file availability. Movies, series, seasons, and episodes have their own catalog identities and details. Season zero represents specials; episodes use positive numbering. The common catalog identity has a unique external provider/resource reference. Details use a restrictive PK/FK to that identity.
+Owns media works independently of physical file availability, with identities and details for movies, series, seasons, and episodes. The common catalog identity has a unique external provider/resource reference. See [decision 0012](../decisions/0012-catalog-entry-identity.md) for persistence identity and [decision 0013](../decisions/0013-series-and-multiple-episode-associations.md) for series invariants.
 
 Catalog reads through its own models and adapters. Identification owns creation or reuse of catalog identities during matching, together with the file association in its transaction. A standalone catalog-entry creation flow requires revisiting that ownership with a concrete use case.
 
@@ -57,11 +65,11 @@ Manual corrections must survive later automatic results, retries, and concurrent
 
 ### Music
 
-Owns library-local tracks, artists, albums, file associations, import attempts, and musical read models. Tracks have stable database IDs and one association per inventory file; copies remain distinct. Artists use trimmed Unicode case-folded names within a library. Albums additionally include the raw source parent directory and credited album artist, so unrelated releases and libraries do not merge. Missing album tags leave tracks ungrouped.
+Owns library-local tracks, artists, albums, file associations, import attempts, and musical read models. Tracks have stable database IDs and one association per inventory file; copies remain distinct. Grouping preserves library and source boundaries rather than merging unrelated releases.
 
-Libraries owns sanitized observations and refresh outbox events, including job references for recovery. Music reads current successful audio observations and locks inventory, inspection, then import state when accepting metadata. File revision, inspection token, availability, and music library type are rechecked before writes. A forced reinspection at the same revision invalidates earlier tokens. Duplicate delivery is harmless; terminal imports remain visible and can be explicitly retried. Recovery filters obsolete observations before applying batch limits and includes jobs that failed before import state was written.
+Libraries owns sanitized observations and refresh outbox events; Music owns import state and recovery. Imports revalidate the current observation before writing, tolerate duplicate delivery, and reject stale revisions or inspection tokens. Reads are authorized and library-scoped; Playback reauthorizes each selected track.
 
-Musical reads are authorized, library-scoped, asynchronous at the web boundary, and bounded to 50 items per page. Search treats wildcard characters literally. Artist and album browsing reuse local identities and omit groups with no available files. Artist albums include both album credits and contributing track artists. Album tracks sort by disc number, track number, raw relative path, then track ID, with missing numbers last. Album queues are bounded to 500 entries and include pending/failed tracks so playback can report unavailable entries; each selected entry is reauthorized by Playback. The screen-local native audio element survives music URL patches, but full navigation or reload ends the queue.
+Identity keys, import locking and recovery, browsing limits, and album playback contracts are defined in [decision 0018](../decisions/0018-local-music-catalog.md). Current listening behavior and verification limits belong in [project status](../status.md).
 
 ### Playback
 
@@ -75,11 +83,25 @@ Run long tasks outside web requests with durable jobs, bounded retries, and meas
 
 When a durable side effect follows a database change, record its outbox event in the same transaction and dispatch it after commit. PubSub may notify connected clients but is not a source of truth or a recovery mechanism. Authorize subscriptions and actions independently; topic names do not grant access. Notifications contain minimal references, never private paths or media content.
 
-Application use cases signal confirmed status changes through a context-owned notification port after repository operations succeed. Repositories persist and return results; they do not publish PubSub hints. Recovery results retain the library IDs changed by successful transactions even when a later transaction fails, so application can notify those committed changes before returning the error. Notification adapters contain delivery failures and define topics and payloads; the shared `Infrastructure.Services.PubSubNotifications` provides transport and normalizes availability errors. Authorize subscriptions at the context facade and keep domain models independent of notification transport.
+Application use cases signal confirmed status changes through a context-owned notification port after repository operations succeed. Repositories persist and return results; they do not publish PubSub hints. Recovery results retain references changed by successful transactions even when later work fails, so application can notify those committed changes before returning the error. Notification adapters define topics and payloads and contain delivery failures, preserving successful persistence. Authorize subscriptions at the context facade and keep domain models independent of notification transport.
 
 Transient failures retry within a bound. Terminal failures remain visible and can be explicitly retried. Logs follow [observability conventions](observability.md).
 
 ## Use cases and verification
+
+### DTO ownership and location
+
+Use a domain model for a business concept or invariant, including a context-owned read model when a projection expresses domain meaning. Use an application DTO when a use case needs a distinct public input or output shape. A simple scalar, tuple with a named type, or explicitly typed container is enough when no separate model or conversion adds meaning; do not wrap every result in another struct. Repositories and readers still return domain results as required above, and persistence schemas never become public responses.
+
+Place DTOs exclusive to a use case beside it, in a directory named after the use case. For example, `application/use_cases/get_movie.ex` owns `application/use_cases/get_movie/response.ex`, with module name `Application.UseCases.GetMovie.Response` under the context namespace. Use `Request` and `Response` where appropriate; do not introduce an input DTO solely to wrap a simple ID or scalar argument.
+
+Keep DTOs shared by multiple use cases in the same context's `application/dto/`, under `Application.Dto`. Share a DTO when the operations use the same contract and should evolve together, not merely because their current fields match. A use case must not depend on another use case's exclusive DTO; promote a genuinely shared contract to `application/dto/`, or give each operation its own DTO when their needs differ.
+
+DTOs representing HTTP payloads or external provider formats belong to their adapters. Application DTOs remain independent of those technologies, and domain models do not depend on application DTOs.
+
+Apply this convention to new and revised contracts. Existing DTOs will be reorganized incrementally; their current location does not imply that they are shared.
+
+### Verification
 
 Use case names describe user or system outcomes; do not create a module for every trivial operation. Apply [testing conventions](testing.md): test domain rules without a database, application behavior through public contracts, persistence guarantees with PostgreSQL, and UI behavior through LiveViewTest. Use controlled external resources; ordinary tests do not depend on public providers, a NAS, or a TV.
 
