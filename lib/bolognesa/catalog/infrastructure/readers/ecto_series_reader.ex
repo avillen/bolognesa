@@ -215,31 +215,39 @@ defmodule Bolognesa.Catalog.Infrastructure.Readers.EctoSeriesReader do
         log: false
       )
 
-    Enum.map(rows, fn {decision, file, inspection} ->
-      numbers =
-        Repo.all(
-          from(relation in IdentificationEntrySchema,
-            join: episode in EpisodeSchema,
-            on: episode.id == relation.catalog_entry_id,
-            where: relation.identification_id == ^decision.id,
-            order_by: relation.position,
-            select: episode.number
-          ),
-          log: false
-        )
+    numbers_by_decision = episode_numbers(rows)
 
+    Enum.map(rows, fn {decision, file, inspection} ->
       %EpisodeVersion{
         id: file.id,
         availability: file.availability,
         size_bytes: file.size_bytes,
         origin: decision.origin,
         needs_review?: decision.needs_review,
-        episode_numbers: numbers,
+        episode_numbers: Map.get(numbers_by_decision, decision.id, []),
         format: if(inspection, do: inspection.format),
         duration_ms: if(inspection, do: inspection.duration_ms),
         codecs: if(inspection, do: codecs(inspection.tracks), else: [])
       }
     end)
+  end
+
+  defp episode_numbers([]), do: %{}
+
+  defp episode_numbers(rows) do
+    decision_ids = Enum.map(rows, fn {decision, _file, _inspection} -> decision.id end)
+
+    Repo.all(
+      from(relation in IdentificationEntrySchema,
+        join: episode in EpisodeSchema,
+        on: episode.id == relation.catalog_entry_id,
+        where: relation.identification_id in ^decision_ids,
+        order_by: [relation.identification_id, relation.position],
+        select: {relation.identification_id, episode.number}
+      ),
+      log: false
+    )
+    |> Enum.group_by(fn {id, _number} -> id end, fn {_id, number} -> number end)
   end
 
   defp codecs(%{"items" => items}) when is_list(items) do

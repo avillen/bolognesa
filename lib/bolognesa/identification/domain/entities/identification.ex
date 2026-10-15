@@ -1,21 +1,6 @@
 defmodule Bolognesa.Identification.Domain.Entities.Identification do
   @moduledoc "The current identification decision for one physical media file."
 
-  defstruct [
-    :media_file_id,
-    :state,
-    :origin,
-    :observed_revision,
-    :token,
-    :needs_review?,
-    :failure_reason,
-    :candidate_data,
-    :job_id,
-    :started_at,
-    :finished_at,
-    catalog_entry_ids: []
-  ]
-
   @type state :: :pending | :automatic | :manual | :manual_unidentified | :failed | :unmatched
   @type origin :: :automatic | :manual | nil
   @type token :: String.t()
@@ -39,6 +24,21 @@ defmodule Bolognesa.Identification.Domain.Entities.Identification do
           started_at: DateTime.t() | nil,
           finished_at: DateTime.t() | nil
         }
+
+  defstruct [
+    :media_file_id,
+    :state,
+    :origin,
+    :observed_revision,
+    :token,
+    :needs_review?,
+    :failure_reason,
+    :candidate_data,
+    :job_id,
+    :started_at,
+    :finished_at,
+    catalog_entry_ids: []
+  ]
 
   @spec new(pos_integer(), pos_integer(), token()) :: {:ok, t()} | {:error, :invalid_request}
   def new(file_id, revision, token)

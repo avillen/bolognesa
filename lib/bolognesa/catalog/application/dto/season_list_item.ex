@@ -3,16 +3,18 @@ defmodule Bolognesa.Catalog.Application.Dto.SeasonListItem do
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Episode
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Season
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
-  defstruct [:id, :series_id, :number, :title, :poster_path, :episode_count]
 
   @type t :: %__MODULE__{
           id: Season.id(),
           series_id: Series.id(),
           number: non_neg_integer(),
-          title: binary() | nil,
-          poster_path: binary() | nil,
+          title: String.t() | nil,
+          poster_path: String.t() | nil,
           episode_count: Episode.count()
         }
+
+  defstruct [:id, :series_id, :number, :title, :poster_path, :episode_count]
+
   @spec from_domain({Season.t(), Episode.count()}) :: t()
   def from_domain({row, episode_count}),
     do: %__MODULE__{

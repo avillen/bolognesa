@@ -1,8 +1,6 @@
 defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack do
   @moduledoc "A bounded, normalized video, audio or subtitle track."
 
-  defstruct [:kind, :codec, :width, :height, :channels, :language]
-
   @type kind :: :video | :audio | :subtitle
   @type t :: %__MODULE__{
           kind: kind(),
@@ -12,6 +10,8 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack do
           channels: pos_integer() | nil,
           language: String.t() | nil
         }
+
+  defstruct [:kind, :codec, :width, :height, :channels, :language]
 
   @spec new(map()) :: {:ok, t()} | {:error, :invalid_data}
   def new(%{kind: kind} = attrs) when kind in [:video, :audio, :subtitle] do

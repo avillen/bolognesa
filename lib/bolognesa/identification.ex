@@ -25,6 +25,12 @@ defmodule Bolognesa.Identification do
   alias Bolognesa.Identification.Infrastructure.Repositories.EctoRequestWriter
   alias Bolognesa.Identity.Domain.Entities.Actor
 
+  @type request_entry :: %{
+          required(:file_id) => pos_integer(),
+          required(:revision) => pos_integer(),
+          required(:requested?) => boolean()
+        }
+
   @spec get_series_review_item(Actor.t(), pos_integer()) ::
           {:ok, SeriesReviewItem.t()} | {:error, :forbidden | :not_found | :unavailable}
   def get_series_review_item(actor, id),
@@ -87,12 +93,6 @@ defmodule Bolognesa.Identification do
   @spec search_candidates(Actor.t(), binary()) :: {:ok, list()} | {:error, atom()}
   def search_candidates(actor, query),
     do: SearchMovieCandidates.call(actor, query, TmdbMovieProvider)
-
-  @type request_entry :: %{
-          required(:file_id) => pos_integer(),
-          required(:revision) => pos_integer(),
-          required(:requested?) => boolean()
-        }
 
   @doc "Write identification requests within an existing inventory transaction."
   @spec request_batch_in_transaction!(module(), [request_entry()]) :: non_neg_integer()

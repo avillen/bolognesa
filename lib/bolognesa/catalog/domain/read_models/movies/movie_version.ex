@@ -7,8 +7,10 @@ defmodule Bolognesa.Catalog.Domain.ReadModels.Movies.MovieVersion do
   @typedoc "Number of associated physical versions whose files are available."
   @type available_count :: non_neg_integer()
 
+  @type id :: pos_integer()
+
   @type t :: %__MODULE__{
-          id: pos_integer(),
+          id: id(),
           availability: :available | :missing,
           size_bytes: non_neg_integer(),
           origin: :automatic | :manual | nil,

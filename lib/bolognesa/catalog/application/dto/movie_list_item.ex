@@ -3,9 +3,6 @@ defmodule Bolognesa.Catalog.Application.Dto.MovieListItem do
   alias Bolognesa.Catalog.Domain.ReadModels.Movies.Movie
   alias Bolognesa.Catalog.Domain.ReadModels.Movies.MovieVersion
 
-  @enforce_keys [:id, :title, :year, :poster_path, :version_count, :available_count]
-  defstruct [:id, :title, :year, :poster_path, :version_count, :available_count]
-
   @type t :: %__MODULE__{
           id: Movie.id(),
           title: Movie.title(),
@@ -14,6 +11,8 @@ defmodule Bolognesa.Catalog.Application.Dto.MovieListItem do
           version_count: MovieVersion.count(),
           available_count: MovieVersion.available_count()
         }
+
+  defstruct [:id, :title, :year, :poster_path, :version_count, :available_count]
 
   @spec from_domain({Movie.t(), MovieVersion.count(), MovieVersion.available_count()}) :: t()
   def from_domain({%Movie{} = movie, version_count, available_count}) do

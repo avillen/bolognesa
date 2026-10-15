@@ -7,7 +7,7 @@ defmodule Bolognesa.Catalog.Application.UseCases.SearchSeries do
 
   @spec call(
           Actor.t(),
-          binary(),
+          String.t(),
           SeriesReader.page_number(),
           SeriesReader.adapter(),
           SeriesReader.library_id()

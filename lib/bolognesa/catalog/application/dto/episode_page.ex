@@ -6,14 +6,14 @@ defmodule Bolognesa.Catalog.Application.Dto.EpisodePage do
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Season
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
 
-  defstruct [:season, :series, :items, :total]
-
   @type t :: %__MODULE__{
           season: Season.t(),
           series: Series.t(),
           items: [EpisodeListItem.t()],
           total: Episode.count()
         }
+
+  defstruct [:season, :series, :items, :total]
 
   @spec from_domain(
           {Season.t(), Series.t(),

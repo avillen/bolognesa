@@ -6,14 +6,14 @@ defmodule Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeSelection d
     SeriesDetails
   }
 
-  defstruct [:series, :season, :episodes]
-
   @type t :: %__MODULE__{
           series: SeriesDetails.t(),
           season: SeasonDetails.t(),
           episodes: [EpisodeDetails.t()]
         }
   @type error :: :invalid_selection | :invalid_response | :incomplete_episodes
+
+  defstruct [:series, :season, :episodes]
 
   @spec new(SeriesDetails.t(), SeasonDetails.t(), [pos_integer()]) ::
           {:ok, t()} | {:error, error()}

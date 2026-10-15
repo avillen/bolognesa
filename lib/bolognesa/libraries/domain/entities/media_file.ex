@@ -4,17 +4,6 @@ defmodule Bolognesa.Libraries.Domain.Entities.MediaFile do
   alias Bolognesa.Libraries.Domain.Entities.Scan
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
-  defstruct [
-    :id,
-    :library_id,
-    :relative_path,
-    :size_bytes,
-    :modified_at,
-    :availability,
-    :revision,
-    :last_seen_generation
-  ]
-
   @type id :: pos_integer()
   @type availability :: :available | :missing
   @type t :: %__MODULE__{
@@ -27,6 +16,17 @@ defmodule Bolognesa.Libraries.Domain.Entities.MediaFile do
           revision: pos_integer(),
           last_seen_generation: Scan.generation()
         }
+
+  defstruct [
+    :id,
+    :library_id,
+    :relative_path,
+    :size_bytes,
+    :modified_at,
+    :availability,
+    :revision,
+    :last_seen_generation
+  ]
 
   @spec revision_for(t() | nil, NewMediaFile.t()) :: pos_integer()
   def revision_for(nil, _entry), do: 1

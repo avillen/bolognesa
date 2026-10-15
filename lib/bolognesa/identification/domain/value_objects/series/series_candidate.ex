@@ -1,8 +1,6 @@
 defmodule Bolognesa.Identification.Domain.ValueObjects.Series.SeriesCandidate do
   @moduledoc "A bounded series search candidate from a provider."
 
-  defstruct [:provider_id, :title, :original_title, :year, :poster_path]
-
   @type t :: %__MODULE__{
           provider_id: pos_integer(),
           title: binary(),
@@ -10,6 +8,8 @@ defmodule Bolognesa.Identification.Domain.ValueObjects.Series.SeriesCandidate do
           year: integer() | nil,
           poster_path: binary() | nil
         }
+
+  defstruct [:provider_id, :title, :original_title, :year, :poster_path]
 
   @spec new(map()) :: {:ok, t()} | {:error, :invalid_candidate}
   def new(%{provider_id: id, title: title} = attrs)

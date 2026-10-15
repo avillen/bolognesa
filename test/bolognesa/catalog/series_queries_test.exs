@@ -6,6 +6,33 @@ defmodule Bolognesa.Catalog.SeriesQueriesTest do
   alias Bolognesa.SeriesFixtures
   @actor %Actor{id: 1, role: :admin}
 
+  test "episode detail query count stays constant as physical versions increase" do
+    library = SeriesFixtures.library()
+    first = SeriesFixtures.file(library.id, "first.mkv")
+    decision = SeriesFixtures.identify(first, 1, [1, 2])
+    episode_id = hd(decision.catalog_entry_ids)
+
+    {initial, initial_queries} = count_queries(fn -> Catalog.get_episode(@actor, episode_id) end)
+    assert {:ok, %{versions: [%{id: first_id, episode_numbers: [1, 2]}]}} = initial
+    assert first_id == first.id
+
+    second = SeriesFixtures.file(library.id, "second.mkv")
+    SeriesFixtures.identify(second, 1, [1])
+    third = SeriesFixtures.file(library.id, "third.mkv")
+    SeriesFixtures.identify(third, 1, [1, 2])
+
+    {expanded, expanded_queries} =
+      count_queries(fn -> Catalog.get_episode(@actor, episode_id) end)
+
+    assert {:ok, %{versions: versions}} = expanded
+
+    assert Enum.map(versions, &{&1.id, &1.episode_numbers}) ==
+             [{first.id, [1, 2]}, {second.id, [1]}, {third.id, [1, 2]}]
+
+    assert initial_queries > 0
+    assert expanded_queries == initial_queries
+  end
+
   test "groups versions and multi episode files without inflating catalog counts" do
     library = SeriesFixtures.library()
     double = SeriesFixtures.file(library.id, "Serie S00E01E02.mkv")
@@ -111,5 +138,34 @@ defmodule Bolognesa.Catalog.SeriesQueriesTest do
 
     assert version.format == nil
     assert version.codecs == []
+  end
+
+  defp count_queries(fun) do
+    reference = make_ref()
+
+    :ok =
+      :telemetry.attach(
+        reference,
+        [:bolognesa, :repo, :query],
+        fn _event, _measurements, _metadata, {owner, tag} ->
+          if self() == owner, do: send(owner, {tag, :query})
+        end,
+        {self(), reference}
+      )
+
+    try do
+      result = fun.()
+      {result, query_count(reference, 0)}
+    after
+      :telemetry.detach(reference)
+    end
+  end
+
+  defp query_count(reference, count) do
+    receive do
+      {^reference, :query} -> query_count(reference, count + 1)
+    after
+      0 -> count
+    end
   end
 end

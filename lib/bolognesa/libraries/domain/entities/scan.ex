@@ -15,23 +15,6 @@ defmodule Bolognesa.Libraries.Domain.Entities.Scan do
     :unexpected_failure
   ]
 
-  defstruct [
-    :id,
-    :library_id,
-    :job_id,
-    :generation,
-    :failure_reason,
-    :requested_at,
-    :started_at,
-    :attempt_started_at,
-    :finished_at,
-    :updated_at,
-    state: :queued,
-    force_inspection?: false,
-    attempt: 0,
-    files_discovered: 0
-  ]
-
   @type id :: pos_integer()
   @type generation :: String.t()
   @type state :: :queued | :running | :retrying | :completed | :failed
@@ -61,6 +44,23 @@ defmodule Bolognesa.Libraries.Domain.Entities.Scan do
           finished_at: DateTime.t() | nil,
           updated_at: DateTime.t()
         }
+
+  defstruct [
+    :id,
+    :library_id,
+    :job_id,
+    :generation,
+    :failure_reason,
+    :requested_at,
+    :started_at,
+    :attempt_started_at,
+    :finished_at,
+    :updated_at,
+    state: :queued,
+    force_inspection?: false,
+    attempt: 0,
+    files_discovered: 0
+  ]
 
   @spec active?(t()) :: boolean()
   def active?(%__MODULE__{state: state}), do: state in [:queued, :running, :retrying]

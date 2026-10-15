@@ -18,14 +18,20 @@ defmodule Bolognesa.Catalog do
     SeriesPage
   }
 
-  alias Bolognesa.Catalog.Application.Ports.Readers.SeriesReader
+  alias Bolognesa.Catalog.Application.Ports.Readers.{MoviesReader, SeriesReader}
+  alias Bolognesa.Catalog.Domain.ReadModels.Movies.Movie
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Episode
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Season
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
   alias Bolognesa.Catalog.Infrastructure.Readers.{EctoMoviesReader, EctoSeriesReader}
   alias Bolognesa.Identity.Domain.Entities.Actor
 
-  @spec search_series(Actor.t(), binary(), SeriesReader.page_number(), SeriesReader.library_id()) ::
+  @spec search_series(
+          Actor.t(),
+          String.t(),
+          SeriesReader.page_number(),
+          SeriesReader.library_id()
+        ) ::
           {:ok, SeriesPage.t()}
           | {:error, :forbidden | :invalid_query | :invalid_page | :unavailable}
   def search_series(actor, query, page, library_id \\ nil),
@@ -44,12 +50,12 @@ defmodule Bolognesa.Catalog do
           {:ok, EpisodeDetail.t()} | {:error, :forbidden | :not_found | :unavailable}
   def get_episode(actor, id), do: GetEpisode.call(actor, id, EctoSeriesReader)
 
-  @spec list_movies(Actor.t(), binary(), pos_integer(), pos_integer() | nil) ::
+  @spec list_movies(Actor.t(), String.t(), MoviesReader.page_number(), MoviesReader.library_id()) ::
           {:ok, MoviePage.t()} | {:error, :forbidden | :invalid_query | :unavailable}
   def list_movies(actor, query, page, library_id \\ nil),
     do: ListMovies.call(actor, query, page, EctoMoviesReader, library_id)
 
-  @spec get_movie(Actor.t(), pos_integer()) ::
+  @spec get_movie(Actor.t(), Movie.id()) ::
           {:ok, MovieDetail.t()} | {:error, :forbidden | :not_found | :unavailable}
   def get_movie(actor, id), do: GetMovie.call(actor, id, EctoMoviesReader)
 end

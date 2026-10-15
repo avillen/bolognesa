@@ -1,7 +1,6 @@
 defmodule Bolognesa.Libraries.Domain.ValueObjects.Files.NewLibrary do
   @moduledoc "Validated library details before storage."
   alias Bolognesa.Libraries.Domain.Entities.Library
-  defstruct [:name, :path, :content_type]
 
   @type attrs :: %{
           optional(:name | :path) => String.t(),
@@ -9,6 +8,8 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Files.NewLibrary do
         }
   @type error :: :invalid_name | :invalid_path | :invalid_content_type
   @type t :: %__MODULE__{name: String.t(), path: String.t(), content_type: Library.content_type()}
+
+  defstruct [:name, :path, :content_type]
 
   @spec new(attrs()) :: {:ok, t()} | {:error, error()}
   def new(attrs) when is_map(attrs) do

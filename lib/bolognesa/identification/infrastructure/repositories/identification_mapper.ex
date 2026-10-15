@@ -3,6 +3,20 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.IdentificationMap
   alias Bolognesa.Identification.Domain.Entities.Identification
   alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
 
+  @type attributes :: %{
+          media_file_id: pos_integer(),
+          state: Identification.state(),
+          origin: Identification.origin(),
+          observed_revision: pos_integer(),
+          token: Identification.token(),
+          needs_review: boolean(),
+          failure_reason: binary() | nil,
+          candidate_data: Identification.candidate_data(),
+          job_id: pos_integer() | nil,
+          started_at: DateTime.t() | nil,
+          finished_at: DateTime.t() | nil
+        }
+
   @spec to_domain(IdentificationSchema.t(), [pos_integer()]) :: Identification.t()
   def to_domain(row, entry_ids \\ []) do
     %Identification{
@@ -20,20 +34,6 @@ defmodule Bolognesa.Identification.Infrastructure.Repositories.IdentificationMap
       finished_at: row.finished_at
     }
   end
-
-  @type attributes :: %{
-          media_file_id: pos_integer(),
-          state: Identification.state(),
-          origin: Identification.origin(),
-          observed_revision: pos_integer(),
-          token: Identification.token(),
-          needs_review: boolean(),
-          failure_reason: binary() | nil,
-          candidate_data: Identification.candidate_data(),
-          job_id: pos_integer() | nil,
-          started_at: DateTime.t() | nil,
-          finished_at: DateTime.t() | nil
-        }
 
   @spec to_attributes(Identification.t()) :: attributes()
   def to_attributes(decision) do

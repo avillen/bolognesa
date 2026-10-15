@@ -3,8 +3,7 @@ defmodule Bolognesa.Identification.Application.Dto.MovieReviewPage do
 
   alias Bolognesa.Identification.Application.Dto.MovieReviewItem
 
-  @enforce_keys [:items, :total]
-  defstruct [:items, :total]
-
   @type t :: %__MODULE__{items: [MovieReviewItem.t()], total: non_neg_integer()}
+
+  defstruct [:items, :total]
 end

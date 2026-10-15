@@ -3,16 +3,15 @@ defmodule Bolognesa.Catalog.Application.Dto.MovieVersion do
 
   alias Bolognesa.Catalog.Domain.ReadModels.Movies.MovieVersion, as: DomainMovieVersion
 
-  @enforce_keys [:id, :availability, :size_bytes, :origin, :needs_review]
-  defstruct [:id, :availability, :size_bytes, :origin, :needs_review]
-
   @type t :: %__MODULE__{
-          id: pos_integer(),
+          id: DomainMovieVersion.id(),
           availability: :available | :missing,
           size_bytes: non_neg_integer(),
           origin: :automatic | :manual | nil,
           needs_review: boolean()
         }
+
+  defstruct [:id, :availability, :size_bytes, :origin, :needs_review]
 
   @spec from_domain(DomainMovieVersion.t()) :: t()
   def from_domain(%DomainMovieVersion{} = version) do

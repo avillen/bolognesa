@@ -1,6 +1,5 @@
 defmodule Bolognesa.Music.Domain.ReadModels.BrowseItem do
   @moduledoc "Bounded local music browsing projection."
-  defstruct [:id, :title, :subtitle, :year]
 
   @type t :: %__MODULE__{
           id: pos_integer(),
@@ -8,4 +7,6 @@ defmodule Bolognesa.Music.Domain.ReadModels.BrowseItem do
           subtitle: String.t() | nil,
           year: pos_integer() | nil
         }
+
+  defstruct [:id, :title, :subtitle, :year]
 end

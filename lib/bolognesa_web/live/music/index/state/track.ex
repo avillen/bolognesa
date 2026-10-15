@@ -3,6 +3,19 @@ defmodule BolognesaWeb.Music.Index.State.Track do
   use Gettext, backend: BolognesaWeb.Gettext
   alias Bolognesa.Music.Application.Dto
 
+  @type t :: %__MODULE__{
+          id: pos_integer(),
+          track_id: pos_integer() | nil,
+          title: String.t(),
+          artist: String.t(),
+          album: String.t(),
+          duration: String.t(),
+          state: atom(),
+          state_label: String.t(),
+          disc_number: pos_integer() | nil,
+          track_number: pos_integer() | nil
+        }
+
   defstruct [
     :id,
     :track_id,
@@ -16,18 +29,6 @@ defmodule BolognesaWeb.Music.Index.State.Track do
     :track_number
   ]
 
-  @type t :: %__MODULE__{
-          id: pos_integer(),
-          track_id: pos_integer() | nil,
-          title: String.t(),
-          artist: String.t(),
-          album: String.t(),
-          duration: String.t(),
-          state: atom(),
-          state_label: String.t(),
-          disc_number: pos_integer() | nil,
-          track_number: pos_integer() | nil
-        }
   @spec from_dto(Dto.Track.t()) :: t()
   def from_dto(track),
     do: %__MODULE__{

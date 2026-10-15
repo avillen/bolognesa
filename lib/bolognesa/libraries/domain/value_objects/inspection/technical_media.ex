@@ -3,14 +3,14 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia do
 
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.{MusicTags, TechnicalTrack}
 
-  defstruct [:format, :duration_ms, :music_tags, tracks: []]
-
   @type t :: %__MODULE__{
           format: String.t() | nil,
           duration_ms: non_neg_integer() | nil,
           music_tags: MusicTags.t() | nil,
           tracks: [TechnicalTrack.t()]
         }
+
+  defstruct [:format, :duration_ms, :music_tags, tracks: []]
 
   @spec new(map()) :: {:ok, t()} | {:error, :invalid_data}
   def new(%{tracks: tracks} = attrs) when is_list(tracks) and length(tracks) <= 128 do

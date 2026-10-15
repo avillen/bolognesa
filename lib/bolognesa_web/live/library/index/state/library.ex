@@ -5,26 +5,6 @@ defmodule BolognesaWeb.Library.Index.State.Library do
   alias Bolognesa.Libraries.Domain.Entities.Scan
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
 
-  defstruct [
-    :id,
-    :name,
-    :path,
-    :content_type,
-    :content_type_label,
-    :state,
-    :state_label,
-    :error,
-    :last_completed_at,
-    :inspection_summary,
-    :inspection_counts,
-    :inspection_failure_reasons,
-    files_discovered: 0,
-    attempt: 0,
-    active?: false,
-    inspection_active?: false,
-    button_label: "Escanear"
-  ]
-
   @type t :: %__MODULE__{
           id: Library.id(),
           name: String.t(),
@@ -44,6 +24,26 @@ defmodule BolognesaWeb.Library.Index.State.Library do
           inspection_active?: boolean(),
           button_label: String.t()
         }
+
+  defstruct [
+    :id,
+    :name,
+    :path,
+    :content_type,
+    :content_type_label,
+    :state,
+    :state_label,
+    :error,
+    :last_completed_at,
+    :inspection_summary,
+    :inspection_counts,
+    :inspection_failure_reasons,
+    files_discovered: 0,
+    attempt: 0,
+    active?: false,
+    inspection_active?: false,
+    button_label: "Escanear"
+  ]
 
   @empty_counts %{
     uninspected: 0,

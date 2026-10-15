@@ -1,18 +1,6 @@
 defmodule Bolognesa.Catalog.Domain.ReadModels.Movies.Movie do
   @moduledoc "A catalog movie with a stable internal identity and provider reference."
 
-  defstruct [
-    :id,
-    :provider,
-    :provider_id,
-    :title,
-    :original_title,
-    :year,
-    :overview,
-    :poster_path,
-    :backdrop_path
-  ]
-
   @typedoc "Number of movies matching a catalog query, across all pages."
   @type count :: non_neg_integer()
 
@@ -26,10 +14,22 @@ defmodule Bolognesa.Catalog.Domain.ReadModels.Movies.Movie do
           provider: provider(),
           provider_id: pos_integer(),
           title: title(),
-          original_title: binary() | nil,
+          original_title: String.t() | nil,
           year: year() | nil,
-          overview: binary() | nil,
+          overview: String.t() | nil,
           poster_path: poster_path() | nil,
-          backdrop_path: binary() | nil
+          backdrop_path: String.t() | nil
         }
+
+  defstruct [
+    :id,
+    :provider,
+    :provider_id,
+    :title,
+    :original_title,
+    :year,
+    :overview,
+    :poster_path,
+    :backdrop_path
+  ]
 end

@@ -2,6 +2,17 @@ defmodule Bolognesa.Music.Domain.ValueObjects.TrackMetadata do
   @moduledoc "Musical metadata with safe display fallback and raw grouping parent."
   alias Bolognesa.Music.Domain.ValueObjects.Observation
 
+  @type t :: %__MODULE__{
+          title: String.t(),
+          artist: String.t() | nil,
+          album_artist: String.t() | nil,
+          album: String.t() | nil,
+          source_parent: binary(),
+          disc_number: pos_integer() | nil,
+          track_number: pos_integer() | nil,
+          year: pos_integer() | nil
+        }
+
   defstruct [
     :title,
     :artist,
@@ -13,16 +24,6 @@ defmodule Bolognesa.Music.Domain.ValueObjects.TrackMetadata do
     :year
   ]
 
-  @type t :: %__MODULE__{
-          title: String.t(),
-          artist: String.t() | nil,
-          album_artist: String.t() | nil,
-          album: String.t() | nil,
-          source_parent: binary(),
-          disc_number: pos_integer() | nil,
-          track_number: pos_integer() | nil,
-          year: pos_integer() | nil
-        }
   @spec from_observation(Observation.t()) :: t()
   def from_observation(observation) do
     tags = observation.music_tags

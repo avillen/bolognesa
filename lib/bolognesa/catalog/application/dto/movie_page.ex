@@ -5,10 +5,12 @@ defmodule Bolognesa.Catalog.Application.Dto.MoviePage do
   alias Bolognesa.Catalog.Domain.ReadModels.Movies.Movie
   alias Bolognesa.Catalog.Domain.ReadModels.Movies.MovieVersion
 
-  @enforce_keys [:items, :total]
-  defstruct [:items, :total]
+  @type t :: %__MODULE__{
+          items: [MovieListItem.t()],
+          total: Movie.count()
+        }
 
-  @type t :: %__MODULE__{items: [MovieListItem.t()], total: Movie.count()}
+  defstruct [:items, :total]
 
   @spec from_domain(
           {[{Movie.t(), MovieVersion.count(), MovieVersion.available_count()}], Movie.count()}

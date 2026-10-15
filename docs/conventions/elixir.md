@@ -11,6 +11,19 @@
 - Model lifecycle stages with distinct types when a value such as an ID exists only after persistence. Do not widen both stages to `id() | nil`.
 - Callback implementations do not need a duplicate `@spec`; private and macro-generated functions do not require specs.
 
+## Struct declaration order
+
+Define struct modules in this order, after module documentation, aliases, and other setup:
+
+1. Field and supporting types, with each `@typedoc` beside its type.
+2. `@type t` describing the complete struct.
+3. `defstruct`, with `@enforce_keys` immediately before it when present.
+4. Functions, with their documentation and specs.
+
+Always write the struct body in `@type t` across multiple lines, with one field per line and the closing brace on its own line, even for small structs.
+
+Credo's built-in `StrictModuleLayout` check enforces `@type` declarations before `defstruct`, and both before functions. The configuration extends the default checks and leaves unrelated declarations and the order between function categories unrestricted. Ordering field types before `@type t`, keeping `@enforce_keys` beside `defstruct`, and writing multiline struct types remain review conventions; the built-in check does not enforce them.
+
 ## Control flow and language rules
 
 - Do not nest conditionals (`if`, `case`, `cond`, or `with`) inside another conditional in the same function. Extract the inner decision into a well-named private function.

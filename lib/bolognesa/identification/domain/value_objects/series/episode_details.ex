@@ -1,6 +1,5 @@
 defmodule Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeDetails do
   @moduledoc "Normalized series provider data owned by Identification."
-  defstruct [:provider_id, :season_number, :number, :title, :overview, :air_date, :still_path]
 
   @type t :: %__MODULE__{
           provider_id: pos_integer(),
@@ -11,6 +10,9 @@ defmodule Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeDetails do
           air_date: Date.t() | nil,
           still_path: binary() | nil
         }
+
+  defstruct [:provider_id, :season_number, :number, :title, :overview, :air_date, :still_path]
+
   @spec valid?(t()) :: boolean()
   def valid?(%__MODULE__{} = value) do
     valid_numbers?(value) and valid_title?(value.title) and valid_metadata?(value)

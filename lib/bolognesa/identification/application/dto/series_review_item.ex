@@ -4,6 +4,22 @@ defmodule Bolognesa.Identification.Application.Dto.SeriesReviewItem do
   alias Bolognesa.Identification.Domain.ReadModels.{ReviewEpisode, ReviewSeriesFile}
   alias Bolognesa.Identification.Domain.ValueObjects.Series.SeriesCandidate
 
+  @type t :: %__MODULE__{
+          id: pos_integer(),
+          file_id: pos_integer(),
+          filename: binary(),
+          availability: ReviewSeriesFile.availability(),
+          state: Identification.state(),
+          origin: Identification.origin(),
+          failure_reason: binary() | nil,
+          series_title: binary() | nil,
+          series_provider_id: pos_integer() | nil,
+          season_number: non_neg_integer() | nil,
+          episode_numbers: [pos_integer()],
+          catalog_entry_ids: [pos_integer()],
+          candidates: [SeriesCandidate.t()]
+        }
+
   defstruct [
     :id,
     :file_id,
@@ -20,21 +36,6 @@ defmodule Bolognesa.Identification.Application.Dto.SeriesReviewItem do
     candidates: []
   ]
 
-  @type t :: %__MODULE__{
-          id: pos_integer(),
-          file_id: pos_integer(),
-          filename: binary(),
-          availability: ReviewSeriesFile.availability(),
-          state: Identification.state(),
-          origin: Identification.origin(),
-          failure_reason: binary() | nil,
-          series_title: binary() | nil,
-          series_provider_id: pos_integer() | nil,
-          season_number: non_neg_integer() | nil,
-          episode_numbers: [pos_integer()],
-          catalog_entry_ids: [pos_integer()],
-          candidates: [SeriesCandidate.t()]
-        }
   @spec from_domain({ReviewSeriesFile.t(), [ReviewEpisode.t()]}) :: t()
   def from_domain({file, episodes}) do
     reference = List.first(episodes)

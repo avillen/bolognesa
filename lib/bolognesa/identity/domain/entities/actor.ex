@@ -1,6 +1,5 @@
 defmodule Bolognesa.Identity.Domain.Entities.Actor do
   @moduledoc "The verified identity passed to protected use cases."
-  defstruct [:id, :name, :email, :role, :locale]
   alias Bolognesa.Identity.Domain.ValueObjects.Locale
 
   alias Bolognesa.Identity.Domain.Entities.User
@@ -12,6 +11,8 @@ defmodule Bolognesa.Identity.Domain.Entities.Actor do
           role: :admin | :member,
           locale: Locale.t()
         }
+
+  defstruct [:id, :name, :email, :role, :locale]
 
   @spec from_user(User.t()) :: t()
   def from_user(%User{} = user) do

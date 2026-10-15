@@ -2,8 +2,6 @@ defmodule Bolognesa.Identity.Domain.ReadModels.Session do
   @moduledoc "A fixed lifetime session without sliding renewal."
   alias Bolognesa.Identity.Domain.Entities.User
 
-  defstruct [:user_id, :token_hash, :expires_at]
-
   @type token :: String.t()
   @type token_hash :: binary()
   @type issued_at :: DateTime.t()
@@ -14,6 +12,8 @@ defmodule Bolognesa.Identity.Domain.ReadModels.Session do
           token_hash: token_hash(),
           expires_at: expires_at()
         }
+
+  defstruct [:user_id, :token_hash, :expires_at]
 
   @lifetime_seconds 30 * 24 * 60 * 60
 

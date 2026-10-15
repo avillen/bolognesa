@@ -1,6 +1,5 @@
 defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags do
   @moduledoc "Allowlisted, bounded local music observations."
-  defstruct [:title, :artist, :album_artist, :album, :disc_number, :track_number, :year]
 
   @type t :: %__MODULE__{
           title: String.t() | nil,
@@ -12,6 +11,9 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags do
           year: pos_integer() | nil
         }
   @type raw_tags :: map() | list() | String.t() | nil
+
+  defstruct [:title, :artist, :album_artist, :album, :disc_number, :track_number, :year]
+
   @spec from_raw(raw_tags()) :: t()
   def from_raw(raw) when is_map(raw) do
     tags = Map.new(raw, fn {key, value} -> {key_name(key), text(value)} end)

@@ -1,6 +1,5 @@
 defmodule Bolognesa.Music.Domain.Entities.Artist do
   @moduledoc "Local musical artist."
-  defstruct [:id, :library_id, :name, :normalized_name]
 
   @type t :: %__MODULE__{
           id: pos_integer(),
@@ -8,4 +7,6 @@ defmodule Bolognesa.Music.Domain.Entities.Artist do
           name: String.t(),
           normalized_name: String.t()
         }
+
+  defstruct [:id, :library_id, :name, :normalized_name]
 end

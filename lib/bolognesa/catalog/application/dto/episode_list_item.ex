@@ -4,6 +4,18 @@ defmodule Bolognesa.Catalog.Application.Dto.EpisodeListItem do
   alias Bolognesa.Catalog.Domain.ReadModels.Series.EpisodeVersion
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Season
 
+  @type t :: %__MODULE__{
+          id: Episode.id(),
+          season_id: Season.id(),
+          number: pos_integer(),
+          title: String.t(),
+          overview: String.t() | nil,
+          air_date: Date.t() | nil,
+          still_path: String.t() | nil,
+          version_count: EpisodeVersion.count(),
+          available_version_count: EpisodeVersion.count()
+        }
+
   defstruct [
     :id,
     :season_id,
@@ -16,17 +28,6 @@ defmodule Bolognesa.Catalog.Application.Dto.EpisodeListItem do
     :available_version_count
   ]
 
-  @type t :: %__MODULE__{
-          id: Episode.id(),
-          season_id: Season.id(),
-          number: pos_integer(),
-          title: binary(),
-          overview: binary() | nil,
-          air_date: Date.t() | nil,
-          still_path: binary() | nil,
-          version_count: EpisodeVersion.count(),
-          available_version_count: EpisodeVersion.count()
-        }
   @spec from_domain({Episode.t(), EpisodeVersion.count(), EpisodeVersion.count()}) :: t()
   def from_domain({row, version_count, available_version_count}),
     do: %__MODULE__{

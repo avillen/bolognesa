@@ -3,10 +3,10 @@ defmodule Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult do
 
   alias Bolognesa.Libraries.Domain.Entities.Library
 
-  defstruct changed_library_ids: [], error: nil
-
   @type t :: %__MODULE__{
           changed_library_ids: [Library.id()],
           error: nil | :unavailable
         }
+
+  defstruct changed_library_ids: [], error: nil
 end

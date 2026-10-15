@@ -1,15 +1,5 @@
 defmodule Bolognesa.Music.Domain.Entities.Album do
   @moduledoc "Local musical album."
-  defstruct [
-    :id,
-    :library_id,
-    :source_parent,
-    :title,
-    :normalized_title,
-    :artist_id,
-    :album_artist_key,
-    :year
-  ]
 
   @type t :: %__MODULE__{
           id: pos_integer(),
@@ -21,4 +11,15 @@ defmodule Bolognesa.Music.Domain.Entities.Album do
           album_artist_key: String.t(),
           year: pos_integer() | nil
         }
+
+  defstruct [
+    :id,
+    :library_id,
+    :source_parent,
+    :title,
+    :normalized_title,
+    :artist_id,
+    :album_artist_key,
+    :year
+  ]
 end

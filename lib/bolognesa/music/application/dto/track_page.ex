@@ -1,7 +1,6 @@
 defmodule Bolognesa.Music.Application.Dto.TrackPage do
   @moduledoc "Bounded music page."
   alias Bolognesa.Music.Application.Dto.Track
-  defstruct items: [], total: 0, page: 1, page_size: 50, heading: nil
 
   @type t :: %__MODULE__{
           items: [Track.t()],
@@ -10,6 +9,9 @@ defmodule Bolognesa.Music.Application.Dto.TrackPage do
           page_size: pos_integer(),
           heading: String.t() | nil
         }
+
+  defstruct items: [], total: 0, page: 1, page_size: 50, heading: nil
+
   @spec from_domain(Bolognesa.Music.Domain.ReadModels.TrackPage.t()) :: t()
   def from_domain(page),
     do: %__MODULE__{

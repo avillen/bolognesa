@@ -5,19 +5,6 @@ defmodule Bolognesa.Identification.Application.Dto.MovieReviewItem do
   alias Bolognesa.Identification.Domain.ReadModels.ReviewMovie
   alias Bolognesa.Identification.Domain.ReadModels.ReviewMovieFile
 
-  @enforce_keys [
-    :file_id,
-    :state,
-    :needs_review,
-    :failure_reason,
-    :availability,
-    :filename,
-    :catalog_entry_id,
-    :movie_title,
-    :candidates
-  ]
-  defstruct @enforce_keys
-
   @type t :: %__MODULE__{
           file_id: pos_integer(),
           state: Identification.state(),
@@ -29,6 +16,18 @@ defmodule Bolognesa.Identification.Application.Dto.MovieReviewItem do
           movie_title: String.t() | nil,
           candidates: Identification.candidate_data()
         }
+
+  defstruct [
+    :file_id,
+    :state,
+    :needs_review,
+    :failure_reason,
+    :availability,
+    :filename,
+    :catalog_entry_id,
+    :movie_title,
+    :candidates
+  ]
 
   @spec from_domain({Identification.t(), ReviewMovieFile.t(), ReviewMovie.t() | nil}) :: t()
   def from_domain({%Identification{} = decision, %ReviewMovieFile{} = file, movie}) do

@@ -3,16 +3,6 @@ defmodule Bolognesa.Identification.Domain.ValueObjects.Movies.MovieDetails do
 
   alias Bolognesa.Identification.Domain.ValueObjects.Movies.MovieCandidate
 
-  defstruct [
-    :provider_id,
-    :title,
-    :original_title,
-    :year,
-    :overview,
-    :poster_path,
-    :backdrop_path
-  ]
-
   @type t :: %__MODULE__{
           provider_id: pos_integer(),
           title: binary(),
@@ -22,6 +12,16 @@ defmodule Bolognesa.Identification.Domain.ValueObjects.Movies.MovieDetails do
           poster_path: binary() | nil,
           backdrop_path: binary() | nil
         }
+
+  defstruct [
+    :provider_id,
+    :title,
+    :original_title,
+    :year,
+    :overview,
+    :poster_path,
+    :backdrop_path
+  ]
 
   @spec new(map()) :: {:ok, t()} | {:error, :invalid_details}
   def new(attrs) do

@@ -2,9 +2,6 @@ defmodule Bolognesa.Identity.Domain.ValueObjects.Sessions.NewAdmin do
   @moduledoc "Validated details for the administrator before persistence."
   alias Bolognesa.Identity.Domain.Entities.User
 
-  @derive {Inspect, except: [:password]}
-  defstruct [:name, :email, :password]
-
   @type attrs :: %{optional(:name | :email | :password) => String.t()}
   @type validation_errors :: %{optional(:name | :email | :password) => String.t()}
   @type t :: %__MODULE__{
@@ -12,6 +9,9 @@ defmodule Bolognesa.Identity.Domain.ValueObjects.Sessions.NewAdmin do
           email: User.email(),
           password: User.password()
         }
+
+  @derive {Inspect, except: [:password]}
+  defstruct [:name, :email, :password]
 
   @email_pattern ~r/\A[a-z0-9.!#$%&'*+\/?^_`{|}~-]+@[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?)+\z/
 

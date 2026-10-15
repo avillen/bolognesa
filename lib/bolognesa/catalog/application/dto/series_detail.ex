@@ -5,8 +5,12 @@ defmodule Bolognesa.Catalog.Application.Dto.SeriesDetail do
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Season
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
 
+  @type t :: %__MODULE__{
+          series: Series.t(),
+          seasons: [SeasonListItem.t()]
+        }
+
   defstruct [:series, :seasons]
-  @type t :: %__MODULE__{series: Series.t(), seasons: [SeasonListItem.t()]}
 
   @spec from_domain({Series.t(), [{Season.t(), Episode.count()}]}) :: t()
   def from_domain({series, seasons}),

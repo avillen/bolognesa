@@ -1,7 +1,6 @@
 defmodule Bolognesa.Identification.Domain.ValueObjects.Series.SeasonDetails do
   @moduledoc "Normalized series provider data owned by Identification."
   alias Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeDetails
-  defstruct [:provider_id, :series_provider_id, :number, :title, :poster_path, :episodes]
 
   @type t :: %__MODULE__{
           provider_id: pos_integer(),
@@ -11,6 +10,9 @@ defmodule Bolognesa.Identification.Domain.ValueObjects.Series.SeasonDetails do
           poster_path: binary() | nil,
           episodes: [Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeDetails.t()]
         }
+
+  defstruct [:provider_id, :series_provider_id, :number, :title, :poster_path, :episodes]
+
   @spec new(map()) :: {:ok, t()} | {:error, :invalid_response}
   def new(attrs) do
     value = struct(__MODULE__, attrs)

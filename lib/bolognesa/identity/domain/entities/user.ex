@@ -1,6 +1,5 @@
 defmodule Bolognesa.Identity.Domain.Entities.User do
   @moduledoc "A persisted user with an assigned identity."
-  defstruct [:id, :name, :email, :role, :locale]
   alias Bolognesa.Identity.Domain.ValueObjects.Locale
 
   @type id :: pos_integer()
@@ -15,4 +14,6 @@ defmodule Bolognesa.Identity.Domain.Entities.User do
           role: :admin | :member,
           locale: Locale.t()
         }
+
+  defstruct [:id, :name, :email, :role, :locale]
 end

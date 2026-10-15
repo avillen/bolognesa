@@ -4,8 +4,12 @@ defmodule Bolognesa.Catalog.Application.Dto.SeriesPage do
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Episode
   alias Bolognesa.Catalog.Domain.ReadModels.Series.Series
 
+  @type t :: %__MODULE__{
+          items: [SeriesListItem.t()],
+          total: Series.count()
+        }
+
   defstruct [:items, :total]
-  @type t :: %__MODULE__{items: [SeriesListItem.t()], total: Series.count()}
 
   @spec from_domain({[{Series.t(), Episode.count(), Episode.count()}], Series.count()}) :: t()
   def from_domain({rows, total}),

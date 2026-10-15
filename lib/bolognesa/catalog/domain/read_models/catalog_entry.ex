@@ -1,7 +1,5 @@
 defmodule Bolognesa.Catalog.Domain.ReadModels.CatalogEntry do
   @moduledoc "Catalog identity and namespaced external reference."
-  @enforce_keys [:id, :kind, :provider, :resource_type, :provider_id]
-  defstruct [:id, :kind, :provider, :resource_type, :provider_id]
 
   @type id :: pos_integer()
   @type t :: %__MODULE__{
@@ -11,4 +9,6 @@ defmodule Bolognesa.Catalog.Domain.ReadModels.CatalogEntry do
           resource_type: :movie | :series | :season | :episode,
           provider_id: pos_integer()
         }
+
+  defstruct [:id, :kind, :provider, :resource_type, :provider_id]
 end

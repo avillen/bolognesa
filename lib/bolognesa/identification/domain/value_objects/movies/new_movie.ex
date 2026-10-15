@@ -1,17 +1,6 @@
 defmodule Bolognesa.Identification.Domain.ValueObjects.Movies.NewMovie do
   @moduledoc "Validated movie data before a database identity is assigned."
 
-  defstruct [
-    :provider,
-    :provider_id,
-    :title,
-    :original_title,
-    :year,
-    :overview,
-    :poster_path,
-    :backdrop_path
-  ]
-
   @type attrs :: %{
           required(:provider) => :tmdb,
           required(:provider_id) => pos_integer(),
@@ -33,6 +22,17 @@ defmodule Bolognesa.Identification.Domain.ValueObjects.Movies.NewMovie do
           poster_path: binary() | nil,
           backdrop_path: binary() | nil
         }
+
+  defstruct [
+    :provider,
+    :provider_id,
+    :title,
+    :original_title,
+    :year,
+    :overview,
+    :poster_path,
+    :backdrop_path
+  ]
 
   @spec new(map()) :: {:ok, t()} | {:error, :invalid_movie}
   def new(%{provider: :tmdb, provider_id: id, title: title} = attrs)

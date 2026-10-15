@@ -5,7 +5,6 @@ defmodule Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeHint do
   @marker ~r/(?<![a-z0-9])(?:s\d+e\d+|\d+x\d+)/iu
   @parts ~r/\A(?:s(?<season>\d+)e|(?<alternate>\d+)x)(?<episodes>\d+(?:(?:e|x)\d+|-(?:e)?\d+)*)(?<remainder>.*)\z/iu
   @folder ~r/\A(?:season[ ._-]*|temporada[ ._-]*|s)(\d+)\z/iu
-  defstruct [:title, :year, :season_number, :episode_numbers]
 
   @type t :: %__MODULE__{
           title: binary(),
@@ -14,6 +13,8 @@ defmodule Bolognesa.Identification.Domain.ValueObjects.Series.EpisodeHint do
           episode_numbers: [pos_integer()]
         }
   @type error :: :unusable_name | :ambiguous_name | :invalid_episode_numbers | :too_many_episodes
+
+  defstruct [:title, :year, :season_number, :episode_numbers]
 
   @spec from_path(binary()) :: {:ok, t()} | {:error, error()}
   def from_path(path) when is_binary(path) do

@@ -6,7 +6,7 @@ defmodule Bolognesa.Catalog.Application.UseCases.ListMovies do
 
   @spec call(
           Bolognesa.Identity.Domain.Entities.Actor.t(),
-          binary(),
+          String.t(),
           MoviesReader.page_number(),
           MoviesReader.adapter(),
           MoviesReader.library_id()

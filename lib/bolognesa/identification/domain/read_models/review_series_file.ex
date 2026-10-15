@@ -2,7 +2,6 @@ defmodule Bolognesa.Identification.Domain.ReadModels.ReviewSeriesFile do
   @moduledoc "Physical file and current decision for series review."
   alias Bolognesa.Identification.Domain.Entities.Identification
   alias Bolognesa.Identification.Domain.ValueObjects.Series.SeriesCandidate
-  defstruct [:id, :relative_path, :availability, :identification, :candidates]
 
   @type availability :: :available | :missing
   @type t :: %__MODULE__{
@@ -12,4 +11,6 @@ defmodule Bolognesa.Identification.Domain.ReadModels.ReviewSeriesFile do
           identification: Identification.t(),
           candidates: [SeriesCandidate.t()]
         }
+
+  defstruct [:id, :relative_path, :availability, :identification, :candidates]
 end

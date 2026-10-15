@@ -1,8 +1,6 @@
 defmodule Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile do
   @moduledoc "Validated physical file details before inventory persistence."
 
-  defstruct [:relative_path, :size_bytes, :modified_at]
-
   @type attrs :: %{
           optional(:relative_path) => binary(),
           optional(:size_bytes) => non_neg_integer(),
@@ -13,6 +11,8 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile do
           size_bytes: non_neg_integer(),
           modified_at: DateTime.t()
         }
+
+  defstruct [:relative_path, :size_bytes, :modified_at]
 
   @spec new(attrs()) :: {:ok, t()} | {:error, :invalid_entry}
   def new(attrs) when is_map(attrs) do

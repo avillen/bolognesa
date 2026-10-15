@@ -1,17 +1,5 @@
 defmodule Bolognesa.Music.Domain.ReadModels.TrackRow do
   @moduledoc "Music list item including processing state."
-  defstruct [
-    :id,
-    :file_id,
-    :title,
-    :artist,
-    :album,
-    :duration_ms,
-    :state,
-    :failure_reason,
-    :disc_number,
-    :track_number
-  ]
 
   @type t :: %__MODULE__{
           id: pos_integer() | nil,
@@ -25,4 +13,17 @@ defmodule Bolognesa.Music.Domain.ReadModels.TrackRow do
           disc_number: pos_integer() | nil,
           track_number: pos_integer() | nil
         }
+
+  defstruct [
+    :id,
+    :file_id,
+    :title,
+    :artist,
+    :album,
+    :duration_ms,
+    :state,
+    :failure_reason,
+    :disc_number,
+    :track_number
+  ]
 end
