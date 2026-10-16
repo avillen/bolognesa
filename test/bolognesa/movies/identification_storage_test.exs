@@ -2,9 +2,9 @@ defmodule Bolognesa.Movies.IdentificationStorageTest do
   use Bolognesa.DataCase, async: true
 
   alias Bolognesa.Infrastructure.Persistence.{
-    MovieSchema,
+    MovieIdentificationEventSchema,
     MovieIdentificationSchema,
-    MovieIdentificationEventSchema
+    MovieSchema
   }
 
   test "provider identities and file decisions are unique and missing files retain their work" do

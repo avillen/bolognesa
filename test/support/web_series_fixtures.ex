@@ -2,16 +2,13 @@ defmodule BolognesaWeb.SeriesFixtures do
   @moduledoc false
   alias Bolognesa.Identity
   alias Bolognesa.Infrastructure.LocalSourcePath
-
-  alias Bolognesa.Infrastructure.Persistence.{
-    EpisodeSchema,
-    LibrarySchema,
-    MediaFileSchema,
-    SeasonSchema
-  }
-
+  alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.SeasonSchema
   alias Bolognesa.Repo
   alias Bolognesa.SeriesFixtures
+
   @spec setup(Plug.Conn.t()) :: map()
   def setup(conn) do
     {:ok, actor} =
@@ -43,7 +40,7 @@ defmodule BolognesaWeb.SeriesFixtures do
       })
 
     decision = SeriesFixtures.identify(file, 0, [1, 2])
-    episode = Repo.get!(EpisodeSchema, hd(decision.catalog_entry_ids))
+    episode = Repo.get!(EpisodeSchema, hd(decision.episode_ids))
     season = Repo.get!(SeasonSchema, episode.season_id)
 
     %{
@@ -53,7 +50,7 @@ defmodule BolognesaWeb.SeriesFixtures do
       library: library,
       media_file: file,
       episode_id: episode.id,
-      episode_ids: decision.catalog_entry_ids,
+      episode_ids: decision.episode_ids,
       season_id: season.id,
       series_id: season.series_id,
       directory: directory

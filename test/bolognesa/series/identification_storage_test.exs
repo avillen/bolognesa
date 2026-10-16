@@ -3,8 +3,8 @@ defmodule Bolognesa.Series.IdentificationStorageTest do
 
   alias Bolognesa.Infrastructure.Persistence.{
     EpisodeSchema,
-    SeriesIdentificationSchema,
-    SeriesIdentificationEpisodeSchema
+    SeriesIdentificationEpisodeSchema,
+    SeriesIdentificationSchema
   }
 
   test "associations require confirmed decisions unique episodes and positive unique positions" do

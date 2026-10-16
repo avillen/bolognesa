@@ -1,11 +1,12 @@
 defmodule Bolognesa.SeriesFixtures do
   @moduledoc false
-  alias Bolognesa.Identification.Application.UseCases.CorrectSeriesIdentification
-  alias Bolognesa.Identification.Domain.Entities.Identification
-  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository
   alias Bolognesa.Identity.Domain.Entities.Actor
-  alias Bolognesa.Infrastructure.Persistence.{LibrarySchema, MediaFileSchema}
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Repo
+  alias Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification
+  alias Bolognesa.Series.Domain.Entities.Identification
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository
   alias Bolognesa.Test.SyntheticSeriesProvider
 
   @spec library(:movie | :series) :: LibrarySchema.t()
