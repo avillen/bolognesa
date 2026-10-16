@@ -1,7 +1,7 @@
 defmodule Bolognesa.Accounts.Application.UseCases.EndSession do
   @moduledoc "Revoke the current token only."
   alias Bolognesa.Accounts.Application.Ports.Repositories.UserRepository
-  alias Bolognesa.Accounts.Domain.ReadModels.Session
+  alias Bolognesa.Accounts.Domain.Entities.Session
   alias Bolognesa.Accounts.Domain.ValueObjects.Sessions.SessionToken
 
   @spec call(Session.token() | nil, UserRepository.adapter()) :: :ok | {:error, :unavailable}

@@ -4,23 +4,11 @@ defmodule Bolognesa.Release do
   installed.
   """
   @app :bolognesa
-  import Ecto.Query
-
+  alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.Actor
-  alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository.UserMapper
-  alias Bolognesa.Infrastructure.Persistence.UserSchema
-  alias Bolognesa.Repo
 
   @spec admin_actor() :: Actor.t() | nil
-  def admin_actor do
-    query =
-      from user in UserSchema, where: user.role == "admin", select: [:id, :name, :email, :role]
-
-    case Repo.one(query) do
-      nil -> nil
-      user -> user |> UserMapper.to_user() |> Actor.from_user()
-    end
-  end
+  def admin_actor, do: Accounts.admin_actor()
 
   @spec migrate() :: [{:ok, [integer()], [atom()]}]
   def migrate do

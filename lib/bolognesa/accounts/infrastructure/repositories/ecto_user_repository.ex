@@ -54,14 +54,20 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
   end
 
   @impl true
-  def insert_session(user_id, token_hash, expires_at) do
-    inserted_at = DateTime.add(expires_at, -30 * 24 * 60 * 60, :second)
+  def find_admin do
+    case Repo.one(from u in UserSchema, where: u.role == "admin") do
+      nil -> nil
+      stored -> UserMapper.to_user(stored)
+    end
+  end
 
+  @impl true
+  def insert_session(session) do
     case Repo.insert(%SessionSchema{
-           user_id: user_id,
-           token_hash: token_hash,
-           expires_at: expires_at,
-           inserted_at: inserted_at
+           user_id: session.user_id,
+           token_hash: session.token_hash,
+           expires_at: session.expires_at,
+           inserted_at: session.issued_at
          }) do
       {:ok, _} -> :ok
       {:error, _} -> {:error, :unavailable}

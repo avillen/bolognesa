@@ -37,6 +37,8 @@ defmodule Bolognesa.Accounts.InstallAdminTest do
     assert {:ok, installed} =
              Accounts.install_admin(%{name: "Ada", email: "ada@example.com", password: @password})
 
+    assert {:ok, installed} = Accounts.update_locale(installed, "en")
+
     {_result, bindings} = Code.eval_file("rel/overlays/bin/.iex.exs")
     assert %Actor{} = bindings[:admin]
     assert bindings[:admin] == installed

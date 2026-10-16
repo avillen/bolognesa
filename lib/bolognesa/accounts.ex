@@ -2,6 +2,7 @@ defmodule Bolognesa.Accounts do
   @moduledoc "Public accounts and access facade."
   alias Bolognesa.Accounts.Application.UseCases.{
     EndSession,
+    GetAdminActor,
     InstallAdmin,
     ResolveSession,
     StartSession,
@@ -9,8 +10,9 @@ defmodule Bolognesa.Accounts do
   }
 
   alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Session
   alias Bolognesa.Accounts.Domain.Entities.User
-  alias Bolognesa.Accounts.Domain.ReadModels.Session
+  alias Bolognesa.Accounts.Domain.Policies.Authorization
   alias Bolognesa.Accounts.Domain.ValueObjects.Locale
   alias Bolognesa.Accounts.Domain.ValueObjects.Sessions.NewAdmin
   alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository
@@ -35,8 +37,10 @@ defmodule Bolognesa.Accounts do
   end
 
   @spec authorize(Actor.t() | nil, :admin) :: :ok | {:error, :forbidden}
-  def authorize(%Actor{role: :admin}, :admin), do: :ok
-  def authorize(_, :admin), do: {:error, :forbidden}
+  def authorize(actor, permission), do: Authorization.authorize(actor, permission)
+
+  @spec admin_actor() :: Actor.t() | nil
+  def admin_actor, do: GetAdminActor.call(EctoUserRepository)
 
   @spec start_session(User.email(), User.password()) ::
           {:ok, Session.token()} | {:error, :invalid_credentials | :unavailable}

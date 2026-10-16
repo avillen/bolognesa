@@ -2,8 +2,8 @@ defmodule Bolognesa.Accounts.Application.UseCases.StartSession do
   @moduledoc "Authenticate credentials and create a durable session."
   alias Bolognesa.Accounts.Application.Ports.Repositories.UserRepository
   alias Bolognesa.Accounts.Application.Ports.Services.PasswordHasher
+  alias Bolognesa.Accounts.Domain.Entities.Session
   alias Bolognesa.Accounts.Domain.Entities.User
-  alias Bolognesa.Accounts.Domain.ReadModels.Session
   alias Bolognesa.Accounts.Domain.ValueObjects.Sessions.SessionToken
 
   @spec call(User.email(), User.password(), UserRepository.adapter(), PasswordHasher.adapter()) ::
@@ -48,7 +48,7 @@ defmodule Bolognesa.Accounts.Application.UseCases.StartSession do
     token = Base.url_encode64(raw, padding: false)
     session = Session.new(user.id, :crypto.hash(:sha256, raw), DateTime.utc_now())
 
-    case repository.insert_session(user.id, session.token_hash, session.expires_at) do
+    case repository.insert_session(session) do
       :ok -> {:ok, token}
       {:error, :unavailable} = error -> error
     end

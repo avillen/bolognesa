@@ -1,6 +1,6 @@
 defmodule Bolognesa.Accounts.Domain.ValueObjects.Sessions.SessionToken do
   @moduledoc "Define the 256-bit browser token format and decode its URL-safe encoding."
-  alias Bolognesa.Accounts.Domain.ReadModels.Session
+  alias Bolognesa.Accounts.Domain.Entities.Session
 
   @type raw_token :: binary()
 

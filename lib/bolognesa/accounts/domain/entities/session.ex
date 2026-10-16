@@ -1,4 +1,4 @@
-defmodule Bolognesa.Accounts.Domain.ReadModels.Session do
+defmodule Bolognesa.Accounts.Domain.Entities.Session do
   @moduledoc "A fixed lifetime session without sliding renewal."
   alias Bolognesa.Accounts.Domain.Entities.User
 
@@ -10,10 +10,11 @@ defmodule Bolognesa.Accounts.Domain.ReadModels.Session do
   @type t :: %__MODULE__{
           user_id: User.id(),
           token_hash: token_hash(),
+          issued_at: issued_at(),
           expires_at: expires_at()
         }
 
-  defstruct [:user_id, :token_hash, :expires_at]
+  defstruct [:user_id, :token_hash, :issued_at, :expires_at]
 
   @lifetime_seconds 30 * 24 * 60 * 60
 
@@ -22,6 +23,7 @@ defmodule Bolognesa.Accounts.Domain.ReadModels.Session do
     %__MODULE__{
       user_id: user_id,
       token_hash: token_hash,
+      issued_at: now,
       expires_at: DateTime.add(now, @lifetime_seconds, :second)
     }
   end

@@ -9,5 +9,8 @@ defmodule Bolognesa.Accounts.Infrastructure.Services.BcryptHasher do
   def verify(password, hash), do: Bcrypt.verify_pass(password, hash)
 
   @impl true
-  def dummy_verify(_password), do: Bcrypt.no_user_verify()
+  def dummy_verify(_password) do
+    Bcrypt.no_user_verify()
+    :ok
+  end
 end

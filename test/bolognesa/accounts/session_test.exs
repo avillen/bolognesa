@@ -5,6 +5,9 @@ defmodule Bolognesa.Accounts.SessionTest do
   alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.SessionSchema
 
+  alias Bolognesa.Accounts.Domain.Entities.Session
+  alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository
+
   @password "correct horse battery staple"
 
   setup do
@@ -26,6 +29,20 @@ defmodule Bolognesa.Accounts.SessionTest do
     refute stored.token_hash == token
     refute inspect(stored) =~ token
     assert DateTime.diff(stored.expires_at, stored.inserted_at, :second) == 30 * 24 * 60 * 60
+  end
+
+  test "persistence preserves the supplied issue and expiry times", %{actor: actor} do
+    session = %Session{
+      user_id: actor.id,
+      token_hash: :crypto.hash(:sha256, "example"),
+      issued_at: ~U[2026-01-01 10:00:00.123456Z],
+      expires_at: ~U[2026-01-01 11:00:00.123456Z]
+    }
+
+    assert :ok = EctoUserRepository.insert_session(session)
+    stored = Repo.one!(SessionSchema)
+    assert stored.inserted_at == session.issued_at
+    assert stored.expires_at == session.expires_at
   end
 
   test "unknown email and wrong password have the same result" do

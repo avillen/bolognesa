@@ -12,12 +12,13 @@ Configured libraries appear in the sidebar, including empty ones. Catalog lists 
 
 LiveDashboard requires a verified administrator session for both HTTP and LiveView access in every environment. The mailbox preview is development-only.
 
-The account and access context is `Bolognesa.Accounts`, including its authenticated `Actor` contract. A reversible migration renames the former `identity_*` tables, sequences, indexes, and constraints to `accounts_*` while preserving users and sessions. Apply the migration with the matching application release.
+The account and access context is `Bolognesa.Accounts`, including its authenticated `Actor` contract. A reversible migration renames the former `identity_*` tables, sequences, indexes, and constraints to `accounts_*` while preserving users and sessions. Apply the migration with the matching application release. Authorization is delegated to a domain policy; session entities own issue time and expiry, and persistence stores those supplied times. The trusted release console resolves its complete administrator actor, including locale, through the Accounts facade.
 
 ## Recorded verification
 
 Current content-context checks and deployment observations are distinguished from earlier device evidence.
 
+- Accounts convention fixes: local `mix precommit` passed with 502 tests and one skipped, compilation, and Credo. Regression coverage verifies the password-hasher result contract, release-console locale preservation, domain session lifetime across calendar boundaries, and persistence of independently supplied issue/expiry times. This change has not been deployed.
 - Accounts rename: local `mix precommit` passed with 499 tests and one skipped, compilation, and Credo. `MIX_ENV=test mix run --no-start scripts/verify_accounts_migration.exs` verified empty and seeded upgrades, rollback, and reapplication in a disposable database. This change has not been deployed.
 - Content-context local `mix precommit`: 499 tests passed, one skipped; compilation and Credo passed. Coverage includes foreign-type mutation rejection, bounded owner backfill/dispatch/recovery, atomic inventory/request/event and work/association rollback, manual/stale revision races, and equal-ID direct/HLS delivery. A fresh whole-change review found an HLS query-parameter route ambiguity; regression tests reproduced it for both manifests and segments, and the corrected controller uses path parameters exclusively.
 - The fixed disposable content-context migration verifier passed two full fresh/reset rebuilds, independent sequence checks, legacy table/function removal, and refused reversal. Both historical migration verifiers passed their seeded and empty cases without requiring obsolete application workers or writers.
