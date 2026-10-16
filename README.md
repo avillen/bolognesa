@@ -135,6 +135,12 @@ The project's full local quality check is:
 mix precommit
 ```
 
+## Rebuilding an existing development database
+
+The content-context change in [decision 0019](docs/decisions/0019-content-context-boundaries.md) requires a whole-database rebuild. Stop the application and workers, verify the configured development database, then run `mix ecto.reset`. This discards accounts, sessions, library configuration, corrections, catalog data, and persisted jobs. Source media remains untouched. Restart the application, create the administrator at `/setup`, configure sources with their existing internal paths, then scan and identify again. Tests use their separate database.
+
+For an existing server, follow the [one-time deployment rebuild](deploy/compose/README.md#one-time-content-context-rebuild); an ordinary in-place upgrade is not supported for this change.
+
 ## Contributing
 
 The most useful next contributions help make the existing journey reliable: first-run setup, scanning, identification and correction, and browser playback. Trying Boloñesa on another Linux setup, browser, or device and reporting the result is valuable even without a code change. See [CONTRIBUTING.md](CONTRIBUTING.md) for what to include in feedback and how to propose work.

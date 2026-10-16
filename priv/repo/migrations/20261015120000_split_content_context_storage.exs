@@ -124,7 +124,9 @@ defmodule Bolognesa.Repo.Migrations.SplitContentContextStorage do
 
     create constraint(
              :series_identification_episodes,
-             :series_identification_episodes_position_positive, check: "position > 0")
+             :series_identification_episodes_position_positive,
+             check: "position > 0"
+           )
 
     execute """
     CREATE FUNCTION validate_series_identification_episode() RETURNS trigger AS $$

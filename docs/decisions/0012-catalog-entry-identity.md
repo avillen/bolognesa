@@ -2,6 +2,8 @@
 
 Status: Implemented locally; deployment status is tracked in [project status](../status.md).
 
+The shared catalog identity, preserved-ID migration, and Catalog/Identification ownership are superseded by [0019](0019-content-context-boundaries.md). Independent content identities replace the shared table. Atomic identity/association writes, provider uniqueness, metadata preservation, and authorized selection remain required.
+
 ## Context
 
 Movie associations and playback authorization depended directly on the `movies` table. Supporting series requires a stable identity shared by several kinds of catalog details.

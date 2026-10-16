@@ -2,6 +2,8 @@
 
 Status: Partially superseded by [0012](0012-catalog-entry-identity.md). Provider, review, and stale-result rules remain in effect.
 
+Ownership and identity are now governed by [0019](0019-content-context-boundaries.md); provider privacy, review, manual precedence, and atomic request rules remain valid.
+
 ## Context
 
 The inventory records physical files but not the works they contain. Identification must group versions of one movie and allow manual corrections to survive scans and old jobs.

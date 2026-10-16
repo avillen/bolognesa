@@ -115,6 +115,26 @@ For a Docker volume, `EXPECTED_DATABASE_SOURCE` is the existing volume name. Thi
 
 Restore verifies the dump, prompts the operator to type `RESTORE`, and replaces the database. The app remains stopped; select an image compatible with the restored schema before starting it. The direct script accepts `--yes` for automated workflows. Never use `down -v` to update or recover a live installation.
 
+## One-time content-context rebuild
+
+The release implementing [decision 0019](../../docs/decisions/0019-content-context-boundaries.md) requires a whole-database reset, including Oban jobs. The destructive migration does not preserve existing identities and refuses reversal. Do not activate it through an ordinary in-place update of a populated installation.
+
+First verify the new release and image, record the current image, and prepare a validated backup with `make deploy-backup`. Keep that backup: the later update also creates a backup of the empty database, which cannot replace it. Stop the application and workers while keeping PostgreSQL running. Use the installation's existing project name, environment, complete Compose file set, data mount, and internal media paths throughout; never remove volumes or source directories.
+
+From the deployment directory on the server, with `docker compose` configured for that installation, rebuild only its configured application database:
+
+```sh
+docker compose stop app
+docker compose exec -T db sh -ec '
+  dropdb --username "$POSTGRES_USER" --maintenance-db postgres --force "$POSTGRES_DB"
+  createdb --username "$POSTGRES_USER" --owner "$POSTGRES_USER" "$POSTGRES_DB"
+'
+```
+
+These commands discard accounts, sessions, library configuration, corrections, imported catalog data, and jobs. Source media is not changed. After the reset, run `make deploy-release COMMIT_SHA=<verified-main-sha>` from the operator checkout. Its normal backup, migration, startup, and health checks still apply. Verify `/setup`, create a new administrator, register sources using their existing internal paths, then scan and identify again.
+
+If activation fails, leave the application stopped. Restore the pre-reset backup using the documented restore workflow and select the recorded old image; do not run the old image against the rebuilt schema.
+
 ## Local build and daily operation
 
 ```sh

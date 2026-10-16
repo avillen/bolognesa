@@ -6,14 +6,6 @@ end
 
 defmodule Bolognesa.SeriesMigrationCheck do
   @moduledoc false
-  alias Bolognesa.Identification.Domain.{
-    EpisodeDetails,
-    EpisodeSelection,
-    SeasonDetails,
-    SeriesDetails
-  }
-
-  alias Bolognesa.Identification.Infrastructure.Persistence.IdentifiedSeriesWriter
   alias Bolognesa.SeriesMigrationCheckRepo, as: CheckRepo
   @database "bolognesa_series_migration_check"
   @baseline 20_261_011_104_533
@@ -93,6 +85,10 @@ defmodule Bolognesa.SeriesMigrationCheck do
     |> Path.join("*.exs")
     |> Path.wildcard()
     |> Enum.sort()
+    |> Enum.filter(fn file ->
+      {version, _} = Integer.parse(Path.basename(file))
+      version <= @hierarchy
+    end)
     |> Enum.map(fn file ->
       {version, _} = Integer.parse(Path.basename(file))
       [{module, _}] = Code.compile_file(file)
@@ -182,7 +178,7 @@ defmodule Bolognesa.SeriesMigrationCheck do
             job =
               CheckRepo.insert!(
                 Oban.Job.new(%{"file_id" => file_id, "token" => token},
-                  worker: Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker,
+                  worker: "Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker",
                   queue: :identifications
                 ),
                 log: false
@@ -282,30 +278,34 @@ defmodule Bolognesa.SeriesMigrationCheck do
       equal!(hierarchy_snapshot(), empty_hierarchy, "unidentified series schema intact")
     end
 
-    series = %SeriesDetails{provider_id: 201, title: "Synthetic series"}
-
-    episodes =
-      for number <- [1, 2],
-          do: %EpisodeDetails{
-            provider_id: 20_100 + number,
-            season_number: 0,
-            number: number,
-            title: "Synthetic episode #{number}"
-          }
-
-    season = %SeasonDetails{
-      provider_id: 2010,
-      series_provider_id: 201,
-      number: 0,
-      title: "Specials",
-      episodes: episodes
-    }
-
-    {:ok, selection} = EpisodeSelection.new(series, season, [1, 2])
-
     {:ok, ids} =
       CheckRepo.transaction(fn ->
-        ids = IdentifiedSeriesWriter.upsert!(selection, CheckRepo)
+        series_id = historical_identity!("series", 201)
+
+        query(
+          "INSERT INTO series (id, title, inserted_at, updated_at) VALUES ($1, 'Synthetic series', now(), now())",
+          [series_id]
+        )
+
+        season_id = historical_identity!("season", 2010)
+
+        query(
+          "INSERT INTO seasons (id, series_id, number, title, inserted_at, updated_at) VALUES ($1, $2, 0, 'Specials', now(), now())",
+          [season_id, series_id]
+        )
+
+        ids =
+          for number <- [1, 2] do
+            id = historical_identity!("episode", 20_100 + number)
+
+            query(
+              "INSERT INTO episodes (id, season_id, number, title, inserted_at, updated_at) VALUES ($1, $2, $3, 'Synthetic episode', now(), now())",
+              [id, season_id, number]
+            )
+
+            id
+          end
+
         query("UPDATE media_identifications SET state = 'manual' WHERE id = $1", [decision])
 
         for {id, position} <- Enum.with_index(ids, 1),
@@ -318,7 +318,7 @@ defmodule Bolognesa.SeriesMigrationCheck do
         ids
       end)
 
-    check!(length(ids) == 2, "complete episode writer")
+    check!(length(ids) == 2, "complete historical episode fixture")
     state = snapshot(:new)
     hierarchy = hierarchy_snapshot()
 
@@ -335,6 +335,16 @@ defmodule Bolognesa.SeriesMigrationCheck do
     query("DELETE FROM seasons")
     query("DELETE FROM series")
     query("DELETE FROM catalog_entries WHERE kind <> 'movie'")
+  end
+
+  defp historical_identity!(kind, provider_id) do
+    [[id]] =
+      query(
+        "INSERT INTO catalog_entries (kind, provider, resource_type, provider_id, inserted_at, updated_at) VALUES ($1, 'tmdb', $1, $2, now(), now()) RETURNING id",
+        [kind, provider_id]
+      ).rows
+
+    id
   end
 
   defp reject_down!(migrations, version) do

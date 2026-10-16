@@ -2,6 +2,8 @@
 
 Status: Implemented. Deployment evidence and playback verification limits are tracked in [project status](../status.md).
 
+[0019](0019-content-context-boundaries.md) clarifies that Music remains an independent content owner. Movies and Series replace the former video Identification boundary; music/video selectors and queues remain separate as described here.
+
 ## Context
 
 Music needs local identities independent of TMDb, musical grouping, and recovery after technical inspection. Reusing video catalog identity would require fictitious external provider IDs and would mix playback selectors whose numeric IDs overlap.

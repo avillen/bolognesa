@@ -169,7 +169,7 @@ defmodule Bolognesa.CatalogMigrationCheck do
             job =
               CheckRepo.insert!(
                 Oban.Job.new(%{"file_id" => file_id, "token" => token},
-                  worker: Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker,
+                  worker: "Bolognesa.Identification.Infrastructure.Jobs.IdentificationWorker",
                   queue: :identifications
                 ),
                 log: false

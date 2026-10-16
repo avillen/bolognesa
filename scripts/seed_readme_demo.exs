@@ -2,10 +2,10 @@ alias Bolognesa.Identity
 alias Bolognesa.Infrastructure.LocalSourcePath
 
 alias Bolognesa.Infrastructure.Persistence.{
-  CatalogEntrySchema,
   EpisodeSchema,
-  IdentificationEntrySchema,
-  IdentificationSchema,
+  SeriesIdentificationEpisodeSchema,
+  MovieIdentificationSchema,
+  SeriesIdentificationSchema,
   InspectionSchema,
   LibrarySchema,
   MediaFileSchema,
@@ -19,8 +19,10 @@ alias Bolognesa.Repo
 
 defmodule ReadmeScreenshotSeed do
   alias Bolognesa.Infrastructure.Persistence.{
-    IdentificationEntrySchema,
-    IdentificationSchema,
+    SeriesIdentificationEpisodeSchema,
+    MovieIdentificationSchema,
+    SeriesIdentificationSchema,
+    LibrarySchema,
     MediaFileSchema
   }
 
@@ -66,28 +68,40 @@ defmodule ReadmeScreenshotSeed do
     )
   end
 
-  def insert_identification!(media_file_id, state, catalog_entry_id \\ nil) do
-    identification =
-      Repo.insert!(%IdentificationSchema{
-        media_file_id: media_file_id,
-        state: state,
-        origin: if(state == :automatic, do: :automatic),
-        observed_revision: 1,
-        token: Ecto.UUID.generate(),
-        needs_review: false,
-        candidate_data: %{items: []},
-        finished_at: if(state == :automatic, do: DateTime.utc_now())
-      })
+  def insert_identification!(media_file_id, state, content_id \\ nil) do
+    file = Repo.get!(MediaFileSchema, media_file_id)
+    library = Repo.get!(LibrarySchema, file.library_id)
 
-    if catalog_entry_id do
-      Repo.insert!(%IdentificationEntrySchema{
-        identification_id: identification.id,
-        catalog_entry_id: catalog_entry_id,
-        position: 1
-      })
-    end
+    attrs = %{
+      media_file_id: media_file_id,
+      state: state,
+      origin: if(state == :automatic, do: :automatic),
+      observed_revision: 1,
+      token: Ecto.UUID.generate(),
+      needs_review: false,
+      candidate_data: %{items: []},
+      finished_at: if(state == :automatic, do: DateTime.utc_now())
+    }
 
-    identification
+    Repo.transaction(fn ->
+      case library.content_type do
+        :movie ->
+          Repo.insert!(struct(MovieIdentificationSchema, Map.put(attrs, :movie_id, content_id)))
+
+        :series ->
+          decision = Repo.insert!(struct(SeriesIdentificationSchema, attrs))
+
+          if content_id,
+            do:
+              Repo.insert!(%SeriesIdentificationEpisodeSchema{
+                identification_id: decision.id,
+                episode_id: content_id,
+                position: 1
+              })
+
+          decision
+      end
+    end)
   end
 end
 
@@ -127,17 +141,10 @@ series_library =
     content_type: :series
   })
 
-movie_entry =
-  Repo.insert!(%CatalogEntrySchema{
-    kind: :movie,
-    provider: :tmdb,
-    resource_type: :movie,
-    provider_id: 900_001
-  })
-
 movie =
   Repo.insert!(%MovieSchema{
-    id: movie_entry.id,
+    provider: :tmdb,
+    provider_id: 900_001,
     title: "After the Signal",
     original_title: "After the Signal",
     year: 2025,
@@ -161,17 +168,10 @@ review_file =
 
 ReadmeScreenshotSeed.insert_identification!(review_file.id, :pending)
 
-series_entry =
-  Repo.insert!(%CatalogEntrySchema{
-    kind: :series,
-    provider: :tmdb,
-    resource_type: :series,
-    provider_id: 900_002
-  })
-
 series =
   Repo.insert!(%SeriesSchema{
-    id: series_entry.id,
+    provider: :tmdb,
+    provider_id: 900_002,
     title: "Small Hours",
     year: 2024,
     overview: "Six neighbours share a late-night radio show and the stories that reach it.",
@@ -179,34 +179,20 @@ series =
     backdrop_path: "/readme-demo-backdrop.jpg"
   })
 
-season_entry =
-  Repo.insert!(%CatalogEntrySchema{
-    kind: :season,
-    provider: :tmdb,
-    resource_type: :season,
-    provider_id: 900_003
-  })
-
 season =
   Repo.insert!(%SeasonSchema{
-    id: season_entry.id,
+    provider: :tmdb,
+    provider_id: 900_003,
     series_id: series.id,
     number: 1,
     title: "Season 1",
     poster_path: "/readme-demo-poster.jpg"
   })
 
-episode_entry =
-  Repo.insert!(%CatalogEntrySchema{
-    kind: :episode,
-    provider: :tmdb,
-    resource_type: :episode,
-    provider_id: 900_004
-  })
-
 episode =
   Repo.insert!(%EpisodeSchema{
-    id: episode_entry.id,
+    provider: :tmdb,
+    provider_id: 900_004,
     season_id: season.id,
     number: 1,
     title: "The First Call",

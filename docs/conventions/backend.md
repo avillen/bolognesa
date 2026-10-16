@@ -51,17 +51,15 @@ Owns configured sources, file inventory, scans, and technical inspection. A file
 
 Only a complete successful scan can mark unseen files as absent. An inaccessible source or partial scan must not cause bulk removals. Repeated scans reconcile without duplicates. Original media is read-only and is never moved, renamed, or deleted by the application.
 
-### Catalog
+### Movies and Series
 
-Owns media works independently of physical file availability, with identities and details for movies, series, seasons, and episodes. The common catalog identity has a unique external provider/resource reference. See [decision 0012](../decisions/0012-catalog-entry-identity.md) for persistence identity and [decision 0013](../decisions/0013-series-and-multiple-episode-associations.md) for series invariants.
+Movies owns movie identities, metadata, versions, file decisions, matching, corrections, requests, outbox delivery, and recovery. Series independently owns the equivalent series/season/episode hierarchy and ordered episode selections. Both expose their own public facades; neither imports the other's internal models or adapters. Catalog and Identification are no longer business contexts. Persisted schemas remain under `Bolognesa.Infrastructure.Persistence`.
 
-Catalog reads through its own models and adapters. Identification owns creation or reuse of catalog identities during matching, together with the file association in its transaction. A standalone catalog-entry creation flow requires revisiting that ownership with a concrete use case.
+Each content table has an independent generated ID and unique `(provider, provider_id)` reference. A movie decision stores a nullable scalar `movie_id`; a series decision stores ordered episode associations. Confirmed relationships and newly created works commit together. Series selections contain at most one hundred unique episodes from one season and are replaced atomically. Unconfirmed decisions expose no active relationships. See [decision 0019](../decisions/0019-content-context-boundaries.md).
 
-### Identification
+Manual corrections survive later automatic results, retries, and concurrent work. Persisted request tokens and revisions reject stale responses; manual provider lookups recheck the observed file revision under lock. Provider calls remain outside transactions. TMDb receives only the inferred title and year, never local paths or library names; enabling lookup requires a runtime read token.
 
-Owns file-to-work decisions, candidates, provenance, and manual corrections. Every file has one decision; confirmed relationships are ordered and replaced atomically. A movie selects one work. A series file may select a bounded set of episodes from one season. Unconfirmed decisions expose no active relationships.
-
-Manual corrections must survive later automatic results, retries, and concurrent work. Persisted request tokens and revisions reject stale responses. External provider calls happen outside transactions. TMDb receives only the inferred title and year, not local paths or library names; enabling lookup requires a runtime read token.
+Libraries explicitly routes inventory handoffs to the owning facade inside the inventory transaction. Inventory, requests, and outbox events commit or roll back together. Each owner revalidates content type, and filters backfill, dispatch, and recovery before batch limits. Workers and dispatcher/reconciler processes are separately named; both video owners initially share the existing `identifications` queue and its concurrency budget.
 
 ### Music
 
@@ -73,7 +71,7 @@ Identity keys, import locking and recovery, browsing limits, and album playback 
 
 ### Playback
 
-Owns authorization, file selection, delivery strategy, and temporary playback sessions. Confirmed movies and episodes, and music tracks imported from a current successful audio inspection, are playable; series and seasons are containers. Music uses a separate track/file selector and endpoint so its numeric IDs cannot resolve video catalog entries. Direct delivery and the optional FFmpeg/HLS path both revalidate the actor, current association, file availability, and revision. Byte-range requests support seeking. A file linked to several episodes plays in full and the UI explains that limitation.
+Owns authorization, file selection, delivery strategy, and temporary playback sessions. Confirmed movies and episodes, and music tracks imported from a current successful audio inspection, are playable; series and seasons are containers. Music uses a separate track/file selector and endpoint so its numeric IDs cannot resolve video works. Video calls use explicit `{:movie, id}` or `{:episode, id}` references. Direct delivery and the optional FFmpeg/HLS path both revalidate the actor, current association, file availability, and revision. HLS sessions bind actor, typed content reference, file, and revision. Only a successful inspection of the current revision supplies technical metadata; video direct delivery remains available without inspection. Byte-range requests support seeking. A file linked to several episodes plays in full and the UI explains that limitation.
 
 Do not assume a server can transcode fast enough or that a browser supports a given container and codec. Verify real formats and devices separately.
 

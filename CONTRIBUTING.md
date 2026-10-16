@@ -25,7 +25,7 @@ docker compose up --build
 
 Open [http://localhost:4000](http://localhost:4000) and create the first administrator account. See the README for media mounts, TMDb setup and Docker details.
 
-For native development, install Elixir 1.17 or newer in the supported 1.x series, Erlang/OTP, PostgreSQL and `ffprobe`. Configure PostgreSQL as in `config/dev.exs`, then run `mix setup` and `mix phx.server`. Use `mix test` for the test suite and `mix precommit` for the full local check. Tests use PostgreSQL.
+For native development, install Elixir 1.17 or newer in the supported 1.x series, Erlang/OTP, PostgreSQL and `ffprobe`. Configure PostgreSQL as in `config/dev.exs`, then run `mix setup` and `mix phx.server`. Use `mix test` for the test suite and `mix precommit` for the full local check. Tests use PostgreSQL. Movies and Series behavior is covered under `test/bolognesa/movies/` and `test/bolognesa/series/`; current-schema migration checks run with `MIX_ENV=test mix run --no-start scripts/verify_content_context_migrations.exs` against a fixed disposable database. The README explains the required development database rebuild for the content-context change.
 
 For interface changes, regenerate the README gallery with `make screenshots`. This needs Docker and Node.js/npm. The command uses a pinned Linux/amd64 Playwright container so Chromium and fonts match CI, starts a temporary PostgreSQL container and uses synthetic demo data and a browser-generated video. CI runs the same capture flow for application, asset, configuration, or screenshot workflow changes and fails when the committed images are stale.
 

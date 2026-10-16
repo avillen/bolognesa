@@ -2,6 +2,8 @@
 
 Status: Accepted and implemented locally.
 
+[0019](0019-content-context-boundaries.md) names Movies and Series as owners in place of Catalog and Identification. Context-owned models, global persistence schemas, and the transactional facade exception remain valid. The authenticated contract is `Identity.Domain.Entities.Actor`.
+
 ## Context
 
 Catalog and Identification readers had reused entities and mappers from other contexts. Those contracts depended on modules and fields that could change for reasons unrelated to the caller.
