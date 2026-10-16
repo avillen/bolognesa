@@ -1,6 +1,5 @@
 defmodule BolognesaWeb.Movie.Index.LiveTest do
   use BolognesaWeb.ConnCase, async: false
-  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
@@ -95,15 +94,6 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     end
   end
 
-  defp movie_changeset(attrs) do
-    entry =
-      Repo.insert!(
-        CatalogEntrySchema.changeset(
-          %CatalogEntrySchema{},
-          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
-        )
-      )
-
-    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
-  end
+  defp movie_changeset(attrs),
+    do: MovieSchema.changeset(%MovieSchema{}, Map.put_new(attrs, :provider, :tmdb))
 end

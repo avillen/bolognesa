@@ -17,15 +17,15 @@ defmodule BolognesaWeb.TranscodeController do
       else: reject(conn, 404)
   end
 
-  defp serve(conn, params, name, mime_type) do
-    with {:ok, catalog_entry_id} <- positive_id(entry_param(params)),
-         {:ok, file_id} <- positive_id(params["file_id"]),
+  defp serve(conn, _params, name, mime_type) do
+    with {:ok, movie_id} <- positive_id(entry_param(conn.path_params)),
+         {:ok, file_id} <- positive_id(conn.path_params["file_id"]),
          {:ok, session} <-
            Playback.compatible_session(
              conn.assigns.current_scope.actor,
-             catalog_entry_id,
+             {entry_kind(conn.path_params), movie_id},
              file_id,
-             params["session_id"]
+             conn.path_params["session_id"]
            ),
          {:ok, bytes} <- read(session.directory, name),
          :ok <- touch_segment(session.id, name) do
@@ -51,6 +51,10 @@ defmodule BolognesaWeb.TranscodeController do
       _ -> {:error, :not_found}
     end
   end
+
+  defp entry_kind(%{"movie_id" => _}), do: :movie
+  defp entry_kind(%{"episode_id" => _}), do: :episode
+  defp entry_kind(_), do: :invalid
 
   defp entry_param(%{"movie_id" => id}), do: id
   defp entry_param(%{"episode_id" => id}), do: id

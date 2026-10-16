@@ -1,9 +1,13 @@
 defmodule Bolognesa.Libraries.ScanInventoryTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Infrastructure.Persistence.{IdentificationEventSchema, IdentificationSchema}
-  alias Bolognesa.Infrastructure.Persistence.{InspectionEventSchema, InspectionSchema}
+
+  alias Bolognesa.Infrastructure.Persistence.InspectionEventSchema
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
-  alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationEventSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.ScanSchema
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
@@ -13,7 +17,8 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
   alias Bolognesa.Libraries.Support.ControlledFileDiscovery
   alias Ecto.Adapters.SQL
-  alias EctoScanRepository.{MediaFileMapper, ScanMapper}
+  alias EctoScanRepository.MediaFileMapper
+  alias EctoScanRepository.ScanMapper
   alias SQL.Sandbox
 
   @modified ~U[2026-10-03 00:00:00Z]
@@ -211,13 +216,13 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     running = start(scan)
     save(running, [entry("a.mp4")])
     [file] = files(scan.library_id)
-    first = Repo.get_by!(IdentificationSchema, media_file_id: file.id)
+    first = Repo.get_by!(MovieIdentificationSchema, media_file_id: file.id)
     assert first.state == :pending
     assert first.observed_revision == 1
     assert [_event] = identification_events(file.id)
 
     save(running, [entry("a.mp4")])
-    assert Repo.get_by!(IdentificationSchema, media_file_id: file.id).token == first.token
+    assert Repo.get_by!(MovieIdentificationSchema, media_file_id: file.id).token == first.token
     assert length(identification_events(file.id)) == 1
     assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
 
@@ -228,7 +233,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
     changed = next_scan(scan.library_id)
     save(changed, [entry("a.mp4", 6)])
-    second = Repo.get_by!(IdentificationSchema, media_file_id: file.id)
+    second = Repo.get_by!(MovieIdentificationSchema, media_file_id: file.id)
     assert second.observed_revision == 2
     refute second.token == first.token
     assert length(identification_events(file.id)) == 2
@@ -251,7 +256,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       before = stored_scan(scan.id)
 
       SQL.query!(Repo, """
-      ALTER TABLE media_identification_events ADD CONSTRAINT inventory_test_reject_identification
+      ALTER TABLE movie_identification_events ADD CONSTRAINT inventory_test_reject_identification
       CHECK (media_file_id <> #{file.id}) NOT VALID
       """)
 
@@ -273,7 +278,58 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       after
         SQL.query!(
           Repo,
-          "ALTER TABLE media_identification_events DROP CONSTRAINT inventory_test_reject_identification"
+          "ALTER TABLE movie_identification_events DROP CONSTRAINT inventory_test_reject_identification"
+        )
+      end
+    end)
+  end
+
+  test "series handoff failure rolls back inventory inspection requests and owner events" do
+    with_committed_scan(fn scan ->
+      library = Repo.get!(LibrarySchema, scan.library_id)
+      Repo.update!(Ecto.Changeset.change(library, content_type: :series))
+      running = start(scan)
+      save(running, [entry("existing.mkv")])
+      [file] = files(scan.library_id)
+
+      decision =
+        Repo.get_by!(Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema,
+          media_file_id: file.id
+        )
+
+      before = stored_scan(scan.id)
+
+      SQL.query!(
+        Repo,
+        "ALTER TABLE series_identification_events ADD CONSTRAINT inventory_test_reject_series CHECK (media_file_id <> #{file.id}) NOT VALID"
+      )
+
+      try do
+        assert {:error, :unavailable} =
+                 EctoScanRepository.save_batch(scan.id, running.generation, [
+                   entry("existing.mkv", 6),
+                   entry("new.mkv")
+                 ])
+
+        assert [unchanged] = files(scan.library_id)
+        assert unchanged.revision == file.revision
+        assert stored_scan(scan.id) == before
+        assert length(events(file.id)) == 1
+
+        assert Repo.get_by!(Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema,
+                 media_file_id: file.id
+               ) == decision
+
+        assert Repo.aggregate(
+                 Bolognesa.Infrastructure.Persistence.SeriesIdentificationEventSchema,
+                 :count
+               ) == 1
+
+        assert Repo.aggregate(MovieIdentificationSchema, :count) == 0
+      after
+        SQL.query!(
+          Repo,
+          "ALTER TABLE series_identification_events DROP CONSTRAINT inventory_test_reject_series"
         )
       end
     end)
@@ -283,16 +339,16 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     running = start(scan)
     save(running, [entry("a.mp4")])
     [file] = files(scan.library_id)
-    first = Repo.get_by!(IdentificationSchema, media_file_id: file.id)
+    first = Repo.get_by!(MovieIdentificationSchema, media_file_id: file.id)
 
     first
-    |> IdentificationSchema.changeset(%{state: :manual_unidentified, origin: :manual})
+    |> MovieIdentificationSchema.changeset(%{state: :manual_unidentified, origin: :manual})
     |> Repo.update!()
 
     assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
     changed = next_scan(scan.library_id)
     save(changed, [entry("a.mp4", 6)])
-    current = Repo.get_by!(IdentificationSchema, media_file_id: file.id)
+    current = Repo.get_by!(MovieIdentificationSchema, media_file_id: file.id)
     assert current.state == :manual_unidentified
     assert current.token == first.token
     assert length(identification_events(file.id)) == 1
@@ -795,7 +851,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     assert inspection(file.id).state == :pending
     assert length(events(file.id)) == 1
     assert identification_events(file.id) == []
-    assert Repo.get_by(IdentificationSchema, media_file_id: file.id) == nil
+    assert Repo.get_by(MovieIdentificationSchema, media_file_id: file.id) == nil
   end
 
   defp library_fixture do
@@ -849,7 +905,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
   defp identification_events(file_id) do
     Repo.all(
-      from event in IdentificationEventSchema,
+      from event in MovieIdentificationEventSchema,
         where: event.media_file_id == ^file_id,
         order_by: event.id
     )

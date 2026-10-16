@@ -2,9 +2,9 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
   alias Bolognesa.Identity
-  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Repo
 
   setup %{conn: conn} do
@@ -94,8 +94,13 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
           })
         )
 
+      schema =
+        if unquote(kind) == :movie,
+          do: MovieIdentificationSchema,
+          else: Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
+
       Repo.insert!(
-        IdentificationSchema.changeset(%IdentificationSchema{}, %{
+        schema.changeset(struct(schema), %{
           media_file_id: file.id,
           observed_revision: 1,
           token: Ecto.UUID.generate(),

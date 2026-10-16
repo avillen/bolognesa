@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.Movie.Review.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
-  alias Bolognesa.Identification
+  alias Bolognesa.Movies
   alias BolognesaWeb.Movie.Review.Reducer
 
   @impl true
@@ -55,7 +55,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
 
     {:noreply,
      start_async(socket, {:candidates, request_id}, fn ->
-       Identification.search_candidates(actor, query)
+       Movies.search_candidates(actor, query)
      end)}
   end
 
@@ -95,7 +95,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
   def handle_event("retry", %{"file_id" => id}, socket) do
     result =
       with {:ok, file_id} <- parse_id(id),
-           do: Identification.retry(socket.assigns.current_scope.actor, file_id)
+           do: Movies.retry(socket.assigns.current_scope.actor, file_id)
 
     case result do
       {:ok, _} ->

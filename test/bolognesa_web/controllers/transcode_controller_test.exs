@@ -1,16 +1,11 @@
 defmodule BolognesaWeb.TranscodeControllerTest do
   use BolognesaWeb.ConnCase, async: false
-  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identity
   alias Bolognesa.Infrastructure.LocalSourcePath
-
-  alias Bolognesa.Infrastructure.Persistence.{
-    LibrarySchema,
-    MediaFileSchema,
-    MovieSchema
-  }
-
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Playback
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias Bolognesa.Repo
@@ -81,7 +76,7 @@ defmodule BolognesaWeb.TranscodeControllerTest do
       )
 
     identification =
-      Bolognesa.IdentificationFixtures.insert_decision!(
+      Bolognesa.MovieIdentificationFixtures.insert_decision!(
         %{
           media_file_id: file.id,
           observed_revision: file.revision,
@@ -89,7 +84,7 @@ defmodule BolognesaWeb.TranscodeControllerTest do
           state: :manual,
           origin: :manual
         },
-        [movie.id]
+        movie.id
       )
 
     executable = Path.join(physical, "fake-ffmpeg")
@@ -108,7 +103,8 @@ defmodule BolognesaWeb.TranscodeControllerTest do
       File.rm_rf!(directory)
     end)
 
-    assert {:ok, session} = Playback.start_compatible(actor, movie.id, file.id, 0, :video)
+    assert {:ok, session} =
+             Playback.start_compatible(actor, {:movie, movie.id}, file.id, 0, :video)
 
     for {request_actor, entry_id, file_id} <- [
           {%{actor | id: actor.id + 1}, movie.id, file.id},
@@ -116,7 +112,7 @@ defmodule BolognesaWeb.TranscodeControllerTest do
           {actor, movie.id, file.id + 1}
         ] do
       assert {:error, :not_found} =
-               Playback.compatible_session(request_actor, entry_id, file_id, session.id)
+               Playback.compatible_session(request_actor, {:movie, entry_id}, file_id, session.id)
 
       assert {:ok, ^session} = TranscodeManager.lookup(session.id)
     end
@@ -139,11 +135,14 @@ defmodule BolognesaWeb.TranscodeControllerTest do
     Repo.update!(MediaFileSchema.changeset(file, %{revision: file.revision + 1}))
 
     assert {:error, :source_changed} =
-             Playback.compatible_session(actor, movie.id, file.id, session.id)
+             Playback.compatible_session(actor, {:movie, movie.id}, file.id, session.id)
 
     assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     Repo.update!(MediaFileSchema.changeset(file, %{revision: file.revision}))
-    assert {:ok, next_session} = Playback.start_compatible(actor, movie.id, file.id, 0, :video)
+
+    assert {:ok, next_session} =
+             Playback.start_compatible(actor, {:movie, movie.id}, file.id, 0, :video)
+
     File.write!(Path.join(next_session.directory, "seg-000000.ts"), "synthetic segment")
     path = "/movies/#{movie.id}/media/#{file.id}/hls/#{next_session.id}"
 
@@ -153,15 +152,6 @@ defmodule BolognesaWeb.TranscodeControllerTest do
     assert {:error, :not_found} = TranscodeManager.lookup(next_session.id)
   end
 
-  defp movie_changeset(attrs) do
-    entry =
-      Repo.insert!(
-        CatalogEntrySchema.changeset(
-          %CatalogEntrySchema{},
-          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
-        )
-      )
-
-    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
-  end
+  defp movie_changeset(attrs),
+    do: MovieSchema.changeset(%MovieSchema{}, Map.put_new(attrs, :provider, :tmdb))
 end

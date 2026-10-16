@@ -1,12 +1,11 @@
 defmodule Bolognesa.Playback.StartPlaybackTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identity.Domain.Entities.Actor
-  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Playback
   alias Bolognesa.Playback.Domain.ReadModels.Source
@@ -27,31 +26,33 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
     identify(missing.id, movie.id)
 
     assert {:ok, %{path: "/playback", relative_path: "film.mp4", size_bytes: 8} = source} =
-             Playback.start(actor, movie.id, file.id)
+             Playback.start(actor, {:movie, movie.id}, file.id)
 
     assert source.__struct__ == Source
 
-    assert {:error, :forbidden} = Playback.start(nil, movie.id, file.id)
-    assert {:error, :not_found} = Playback.start(actor, other.id, file.id)
-    assert {:error, :missing} = Playback.start(actor, movie.id, missing.id)
-    assert {:error, :not_found} = Playback.start(actor, movie.id, 0)
+    assert {:error, :forbidden} = Playback.start(nil, {:movie, movie.id}, file.id)
+    assert {:error, :not_found} = Playback.start(actor, {:movie, other.id}, file.id)
+    assert {:error, :missing} = Playback.start(actor, {:movie, movie.id}, missing.id)
+    assert {:error, :not_found} = Playback.start(actor, {:movie, movie.id}, 0)
 
     identification
-    |> IdentificationSchema.changeset(%{
+    |> MovieIdentificationSchema.changeset(%{
       state: :manual,
       origin: :manual
     })
     |> Repo.update!()
 
     Repo.update_all(
-      from(r in Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema,
-        where: r.identification_id == ^identification.id
+      from(r in MovieIdentificationSchema,
+        where: r.id == ^identification.id
       ),
-      set: [catalog_entry_id: other.id]
+      set: [movie_id: other.id]
     )
 
-    assert {:error, :not_found} = Playback.start(actor, movie.id, file.id)
-    assert {:ok, %{relative_path: "film.mp4"}} = Playback.start(actor, other.id, file.id)
+    assert {:error, :not_found} = Playback.start(actor, {:movie, movie.id}, file.id)
+
+    assert {:ok, %{relative_path: "film.mp4"}} =
+             Playback.start(actor, {:movie, other.id}, file.id)
   end
 
   test "uses only a successful inspection for the current file revision" do
@@ -87,14 +88,15 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
         })
       )
 
-    assert {:ok, :video, %{duration_ms: 60_000}} = Playback.delivery(actor, movie.id, file.id)
+    assert {:ok, :video, %{duration_ms: 60_000}} =
+             Playback.delivery(actor, {:movie, movie.id}, file.id)
 
     inspection
     |> InspectionSchema.changeset(%{state: :failed})
     |> Repo.update!()
 
     assert {:ok, :direct, %{duration_ms: nil, tracks: []}} =
-             Playback.delivery(actor, movie.id, file.id)
+             Playback.delivery(actor, {:movie, movie.id}, file.id)
   end
 
   defp movie(provider_id) do
@@ -121,7 +123,7 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
   end
 
   defp identify(file_id, movie_id) do
-    Bolognesa.IdentificationFixtures.insert_decision!(
+    Bolognesa.MovieIdentificationFixtures.insert_decision!(
       %{
         media_file_id: file_id,
         observed_revision: 1,
@@ -129,19 +131,10 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
         state: :automatic,
         origin: :automatic
       },
-      [movie_id]
+      movie_id
     )
   end
 
-  defp movie_changeset(attrs) do
-    entry =
-      Repo.insert!(
-        CatalogEntrySchema.changeset(
-          %CatalogEntrySchema{},
-          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
-        )
-      )
-
-    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
-  end
+  defp movie_changeset(attrs),
+    do: MovieSchema.changeset(%MovieSchema{}, Map.put_new(attrs, :provider, :tmdb))
 end

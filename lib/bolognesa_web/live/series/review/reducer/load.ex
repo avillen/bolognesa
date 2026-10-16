@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.Load do
   @moduledoc false
   import Phoenix.Component, only: [assign: 2]
   import Phoenix.LiveView, only: [start_async: 3]
-  alias Bolognesa.Identification
+  alias Bolognesa.Series
 
   @spec call(Phoenix.LiveView.Socket.t(), pos_integer(), pos_integer() | nil) ::
           Phoenix.LiveView.Socket.t()
@@ -20,7 +20,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.Load do
       requests: requests
     )
     |> start_async({:reviews, request}, fn ->
-      with {:ok, rows} <- Identification.list_series_review_items(actor, page),
+      with {:ok, rows} <- Series.list_review_items(actor, page),
            {:ok, item} <- selected(actor, file_id) do
         {:ok, {rows, item}}
       end
@@ -28,5 +28,5 @@ defmodule BolognesaWeb.Series.Review.Reducer.Load do
   end
 
   defp selected(_, nil), do: {:ok, nil}
-  defp selected(actor, id), do: Identification.get_series_review_item(actor, id)
+  defp selected(actor, id), do: Series.get_review_item(actor, id)
 end

@@ -54,13 +54,19 @@ defmodule Bolognesa.Application do
 
   defp identification_outbox_children do
     if Application.get_env(:bolognesa, :identification_outbox_dispatcher, true),
-      do: [Bolognesa.Identification.Infrastructure.Jobs.OutboxDispatcher],
+      do: [
+        Bolognesa.Movies.Infrastructure.Jobs.OutboxDispatcher,
+        Bolognesa.Series.Infrastructure.Jobs.OutboxDispatcher
+      ],
       else: []
   end
 
   defp identification_reconciler_children do
     if Application.get_env(:bolognesa, :identification_reconciler, true),
-      do: [Bolognesa.Identification.Infrastructure.Jobs.IdentificationReconciler],
+      do: [
+        Bolognesa.Movies.Infrastructure.Jobs.IdentificationReconciler,
+        Bolognesa.Series.Infrastructure.Jobs.IdentificationReconciler
+      ],
       else: []
   end
 

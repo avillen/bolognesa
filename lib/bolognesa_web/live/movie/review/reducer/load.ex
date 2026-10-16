@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Movie.Review.Reducer.Load do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [start_async: 3]
-  alias Bolognesa.Identification
+  alias Bolognesa.Movies
 
   @spec call(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def call(socket) do
@@ -13,6 +13,6 @@ defmodule BolognesaWeb.Movie.Review.Reducer.Load do
     socket
     |> assign(:request_id, request_id)
     |> assign(:loading?, true)
-    |> start_async({:reviews, request_id}, fn -> Identification.list_review_items(actor, page) end)
+    |> start_async({:reviews, request_id}, fn -> Movies.list_review_items(actor, page) end)
   end
 end

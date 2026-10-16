@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream: 3, start_async: 3]
-  alias Bolognesa.Catalog
+  alias Bolognesa.Movies
 
   @spec call(Phoenix.LiveView.Socket.t(), Bolognesa.Identity.Domain.Entities.Actor.t(), integer()) ::
           Phoenix.LiveView.Socket.t()
@@ -10,7 +10,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
     request_id = make_ref()
 
     socket
-    |> assign(:catalog_entry_id, id)
+    |> assign(:content_ref, {:movie, id})
     |> assign(:detail, nil)
     |> assign(:loading?, true)
     |> assign(:error, nil)
@@ -24,6 +24,6 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
     |> assign(:playback_error_reason, nil)
     |> assign(:request_id, request_id)
     |> stream(:versions, [])
-    |> start_async({:movie, request_id}, fn -> Catalog.get_movie(actor, id) end)
+    |> start_async({:movie, request_id}, fn -> Movies.get_movie(actor, id) end)
   end
 end

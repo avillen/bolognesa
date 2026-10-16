@@ -2,28 +2,30 @@ defmodule Bolognesa.Playback do
   @moduledoc "Authorize a movie version for direct or compatible playback."
 
   alias Bolognesa.Identity.Domain.Entities.Actor
-  alias Bolognesa.Playback.Application.UseCases.{StartPlayback, StartTrackPlayback}
+  alias Bolognesa.Playback.Application.UseCases.StartPlayback
+  alias Bolognesa.Playback.Application.UseCases.StartTrackPlayback
   alias Bolognesa.Playback.Domain.Policies.TranscodeProfile
   alias Bolognesa.Playback.Domain.ReadModels.Source
+  alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   alias Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
 
-  @spec start(Actor.t(), integer(), integer()) ::
+  @spec start(Actor.t(), ContentRef.t(), integer()) ::
           {:ok, Source.t()} | {:error, :forbidden | :not_found | :missing | :unavailable}
-  def start(actor, catalog_entry_id, file_id),
-    do: StartPlayback.call(actor, catalog_entry_id, file_id, EctoPlaybackRepository)
+  def start(actor, content_ref, file_id),
+    do: StartPlayback.call(actor, content_ref, file_id, EctoPlaybackRepository)
 
   @spec start_track(Actor.t() | nil, integer(), integer()) ::
           {:ok, Source.t()} | {:error, :forbidden | :not_found | :missing | :unavailable}
   def start_track(actor, track_id, file_id),
     do: StartTrackPlayback.call(actor, track_id, file_id, EctoPlaybackRepository)
 
-  @spec prepare(Actor.t(), integer(), integer()) ::
+  @spec prepare(Actor.t(), ContentRef.t(), integer()) ::
           :ok
           | {:error, :forbidden | :not_found | :missing | :unavailable | LocalMediaFile.failure()}
-  def prepare(actor, catalog_entry_id, file_id) do
-    with {:ok, source} <- start(actor, catalog_entry_id, file_id),
+  def prepare(actor, content_ref, file_id) do
+    with {:ok, source} <- start(actor, content_ref, file_id),
          {:ok, %{device: device}} <- LocalMediaFile.open(source) do
       case :file.close(device) do
         :ok -> :ok
@@ -32,32 +34,32 @@ defmodule Bolognesa.Playback do
     end
   end
 
-  @spec delivery(Actor.t(), integer(), integer()) ::
+  @spec delivery(Actor.t(), ContentRef.t(), integer()) ::
           {:ok, :direct | :audio | :video, Source.t()} | {:error, atom()}
-  def delivery(actor, catalog_entry_id, file_id) do
-    with {:ok, source} <- start(actor, catalog_entry_id, file_id) do
+  def delivery(actor, content_ref, file_id) do
+    with {:ok, source} <- start(actor, content_ref, file_id) do
       {:ok, TranscodeProfile.choose(source), source}
     end
   end
 
-  @spec start_compatible(Actor.t(), integer(), integer(), integer(), :auto | :video) ::
+  @spec start_compatible(Actor.t(), ContentRef.t(), integer(), integer(), :auto | :video) ::
           {:ok, Bolognesa.Playback.Domain.ReadModels.TranscodeSession.t()} | {:error, atom()}
-  def start_compatible(actor, catalog_entry_id, file_id, offset_ms, mode \\ :auto) do
-    with {:ok, profile, source} <- delivery(actor, catalog_entry_id, file_id),
+  def start_compatible(actor, content_ref, file_id, offset_ms, mode \\ :auto) do
+    with {:ok, profile, source} <- delivery(actor, content_ref, file_id),
          :ok <- validate_profile(profile, mode) do
       selected = if mode == :video, do: :video, else: profile
-      TranscodeManager.start(actor.id, catalog_entry_id, file_id, source, selected, offset_ms)
+      TranscodeManager.start(actor.id, content_ref, file_id, source, selected, offset_ms)
     end
   end
 
-  @spec compatible_session(Actor.t(), integer(), integer(), String.t()) ::
+  @spec compatible_session(Actor.t(), ContentRef.t(), integer(), String.t()) ::
           {:ok, Bolognesa.Playback.Domain.ReadModels.TranscodeSession.t()} | {:error, atom()}
-  def compatible_session(actor, catalog_entry_id, file_id, session_id) do
+  def compatible_session(actor, content_ref, file_id, session_id) do
     with {:ok, session} <- TranscodeManager.lookup(session_id),
          true <-
-           session.actor_id == actor.id and session.catalog_entry_id == catalog_entry_id and
+           session.actor_id == actor.id and session.content_ref == content_ref and
              session.file_id == file_id do
-      case validate_compatible_source(actor, catalog_entry_id, file_id, session) do
+      case validate_compatible_source(actor, content_ref, file_id, session) do
         :ok ->
           {:ok, session}
 
@@ -71,8 +73,8 @@ defmodule Bolognesa.Playback do
     end
   end
 
-  defp validate_compatible_source(actor, catalog_entry_id, file_id, session) do
-    with {:ok, source} <- start(actor, catalog_entry_id, file_id),
+  defp validate_compatible_source(actor, content_ref, file_id, session) do
+    with {:ok, source} <- start(actor, content_ref, file_id),
          true <- source.revision == session.revision,
          {:ok, %{device: device}} <- LocalMediaFile.open(source),
          :ok <- :file.close(device) do

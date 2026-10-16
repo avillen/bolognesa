@@ -1,13 +1,14 @@
 defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @moduledoc "Own one FFmpeg process and its private sliding HLS directory."
-  use GenServer
-
-  require Logger
-
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
-  alias Bolognesa.Playback.Infrastructure.{FfmpegArgs, LocalMediaFile}
+  alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
+  alias Bolognesa.Playback.Infrastructure.FfmpegArgs
+  alias Bolognesa.Playback.Infrastructure.LocalMediaFile
+  use GenServer
+
+  require Logger
 
   @idle_ms 300_000
   @tick_ms 5_000
@@ -16,14 +17,25 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(_opts), do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
 
-  @spec start(pos_integer(), pos_integer(), pos_integer(), Source.t(), :audio | :video, integer()) ::
+  @spec start(
+          pos_integer(),
+          ContentRef.t(),
+          pos_integer(),
+          Source.t(),
+          :audio | :video,
+          integer()
+        ) ::
           {:ok, TranscodeSession.t()} | {:error, atom()}
-  def start(actor_id, catalog_entry_id, file_id, source, profile, offset_ms),
-    do:
+  def start(actor_id, content_ref, file_id, source, profile, offset_ms) do
+    if ContentRef.valid?(content_ref) do
       GenServer.call(
         __MODULE__,
-        {:start, actor_id, catalog_entry_id, file_id, source, profile, offset_ms}
+        {:start, actor_id, content_ref, file_id, source, profile, offset_ms}
       )
+    else
+      {:error, :not_found}
+    end
+  end
 
   @spec lookup(String.t()) :: {:ok, TranscodeSession.t()} | {:error, :not_found}
   def lookup(id), do: GenServer.call(__MODULE__, {:lookup, id})
@@ -70,13 +82,13 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   @impl true
   def handle_call(
-        {:start, actor_id, catalog_entry_id, file_id, source, profile, offset_ms},
+        {:start, actor_id, content_ref, file_id, source, profile, offset_ms},
         {owner, _tag},
         state
       ) do
     state = replace_actor_session(state, actor_id)
 
-    case start_session(state, actor_id, catalog_entry_id, file_id, source, profile, offset_ms) do
+    case start_session(state, actor_id, content_ref, file_id, source, profile, offset_ms) do
       {:ok, session, port, root} ->
         Logger.info("transcode_started session_id=#{session.id} profile=#{profile}")
 
@@ -166,7 +178,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   defp start_session(%{current: current}, _, _, _, _, _, _) when not is_nil(current),
     do: {:error, :busy}
 
-  defp start_session(_state, actor_id, catalog_entry_id, file_id, source, profile, offset_ms) do
+  defp start_session(_state, actor_id, content_ref, file_id, source, profile, offset_ms) do
     with :ok <- valid_offset(source, offset_ms),
          {:ok, root} <- root(),
          {:ok, executable} <- executable(),
@@ -179,7 +191,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
       session = %TranscodeSession{
         id: id,
         actor_id: actor_id,
-        catalog_entry_id: catalog_entry_id,
+        content_ref: content_ref,
         file_id: file_id,
         revision: source.revision,
         offset_ms: offset_ms,

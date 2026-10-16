@@ -3,7 +3,7 @@ defmodule BolognesaWeb.Series.Season.Reducer.ApplyResult do
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2]
   import Phoenix.LiveView, only: [stream: 4]
-  alias Bolognesa.Catalog.Application.Dto.EpisodePage
+  alias Bolognesa.Series.Application.UseCases.ListEpisodes.Response, as: EpisodePage
 
   @type result ::
           {:ok,

@@ -3,7 +3,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.LoadSeason do
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2, to_form: 2]
   import Phoenix.LiveView, only: [stream: 4]
-  alias Bolognesa.Identification
+  alias Bolognesa.Series
   alias BolognesaWeb.Series.Review.AsyncRequest
   @spec call(Phoenix.LiveView.Socket.t(), non_neg_integer()) :: Phoenix.LiveView.Socket.t()
   def call(%{assigns: %{saving?: true}} = socket, _), do: socket
@@ -24,6 +24,6 @@ defmodule BolognesaWeb.Series.Review.Reducer.LoadSeason do
       season_form: to_form(%{"number" => number}, as: :season)
     )
     |> stream(:episodes, [], reset: true)
-    |> AsyncRequest.start(:season, fn -> Identification.series_season(actor, id, number) end)
+    |> AsyncRequest.start(:season, fn -> Series.series_season(actor, id, number) end)
   end
 end

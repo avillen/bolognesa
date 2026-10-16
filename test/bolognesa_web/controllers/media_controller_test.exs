@@ -1,13 +1,11 @@
 defmodule BolognesaWeb.MediaControllerTest do
   use BolognesaWeb.ConnCase, async: false
-  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
 
   alias Bolognesa.Identity
-  alias Bolognesa.Infrastructure.Persistence.MovieSchema
-
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Repo
 
   setup do
@@ -48,7 +46,7 @@ defmodule BolognesaWeb.MediaControllerTest do
       )
 
     identification =
-      Bolognesa.IdentificationFixtures.insert_decision!(
+      Bolognesa.MovieIdentificationFixtures.insert_decision!(
         %{
           media_file_id: file.id,
           observed_revision: 1,
@@ -56,7 +54,7 @@ defmodule BolognesaWeb.MediaControllerTest do
           state: :automatic,
           origin: :automatic
         },
-        [movie.id]
+        movie.id
       )
 
     {:ok,
@@ -181,15 +179,6 @@ defmodule BolognesaWeb.MediaControllerTest do
     refute response(result, result.status) =~ "different content"
   end
 
-  defp movie_changeset(attrs) do
-    entry =
-      Repo.insert!(
-        CatalogEntrySchema.changeset(
-          %CatalogEntrySchema{},
-          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
-        )
-      )
-
-    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
-  end
+  defp movie_changeset(attrs),
+    do: MovieSchema.changeset(%MovieSchema{}, Map.put_new(attrs, :provider, :tmdb))
 end

@@ -4,25 +4,44 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
 
   import Ecto.Query
 
-  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
-  alias Bolognesa.Infrastructure.Persistence.IdentificationEntrySchema
-  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-  alias Bolognesa.Infrastructure.Persistence.{MusicImportSchema, MusicTrackSchema}
+  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicImportSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicTrackSchema
+  alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema
+  alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ReadModels.TechnicalTrack
   alias Bolognesa.Repo
 
   @impl true
-  def find_source(catalog_entry_id, file_id) do
+  def find_source({:movie, id}, file_id) when is_integer(id) and id > 0 do
+    base =
+      from identification in MovieIdentificationSchema,
+        where: identification.movie_id == ^id,
+        select: identification
+
+    video_source(base, :movie, file_id)
+  end
+
+  def find_source({:episode, id}, file_id) when is_integer(id) and id > 0 do
+    base =
+      from identification in SeriesIdentificationSchema,
+        join: relation in SeriesIdentificationEpisodeSchema,
+        on: relation.identification_id == identification.id,
+        where: relation.episode_id == ^id,
+        select: identification
+
+    video_source(base, :series, file_id)
+  end
+
+  def find_source(_, _), do: {:error, :not_found}
+
+  defp video_source(base, content_type, file_id) do
     query =
-      from entry in CatalogEntrySchema,
-        join: relation in IdentificationEntrySchema,
-        on: relation.catalog_entry_id == entry.id,
-        join: identification in IdentificationSchema,
-        on: identification.id == relation.identification_id,
+      from identification in subquery(base),
         join: file in MediaFileSchema,
         on: file.id == identification.media_file_id,
         join: library in LibrarySchema,
@@ -31,45 +50,31 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
         on:
           inspection.media_file_id == file.id and inspection.observed_revision == file.revision and
             inspection.state == :succeeded,
-        where:
-          entry.id == ^catalog_entry_id and entry.kind in [:movie, :episode] and
-            file.id == ^file_id and
-            identification.state in [:automatic, :manual],
-        select: %{
-          path: library.path,
-          relative_path: file.relative_path,
-          size_bytes: file.size_bytes,
-          modified_at: file.modified_at,
-          availability: file.availability,
-          revision: file.revision,
-          format: inspection.format,
-          duration_ms: inspection.duration_ms,
-          tracks: inspection.tracks
-        }
+        where: file.id == ^file_id and library.content_type == ^content_type,
+        where: identification.state in [:automatic, :manual],
+        select: {file, library.path, inspection}
 
-    case Repo.one(query, log: false) do
-      nil ->
-        {:error, :not_found}
-
-      %{availability: :missing} ->
-        {:error, :missing}
-
-      %{availability: :available} = source ->
-        {:ok,
-         %Source{
-           path: source.path,
-           relative_path: source.relative_path,
-           size_bytes: source.size_bytes,
-           modified_at: source.modified_at,
-           revision: source.revision,
-           format: source.format,
-           duration_ms: source.duration_ms,
-           tracks: tracks(source.tracks)
-         }}
-    end
+    video_result(Repo.one(query, log: false))
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp video_result(nil), do: {:error, :not_found}
+  defp video_result({%{availability: :missing}, _, _}), do: {:error, :missing}
+
+  defp video_result({file, path, inspection}) do
+    {:ok,
+     %Source{
+       path: path,
+       relative_path: file.relative_path,
+       size_bytes: file.size_bytes,
+       modified_at: file.modified_at,
+       revision: file.revision,
+       format: if(inspection, do: inspection.format),
+       duration_ms: if(inspection, do: inspection.duration_ms),
+       tracks: if(inspection, do: tracks(inspection.tracks), else: [])
+     }}
   end
 
   @impl true

@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Movie.Review.Reducer.BeginCorrection do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [start_async: 3]
-  alias Bolognesa.Identification
+  alias Bolognesa.Movies
 
   @spec call(Phoenix.LiveView.Socket.t(), pos_integer(), {:tmdb, pos_integer()} | :unidentified) ::
           Phoenix.LiveView.Socket.t()
@@ -15,7 +15,7 @@ defmodule BolognesaWeb.Movie.Review.Reducer.BeginCorrection do
     |> assign(:saving?, true)
     |> assign(:feedback, nil)
     |> start_async({:correction, request_id}, fn ->
-      Identification.correct(actor, file_id, choice)
+      Movies.correct(actor, file_id, choice)
     end)
   end
 end

@@ -1,6 +1,5 @@
 defmodule BolognesaWeb.Movie.Show.LiveTest do
   use BolognesaWeb.ConnCase, async: false
-  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
@@ -71,7 +70,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         })
       )
 
-    Bolognesa.IdentificationFixtures.insert_decision!(
+    Bolognesa.MovieIdentificationFixtures.insert_decision!(
       %{
         media_file_id: file.id,
         observed_revision: 1,
@@ -79,7 +78,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         state: :automatic,
         origin: :automatic
       },
-      [movie.id]
+      movie.id
     )
 
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies/#{movie.id}")
@@ -296,7 +295,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         })
       )
 
-    Bolognesa.IdentificationFixtures.insert_decision!(
+    Bolognesa.MovieIdentificationFixtures.insert_decision!(
       %{
         media_file_id: file.id,
         observed_revision: 1,
@@ -304,21 +303,12 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         state: :automatic,
         origin: :automatic
       },
-      [movie_id]
+      movie_id
     )
 
     file
   end
 
-  defp movie_changeset(attrs) do
-    entry =
-      Repo.insert!(
-        CatalogEntrySchema.changeset(
-          %CatalogEntrySchema{},
-          %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: attrs.provider_id}
-        )
-      )
-
-    MovieSchema.changeset(%MovieSchema{id: entry.id}, Map.drop(attrs, [:provider, :provider_id]))
-  end
+  defp movie_changeset(attrs),
+    do: MovieSchema.changeset(%MovieSchema{}, Map.put_new(attrs, :provider, :tmdb))
 end

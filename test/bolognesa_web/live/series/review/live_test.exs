@@ -2,9 +2,7 @@ defmodule BolognesaWeb.Series.Review.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
-  alias Bolognesa.Identification.Infrastructure.Repositories.EctoIdentificationRepository,
-    as: Repository
-
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
   alias Bolognesa.Test.DelayedSearchSeriesProvider
   alias Bolognesa.Test.SyntheticSeriesProvider
   alias BolognesaWeb.SeriesFixtures
@@ -40,7 +38,7 @@ defmodule BolognesaWeb.Series.Review.LiveTest do
 
     render_async(view)
     assert has_element?(view, "#series-review-feedback", "guardada")
-    assert {:ok, %{catalog_entry_ids: [id]}} = Repository.get(ctx.media_file.id)
+    assert {:ok, %{episode_ids: [id]}} = Repository.get(ctx.media_file.id)
     assert id == List.last(ctx.episode_ids)
     render_submit(view, "correct", %{"selection" => %{"episode_numbers" => [""]}})
     assert has_element?(view, "#series-review-feedback", "Selecciona")

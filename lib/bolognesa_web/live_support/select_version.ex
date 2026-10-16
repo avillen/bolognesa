@@ -3,6 +3,7 @@ defmodule BolognesaWeb.LiveSupport.SelectVersion do
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   alias Bolognesa.Playback
+  alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
 
   @spec call(Phoenix.LiveView.Socket.t(), binary()) :: Phoenix.LiveView.Socket.t()
   def call(socket, file_id_text) do
@@ -17,15 +18,15 @@ defmodule BolognesaWeb.LiveSupport.SelectVersion do
 
   defp prepare(socket, file_id) do
     actor = socket.assigns.current_scope.actor
-    catalog_entry_id = socket.assigns.catalog_entry_id
+    content_ref = socket.assigns.content_ref
     stop_previous(socket)
 
-    case Playback.delivery(actor, catalog_entry_id, file_id) do
+    case Playback.delivery(actor, content_ref, file_id) do
       {:ok, :direct, _source} ->
-        prepare_direct(socket, actor, catalog_entry_id, file_id)
+        prepare_direct(socket, actor, content_ref, file_id)
 
       {:ok, _profile, _source} ->
-        start_compatible(socket, actor, catalog_entry_id, file_id, 0, :auto)
+        start_compatible(socket, actor, content_ref, file_id, 0, :auto)
 
       {:error, reason} ->
         socket
@@ -37,13 +38,13 @@ defmodule BolognesaWeb.LiveSupport.SelectVersion do
   @spec start_compatible(
           Phoenix.LiveView.Socket.t(),
           Bolognesa.Identity.Domain.Entities.Actor.t(),
-          pos_integer(),
+          ContentRef.t(),
           pos_integer(),
           non_neg_integer(),
           :auto | :video
         ) :: Phoenix.LiveView.Socket.t()
-  def start_compatible(socket, actor, catalog_entry_id, file_id, offset_ms, mode) do
-    case Playback.start_compatible(actor, catalog_entry_id, file_id, offset_ms, mode) do
+  def start_compatible(socket, actor, content_ref, file_id, offset_ms, mode) do
+    case Playback.start_compatible(actor, content_ref, file_id, offset_ms, mode) do
       {:ok, session} ->
         Process.send_after(self(), {:compatible_poll, session.id}, 250)
 
@@ -74,8 +75,8 @@ defmodule BolognesaWeb.LiveSupport.SelectVersion do
     end
   end
 
-  defp prepare_direct(socket, actor, catalog_entry_id, file_id) do
-    case Playback.prepare(actor, catalog_entry_id, file_id) do
+  defp prepare_direct(socket, actor, content_ref, file_id) do
+    case Playback.prepare(actor, content_ref, file_id) do
       :ok ->
         socket
         |> assign(:selected_file_id, file_id)

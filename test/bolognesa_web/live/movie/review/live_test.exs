@@ -3,12 +3,10 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
   import Phoenix.LiveViewTest
 
   alias Bolognesa.Identity
-  alias Bolognesa.Repo
-
-  alias Bolognesa.Infrastructure.Persistence.IdentificationSchema
-
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
+  alias Bolognesa.Repo
 
   test "review queue shows correction controls", %{conn: conn} do
     {:ok, _} =
@@ -52,7 +50,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
       )
 
     Repo.insert!(
-      IdentificationSchema.changeset(%IdentificationSchema{}, %{
+      MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{
         media_file_id: file.id,
         observed_revision: 1,
         token: Ecto.UUID.generate(),
@@ -70,7 +68,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
     assert has_element?(view, "#review-select-#{file.id}")
 
     assert %{state: :manual_unidentified, origin: :manual} =
-             Repo.get_by!(IdentificationSchema, media_file_id: file.id)
+             Repo.get_by!(MovieIdentificationSchema, media_file_id: file.id)
   end
 
   test "missing TMDb token has an actionable review state", %{conn: conn} do
@@ -101,7 +99,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
       )
 
     Repo.insert!(
-      IdentificationSchema.changeset(%IdentificationSchema{}, %{
+      MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{
         media_file_id: file.id,
         observed_revision: 1,
         token: Ecto.UUID.generate(),
@@ -146,7 +144,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
           )
 
         Repo.insert!(
-          IdentificationSchema.changeset(%IdentificationSchema{}, %{
+          MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{
             media_file_id: file.id,
             observed_revision: 1,
             token: Ecto.UUID.generate(),

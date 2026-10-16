@@ -2,12 +2,12 @@ defmodule BolognesaWeb.Series.Review.Reducer.Save do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2]
-  alias Bolognesa.Identification
+  alias Bolognesa.Series
   alias BolognesaWeb.Series.Review.AsyncRequest
 
   @spec call(
           Phoenix.LiveView.Socket.t(),
-          Bolognesa.Identification.Application.UseCases.CorrectSeriesIdentification.choice()
+          Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification.choice()
         ) :: Phoenix.LiveView.Socket.t()
   def call(%{assigns: %{saving?: true}} = socket, _), do: socket
 
@@ -20,6 +20,6 @@ defmodule BolognesaWeb.Series.Review.Reducer.Save do
 
     socket
     |> assign(saving?: true, feedback: nil)
-    |> AsyncRequest.start(:correction, fn -> Identification.correct_series(actor, id, choice) end)
+    |> AsyncRequest.start(:correction, fn -> Series.correct(actor, id, choice) end)
   end
 end

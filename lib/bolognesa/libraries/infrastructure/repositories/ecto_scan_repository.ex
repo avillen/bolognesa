@@ -4,8 +4,11 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
 
   import Ecto.Query
 
-  alias Bolognesa.Identification
+  alias Bolognesa.Infrastructure.Persistence.InspectionEventSchema
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.ScanSchema
   alias Bolognesa.Libraries.Application.InventoryRequestPlan
   alias Bolognesa.Libraries.Domain.Entities.Scan
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
@@ -13,15 +16,11 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository.LibraryMapper
-  alias Bolognesa.Repo
-
-  alias Bolognesa.Infrastructure.Persistence.InspectionEventSchema
-  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
-
-  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-  alias Bolognesa.Infrastructure.Persistence.ScanSchema
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.MediaFileMapper
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.ScanMapper
+  alias Bolognesa.Movies
+  alias Bolognesa.Repo
+  alias Bolognesa.Series
 
   @impl true
   def request(library_id), do: request(library_id, false)
@@ -390,11 +389,12 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   defp schedule_identifications(library_id, entries, saved, plans) do
     case Repo.get!(LibrarySchema, library_id).content_type do
       :music -> :ok
-      _type -> schedule_video_identifications(entries, saved, plans)
+      :movie -> schedule_video_identifications(Movies, entries, saved, plans)
+      :series -> schedule_video_identifications(Series, entries, saved, plans)
     end
   end
 
-  defp schedule_video_identifications(entries, saved, plans) do
+  defp schedule_video_identifications(owner, entries, saved, plans) do
     requests =
       Enum.map(entries, fn entry ->
         file = Map.fetch!(saved, entry.relative_path)
@@ -406,7 +406,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
         }
       end)
 
-    Identification.request_batch_in_transaction!(Repo, requests)
+    owner.request_batch_in_transaction!(Repo, requests)
   end
 
   defp file_row(scan, entry, plan) do

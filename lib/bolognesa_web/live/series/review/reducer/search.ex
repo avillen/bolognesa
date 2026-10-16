@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.Search do
   @moduledoc false
   import Phoenix.Component, only: [assign: 2, to_form: 2]
   import Phoenix.LiveView, only: [stream: 4]
-  alias Bolognesa.Identification
+  alias Bolognesa.Series
   alias BolognesaWeb.Series.Review.AsyncRequest
   alias BolognesaWeb.Series.Review.Reducer.ResetSelection
   @spec call(Phoenix.LiveView.Socket.t(), binary()) :: Phoenix.LiveView.Socket.t()
@@ -20,7 +20,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.Search do
     )
     |> stream(:candidates, [], reset: true)
     |> AsyncRequest.start(:candidates, fn ->
-      Identification.search_series_candidates(actor, query)
+      Series.search_candidates(actor, query)
     end)
   end
 end

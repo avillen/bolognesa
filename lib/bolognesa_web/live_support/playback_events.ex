@@ -2,7 +2,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   use Gettext, backend: BolognesaWeb.Gettext
   @moduledoc "Shared LiveView lifecycle for authorized direct and HLS playback."
   alias Bolognesa.Playback
-  alias BolognesaWeb.LiveSupport.{PlaybackError, SelectVersion}
+  alias BolognesaWeb.LiveSupport.PlaybackError
+  alias BolognesaWeb.LiveSupport.SelectVersion
 
   @spec handle_event(binary(), map(), Phoenix.LiveView.Socket.t()) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
@@ -19,13 +20,13 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
          Integer.to_string(socket.assigns.selected_file_id) == file_id do
       SelectVersion.stop_previous(socket)
       actor = socket.assigns.current_scope.actor
-      catalog_entry_id = socket.assigns.catalog_entry_id
+      content_ref = socket.assigns.content_ref
 
       {:noreply,
        SelectVersion.start_compatible(
          socket,
          actor,
-         catalog_entry_id,
+         content_ref,
          socket.assigns.selected_file_id,
          0,
          :video
@@ -48,13 +49,13 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
              (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
         SelectVersion.stop_previous(socket)
         actor = socket.assigns.current_scope.actor
-        catalog_entry_id = socket.assigns.catalog_entry_id
+        content_ref = socket.assigns.content_ref
 
         next =
           SelectVersion.start_compatible(
             socket,
             actor,
-            catalog_entry_id,
+            content_ref,
             session.file_id,
             offset,
             if(session.profile == :video, do: :video, else: :auto)
@@ -174,14 +175,14 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
       {offset, ""}
       when offset >= 0 and (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
         actor = socket.assigns.current_scope.actor
-        catalog_entry_id = socket.assigns.catalog_entry_id
+        content_ref = socket.assigns.content_ref
         mode = if session.profile == :video, do: :video, else: :auto
 
         {:noreply,
          SelectVersion.start_compatible(
            socket,
            actor,
-           catalog_entry_id,
+           content_ref,
            session.file_id,
            offset,
            mode

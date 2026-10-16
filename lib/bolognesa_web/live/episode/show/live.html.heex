@@ -77,7 +77,7 @@
         <BolognesaWeb.Player.player
           prefix="episode"
           kind={:episode}
-          entry_id={@catalog_entry_id}
+          entry_id={elem(@content_ref, 1)}
           selected_file_id={@selected_file_id}
           compatible_session={@compatible_session}
           compatible_ready?={@compatible_ready?}

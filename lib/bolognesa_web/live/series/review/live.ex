@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.Series.Review.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
-  alias Bolognesa.Identification
+  alias Bolognesa.Series
   alias BolognesaWeb.Series.Review.Reducer
   @impl true
   def mount(_, _, socket), do: {:ok, Reducer.Initialize.call(socket)}
@@ -46,7 +46,7 @@ defmodule BolognesaWeb.Series.Review.Live do
     result =
       case integer(id, 1, nil) do
         nil -> {:error, :invalid_choice}
-        file_id -> Identification.retry(socket.assigns.current_scope.actor, file_id)
+        file_id -> Series.retry(socket.assigns.current_scope.actor, file_id)
       end
 
     socket =

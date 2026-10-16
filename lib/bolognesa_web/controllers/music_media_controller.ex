@@ -2,7 +2,8 @@ defmodule BolognesaWeb.MusicMediaController do
   use BolognesaWeb, :controller
 
   alias Bolognesa.Playback
-  alias BolognesaWeb.{MediaDelivery, MediaMime}
+  alias BolognesaWeb.MediaDelivery
+  alias BolognesaWeb.MediaMime
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"track_id" => entry_text, "file_id" => file_text}),
@@ -11,9 +12,9 @@ defmodule BolognesaWeb.MusicMediaController do
   defp serve_entry(conn, entry_text, file_text) do
     actor = conn.assigns.current_scope.actor
 
-    with {:ok, catalog_entry_id} <- positive_id(entry_text),
+    with {:ok, track_id} <- positive_id(entry_text),
          {:ok, file_id} <- positive_id(file_text),
-         {:ok, source} <- Playback.start_track(actor, catalog_entry_id, file_id),
+         {:ok, source} <- Playback.start_track(actor, track_id, file_id),
          {:ok, mime_type} <- MediaMime.for_path(source.relative_path, :music) do
       MediaDelivery.serve(conn, source, mime_type)
     else

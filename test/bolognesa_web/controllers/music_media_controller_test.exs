@@ -3,8 +3,6 @@ defmodule BolognesaWeb.MusicMediaControllerTest do
 
   alias Bolognesa.Identity
   alias Bolognesa.Infrastructure.LocalSourcePath
-
-  alias Bolognesa.Infrastructure.Persistence.CatalogEntrySchema
   alias Bolognesa.Repo
 
   import Bolognesa.MusicFixtures
@@ -201,12 +199,12 @@ defmodule BolognesaWeb.MusicMediaControllerTest do
     movie: track,
     media_file: file
   } do
-    Repo.insert!(
-      CatalogEntrySchema.changeset(
-        %CatalogEntrySchema{id: track.id},
-        %{kind: :movie, provider: :tmdb, resource_type: :movie, provider_id: 90_802}
-      )
-    )
+    Repo.insert!(%Bolognesa.Infrastructure.Persistence.MovieSchema{
+      id: track.id,
+      provider: :tmdb,
+      provider_id: 90_802,
+      title: "Synthetic movie"
+    })
 
     assert conn
            |> init_test_session(user_token: token)
