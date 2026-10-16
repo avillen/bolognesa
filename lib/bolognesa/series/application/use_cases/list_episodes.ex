@@ -1,7 +1,7 @@
 defmodule Bolognesa.Series.Application.UseCases.ListEpisodes do
   @moduledoc "Authorize a bounded season episode page."
-  alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Series.Application.Ports.Readers.SeriesReader
   alias Bolognesa.Series.Application.UseCases.ListEpisodes.Response, as: EpisodePage
   alias Bolognesa.Series.Domain.ReadModels.Season
@@ -10,7 +10,7 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes do
           {:ok, EpisodePage.t()}
           | {:error, :forbidden | :not_found | :invalid_page | :unavailable}
   def call(actor, id, page, reader) do
-    with :ok <- Identity.authorize(actor, :admin),
+    with :ok <- Accounts.authorize(actor, :admin),
          :ok <- valid_id(id),
          :ok <- valid_page(page),
          {:ok, result} <- reader.list_episodes(id, page) do

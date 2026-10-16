@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.UserAuthTest do
   use BolognesaWeb.ConnCase, async: false
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias BolognesaWeb.UserAuth
 
   test "an empty installation redirects anonymous visitors to setup", %{conn: conn} do
@@ -10,7 +10,7 @@ defmodule BolognesaWeb.UserAuthTest do
 
   test "an installed site redirects anonymous visitors to login", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "ada@example.com",
         password: "correct horse battery staple"

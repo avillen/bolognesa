@@ -1,6 +1,6 @@
 defmodule Bolognesa.MusicFixtures do
   @moduledoc false
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, LibrarySchema, MediaFileSchema}
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
   alias Bolognesa.Repo

@@ -2,18 +2,18 @@ defmodule BolognesaWeb.DashboardTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.Persistence.UserSchema
 
   setup do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "ada@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("ada@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("ada@example.com", "correct horse battery staple")
     %{token: token}
   end
 
@@ -38,7 +38,7 @@ defmodule BolognesaWeb.DashboardTest do
   end
 
   test "a revoked session cannot connect to the dashboard", %{conn: conn, token: token} do
-    assert :ok = Identity.end_session(token)
+    assert :ok = Accounts.end_session(token)
 
     assert {:error, {:redirect, %{to: "/login"}}} =
              conn |> init_test_session(user_token: token) |> live("/dev/dashboard")

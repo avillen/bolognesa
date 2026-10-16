@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
@@ -13,13 +13,13 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
   test "shows movie details and versions container", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "show@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("show@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("show@example.com", "correct horse battery staple")
 
     movie =
       Repo.insert!(
@@ -38,14 +38,14 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
   test "each confirmed version can open manual correction", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "correct-show@example.com",
         password: "correct horse battery staple"
       })
 
     {:ok, token} =
-      Identity.start_session("correct-show@example.com", "correct horse battery staple")
+      Accounts.start_session("correct-show@example.com", "correct horse battery staple")
 
     movie =
       Repo.insert!(
@@ -92,14 +92,14 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
   test "selects available versions and clears an old playback error", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "play-show@example.com",
         password: "correct horse battery staple"
       })
 
     {:ok, token} =
-      Identity.start_session("play-show@example.com", "correct horse battery staple")
+      Accounts.start_session("play-show@example.com", "correct horse battery staple")
 
     movie =
       Repo.insert!(
@@ -232,14 +232,14 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
   test "shows the first selection error when the file has disappeared", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "missing-play@example.com",
         password: "correct horse battery staple"
       })
 
     {:ok, token} =
-      Identity.start_session("missing-play@example.com", "correct horse battery staple")
+      Accounts.start_session("missing-play@example.com", "correct horse battery staple")
 
     movie =
       Repo.insert!(

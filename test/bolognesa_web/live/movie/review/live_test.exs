@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
@@ -10,13 +10,13 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
 
   test "review queue shows correction controls", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "review@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("review@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("review@example.com", "correct horse battery staple")
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies/review")
     render_async(view)
     assert has_element?(view, "#review-list")
@@ -25,13 +25,13 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
 
   test "administrator can mark a pending file unidentified", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "decision@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("decision@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("decision@example.com", "correct horse battery staple")
 
     library =
       Repo.insert!(
@@ -73,14 +73,14 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
 
   test "missing TMDb token has an actionable review state", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "missing-token@example.com",
         password: "correct horse battery staple"
       })
 
     {:ok, token} =
-      Identity.start_session("missing-token@example.com", "correct horse battery staple")
+      Accounts.start_session("missing-token@example.com", "correct horse battery staple")
 
     library =
       Repo.insert!(
@@ -119,13 +119,13 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
 
   test "switching files clears the previous candidate choice", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "switch@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("switch@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("switch@example.com", "correct horse battery staple")
 
     library =
       Repo.insert!(LibrarySchema.changeset(%LibrarySchema{}, %{name: "Switch", path: "/switch"}))

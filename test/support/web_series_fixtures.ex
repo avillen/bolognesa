@@ -1,6 +1,6 @@
 defmodule BolognesaWeb.SeriesFixtures do
   @moduledoc false
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
@@ -12,13 +12,13 @@ defmodule BolognesaWeb.SeriesFixtures do
   @spec setup(Plug.Conn.t()) :: map()
   def setup(conn) do
     {:ok, actor} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "series@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("series@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("series@example.com", "correct horse battery staple")
     root = hd(Application.fetch_env!(:bolognesa, :library_roots))
     directory = Path.join(root, "series-web-#{System.unique_integer([:positive])}")
     File.mkdir_p!(directory)

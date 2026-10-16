@@ -1,6 +1,6 @@
 defmodule Bolognesa.Movies do
   @moduledoc "Owns movie browsing, identification, corrections, and recovery."
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Movies.Application.Ports.Providers.MovieProvider
   alias Bolognesa.Movies.Application.UseCases.CorrectMovieIdentification
   alias Bolognesa.Movies.Application.UseCases.GetMovie

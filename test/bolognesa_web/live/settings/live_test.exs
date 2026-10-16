@@ -1,14 +1,14 @@
 defmodule BolognesaWeb.Settings.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
 
   @password "correct horse battery staple"
   setup %{conn: conn} do
     {:ok, actor} =
-      Identity.install_admin(%{name: "Ada", email: "ada@example.com", password: @password})
+      Accounts.install_admin(%{name: "Ada", email: "ada@example.com", password: @password})
 
-    {:ok, token} = Identity.start_session("ada@example.com", @password)
+    {:ok, token} = Accounts.start_session("ada@example.com", @password)
     %{conn: init_test_session(conn, user_token: token), actor: actor, token: token}
   end
 
@@ -22,7 +22,7 @@ defmodule BolognesaWeb.Settings.LiveTest do
     assert has_element?(view, "#nav-settings[aria-current=page]")
     view |> form("#locale-form", preferences: %{locale: "en"}) |> render_submit()
     assert_redirect(view, "/settings")
-    assert {:ok, %{locale: "en"}} = Identity.fetch_actor(token)
+    assert {:ok, %{locale: "en"}} = Accounts.fetch_actor(token)
     conn = get(init_test_session(build_conn(), user_token: token), "/settings")
 
     assert conn
@@ -35,7 +35,7 @@ defmodule BolognesaWeb.Settings.LiveTest do
     assert has_element?(view, "#save-locale", "Save")
     view |> form("#locale-form", preferences: %{locale: ""}) |> render_submit()
     assert_redirect(view, "/settings")
-    assert {:ok, %{locale: nil}} = Identity.fetch_actor(token)
+    assert {:ok, %{locale: nil}} = Accounts.fetch_actor(token)
   end
 
   test "invalid and manipulated parameters never modify identity", %{conn: conn, token: token} do
@@ -46,6 +46,6 @@ defmodule BolognesaWeb.Settings.LiveTest do
     })
 
     assert has_element?(view, "#locale-form")
-    assert {:ok, %{locale: nil, role: :admin}} = Identity.fetch_actor(token)
+    assert {:ok, %{locale: nil, role: :admin}} = Accounts.fetch_actor(token)
   end
 end

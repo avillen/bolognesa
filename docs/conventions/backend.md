@@ -41,9 +41,9 @@ Organize domain modules by concept type where useful: `entities/`, `value_object
 
 ## Context responsibilities
 
-### Identity
+### Accounts
 
-Owns accounts, credentials, sessions, and authorization. Initial setup creates one administrator; there is no public registration or hard-coded user. Protected use cases receive an authenticated `Actor` established by trusted authentication, never an arbitrary client-supplied ID. Authorization is enforced in the backend, including media delivery.
+Owns accounts, credentials, sessions, and authorization through `Bolognesa.Accounts`. Persistence uses the `accounts_users` and `accounts_sessions` tables. Initial setup creates one administrator; there is no public registration or hard-coded user. Protected use cases receive an authenticated `Actor` established by trusted authentication, never an arbitrary client-supplied ID. Authorization is enforced in the backend, including media delivery.
 
 ### Libraries
 

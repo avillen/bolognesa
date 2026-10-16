@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Setup.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
 
   @valid %{
     name: "Ada",
@@ -30,7 +30,7 @@ defmodule BolognesaWeb.Setup.LiveTest do
     |> render_change()
 
     assert has_element?(view, "#setup-form")
-    assert {:ok, :open} = Identity.setup_status()
+    assert {:ok, :open} = Accounts.setup_status()
   end
 
   test "setup rejects a password containing NUL before sending it to the backend", %{conn: conn} do
@@ -49,14 +49,14 @@ defmodule BolognesaWeb.Setup.LiveTest do
     |> render_submit()
 
     assert has_element?(view, "#setup-form")
-    assert {:ok, :open} = Identity.setup_status()
+    assert {:ok, :open} = Accounts.setup_status()
   end
 
   test "valid setup creates the administrator and closes setup", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/setup")
     view |> form("#setup-form", admin: @valid) |> render_submit()
     assert_redirect(view, "/login")
-    assert {:ok, :closed} = Identity.setup_status()
+    assert {:ok, :closed} = Accounts.setup_status()
     assert {:error, {:redirect, %{to: "/login"}}} = live(build_conn(), ~p"/setup")
   end
 
@@ -64,7 +64,7 @@ defmodule BolognesaWeb.Setup.LiveTest do
     {:ok, view, _html} = live(conn, ~p"/setup")
 
     assert {:ok, _} =
-             Identity.install_admin(%{
+             Accounts.install_admin(%{
                name: "First",
                email: "first@example.com",
                password: "correct horse battery staple"
@@ -74,14 +74,14 @@ defmodule BolognesaWeb.Setup.LiveTest do
     assert_redirect(view, "/login")
 
     assert {:error, :invalid_credentials} =
-             Identity.start_session("ada@example.com", "correct horse battery staple")
+             Accounts.start_session("ada@example.com", "correct horse battery staple")
   end
 
   test "a stale form redirects even when its submitted fields are invalid", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/setup")
 
     assert {:ok, _} =
-             Identity.install_admin(%{
+             Accounts.install_admin(%{
                name: "First",
                email: "first@example.com",
                password: "correct horse battery staple"

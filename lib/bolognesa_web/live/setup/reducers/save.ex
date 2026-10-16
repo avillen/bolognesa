@@ -4,12 +4,12 @@ defmodule BolognesaWeb.Setup.Reducers.Save do
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias BolognesaWeb.Setup.Forms.Admin
 
   @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
   def call(socket, params) do
-    case Identity.setup_status() do
+    case Accounts.setup_status() do
       {:ok, :closed} ->
         redirect(socket, to: "/login")
 
@@ -38,7 +38,7 @@ defmodule BolognesaWeb.Setup.Reducers.Save do
   defp save(socket, changeset) do
     attrs = Map.take(Ecto.Changeset.apply_changes(changeset), [:name, :email, :password])
 
-    case Identity.install_admin(attrs) do
+    case Accounts.install_admin(attrs) do
       {:ok, _actor} ->
         redirect(socket, to: "/login")
 

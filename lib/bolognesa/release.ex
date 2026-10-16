@@ -6,8 +6,8 @@ defmodule Bolognesa.Release do
   @app :bolognesa
   import Ecto.Query
 
-  alias Bolognesa.Identity.Domain.Entities.Actor
-  alias Bolognesa.Identity.Infrastructure.Repositories.EctoUserRepository.UserMapper
+  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository.UserMapper
   alias Bolognesa.Infrastructure.Persistence.UserSchema
   alias Bolognesa.Repo
 

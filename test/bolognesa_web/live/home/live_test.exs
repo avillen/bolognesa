@@ -2,17 +2,17 @@ defmodule BolognesaWeb.Home.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
 
   setup do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "ada@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("ada@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("ada@example.com", "correct horse battery staple")
     %{token: token}
   end
 
@@ -36,7 +36,7 @@ defmodule BolognesaWeb.Home.LiveTest do
   end
 
   test "a revoked token cannot mount Inicio", %{conn: conn, token: token} do
-    assert :ok = Identity.end_session(token)
+    assert :ok = Accounts.end_session(token)
     conn = init_test_session(conn, user_token: token)
     assert {:error, {:redirect, %{to: "/login"}}} = live(conn, ~p"/")
   end

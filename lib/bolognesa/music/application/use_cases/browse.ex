@@ -1,7 +1,7 @@
 defmodule Bolognesa.Music.Application.UseCases.Browse do
   @moduledoc "Authorized, bounded browsing of existing local identities."
-  alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Music.Application.Dto.BrowsePage
   alias Bolognesa.Music.Application.Ports.Readers.BrowseReader
 
@@ -18,7 +18,7 @@ defmodule Bolognesa.Music.Application.UseCases.Browse do
           BrowseReader.adapter()
         ) :: result()
   def call(actor, kind, artist_id, query, page, library_id, reader) do
-    with :ok <- Identity.authorize(actor, :admin),
+    with :ok <- Accounts.authorize(actor, :admin),
          true <-
            kind in [:artists, :albums] and valid_id?(artist_id) and valid_id?(library_id) and
              is_binary(query) and String.valid?(query) and byte_size(query) <= 256 and

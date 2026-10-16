@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.MediaControllerTest do
   use BolognesaWeb.ConnCase, async: false
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -10,13 +10,13 @@ defmodule BolognesaWeb.MediaControllerTest do
 
   setup do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "media@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("media@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("media@example.com", "correct horse battery staple")
 
     base = hd(Application.fetch_env!(:bolognesa, :library_roots))
     directory = Path.join(base, "media-http-#{System.unique_integer([:positive])}")
@@ -161,7 +161,7 @@ defmodule BolognesaWeb.MediaControllerTest do
     wrong_path = ~p"/movies/#{other.id}/media/#{file.id}"
     assert conn |> init_test_session(user_token: token) |> get(wrong_path) |> response(404) == ""
 
-    assert :ok = Identity.end_session(token)
+    assert :ok = Accounts.end_session(token)
     assert conn |> init_test_session(user_token: token) |> get(path) |> response(401) == ""
   end
 

@@ -1,9 +1,9 @@
 defmodule Bolognesa.Movies.Application.UseCases.SearchMovieCandidates do
   @moduledoc "Authorize and validate a manual movie search."
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
 
   def call(actor, query, provider) do
-    with :ok <- Identity.authorize(actor, :admin),
+    with :ok <- Accounts.authorize(actor, :admin),
          :ok <- valid_query(query) do
       provider.search(String.trim(query), nil)
     end

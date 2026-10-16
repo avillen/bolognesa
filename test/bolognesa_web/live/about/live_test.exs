@@ -2,17 +2,17 @@ defmodule BolognesaWeb.About.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
 
   test "authenticated about page attributes TMDb", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "about@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("about@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("about@example.com", "correct horse battery staple")
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/about")
     assert has_element?(view, "#tmdb-attribution")
     assert has_element?(view, "#tmdb-attribution img[alt]")
@@ -21,7 +21,7 @@ defmodule BolognesaWeb.About.LiveTest do
 
   test "anonymous visitor cannot open about", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "anonymous-about@example.com",
         password: "correct horse battery staple"

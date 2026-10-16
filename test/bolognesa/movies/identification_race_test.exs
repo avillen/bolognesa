@@ -1,7 +1,7 @@
 defmodule Bolognesa.Movies.IdentificationRaceTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema

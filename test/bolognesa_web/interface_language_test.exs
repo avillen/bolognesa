@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.InterfaceLanguageTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
@@ -9,13 +9,13 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
 
   setup %{conn: conn} do
     {:ok, actor} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "ada@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("ada@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("ada@example.com", "correct horse battery staple")
     %{conn: init_test_session(conn, user_token: token), actor: actor, token: token}
   end
 
@@ -50,7 +50,7 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
     render_submit(spanish, "save", %{"preferences" => %{"locale" => "fr"}})
     assert has_element?(english, "#locale-form", "is invalid")
     assert has_element?(spanish, "#locale-form", "no es válido")
-    assert {:ok, _} = Identity.update_locale(actor, "en")
+    assert {:ok, _} = Accounts.update_locale(actor, "en")
     assert has_element?(spanish, "#save-locale", "Guardar")
     {:ok, reopened, _} = live(init_test_session(build_conn(), user_token: token), "/settings")
     assert has_element?(reopened, "#save-locale", "Save")

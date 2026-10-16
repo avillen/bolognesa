@@ -4,14 +4,14 @@ defmodule BolognesaWeb.Login.Reducers.Initialize do
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias BolognesaWeb.Login.Forms.Login
 
   @spec call(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def call(socket) do
     socket = assign(socket, :current_scope, nil)
 
-    case Identity.setup_status() do
+    case Accounts.setup_status() do
       {:ok, :open} ->
         redirect(socket, to: "/setup")
 

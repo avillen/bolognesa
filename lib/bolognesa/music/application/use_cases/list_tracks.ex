@@ -1,7 +1,7 @@
 defmodule Bolognesa.Music.Application.UseCases.ListTracks do
   @moduledoc "Authorize and validate local musical reads."
-  alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Music.Application.Dto.TrackPage
   alias Bolognesa.Music.Application.Ports.Readers.TracksReader
   @type error :: :forbidden | :invalid_query | :not_found | :unavailable
@@ -14,7 +14,7 @@ defmodule Bolognesa.Music.Application.UseCases.ListTracks do
           TracksReader.adapter()
         ) :: result()
   def call(actor, query, page, library_id, reader) do
-    with :ok <- Identity.authorize(actor, :admin),
+    with :ok <- Accounts.authorize(actor, :admin),
          true <- valid?(query, page, library_id),
          {:ok, result} <- reader.list_tracks(query, page, library_id) do
       {:ok, TrackPage.from_domain(result)}

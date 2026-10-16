@@ -1,7 +1,7 @@
 defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
   @moduledoc "Authorize album tracks and bounded album playback queues."
-  alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Music.Application.Dto.{Track, TrackPage}
   alias Bolognesa.Music.Application.Ports.Readers.TracksReader
   @type error :: :forbidden | :invalid_query | :not_found | :unavailable | :album_too_large
@@ -36,7 +36,7 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
   end
 
   defp validate(actor, id, query, page, library) do
-    with :ok <- Identity.authorize(actor, :admin) do
+    with :ok <- Accounts.authorize(actor, :admin) do
       valid_query(id, query, page, library)
     end
   end

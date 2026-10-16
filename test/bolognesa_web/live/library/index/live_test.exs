@@ -8,7 +8,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   alias Phoenix.LiveView.Channel
   import Phoenix.LiveViewTest
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
@@ -26,18 +26,18 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
 
   setup do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "ada@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("ada@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("ada@example.com", "correct horse battery staple")
     root = Application.fetch_env!(:bolognesa, :library_roots) |> hd()
     path = Path.join(root, "web-#{System.unique_integer([:positive])}")
     File.mkdir_p!(path)
     on_exit(fn -> File.rm_rf!(path) end)
-    {:ok, actor} = Identity.fetch_actor(token)
+    {:ok, actor} = Accounts.fetch_actor(token)
     %{token: token, path: path, actor: actor}
   end
 
@@ -95,7 +95,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     {:ok, reopened, _} = live(conn, ~p"/libraries")
     assert has_element?(reopened, "#library-list [data-library-name='Películas']")
 
-    {:ok, new_token} = Identity.start_session("ada@example.com", "correct horse battery staple")
+    {:ok, new_token} = Accounts.start_session("ada@example.com", "correct horse battery staple")
     new_conn = Phoenix.ConnTest.build_conn() |> init_test_session(user_token: new_token)
     {:ok, new_session, _} = live(new_conn, ~p"/libraries")
     assert has_element?(new_session, "#library-list [data-library-name='Películas']")

@@ -1,19 +1,19 @@
 defmodule Bolognesa.Movies.Application.UseCases.ListMovieReviewItems do
   @moduledoc "Authorize paginated identification review."
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Movies.Application.Ports.Readers.MovieReviewReader
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems.Item, as: MovieReviewItem
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems.Response, as: MovieReviewPage
 
   @spec call(
-          Bolognesa.Identity.Domain.Entities.Actor.t(),
+          Bolognesa.Accounts.Domain.Entities.Actor.t(),
           pos_integer(),
           MovieReviewReader.adapter()
         ) ::
           {:ok, MovieReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}
   def call(actor, page, reader) do
-    with :ok <- Identity.authorize(actor, :admin),
+    with :ok <- Accounts.authorize(actor, :admin),
          :ok <- validate_page(page),
          {:ok, {entries, total}} <- reader.list_review_items(page) do
       {:ok,

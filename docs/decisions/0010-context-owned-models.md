@@ -2,7 +2,7 @@
 
 Status: Accepted and implemented locally.
 
-[0019](0019-content-context-boundaries.md) names Movies and Series as owners in place of Catalog and Identification. Context-owned models, global persistence schemas, and the transactional facade exception remain valid. The authenticated contract is `Identity.Domain.Entities.Actor`.
+[0019](0019-content-context-boundaries.md) names Movies and Series as owners in place of Catalog and Identification. Context-owned models, global persistence schemas, and the transactional facade exception remain valid. The authenticated contract is `Accounts.Domain.Entities.Actor`.
 
 ## Context
 
@@ -13,7 +13,7 @@ Catalog and Identification readers had reused entities and mappers from other co
 - Each context owns models for its reads and operations, with only the data it needs. A small amount of duplicated data is preferable to sharing entities for convenience.
 - Cross-context calls go through public facades and use IDs when sufficient. Identification can write a request in the inventory transaction through an explicit facade operation.
 - Shared Ecto schemas remain in `Bolognesa.Infrastructure.Persistence`. Shared physical path validation belongs to neutral infrastructure.
-- `Identity.Domain.Actor` remains the explicit authenticated-identity contract for protected operations.
+- `Accounts.Domain.Entities.Actor` remains the explicit authenticated-identity contract for protected operations.
 
 ## Consequences
 

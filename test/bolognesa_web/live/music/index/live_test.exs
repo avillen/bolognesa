@@ -2,18 +2,18 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
   import Bolognesa.MusicFixtures
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Repo
 
   setup do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "music@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("music@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("music@example.com", "correct horse battery staple")
     %{token: token}
   end
 

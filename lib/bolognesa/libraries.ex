@@ -22,13 +22,13 @@ defmodule Bolognesa.Libraries do
     EctoScanRepository
   }
 
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
   @spec subscribe_status_updates(Actor.t() | nil) ::
           :ok | {:error, :forbidden | :unavailable}
   def subscribe_status_updates(actor) do
-    with :ok <- Bolognesa.Identity.authorize(actor, :admin) do
+    with :ok <- Bolognesa.Accounts.authorize(actor, :admin) do
       LibraryStatusNotifications.subscribe()
     end
   end

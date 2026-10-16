@@ -1,13 +1,13 @@
 defmodule BolognesaWeb.SessionControllerTest do
   use BolognesaWeb.ConnCase, async: false
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
 
   @password "correct horse battery staple"
 
   setup do
     {:ok, actor} =
-      Identity.install_admin(%{name: "Ada", email: "ada@example.com", password: @password})
+      Accounts.install_admin(%{name: "Ada", email: "ada@example.com", password: @password})
 
     %{actor: actor}
   end
@@ -20,7 +20,7 @@ defmodule BolognesaWeb.SessionControllerTest do
 
     assert redirected_to(conn) == ~p"/"
     assert token = get_session(conn, :user_token)
-    assert {:ok, _actor} = Identity.fetch_actor(token)
+    assert {:ok, _actor} = Accounts.fetch_actor(token)
     assert conn |> recycle() |> get(~p"/") |> html_response(200)
   end
 
@@ -42,7 +42,7 @@ defmodule BolognesaWeb.SessionControllerTest do
     token = get_session(login, :user_token)
     logout = login |> recycle() |> delete(~p"/logout")
     assert redirected_to(logout) == ~p"/login"
-    assert {:error, :unauthenticated} = Identity.fetch_actor(token)
+    assert {:error, :unauthenticated} = Accounts.fetch_actor(token)
     assert get_session(logout, :user_token) == nil
     assert redirected_to(login |> recycle() |> get(~p"/")) == ~p"/login"
   end

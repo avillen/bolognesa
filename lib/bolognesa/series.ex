@@ -1,6 +1,6 @@
 defmodule Bolognesa.Series do
   @moduledoc "Owns series browsing, identification, corrections, and recovery."
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Series.Application.Dto.SeriesReviewItem
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification

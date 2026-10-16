@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.Settings.Forms.Preferences do
   @moduledoc false
   import Ecto.Changeset
-  alias Bolognesa.Identity.Domain.ValueObjects.Locale
+  alias Bolognesa.Accounts.Domain.ValueObjects.Locale
   @spec changeset(Locale.t(), map()) :: Ecto.Changeset.t()
   def changeset(locale, params \\ %{}) do
     {%{locale: locale || ""}, %{locale: :string}}

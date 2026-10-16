@@ -1,7 +1,7 @@
 defmodule Bolognesa.Series.Application.UseCases.SearchSeriesCandidates do
   @moduledoc "Authorize a bounded manual series search."
-  alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Series.Domain.ValueObjects.SeriesCandidate
 
@@ -9,7 +9,7 @@ defmodule Bolognesa.Series.Application.UseCases.SearchSeriesCandidates do
           {:ok, [SeriesCandidate.t()]}
           | {:error, :forbidden | :invalid_query | SeriesProvider.reason()}
   def call(actor, query, provider) do
-    with :ok <- Identity.authorize(actor, :admin),
+    with :ok <- Accounts.authorize(actor, :admin),
          :ok <- validate(query),
          do: provider.search(String.trim(query), nil)
   end

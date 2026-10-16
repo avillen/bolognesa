@@ -18,7 +18,7 @@ The requested final architecture review is part of completion. Its outcome may b
 
 | Context | Owns |
 | --- | --- |
-| Identity | Accounts, sessions, and authorization policy |
+| Accounts | Accounts, sessions, and authorization policy |
 | Libraries | Sources, inventory, scans, technical observations, and durable inspection handoffs |
 | Movies | Movie identities and metadata, versions, file identification, review, corrections, requests, outbox delivery, and recovery |
 | Series | Series/season/episode identities and metadata, ordered file associations, identification, review, corrections, requests, outbox delivery, and recovery |
@@ -48,7 +48,7 @@ Remove `catalog_entries`, `media_identifications`, `identification_entries`, and
 - `movie_identifications` owns one decision per inventory file, current revision/token, provenance, candidates, job/recovery fields, and a nullable `movie_id`. Only confirmed decisions have an active movie reference. Several file decisions can point to the same movie as versions.
 - `series_identifications` owns one decision per inventory file and the equivalent series-specific decision state. `series_identification_episodes` owns its ordered episode references, with uniqueness and positive-position constraints. Preserve the bounded, same-season, all-or-nothing selection policy.
 - `movie_identification_events` and `series_identification_events` are separate durable outboxes. Each domain owns its dispatcher, worker, backfill, and reconciler.
-- Existing Libraries, Music, Identity, and Oban schemas remain unless a concrete dependency requires a change. The allowed whole-database reset also clears old accounts, library configuration, and jobs; source media is never modified.
+- Existing Libraries, Music, Accounts, and Oban schemas remain unless a concrete dependency requires a change. The allowed whole-database reset also clears old accounts, library configuration, and jobs; source media is never modified.
 
 Keep current TMDb matching and local music identity behavior. Introducing local unmatched video works or recording/release deduplication is outside scope. Do not add a universal provider-reference table without a concrete requirement.
 
@@ -85,7 +85,7 @@ Use current behavior tests as refactor protection. Reorganize them with their ow
 - Injected persistence failure rolls back inventory/request/event together and identity/details/association together. Multi-episode selection never persists only a subset.
 - Library scoping, literal search, pagination, constant-query episode/version reads, review screens, correction feedback, and authenticated playback keep their existing contracts.
 - Music import, conservative grouping, inspection handoff, retry, and bounded album playback remain unaffected after reimport. Equal movie/episode/track IDs cannot select another content type, including through HLS session and segment endpoints.
-- No production caller imports removed Catalog/Identification modules or references obsolete tables. No Movies/Series/Music context imports another content context's internal modules. Global persistence schemas and Identity's Actor contract remain permitted contracts under existing conventions.
+- No production caller imports removed Catalog/Identification modules or references obsolete tables. No Movies/Series/Music context imports another content context's internal modules. Global persistence schemas and Accounts' Actor contract remain permitted contracts under existing conventions.
 - Tests run against controlled providers and PostgreSQL. Record actual commands and results; automated success does not establish deployment or device compatibility.
 
 Existing regression anchors include `test/bolognesa/movies/`, `test/bolognesa/series/`, `test/bolognesa/libraries/scan_inventory_test.exs`, `test/bolognesa/playback/`, `test/bolognesa/music/`, and movie/series/music LiveView and media controller tests. Detailed task commands must track their destination paths as tests move.

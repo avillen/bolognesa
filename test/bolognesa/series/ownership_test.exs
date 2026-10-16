@@ -1,6 +1,6 @@
 defmodule Bolognesa.Series.OwnershipTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationEventSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema

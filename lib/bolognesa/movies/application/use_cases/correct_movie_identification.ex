@@ -1,12 +1,12 @@
 defmodule Bolognesa.Movies.Application.UseCases.CorrectMovieIdentification do
   @moduledoc "Resolve an identification by an administrator's explicit choice."
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Movies.Application.Ports.Providers.MovieProvider
   alias Bolognesa.Movies.Application.Ports.Repositories.IdentificationRepository
   alias Bolognesa.Movies.Domain.Entities.Identification
 
   @spec call(
-          Bolognesa.Identity.Domain.Entities.Actor.t(),
+          Bolognesa.Accounts.Domain.Entities.Actor.t(),
           pos_integer(),
           :unidentified | {:tmdb, pos_integer()},
           IdentificationRepository.adapter(),
@@ -21,7 +21,7 @@ defmodule Bolognesa.Movies.Application.UseCases.CorrectMovieIdentification do
              | :wrong_content_type
              | :source_changed}
   def call(actor, file_id, choice, repository, provider) do
-    with :ok <- Identity.authorize(actor, :admin),
+    with :ok <- Accounts.authorize(actor, :admin),
          {:ok, file} <- repository.find_file(file_id),
          :ok <- movie_file(file),
          {:ok, details} <- details(choice, provider) do

@@ -8,7 +8,7 @@ The interface needed English and Spanish, browser-language detection, and a choi
 
 ## Decision
 
-Identity stores a nullable `locale` preference. `nil` follows the browser; explicit values are `en` and `es`, validated by the domain and database. Only the verified actor's ID can update the preference.
+Accounts stores a nullable `locale` preference. `nil` follows the browser; explicit values are `en` and `es`, validated by the domain and database. Only the verified actor's ID can update the preference.
 
 Resolve locale in this order: account preference, `Accept-Language`, then Spanish. Normalize regional variants and honor quality, order, and exclusions. Set Gettext per request/process; the HTML document declares the effective language.
 

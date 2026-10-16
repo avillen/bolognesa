@@ -37,7 +37,7 @@ defmodule BolognesaWeb.LiveSupport.SelectVersion do
 
   @spec start_compatible(
           Phoenix.LiveView.Socket.t(),
-          Bolognesa.Identity.Domain.Entities.Actor.t(),
+          Bolognesa.Accounts.Domain.Entities.Actor.t(),
           ContentRef.t(),
           pos_integer(),
           non_neg_integer(),

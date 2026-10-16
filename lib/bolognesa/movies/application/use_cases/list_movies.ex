@@ -1,11 +1,11 @@
 defmodule Bolognesa.Movies.Application.UseCases.ListMovies do
   @moduledoc "Authorize and bound a movie catalog search."
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Movies.Application.Ports.Readers.MoviesReader
   alias Bolognesa.Movies.Application.UseCases.ListMovies.Response, as: MoviePage
 
   @spec call(
-          Bolognesa.Identity.Domain.Entities.Actor.t(),
+          Bolognesa.Accounts.Domain.Entities.Actor.t(),
           String.t(),
           MoviesReader.page_number(),
           MoviesReader.adapter(),
@@ -13,7 +13,7 @@ defmodule Bolognesa.Movies.Application.UseCases.ListMovies do
         ) ::
           {:ok, MoviePage.t()} | {:error, :forbidden | :invalid_query | :unavailable}
   def call(actor, query, page, reader, library_id \\ nil) do
-    with :ok <- Identity.authorize(actor, :admin),
+    with :ok <- Accounts.authorize(actor, :admin),
          :ok <- validate_library(library_id),
          :ok <- validate(query, page),
          {:ok, result} <- reader.list_movies(String.trim(query), page, library_id) do

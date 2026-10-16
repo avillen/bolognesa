@@ -1,6 +1,6 @@
 defmodule Bolognesa.Series.SeriesReviewQueriesTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
   alias Bolognesa.Series
   alias Bolognesa.SeriesFixtures

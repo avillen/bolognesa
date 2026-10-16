@@ -1,6 +1,6 @@
 defmodule Bolognesa.Libraries.LibraryTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries
   alias Ecto.Adapters.SQL.Sandbox

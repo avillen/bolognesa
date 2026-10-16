@@ -12,7 +12,7 @@ defmodule Bolognesa.Infrastructure.Persistence.UserSchema do
           locale: String.t() | nil
         }
 
-  schema "identity_users" do
+  schema "accounts_users" do
     field :name, :string
     field :email, :string
     field :role, :string
@@ -27,6 +27,6 @@ defmodule Bolognesa.Infrastructure.Persistence.UserSchema do
     |> cast(attrs, [:name, :email])
     |> validate_required([:name, :email, :role, :hashed_password])
     |> unique_constraint(:email)
-    |> unique_constraint(:role, name: :identity_one_admin)
+    |> unique_constraint(:role, name: :accounts_one_admin)
   end
 end

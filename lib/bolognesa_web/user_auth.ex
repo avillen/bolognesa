@@ -4,14 +4,14 @@ defmodule BolognesaWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller, only: [redirect: 2]
 
-  alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts
+  alias Bolognesa.Accounts.Domain.Entities.Actor
 
   @spec fetch_current_scope(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
   def fetch_current_scope(conn, _opts) do
     case get_session(conn, :user_token) do
       nil -> assign(conn, :current_scope, nil)
-      token -> assign_scope_result(conn, Identity.fetch_actor(token))
+      token -> assign_scope_result(conn, Accounts.fetch_actor(token))
     end
   end
 
@@ -73,7 +73,7 @@ defmodule BolognesaWeb.UserAuth do
     result =
       case session["user_token"] do
         nil -> {:error, :unauthenticated}
-        token -> Identity.fetch_actor(token)
+        token -> Accounts.fetch_actor(token)
       end
 
     case result do
@@ -109,7 +109,7 @@ defmodule BolognesaWeb.UserAuth do
   end
 
   defp redirect_unauthenticated(conn) do
-    case Identity.setup_status() do
+    case Accounts.setup_status() do
       {:ok, :open} -> redirect_and_halt(conn, "/setup")
       {:ok, :closed} -> redirect_and_halt(conn, "/login")
       {:error, :unavailable} -> assign_scope_result(conn, {:error, :unavailable})
@@ -117,7 +117,7 @@ defmodule BolognesaWeb.UserAuth do
   end
 
   defp unauthenticated_path do
-    if Identity.setup_status() == {:ok, :open}, do: "/setup", else: "/login"
+    if Accounts.setup_status() == {:ok, :open}, do: "/setup", else: "/login"
   end
 
   defp redirect_and_halt(conn, path) do

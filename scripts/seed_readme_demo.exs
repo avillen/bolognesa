@@ -1,4 +1,4 @@
-alias Bolognesa.Identity
+alias Bolognesa.Accounts
 alias Bolognesa.Infrastructure.LocalSourcePath
 
 alias Bolognesa.Infrastructure.Persistence.{
@@ -121,7 +121,7 @@ movie_name = "After the Signal.webm"
 File.cp!(movie_path, Path.join(movie_directory, movie_name))
 
 {:ok, _actor} =
-  Identity.install_admin(%{
+  Accounts.install_admin(%{
     name: "Demo Administrator",
     email: "demo@example.test",
     password: "demo-password-only-for-screenshots"

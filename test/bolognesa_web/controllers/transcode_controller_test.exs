@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.TranscodeControllerTest do
   use BolognesaWeb.ConnCase, async: false
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -18,13 +18,13 @@ defmodule BolognesaWeb.TranscodeControllerTest do
 
   test "an arbitrary segment name is rejected without bytes", %{conn: conn} do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "hls@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("hls@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("hls@example.com", "correct horse battery staple")
 
     conn =
       get(
@@ -38,13 +38,13 @@ defmodule BolognesaWeb.TranscodeControllerTest do
 
   test "serves private HLS and rejects a revoked association", %{conn: conn} do
     {:ok, actor} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "hls-real@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("hls-real@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("hls-real@example.com", "correct horse battery staple")
     base = hd(Application.fetch_env!(:bolognesa, :library_roots))
     directory = Path.join(base, "hls-http-#{System.unique_integer([:positive])}")
     File.mkdir_p!(directory)

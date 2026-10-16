@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.Locale do
   @moduledoc "Resolve and install the interface language for each request and LiveView process."
   import Plug.Conn
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias BolognesaWeb.Gettext, as: Backend
   @supported ["es", "en"]
 
@@ -64,7 +64,7 @@ defmodule BolognesaWeb.Locale do
   end
 
   defp session_scope(session) do
-    case Identity.fetch_actor(session["user_token"]) do
+    case Accounts.fetch_actor(session["user_token"]) do
       {:ok, actor} -> %{actor: actor}
       _ -> nil
     end

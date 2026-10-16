@@ -2,19 +2,19 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Repo
 
   setup do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "movies@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("movies@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("movies@example.com", "correct horse battery staple")
     %{token: token}
   end
 

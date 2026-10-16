@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.MusicMediaControllerTest do
   use BolognesaWeb.ConnCase, async: false
 
-  alias Bolognesa.Identity
+  alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Repo
 
@@ -9,13 +9,13 @@ defmodule BolognesaWeb.MusicMediaControllerTest do
 
   setup do
     {:ok, _} =
-      Identity.install_admin(%{
+      Accounts.install_admin(%{
         name: "Ada",
         email: "music@example.com",
         password: "correct horse battery staple"
       })
 
-    {:ok, token} = Identity.start_session("music@example.com", "correct horse battery staple")
+    {:ok, token} = Accounts.start_session("music@example.com", "correct horse battery staple")
     fixture = refresh_fixture(relative_path: "sample.mp3")
     base = hd(Application.fetch_env!(:bolognesa, :library_roots))
     directory = Path.join(base, "music-http-#{System.unique_integer([:positive])}")
@@ -129,7 +129,7 @@ defmodule BolognesaWeb.MusicMediaControllerTest do
     wrong_path = ~p"/music/tracks/#{other.id}/media/#{file.id}"
     assert conn |> init_test_session(user_token: token) |> get(wrong_path) |> response(404) == ""
 
-    assert :ok = Identity.end_session(token)
+    assert :ok = Accounts.end_session(token)
     assert conn |> init_test_session(user_token: token) |> get(path) |> response(401) == ""
   end
 

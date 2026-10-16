@@ -1,7 +1,7 @@
 defmodule Bolognesa.Series.Application.UseCases.GetEpisode do
   @moduledoc "Authorize an episode detail and physical versions."
-  alias Bolognesa.Identity
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Series.Application.Ports.Readers.SeriesReader
   alias Bolognesa.Series.Application.UseCases.GetEpisode.Response, as: EpisodeDetail
   alias Bolognesa.Series.Domain.ReadModels.Episode
@@ -9,7 +9,7 @@ defmodule Bolognesa.Series.Application.UseCases.GetEpisode do
   @spec call(Actor.t(), Episode.id(), SeriesReader.adapter()) ::
           {:ok, EpisodeDetail.t()} | {:error, :forbidden | :not_found | :unavailable}
   def call(actor, id, reader) do
-    with :ok <- Identity.authorize(actor, :admin),
+    with :ok <- Accounts.authorize(actor, :admin),
          :ok <- valid_id(id),
          {:ok, result} <- reader.get_episode(id) do
       {:ok, EpisodeDetail.from_domain(result)}

@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.LibraryStatusNotificationsTest do
 
   import ExUnit.CaptureLog
 
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 

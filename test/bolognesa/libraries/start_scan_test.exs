@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
   alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
   alias Bolognesa.Libraries

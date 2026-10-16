@@ -1,6 +1,6 @@
 defmodule BolognesaWeb.Settings.ReducerTest do
   use ExUnit.Case, async: true
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
   alias BolognesaWeb.Settings.Reducer
 
   test "failed save preserves selection for retry and never reports success" do

@@ -1,6 +1,6 @@
 defmodule Bolognesa.Music do
   @moduledoc "Local music identities, import and authorized listening reads."
-  alias Bolognesa.Identity.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.Actor
 
   alias Bolognesa.Music.Application.UseCases.{
     AlbumTracks,
