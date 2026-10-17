@@ -8,6 +8,9 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
   alias Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
 
+  alias Ecto.Adapters.SQL
+  alias Ecto.Adapters.SQL.Sandbox
+
   defmodule NoTokenProvider do
     def search(_, _), do: {:error, :not_configured}
   end
@@ -23,6 +26,48 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
       reason = if state == "discarded", do: "attempts_exhausted", else: "unexpected_failure"
       assert {:ok, %{state: :failed, failure_reason: ^reason}} = Repository.get(file.id)
     end
+  end
+
+  @tag committed: true
+  test "recovery reports a failed write and still recovers other decisions" do
+    Sandbox.unboxed_run(Repo, fn ->
+      now = DateTime.utc_now()
+      entries = for _ <- 1..3, do: fixture()
+      [{first, _}, {rejected, _}, {last, _}] = entries
+      Enum.each(entries, fn {file, token} -> link_job(file, token, "discarded", now, now) end)
+      file_ids = Enum.map(entries, fn {file, _} -> file.id end)
+
+      job_ids =
+        Repo.all(
+          from row in MovieIdentificationSchema,
+            where: row.media_file_id in ^file_ids,
+            select: row.job_id
+        )
+
+      SQL.query!(Repo, """
+      ALTER TABLE movie_identifications ADD CONSTRAINT movies_recovery_reject_failure
+      CHECK (media_file_id <> #{rejected.id} OR state <> 'failed') NOT VALID
+      """)
+
+      try do
+        assert {:error, :unavailable} = Repository.reconcile_jobs(now)
+        assert {:ok, %{state: :failed}} = Repository.get(first.id)
+        assert {:ok, %{state: :pending}} = Repository.get(rejected.id)
+        assert {:ok, %{state: :failed}} = Repository.get(last.id)
+      after
+        SQL.query!(
+          Repo,
+          "ALTER TABLE movie_identifications DROP CONSTRAINT movies_recovery_reject_failure"
+        )
+
+        Enum.each(entries, fn {file, _} ->
+          Repo.delete!(Repo.get!(MediaFileSchema, file.id))
+          Repo.delete!(Repo.get!(LibrarySchema, file.library_id))
+        end)
+
+        Repo.delete_all(from job in Oban.Job, where: job.id in ^job_ids)
+      end
+    end)
   end
 
   test "executing jobs require both timestamps strictly older than the cutoff" do

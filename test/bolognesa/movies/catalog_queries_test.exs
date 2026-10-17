@@ -123,6 +123,38 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
     assert {:error, :invalid_query} = Movies.list_movies(actor, "", 1, -1)
   end
 
+  test "movie details reject more than one hundred versions without returning a partial list" do
+    actor = %Actor{id: 1, role: :admin}
+    library = Bolognesa.SeriesFixtures.library(:movie)
+    movie = Repo.insert!(movie_changeset(%{provider_id: 903, title: "Many versions"}))
+
+    for index <- 1..100 do
+      insert_version(library.id, movie.id, index)
+    end
+
+    assert {:ok, %{versions: versions}} = Movies.get_movie(actor, movie.id)
+    assert length(versions) == 100
+    assert Enum.map(versions, & &1.id) == Enum.sort(Enum.map(versions, & &1.id))
+
+    insert_version(library.id, movie.id, 101)
+    assert {:error, :too_many_versions} = Movies.get_movie(actor, movie.id)
+  end
+
+  defp insert_version(library_id, movie_id, index) do
+    file = Bolognesa.SeriesFixtures.file(library_id, "version-#{index}.mkv")
+
+    Bolognesa.MovieIdentificationFixtures.insert_decision!(
+      %{
+        media_file_id: file.id,
+        observed_revision: 1,
+        token: Ecto.UUID.generate(),
+        state: :automatic,
+        origin: :automatic
+      },
+      movie_id
+    )
+  end
+
   defp movie_changeset(attrs),
     do: MovieSchema.changeset(%MovieSchema{}, Map.put_new(attrs, :provider, :tmdb))
 end

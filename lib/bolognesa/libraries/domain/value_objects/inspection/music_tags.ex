@@ -49,10 +49,13 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags do
   defp number(value) do
     case Regex.run(~r/\A([0-9]{1,4})(?:\/([0-9]{1,5}))?\z/, value) do
       [_, number] -> positive(number)
-      [_, number, total] -> if positive(total), do: positive(number), else: nil
+      [_, number, total] -> numbered_total(number, positive(total))
       _ -> nil
     end
   end
+
+  defp numbered_total(_number, nil), do: nil
+  defp numbered_total(number, _total), do: positive(number)
 
   defp positive(text) do
     {value, ""} = Integer.parse(text)

@@ -407,7 +407,7 @@ msgstr ""
 #: lib/bolognesa_web/live/episode/show/live.html.heex:124
 #: lib/bolognesa_web/live/movie/review/live.html.heex:56
 #: lib/bolognesa_web/live/movie/show/live.html.heex:103
-#: lib/bolognesa_web/live/music/index/state/track.ex:54
+#: lib/bolognesa_web/live/music/index/state/track.ex:55
 #, elixir-autogen, elixir-format
 msgid "Disponible"
 msgstr ""
@@ -442,7 +442,7 @@ msgstr ""
 msgid "El archivo ha cambiado. Recarga antes de corregirlo."
 msgstr ""
 
-#: lib/bolognesa_web/live_support/select_version.ex:104
+#: lib/bolognesa_web/live_support/select_version.ex:105
 #, elixir-autogen, elixir-format
 msgid "El archivo ya no está disponible. Revisa la biblioteca y vuelve a escanear."
 msgstr ""
@@ -694,7 +694,7 @@ msgstr ""
 msgid "La carpeta está fuera de las ubicaciones permitidas."
 msgstr ""
 
-#: lib/bolognesa_web/live_support/playback_events.ex:112
+#: lib/bolognesa_web/live_support/playback_events.ex:113
 #, elixir-autogen, elixir-format
 msgid "La conversión se ha interrumpido. Vuelve a intentarlo."
 msgstr ""
@@ -786,7 +786,7 @@ msgstr ""
 msgid "No se encontraron series."
 msgstr ""
 
-#: lib/bolognesa_web/live/episode/show/reducer/apply_result.ex:24
+#: lib/bolognesa_web/live/episode/show/reducer/apply_result.ex:33
 #, elixir-autogen, elixir-format
 msgid "No se encontró el episodio."
 msgstr ""
@@ -796,7 +796,7 @@ msgstr ""
 msgid "No se encontró la biblioteca."
 msgstr ""
 
-#: lib/bolognesa_web/live/movie/show/reducer/apply_result.ex:20
+#: lib/bolognesa_web/live/movie/show/reducer/apply_result.ex:29
 #, elixir-autogen, elixir-format
 msgid "No se encontró la película."
 msgstr ""
@@ -841,7 +841,7 @@ msgid "No se pudo cargar el catálogo."
 msgstr ""
 
 #: lib/bolognesa_web/live/series/season/reducer/apply_result.ex:28
-#: lib/bolognesa_web/live/series/show/reducer/apply_result.ex:28
+#: lib/bolognesa_web/live/series/show/reducer/apply_result.ex:35
 #, elixir-autogen, elixir-format
 msgid "No se pudo cargar esta ficha. Vuelve a intentarlo."
 msgstr ""
@@ -896,8 +896,8 @@ msgstr ""
 msgid "No se pudo leer todo el contenido de la carpeta. Comprueba los permisos de lectura y pulsa Reintentar."
 msgstr ""
 
-#: lib/bolognesa_web/live_support/playback_events.ex:199
-#: lib/bolognesa_web/live_support/select_version.ex:106
+#: lib/bolognesa_web/live_support/playback_events.ex:200
+#: lib/bolognesa_web/live_support/select_version.ex:107
 #, elixir-autogen, elixir-format
 msgid "No se pudo preparar esta versión. Vuelve a intentarlo."
 msgstr ""
@@ -1477,7 +1477,7 @@ msgstr ""
 msgid "Actualizar"
 msgstr ""
 
-#: lib/bolognesa_web/live/music/index/state/track.ex:37
+#: lib/bolognesa_web/live/music/index/state/track.ex:38
 #, elixir-autogen, elixir-format
 msgid "Artista desconocido"
 msgstr ""
@@ -1497,12 +1497,12 @@ msgstr ""
 msgid "Cargando música…"
 msgstr ""
 
-#: lib/bolognesa_web/live/music/index/state/track.ex:57
+#: lib/bolognesa_web/live/music/index/state/track.ex:58
 #, elixir-autogen, elixir-format
 msgid "Error al importar la canción"
 msgstr ""
 
-#: lib/bolognesa_web/live/music/index/state/track.ex:56
+#: lib/bolognesa_web/live/music/index/state/track.ex:57
 #, elixir-autogen, elixir-format
 msgid "Error de análisis de audio"
 msgstr ""
@@ -1539,7 +1539,7 @@ msgstr ""
 msgid "Paginación de música"
 msgstr ""
 
-#: lib/bolognesa_web/live/music/index/state/track.ex:55
+#: lib/bolognesa_web/live/music/index/state/track.ex:56
 #, elixir-autogen, elixir-format
 msgid "Procesando audio"
 msgstr ""
@@ -1565,7 +1565,7 @@ msgstr ""
 msgid "Reproductor de música"
 msgstr ""
 
-#: lib/bolognesa_web/live/music/index/state/track.ex:38
+#: lib/bolognesa_web/live/music/index/state/track.ex:39
 #, elixir-autogen, elixir-format
 msgid "Sin álbum"
 msgstr ""
@@ -1653,4 +1653,11 @@ msgstr ""
 #: lib/bolognesa_web/live/music/index/live.html.heex:35
 #, elixir-autogen, elixir-format
 msgid "Álbumes"
+msgstr ""
+
+#: lib/bolognesa_web/live/episode/show/reducer/apply_result.ex:29
+#: lib/bolognesa_web/live/movie/show/reducer/apply_result.ex:25
+#: lib/bolognesa_web/live/series/show/reducer/apply_result.ex:28
+#, elixir-autogen, elixir-format
+msgid "Esta ficha supera el límite de 100 elementos."
 msgstr ""

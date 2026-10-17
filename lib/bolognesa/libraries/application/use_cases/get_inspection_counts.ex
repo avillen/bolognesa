@@ -3,10 +3,11 @@ defmodule Bolognesa.Libraries.Application.UseCases.GetInspectionCounts do
 
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
   alias Bolognesa.Libraries.Domain.Entities.Library
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
 
-  @spec call(Actor.t(), Library.id(), module()) ::
+  @spec call(Actor.t(), Library.id(), InspectionRepository.adapter()) ::
           {:ok, InspectionCounts.t()} | {:error, :forbidden | :not_found | :unavailable}
   def call(actor, library_id, repository) do
     with :ok <- Accounts.authorize(actor, :admin) do

@@ -24,7 +24,13 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
   @impl true
   def inspect(library, file), do: inspect(library, file, [])
 
-  @spec inspect(map(), map(), keyword()) :: {:ok, map()} | {:error, atom()}
+  @spec inspect(
+          Bolognesa.Libraries.Domain.Entities.Library.t(),
+          Bolognesa.Libraries.Domain.Entities.MediaFile.t(),
+          keyword()
+        ) ::
+          {:ok, Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia.t()}
+          | {:error, Bolognesa.Libraries.Application.Ports.Services.MediaProbe.reason()}
   def inspect(library, file, opts) do
     with {:ok, root, source_identity} <- source(library.path),
          {:ok, path, before_identity} <- physical_file(root, file),
@@ -110,21 +116,25 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
     if Enum.any?(parts, &(&1 in ["", ".", ".."])) do
       {:error, :unsafe_entry}
     else
-      with :ok <- physical_ancestors(root, Enum.drop(parts, -1)),
-           path = root <> "/" <> file.relative_path,
-           {:ok, %{type: :regular, access: access} = stat} <- File.lstat(path, time: :posix),
-           true <- access in [:read, :read_write],
-           {:ok, modified_at} <- DateTime.from_unix(stat.mtime),
-           :ok <- same?(file.size_bytes, stat.size),
-           :ok <- same?(file.modified_at, modified_at) do
-        {:ok, path, identity(stat)}
-      else
-        {:ok, _} -> {:error, :unsafe_entry}
-        false -> {:error, :unreadable}
-        {:error, :source_changed} = error -> error
-        {:error, :unsafe_entry} = error -> error
-        _ -> {:error, :unreadable}
-      end
+      validated_physical_file(root, file, parts)
+    end
+  end
+
+  defp validated_physical_file(root, file, parts) do
+    with :ok <- physical_ancestors(root, Enum.drop(parts, -1)),
+         path = root <> "/" <> file.relative_path,
+         {:ok, %{type: :regular, access: access} = stat} <- File.lstat(path, time: :posix),
+         true <- access in [:read, :read_write],
+         {:ok, modified_at} <- DateTime.from_unix(stat.mtime),
+         :ok <- same?(file.size_bytes, stat.size),
+         :ok <- same?(file.modified_at, modified_at) do
+      {:ok, path, identity(stat)}
+    else
+      {:ok, _} -> {:error, :unsafe_entry}
+      false -> {:error, :unreadable}
+      {:error, :source_changed} = error -> error
+      {:error, :unsafe_entry} = error -> error
+      _ -> {:error, :unreadable}
     end
   end
 

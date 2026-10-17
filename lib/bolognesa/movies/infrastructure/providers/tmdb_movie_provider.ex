@@ -29,7 +29,10 @@ defmodule Bolognesa.Movies.Infrastructure.Providers.TmdbMovieProvider do
   def details(id, opts) when is_integer(id) and id > 0 do
     with {:ok, body} <- TmdbClient.get("/movie/#{id}", [language: "es-ES"], opts),
          {:ok, details} <- TmdbMovieResponse.details(body) do
-      if details.provider_id == id, do: {:ok, details}, else: {:error, :invalid_response}
+      validate_details(details, id)
     end
   end
+
+  defp validate_details(%{provider_id: id} = details, id), do: {:ok, details}
+  defp validate_details(_details, _id), do: {:error, :invalid_response}
 end

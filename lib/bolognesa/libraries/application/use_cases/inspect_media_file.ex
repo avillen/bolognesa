@@ -4,7 +4,6 @@ defmodule Bolognesa.Libraries.Application.UseCases.InspectMediaFile do
   alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
   alias Bolognesa.Libraries.Application.Ports.Services.{LibraryStatusNotifier, MediaProbe}
   alias Bolognesa.Libraries.Domain.Entities.{Inspection, MediaFile}
-  alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
 
   @permanent [
     :source_changed,
@@ -67,7 +66,7 @@ defmodule Bolognesa.Libraries.Application.UseCases.InspectMediaFile do
   end
 
   defp retry_or_fail(file, token, reason, attempt, repository, notifications) do
-    if attempt >= InspectionPolicy.max_attempts(),
+    if attempt >= Inspection.max_attempts(),
       do: record_failure(file, token, reason, attempt, repository, notifications, :error),
       else: {:error, reason}
   end

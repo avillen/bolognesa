@@ -15,6 +15,8 @@ defmodule Bolognesa.Movies.Application.Ports.Readers.MoviesReader do
   @callback list_movies(query :: String.t(), page :: page_number(), library_id :: library_id()) ::
               {:ok, {[listed_movie()], Movie.count()}} | {:error, :unavailable}
 
+  @doc "Returns at most 100 versions ordered by file ID; rejects larger collections without truncation."
   @callback get_movie(Movie.id()) ::
-              {:ok, {Movie.t(), [MovieVersion.t()]}} | {:error, :not_found | :unavailable}
+              {:ok, {Movie.t(), [MovieVersion.t()]}}
+              | {:error, :not_found | :unavailable | :too_many_versions}
 end

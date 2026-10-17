@@ -149,6 +149,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
 
   @impl true
   def reconcile_jobs(now) do
+    cutoff = DateTime.add(now, -ScanPolicy.timeout_ms(), :millisecond)
+
     candidates =
       Repo.all(
         from scan in ScanSchema,
@@ -157,7 +159,13 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
           where: scan.state in [:queued, :running, :retrying],
           where:
             is_nil(job.id) or job.state in ["retryable", "discarded", "cancelled", "completed"],
+          where:
+            scan.state != :running or is_nil(scan.attempt_started_at) or
+              scan.attempt_started_at <= ^cutoff,
+          where:
+            not (scan.state == :retrying and not is_nil(job.id) and job.state == "retryable"),
           order_by: scan.id,
+          limit: 100,
           select: scan.id
       )
 

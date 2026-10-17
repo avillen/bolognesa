@@ -5,7 +5,7 @@ defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
   alias Bolognesa.Movies.Domain.Entities.Identification
   alias Bolognesa.Movies.Domain.ValueObjects.TitleHint
 
-  @transient [:rate_limited, :provider_unavailable]
+  alias Bolognesa.Movies.Domain.Policies.IdentificationPolicy
 
   @spec call(
           pos_integer(),
@@ -14,38 +14,48 @@ defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
           IdentificationRepository.adapter(),
           MovieProvider.adapter(),
           integer() | nil
-        ) :: :ok | {:error, :unavailable | :unusable_name | MovieProvider.reason()}
+        ) ::
+          :ok
+          | {:error, :unavailable | :wrong_content_type | :unusable_name | MovieProvider.reason()}
   def call(file_id, token, attempt, repository, provider, job_id \\ nil) do
     case repository.begin_identification(file_id, token, job_id) do
-      {:ok, :stale} -> :ok
-      {:error, :unavailable} -> {:error, :unavailable}
-      {:ok, %{content_type: :series}} -> {:error, :wrong_content_type}
-      {:ok, file} -> identify(file_id, token, attempt, repository, provider, file)
+      {:ok, :stale} ->
+        :ok
+
+      {:error, :unavailable} ->
+        {:error, :unavailable}
+
+      {:ok, %{content_type: :movie} = file} ->
+        identify(file_id, token, attempt, repository, provider, file)
+
+      {:ok, _file} ->
+        {:error, :wrong_content_type}
     end
   end
 
   defp identify(file_id, token, attempt, repository, provider, file) do
     with {:ok, hint} <- TitleHint.from_path(file.relative_path),
          {:ok, candidates} <- provider.search(hint.title, hint.year) do
-      case candidates do
-        [] ->
-          normalize(repository.complete(file_id, token, [], nil, true))
-
-        [candidate | _] ->
-          identify_candidate(
-            file_id,
-            token,
-            attempt,
-            repository,
-            provider,
-            hint,
-            candidate,
-            candidates
-          )
-      end
+      identify_candidates(file_id, token, attempt, repository, provider, hint, candidates)
     else
       {:error, reason} -> handle_error(file_id, token, reason, attempt, repository)
     end
+  end
+
+  defp identify_candidates(file_id, token, _attempt, repository, _provider, _hint, []) do
+    normalize(repository.complete(file_id, token, [], nil, true))
+  end
+
+  defp identify_candidates(
+         file_id,
+         token,
+         attempt,
+         repository,
+         provider,
+         hint,
+         [candidate | _] = candidates
+       ) do
+    identify_candidate(file_id, token, attempt, repository, provider, hint, candidate, candidates)
   end
 
   defp identify_candidate(
@@ -61,7 +71,13 @@ defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
     case provider.details(candidate.provider_id) do
       {:ok, details} ->
         normalize(
-          repository.complete(file_id, token, candidates, details, review?(hint, candidate))
+          repository.complete(
+            file_id,
+            token,
+            candidates,
+            details,
+            IdentificationPolicy.needs_review?(hint, candidate)
+          )
         )
 
       {:error, reason} ->
@@ -69,39 +85,10 @@ defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
     end
   end
 
-  defp review?(hint, candidate) do
-    normalize_title(hint.title) != normalize_title(candidate.title) or
-      (not is_nil(hint.year) and not is_nil(candidate.year) and hint.year != candidate.year)
-  end
-
-  defp normalize_title(title),
-    do:
-      title
-      |> String.downcase()
-      |> String.normalize(:nfd)
-      |> String.replace(~r/\p{Mn}/u, "")
-      |> String.replace(~r/[^a-z0-9]/u, "")
-
   defp handle_error(file_id, token, reason, attempt, repository) do
-    safe_reason =
-      if reason in [
-           :unusable_name,
-           :not_configured,
-           :rate_limited,
-           :provider_unavailable,
-           :unauthorized,
-           :invalid_response,
-           :not_found
-         ], do: reason, else: :provider_unavailable
-
-    if safe_reason in @transient and attempt < 3 do
-      {:error, safe_reason}
-    else
-      case repository.fail(file_id, token, safe_reason) do
-        :ok -> :ok
-        {:ok, :stale} -> :ok
-        {:error, :unavailable} -> {:error, :unavailable}
-      end
+    case IdentificationPolicy.failure_action(reason, attempt) do
+      {:retry, safe_reason} -> {:error, safe_reason}
+      {:fail, safe_reason} -> normalize(repository.fail(file_id, token, safe_reason))
     end
   end
 

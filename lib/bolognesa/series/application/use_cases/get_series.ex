@@ -7,7 +7,8 @@ defmodule Bolognesa.Series.Application.UseCases.GetSeries do
   alias Bolognesa.Series.Domain.ReadModels.Series
 
   @spec call(Actor.t(), Series.id(), SeriesReader.adapter()) ::
-          {:ok, SeriesDetail.t()} | {:error, :forbidden | :not_found | :unavailable}
+          {:ok, SeriesDetail.t()}
+          | {:error, :forbidden | :not_found | :unavailable | :too_many_seasons}
   def call(actor, id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
          :ok <- valid_id(id),

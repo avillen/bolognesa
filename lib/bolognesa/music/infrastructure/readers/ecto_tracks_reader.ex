@@ -11,8 +11,8 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
     MusicTrackSchema
   }
 
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
   alias Bolognesa.Music.Domain.ReadModels.{TrackPage, TrackRow}
+  alias Bolognesa.Music.Domain.ValueObjects.MusicTags
   alias Bolognesa.Music.Domain.ValueObjects.{Observation, TrackMetadata}
   alias Bolognesa.Repo
   @impl true

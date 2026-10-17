@@ -50,7 +50,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
 
   defp complete_series_current(identification, file, candidates, selection, reason) do
     if file_projection(file).content_type == :series do
-      ids = if selection, do: IdentifiedSeriesWriter.upsert!(selection), else: []
+      ids = selected_ids(selection)
 
       complete_decision!(identification, ids, candidates, ids == [], reason)
       :ok
@@ -58,6 +58,9 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
       {:ok, :stale}
     end
   end
+
+  defp selected_ids(nil), do: []
+  defp selected_ids(selection), do: IdentifiedSeriesWriter.upsert!(selection)
 
   defp correct_series_current(nil, _revision, _choice), do: {:error, :not_found}
 
@@ -113,7 +116,11 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
     end)
   end
 
-  @spec fail(pos_integer(), Identification.token(), atom()) ::
+  @spec fail(
+          pos_integer(),
+          Identification.token(),
+          Bolognesa.Series.Application.Ports.Repositories.IdentificationRepository.failure_reason()
+        ) ::
           :ok | {:ok, :stale} | {:error, :unavailable}
   @impl true
   def fail(file_id, token, reason) do
@@ -171,16 +178,17 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   @spec reconcile_jobs(DateTime.t()) :: :ok | {:error, :unavailable}
   def reconcile_jobs(now) do
     JobRecovery.interrupted(Repo, now)
-    |> Enum.each(fn {file_id, token, state} ->
+    |> Enum.reduce(:ok, fn {file_id, token, state}, result ->
       reason = if state == "discarded", do: :attempts_exhausted, else: :unexpected_failure
-      fail(file_id, token, reason)
+      recovery_result(fail(file_id, token, reason), result)
     end)
-
-    :ok
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
+
+  defp recovery_result({:error, :unavailable}, _result), do: {:error, :unavailable}
+  defp recovery_result(_success, result), do: result
 
   defp start_pending_identification(identification, file, job_id) do
     {:ok, started} = Identification.start(decision(identification), job_id, DateTime.utc_now())

@@ -33,6 +33,49 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     %{scan: scan}
   end
 
+  test "recovery processes at most 100 scans and continues on the next pass", %{scan: scan} do
+    scans = [scan | Enum.map(1..100, &orphan_scan/1)]
+    Enum.each(scans, &Repo.delete!(Repo.get!(Oban.Job, &1.job_id)))
+
+    first = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
+    assert first.error == nil
+    assert length(first.changed_library_ids) == 100
+
+    assert Repo.aggregate(Ecto.Query.from(s in ScanSchema, where: s.state == :queued), :count) ==
+             1
+
+    second = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
+    assert second.error == nil
+    assert length(second.changed_library_ids) == 1
+
+    assert Repo.aggregate(Ecto.Query.from(s in ScanSchema, where: s.state == :queued), :count) ==
+             0
+  end
+
+  test "scans with remaining budget or awaiting retry do not consume the recovery batch" do
+    now = DateTime.utc_now()
+
+    for index <- 1..100 do
+      scan = orphan_scan(index)
+      {:ok, current, _} = EctoScanRepository.begin_attempt(scan.id, 1)
+
+      if rem(index, 2) == 0 do
+        :ok =
+          EctoScanRepository.fail(scan.id, current.generation, :storage_unavailable, :retrying)
+
+        job_state(scan, "retryable")
+      else
+        job_state(scan, "completed")
+      end
+    end
+
+    orphan = orphan_scan(101)
+    Repo.delete!(Repo.get!(Oban.Job, orphan.job_id))
+    result = EctoScanRepository.reconcile_jobs(DateTime.add(now, 1))
+    assert result.error == nil
+    assert result.changed_library_ids == [orphan.library_id]
+  end
+
   test "running generation gets its full budget despite an old invocation's terminal or retryable result",
        %{scan: scan} do
     for state <- ["completed", "cancelled", "discarded", "retryable"] do
@@ -385,6 +428,16 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
 
     assert log =~ "Library scan reconciliation unavailable"
     send(pid, {:reconciled, %ReconciliationResult{}})
+  end
+
+  defp orphan_scan(index) do
+    library =
+      %LibrarySchema{}
+      |> LibrarySchema.changeset(%{name: "Recovery #{index}", path: "/bounded-recovery-#{index}"})
+      |> Repo.insert!()
+
+    {:ok, scan} = EctoScanRepository.request(library.id)
+    scan
   end
 
   defp prepare_job(scan, mode, attrs \\ []) do

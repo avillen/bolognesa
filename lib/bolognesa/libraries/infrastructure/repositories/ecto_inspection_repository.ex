@@ -46,25 +46,23 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
 
         counts = %InspectionCounts{}
 
-        {:ok,
-         Enum.reduce(rows, counts, fn {state, reason, count}, acc ->
-           acc = Map.update!(acc, state || :uninspected, &(&1 + count))
-
-           if state == :failed do
-             Map.update!(
-               acc,
-               :failure_reasons,
-               &Map.update(&1, reason, count, fn total -> total + count end)
-             )
-           else
-             acc
-           end
-         end)}
+        {:ok, Enum.reduce(rows, counts, &add_inspection_count/2)}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
+
+  defp add_inspection_count({state, reason, count}, counts) do
+    counts = Map.update!(counts, state || :uninspected, &(&1 + count))
+    add_failure_count(counts, state, reason, count)
+  end
+
+  defp add_failure_count(counts, :failed, reason, count) do
+    %{counts | failure_reasons: Map.update(counts.failure_reasons, reason, count, &(&1 + count))}
+  end
+
+  defp add_failure_count(counts, _state, _reason, _count), do: counts
 
   @impl true
   def begin_inspection(file_id, token, job_id) do

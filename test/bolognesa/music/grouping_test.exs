@@ -1,7 +1,7 @@
 defmodule Bolognesa.Music.GroupingTest do
   use ExUnit.Case, async: true
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
   alias Bolognesa.Music.Domain.Policies.Grouping
+  alias Bolognesa.Music.Domain.ValueObjects.MusicTags
   alias Bolognesa.Music.Domain.ValueObjects.{Observation, TrackMetadata}
 
   test "folder and library boundaries separate otherwise identical albums" do
@@ -18,14 +18,13 @@ defmodule Bolognesa.Music.GroupingTest do
     observation = %Observation{
       library_id: 1,
       relative_path: "album/song.mp3",
-      music_tags:
-        MusicTags.from_raw(%{
-          "artist" => "Solo",
-          "album_artist" => "Ensemble",
-          "album" => "Compilation",
-          "disc" => "2",
-          "track" => "3"
-        })
+      music_tags: %MusicTags{
+        artist: "Solo",
+        album_artist: "Ensemble",
+        album: "Compilation",
+        disc_number: 2,
+        track_number: 3
+      }
     }
 
     metadata = TrackMetadata.from_observation(observation)

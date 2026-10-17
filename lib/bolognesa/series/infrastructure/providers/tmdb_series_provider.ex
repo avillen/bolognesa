@@ -31,7 +31,7 @@ defmodule Bolognesa.Series.Infrastructure.Providers.TmdbSeriesProvider do
   def details(id, opts) do
     with {:ok, body} <- TmdbClient.get("/tv/#{id}", [language: "es-ES"], opts),
          {:ok, details} <- TmdbSeriesResponse.details(body) do
-      if details.provider_id == id, do: {:ok, details}, else: {:error, :invalid_response}
+      validate_details(details, id)
     end
   end
 
@@ -44,4 +44,7 @@ defmodule Bolognesa.Series.Infrastructure.Providers.TmdbSeriesProvider do
     with {:ok, body} <- TmdbClient.get("/tv/#{id}/season/#{number}", [language: "es-ES"], opts),
          do: TmdbSeriesResponse.season(body, id, number)
   end
+
+  defp validate_details(%{provider_id: id} = details, id), do: {:ok, details}
+  defp validate_details(_details, _id), do: {:error, :invalid_response}
 end

@@ -14,7 +14,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository 
       path: details.path,
       content_type: details.content_type
     })
-    |> Repo.insert()
+    |> Repo.insert(log: false)
     |> case do
       {:ok, stored} -> {:ok, LibraryMapper.to_library(stored)}
       {:error, changeset} -> {:error, map_error(changeset)}

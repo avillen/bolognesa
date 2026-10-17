@@ -7,7 +7,11 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Files.NewLibrary do
           optional(:content_type) => Library.content_type()
         }
   @type error :: :invalid_name | :invalid_path | :invalid_content_type
-  @type t :: %__MODULE__{name: String.t(), path: String.t(), content_type: Library.content_type()}
+  @type t :: %__MODULE__{
+          name: String.t(),
+          path: String.t(),
+          content_type: Library.content_type()
+        }
 
   defstruct [:name, :path, :content_type]
 

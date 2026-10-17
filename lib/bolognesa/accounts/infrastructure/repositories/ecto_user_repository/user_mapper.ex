@@ -9,8 +9,11 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository.User
       id: schema.id,
       name: schema.name,
       email: schema.email,
-      role: String.to_existing_atom(schema.role),
+      role: role(schema.role),
       locale: schema.locale
     }
   end
+
+  defp role("admin"), do: :admin
+  defp role("member"), do: :member
 end

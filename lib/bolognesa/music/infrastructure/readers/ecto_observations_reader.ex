@@ -3,7 +3,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoObservationsReader do
   @behaviour Bolognesa.Music.Application.Ports.Readers.ObservationsReader
   import Ecto.Query
   alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, LibrarySchema, MediaFileSchema}
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
+  alias Bolognesa.Music.Domain.ValueObjects.MusicTags
   alias Bolognesa.Music.Domain.ValueObjects.Observation
   alias Bolognesa.Repo
   @impl true

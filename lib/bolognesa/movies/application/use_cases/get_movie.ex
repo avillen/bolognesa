@@ -7,7 +7,8 @@ defmodule Bolognesa.Movies.Application.UseCases.GetMovie do
   alias Bolognesa.Movies.Domain.ReadModels.Movie
 
   @spec call(Actor.t(), Movie.id(), MoviesReader.adapter()) ::
-          {:ok, MovieDetail.t()} | {:error, :forbidden | :not_found | :unavailable}
+          {:ok, MovieDetail.t()}
+          | {:error, :forbidden | :not_found | :unavailable | :too_many_versions}
   def call(actor, id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
          :ok <- validate_id(id),

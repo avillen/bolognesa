@@ -8,7 +8,7 @@ defmodule BolognesaWeb.Series.Show.Reducer.ApplyResult do
   @type result ::
           {:ok,
            {:ok, SeriesDetail.t()}
-           | {:error, :forbidden | :not_found | :invalid_page | :unavailable}}
+           | {:error, :forbidden | :not_found | :invalid_page | :unavailable | :too_many_seasons}}
           | {:exit, term()}
   @spec call(Phoenix.LiveView.Socket.t(), reference(), result()) :: Phoenix.LiveView.Socket.t()
   def call(socket, request, result) do
@@ -20,6 +20,13 @@ defmodule BolognesaWeb.Series.Show.Reducer.ApplyResult do
       socket
       |> assign(detail: detail, loading?: false, total: length(detail.seasons))
       |> stream(:seasons, detail.seasons, reset: true)
+
+  defp apply_result(socket, {:ok, {:error, :too_many_seasons}}),
+    do:
+      assign(socket,
+        loading?: false,
+        error: gettext("Esta ficha supera el límite de 100 elementos.")
+      )
 
   defp apply_result(socket, _),
     do:

@@ -6,14 +6,13 @@ defmodule Bolognesa.Series.Application.Ports.Repositories.IdentificationReposito
   alias Bolognesa.Series.Domain.ValueObjects.SeriesCandidate
 
   @type adapter :: atom()
-  @type review_reason ::
-          :unusable_name
-          | :ambiguous_name
-          | :invalid_episode_numbers
-          | :too_many_episodes
-          | :incomplete_episodes
-          | :ambiguous_series
-          | :no_match
+  @type review_reason :: Bolognesa.Series.Domain.Policies.IdentificationPolicy.review_reason()
+  @type failure_reason ::
+          Bolognesa.Series.Domain.Policies.IdentificationPolicy.provider_reason()
+          | :attempts_exhausted
+          | :unexpected_failure
+  @type reason ::
+          :not_found | :unavailable | :wrong_content_type | :source_changed | :manual_locked
   @callback find_file(file_id :: pos_integer()) ::
               {:ok, FileToIdentify.t()} | {:error, :not_found | :unavailable}
   @callback complete_series(
@@ -39,8 +38,8 @@ defmodule Bolognesa.Series.Application.Ports.Repositories.IdentificationReposito
   @callback fail(
               file_id :: pos_integer(),
               token :: Identification.token(),
-              reason :: atom()
+              reason :: failure_reason()
             ) ::
-              :ok | {:ok, :stale} | {:error, atom()}
-  @callback retry(file_id :: pos_integer()) :: {:ok, Identification.t()} | {:error, atom()}
+              :ok | {:ok, :stale} | {:error, reason()}
+  @callback retry(file_id :: pos_integer()) :: {:ok, Identification.t()} | {:error, reason()}
 end

@@ -133,6 +133,49 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     assert version.codecs == []
   end
 
+  test "episode details reject more than one hundred versions" do
+    library = SeriesFixtures.library()
+    first = SeriesFixtures.identify(SeriesFixtures.file(library.id, "version-1.mkv"), 1, [1])
+    episode_id = hd(first.episode_ids)
+
+    for index <- 2..100 do
+      SeriesFixtures.identify(SeriesFixtures.file(library.id, "version-#{index}.mkv"), 1, [1])
+    end
+
+    assert {:ok, %{versions: versions}} = Series.get_episode(@actor, episode_id)
+    assert length(versions) == 100
+    SeriesFixtures.identify(SeriesFixtures.file(library.id, "version-101.mkv"), 1, [1])
+    assert {:error, :too_many_versions} = Series.get_episode(@actor, episode_id)
+  end
+
+  test "series details reject more than one hundred seasons" do
+    library = SeriesFixtures.library()
+    decision = SeriesFixtures.identify(SeriesFixtures.file(library.id, "first.mkv"), 1, [1])
+    assert {:ok, detail} = Series.get_episode(@actor, hd(decision.episode_ids))
+    series_id = detail.series.id
+
+    for number <- 2..100 do
+      Repo.insert!(%Bolognesa.Infrastructure.Persistence.SeasonSchema{
+        series_id: series_id,
+        provider: :tmdb,
+        provider_id: 100_000 + number,
+        number: number
+      })
+    end
+
+    assert {:ok, %{seasons: seasons}} = Series.get_series(@actor, series_id)
+    assert length(seasons) == 100
+
+    Repo.insert!(%Bolognesa.Infrastructure.Persistence.SeasonSchema{
+      series_id: series_id,
+      provider: :tmdb,
+      provider_id: 100_101,
+      number: 101
+    })
+
+    assert {:error, :too_many_seasons} = Series.get_series(@actor, series_id)
+  end
+
   defp count_queries(fun) do
     reference = make_ref()
 

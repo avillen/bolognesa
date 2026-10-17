@@ -45,6 +45,9 @@ defmodule Bolognesa.Libraries.Domain.Entities.Inspection do
     state: :pending
   ]
 
+  @spec max_attempts() :: pos_integer()
+  def max_attempts, do: 3
+
   @spec request?(MediaFile.t() | nil, boolean(), NewMediaFile.t(), boolean()) :: boolean()
   def request?(nil, _has_inspection?, _entry, _force?), do: true
 

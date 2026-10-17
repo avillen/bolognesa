@@ -1,13 +1,15 @@
 defmodule Bolognesa.Music.Domain.Entities.ImportState do
   @moduledoc "Local musical import state."
 
+  @type failure_reason :: :storage_unavailable | :attempts_exhausted | :unexpected_failure
+
   @type t :: %__MODULE__{
           media_file_id: pos_integer(),
           observed_revision: pos_integer(),
           inspection_token: String.t(),
           state: :pending | :running | :succeeded | :failed,
           job_id: pos_integer() | nil,
-          failure_reason: :storage_unavailable | :attempts_exhausted | :unexpected_failure | nil,
+          failure_reason: failure_reason() | nil,
           started_at: DateTime.t() | nil,
           finished_at: DateTime.t() | nil
         }

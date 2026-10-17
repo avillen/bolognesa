@@ -14,6 +14,15 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @tick_ms 5_000
   @max_bytes 512 * 1_024 * 1_024
 
+  @type failure ::
+          LocalMediaFile.failure()
+          | :not_found
+          | :busy
+          | :invalid_offset
+          | :tool_unavailable
+          | :unsafe_root
+          | :storage_unavailable
+
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(_opts), do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
 
@@ -25,7 +34,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
           :audio | :video,
           integer()
         ) ::
-          {:ok, TranscodeSession.t()} | {:error, atom()}
+          {:ok, TranscodeSession.t()} | {:error, failure()}
   def start(actor_id, content_ref, file_id, source, profile, offset_ms) do
     if ContentRef.valid?(content_ref) do
       GenServer.call(
@@ -90,7 +99,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
     case start_session(state, actor_id, content_ref, file_id, source, profile, offset_ms) do
       {:ok, session, port, root} ->
-        Logger.info("transcode_started session_id=#{session.id} profile=#{profile}")
+        Logger.info("Transcode started", session_id: session.id, profile: profile)
 
         {:reply, {:ok, session},
          %{
@@ -149,7 +158,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   def handle_info({port, {:exit_status, status}}, %{port: port} = state) do
     session = state.current
     result = if status == 0, do: :finished, else: :failed
-    Logger.info("transcode_ended session_id=#{session.id} reason=#{result}")
+    Logger.info("Transcode ended", session_id: session.id, reason: result)
 
     if status == 0 do
       {:noreply, %{state | current: %{session | status: result}, port: nil, suspended?: false}}
@@ -340,20 +349,24 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   defp clear(state, reason) do
     if state.owner_ref, do: Process.demonitor(state.owner_ref, [:flush])
 
-    if state.port do
-      if state.suspended?, do: signal(state.port, "CONT")
-      signal(state.port, "TERM")
-
-      try do
-        Port.close(state.port)
-      rescue
-        ArgumentError -> :ok
-      end
-    end
+    close_port(state.port, state.suspended?)
 
     File.rm_rf(state.current.directory)
-    Logger.info("transcode_closed session_id=#{state.current.id} reason=#{reason}")
+    Logger.info("Transcode closed", session_id: state.current.id, reason: reason)
     %{state | current: nil, port: nil, owner_ref: nil, last_activity: nil, suspended?: false}
+  end
+
+  defp close_port(nil, _suspended?), do: :ok
+
+  defp close_port(port, suspended?) do
+    if suspended?, do: signal(port, "CONT")
+    signal(port, "TERM")
+
+    try do
+      Port.close(port)
+    rescue
+      ArgumentError -> :ok
+    end
   end
 
   defp signal(port, name) do
@@ -364,12 +377,15 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
             stderr_to_stdout: true
           )
 
-        if status == 0, do: :ok, else: {:error, :process_missing}
+        signal_status(status)
 
       _ ->
         {:error, :process_missing}
     end
   end
+
+  defp signal_status(0), do: :ok
+  defp signal_status(_status), do: {:error, :process_missing}
 
   defp now, do: System.monotonic_time(:millisecond)
 end

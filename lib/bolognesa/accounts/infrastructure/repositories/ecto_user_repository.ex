@@ -45,7 +45,7 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
 
   @impl true
   def find_user_by_email(email) do
-    case Repo.get_by(UserSchema, email: email) do
+    case Repo.get_by(UserSchema, [email: email], log: false) do
       nil -> :not_found
       stored -> {:ok, UserMapper.to_user(stored), stored.hashed_password}
     end
@@ -63,12 +63,15 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
 
   @impl true
   def insert_session(session) do
-    case Repo.insert(%SessionSchema{
-           user_id: session.user_id,
-           token_hash: session.token_hash,
-           expires_at: session.expires_at,
-           inserted_at: session.issued_at
-         }) do
+    case Repo.insert(
+           %SessionSchema{
+             user_id: session.user_id,
+             token_hash: session.token_hash,
+             expires_at: session.expires_at,
+             inserted_at: session.issued_at
+           },
+           log: false
+         ) do
       {:ok, _} -> :ok
       {:error, _} -> {:error, :unavailable}
     end
@@ -83,7 +86,7 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
         where: s.token_hash == ^token_hash and s.expires_at > ^now,
         preload: [:user]
 
-    case Repo.one(query) do
+    case Repo.one(query, log: false) do
       nil -> :not_found
       session -> {:ok, SessionMapper.to_user(session)}
     end
@@ -93,7 +96,7 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
 
   @impl true
   def delete_session(token_hash) do
-    Repo.delete_all(from s in SessionSchema, where: s.token_hash == ^token_hash)
+    Repo.delete_all(from(s in SessionSchema, where: s.token_hash == ^token_hash), log: false)
     :ok
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -109,7 +112,7 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
     attrs = %{name: user.name, email: user.email}
     record = %UserSchema{role: "admin", hashed_password: hashed_password}
 
-    case record |> UserSchema.changeset(attrs) |> Repo.insert() do
+    case record |> UserSchema.changeset(attrs) |> Repo.insert(log: false) do
       {:ok, stored} -> UserMapper.to_user(stored)
       {:error, changeset} -> Repo.rollback(map_insert_error(changeset))
     end

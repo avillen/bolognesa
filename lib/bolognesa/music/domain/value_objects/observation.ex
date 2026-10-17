@@ -1,6 +1,6 @@
 defmodule Bolognesa.Music.Domain.ValueObjects.Observation do
   @moduledoc "Current successful music inspection observed through a read port."
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
+  alias Bolognesa.Music.Domain.ValueObjects.MusicTags
 
   @type t :: %__MODULE__{
           file_id: pos_integer(),

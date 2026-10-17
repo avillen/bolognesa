@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-16.
+Last reviewed: 2026-10-17.
 
 ## Implemented behavior
 
@@ -18,6 +18,9 @@ The account and access context is `Bolognesa.Accounts`, including its authentica
 
 Current content-context checks and deployment observations are distinguished from earlier device evidence.
 
+- Context convention review: local `mix precommit` passed with 519 tests and one skipped, compilation, and Credo. PostgreSQL regressions verify Movies/Series recovery reports failed writes while preserving other successful recoveries. Matching/retry policies are domain-owned; Music maps inspection tags into its own model; Playback uses explicit error contracts and structured logging. Account/session SQL operations suppress credential hashes, and a fresh-VM regression covers persisted role mapping before domain modules load. Detail reads reject more than 100 versions or seasons with translated UI feedback instead of truncating. An independent code review's UI-feedback finding was corrected and verified. This change has not been deployed.
+- Current `make check-screenshots` passed with unchanged captures and synthetic WAV playback/navigation checks in Chromium 140. Its first run exposed the Accounts role mapper's dependency on an already-loaded atom; explicit allowlisted role mapping fixed that cold-start failure. The Accounts migration verifier passed empty/seeded upgrades, rollback, and reapplication against a disposable database.
+- Libraries convention fixes: local `mix precommit` passed with 505 tests and one skipped, compilation, and Credo. Focused Libraries checks passed with 171 tests and one skipped. Regression coverage verifies private source registration does not enter SQL logs, scan recovery handles at most 100 candidates per pass, and waiting retries or unexpired attempts do not block eligible recovery. Inspection retry limits are domain-owned; application port types and Elixir layout/control flow were corrected. An initial full run hit an existing interface-language test's 100 ms async timeout; `mix test --failed` and the subsequent full `mix precommit` passed. This change has not been deployed.
 - Accounts convention fixes: local `mix precommit` passed with 502 tests and one skipped, compilation, and Credo. Regression coverage verifies the password-hasher result contract, release-console locale preservation, domain session lifetime across calendar boundaries, and persistence of independently supplied issue/expiry times. This change has not been deployed.
 - Accounts rename: local `mix precommit` passed with 499 tests and one skipped, compilation, and Credo. `MIX_ENV=test mix run --no-start scripts/verify_accounts_migration.exs` verified empty and seeded upgrades, rollback, and reapplication in a disposable database. This change has not been deployed.
 - Content-context local `mix precommit`: 499 tests passed, one skipped; compilation and Credo passed. Coverage includes foreign-type mutation rejection, bounded owner backfill/dispatch/recovery, atomic inventory/request/event and work/association rollback, manual/stale revision races, and equal-ID direct/HLS delivery. A fresh whole-change review found an HLS query-parameter route ambiguity; regression tests reproduced it for both manifests and segments, and the corrected controller uses path parameters exclusively.

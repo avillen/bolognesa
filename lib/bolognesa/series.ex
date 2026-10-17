@@ -40,8 +40,11 @@ defmodule Bolognesa.Series do
           | :incomplete_episodes
           | :too_many_episodes
           | :invalid_episode_numbers
+          | :too_many_seasons
+          | :too_many_versions
           | :unusable_name
           | SeriesProvider.reason()
+  @type transaction_repository :: atom()
   @type request_entry :: %{
           required(:file_id) => pos_integer(),
           required(:revision) => pos_integer(),
@@ -88,7 +91,7 @@ defmodule Bolognesa.Series do
   def retry(actor, id), do: RetryIdentification.call(actor, id, EctoIdentificationRepository)
 
   @spec request_batch_in_transaction!(
-          Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore.repo(),
+          transaction_repository(),
           [request_entry()]
         ) :: non_neg_integer()
   def request_batch_in_transaction!(repo, entries),

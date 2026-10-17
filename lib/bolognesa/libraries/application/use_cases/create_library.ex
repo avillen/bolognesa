@@ -2,7 +2,8 @@ defmodule Bolognesa.Libraries.Application.UseCases.CreateLibrary do
   @moduledoc "Authorize and register one library source."
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.Actor
-  alias Bolognesa.Libraries.Application.Ports.{FileSource, LibraryRepository}
+  alias Bolognesa.Libraries.Application.Ports.Repositories.LibraryRepository
+  alias Bolognesa.Libraries.Application.Ports.Services.FileSource
   alias Bolognesa.Libraries.Domain.Entities.Library
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewLibrary
 

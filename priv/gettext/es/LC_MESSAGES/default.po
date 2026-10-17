@@ -1646,3 +1646,6 @@ msgstr "Álbum terminado"
 #, elixir-autogen, elixir-format
 msgid "Álbumes"
 msgstr "Álbumes"
+
+msgid "Esta ficha supera el límite de 100 elementos."
+msgstr "Esta ficha supera el límite de 100 elementos."

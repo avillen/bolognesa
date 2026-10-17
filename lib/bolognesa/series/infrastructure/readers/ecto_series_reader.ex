@@ -14,6 +14,8 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader.SeriesMapper
 
   @page_size 24
+  @max_seasons 100
+  @max_versions 100
 
   @impl true
   def list_series(query, page, library_id) do
@@ -99,19 +101,27 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
               on: episode.season_id == season.id,
               where: season.series_id == ^id,
               group_by: season.id,
-              order_by: season.number,
+              order_by: [asc: season.number, asc: season.id],
+              limit: ^(@max_seasons + 1),
               select: {season, count(episode.id)}
             ),
             log: false
           )
 
-        {:ok,
-         {SeriesMapper.series(series),
-          Enum.map(seasons, fn {season, count} -> {SeriesMapper.season(season), count} end)}}
+        series_detail(series, seasons)
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp series_detail(_series, seasons) when length(seasons) > @max_seasons,
+    do: {:error, :too_many_seasons}
+
+  defp series_detail(series, seasons) do
+    {:ok,
+     {SeriesMapper.series(series),
+      Enum.map(seasons, fn {season, count} -> {SeriesMapper.season(season), count} end)}}
   end
 
   @impl true
@@ -179,13 +189,19 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
         {:error, :not_found}
 
       {episode, season, series} ->
-        {:ok,
-         {SeriesMapper.episode(episode), SeriesMapper.season(season), SeriesMapper.series(series),
-          versions(id)}}
+        episode_detail(episode, season, series)
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp episode_detail(episode, season, series) do
+    with {:ok, versions} <- versions(episode.id) do
+      {:ok,
+       {SeriesMapper.episode(episode), SeriesMapper.season(season), SeriesMapper.series(series),
+        versions}}
+    end
   end
 
   defp versions(id) do
@@ -201,27 +217,37 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
             inspection.media_file_id == file.id and inspection.state == :succeeded and
               inspection.observed_revision == file.revision,
           where: relation.episode_id == ^id and decision.state in [:automatic, :manual],
+          limit: ^(@max_versions + 1),
           order_by: file.id,
           select: {decision, file, inspection}
         ),
         log: false
       )
 
+    bounded_versions(rows)
+  end
+
+  defp bounded_versions(rows) when length(rows) > @max_versions, do: {:error, :too_many_versions}
+
+  defp bounded_versions(rows) do
     numbers_by_decision = episode_numbers(rows)
 
-    Enum.map(rows, fn {decision, file, inspection} ->
-      %EpisodeVersion{
-        id: file.id,
-        availability: file.availability,
-        size_bytes: file.size_bytes,
-        origin: decision.origin,
-        needs_review?: decision.needs_review,
-        episode_numbers: Map.get(numbers_by_decision, decision.id, []),
-        format: if(inspection, do: inspection.format),
-        duration_ms: if(inspection, do: inspection.duration_ms),
-        codecs: if(inspection, do: codecs(inspection.tracks), else: [])
-      }
-    end)
+    versions =
+      Enum.map(rows, fn {decision, file, inspection} ->
+        %EpisodeVersion{
+          id: file.id,
+          availability: file.availability,
+          size_bytes: file.size_bytes,
+          origin: decision.origin,
+          needs_review?: decision.needs_review,
+          episode_numbers: Map.get(numbers_by_decision, decision.id, []),
+          format: if(inspection, do: inspection.format),
+          duration_ms: if(inspection, do: inspection.duration_ms),
+          codecs: if(inspection, do: codecs(inspection.tracks), else: [])
+        }
+      end)
+
+    {:ok, versions}
   end
 
   defp episode_numbers([]), do: %{}

@@ -6,23 +6,7 @@ defmodule Bolognesa.Series.Application.UseCases.IdentifySeriesFile do
   alias Bolognesa.Series.Domain.ValueObjects.EpisodeHint
   alias Bolognesa.Series.Domain.ValueObjects.EpisodeSelection
 
-  @review_reasons [
-    :unusable_name,
-    :ambiguous_name,
-    :invalid_episode_numbers,
-    :too_many_episodes,
-    :incomplete_episodes,
-    :ambiguous_series,
-    :no_match
-  ]
-  @provider_reasons [
-    :not_configured,
-    :rate_limited,
-    :provider_unavailable,
-    :unauthorized,
-    :invalid_response,
-    :not_found
-  ]
+  alias Bolognesa.Series.Domain.Policies.IdentificationPolicy
 
   @spec call(
           pos_integer(),
@@ -81,17 +65,17 @@ defmodule Bolognesa.Series.Application.UseCases.IdentifySeriesFile do
     end
   end
 
-  defp handle_error(id, token, _attempt, repository, candidates, reason)
-       when reason in @review_reasons,
-       do: normalize(repository.complete_series(id, token, candidates, nil, reason))
+  defp handle_error(id, token, attempt, repository, candidates, reason) do
+    case IdentificationPolicy.failure_action(reason, attempt) do
+      {:review, reason} ->
+        normalize(repository.complete_series(id, token, candidates, nil, reason))
 
-  defp handle_error(_id, _token, attempt, _repository, _candidates, reason)
-       when reason in [:rate_limited, :provider_unavailable] and attempt < 3,
-       do: {:error, reason}
+      {:retry, reason} ->
+        {:error, reason}
 
-  defp handle_error(id, token, _attempt, repository, _candidates, reason) do
-    reason = if reason in @provider_reasons, do: reason, else: :invalid_response
-    normalize(repository.fail(id, token, reason))
+      {:fail, reason} ->
+        normalize(repository.fail(id, token, reason))
+    end
   end
 
   defp normalize({:ok, :stale}), do: :ok

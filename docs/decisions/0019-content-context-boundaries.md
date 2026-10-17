@@ -104,6 +104,8 @@ The implemented owners have independent facades, domain models, DTOs, tables, pr
 
 No new business context, generic workflow, repository framework, or cross-content entity is warranted. A technical extraction remains possible when it has a concrete consumer benefit. Automated acceptance and fresh review are recorded separately in project status.
 
+Movie and episode detail reads accept at most one hundred physical versions, ordered by file ID. Series details accept at most one hundred seasons, ordered by season number and ID. Readers fetch one extra item to detect overflow and return an explicit error without truncation; the UI explains the limit. These limits bound detail reads independently of paginated catalog and episode lists. Supporting larger details requires pagination rather than silently dropping associations.
+
 ## Verification and documentation
 
 The owner split passed the complete local suite and a fresh whole-change review. The review exposed merged-query-parameter ambiguity in HLS routing; manifest and segment tests reproduced the bypass, and controllers now construct content identity exclusively from route path parameters. Public playback helpers use the typed reference contract. Source ownership and independent-ID cleanup assertions were reviewed alongside transactional and recovery coverage.

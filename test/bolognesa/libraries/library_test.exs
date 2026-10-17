@@ -17,6 +17,25 @@ defmodule Bolognesa.Libraries.LibraryTest do
     %{path: path}
   end
 
+  test "registration keeps the source path and name out of SQL logs", %{path: path} do
+    level = Logger.level()
+    Logger.configure(level: :debug)
+    on_exit(fn -> Logger.configure(level: level) end)
+
+    log =
+      ExUnit.CaptureLog.capture_log([level: :debug], fn ->
+        assert {:ok, _} =
+                 Libraries.create_library(@admin, %{
+                   name: "Sensitive source name",
+                   path: path,
+                   content_type: :movie
+                 })
+      end)
+
+    refute log =~ path
+    refute log =~ "Sensitive source name"
+  end
+
   test "creates and lists music libraries", %{path: path} do
     assert {:ok, library} =
              Libraries.create_library(@admin, %{name: "Music", path: path, content_type: :music})

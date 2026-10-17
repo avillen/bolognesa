@@ -12,6 +12,7 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader do
   alias Bolognesa.Repo
 
   @page_size 24
+  @max_versions 100
 
   @impl true
   def list_movies(query, page, library_id) do
@@ -86,32 +87,36 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader do
         {:error, :not_found}
 
       movie ->
-        versions =
-          Repo.all(
-            from file in MediaFileSchema,
-              join: identification in MovieIdentificationSchema,
-              on: identification.media_file_id == file.id,
-              where:
-                identification.movie_id == ^id and identification.state in [:automatic, :manual],
-              order_by: file.id,
-              select: {file, identification}
-          )
-
-        entries =
-          Enum.map(versions, fn {file, identification} ->
-            %MovieVersion{
-              id: file.id,
-              availability: file.availability,
-              size_bytes: file.size_bytes,
-              origin: identification.origin,
-              needs_review?: identification.needs_review
-            }
-          end)
-
-        {:ok, {MovieMapper.to_movie(movie), entries}}
+        movie_versions(movie)
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp movie_versions(movie) do
+    versions =
+      Repo.all(
+        from(file in MediaFileSchema,
+          join: identification in MovieIdentificationSchema,
+          on: identification.media_file_id == file.id,
+          where:
+            identification.movie_id == ^movie.id and identification.state in [:automatic, :manual],
+          order_by: file.id,
+          limit: ^(@max_versions + 1),
+          select: %MovieVersion{
+            id: file.id,
+            availability: file.availability,
+            size_bytes: file.size_bytes,
+            origin: identification.origin,
+            needs_review?: identification.needs_review
+          }
+        ),
+        log: false
+      )
+
+    if length(versions) > @max_versions,
+      do: {:error, :too_many_versions},
+      else: {:ok, {MovieMapper.to_movie(movie), versions}}
   end
 end

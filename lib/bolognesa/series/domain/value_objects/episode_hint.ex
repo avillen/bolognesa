@@ -60,16 +60,23 @@ defmodule Bolognesa.Series.Domain.ValueObjects.EpisodeHint do
         "episodes" => episodes,
         "remainder" => remainder
       } ->
-        season_number = String.to_integer(if(season == "", do: alternate, else: season))
-
-        with :ok <- valid_remainder(remainder),
-             {:ok, numbers} <- episode_numbers(episodes),
-             do: {:ok, season_number, numbers}
+        parsed_selection(season, alternate, episodes, remainder)
 
       _ ->
         {:error, :unusable_name}
     end
   end
+
+  defp parsed_selection(season, alternate, episodes, remainder) do
+    season_number = season |> season_text(alternate) |> String.to_integer()
+
+    with :ok <- valid_remainder(remainder),
+         {:ok, numbers} <- episode_numbers(episodes),
+         do: {:ok, season_number, numbers}
+  end
+
+  defp season_text("", alternate), do: alternate
+  defp season_text(season, _alternate), do: season
 
   defp valid_remainder(""), do: :ok
 

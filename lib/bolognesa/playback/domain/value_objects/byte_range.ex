@@ -22,31 +22,37 @@ defmodule Bolognesa.Playback.Domain.ValueObjects.ByteRange do
 
   defp suffix_range(value, size) do
     with {:ok, suffix} <- number(value) do
-      if suffix > 0 and size > 0 do
-        length = min(suffix, size)
-        {:ok, {size - length, length, 206}}
-      else
-        {:error, :unsatisfiable}
-      end
+      suffix_result(suffix, size)
     end
   end
 
   defp open_range(value, size) do
     with {:ok, first} <- number(value) do
-      if first < size,
-        do: {:ok, {first, size - first, 206}},
-        else: {:error, :unsatisfiable}
+      open_result(first, size)
     end
   end
 
   defp closed_range(first_text, last_text, size) do
     with {:ok, first} <- number(first_text),
          {:ok, last} <- number(last_text) do
-      if first < size and last >= first,
-        do: {:ok, {first, min(last, size - 1) - first + 1, 206}},
-        else: {:error, :unsatisfiable}
+      closed_result(first, last, size)
     end
   end
+
+  defp suffix_result(suffix, size) when suffix > 0 and size > 0 do
+    length = min(suffix, size)
+    {:ok, {size - length, length, 206}}
+  end
+
+  defp suffix_result(_suffix, _size), do: {:error, :unsatisfiable}
+
+  defp open_result(first, size) when first < size, do: {:ok, {first, size - first, 206}}
+  defp open_result(_first, _size), do: {:error, :unsatisfiable}
+
+  defp closed_result(first, last, size) when first < size and last >= first,
+    do: {:ok, {first, min(last, size - 1) - first + 1, 206}}
+
+  defp closed_result(_first, _last, _size), do: {:error, :unsatisfiable}
 
   defp number(digits) when byte_size(digits) <= 19 do
     value = String.to_integer(digits)

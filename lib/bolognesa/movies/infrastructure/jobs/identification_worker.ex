@@ -22,7 +22,9 @@ defmodule Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker do
   def perform(_), do: {:cancel, :invalid_job}
 
   @spec perform(Oban.Job.t(), IdentificationRepository.adapter(), MovieProvider.adapter()) ::
-          :ok | {:error, atom()} | {:cancel, :invalid_job}
+          :ok
+          | {:error, IdentificationRepository.reason() | :unusable_name | MovieProvider.reason()}
+          | {:cancel, :invalid_job}
   def perform(
         %Oban.Job{args: %{"file_id" => id, "token" => token}, attempt: attempt} = job,
         repository,
