@@ -5,10 +5,7 @@ defmodule Bolognesa.Music.MusicJourneyTest do
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
 
-  alias Bolognesa.Libraries.Infrastructure.Repositories.{
-    EctoInspectionRepository,
-    EctoMusicRefreshOutboxRepository
-  }
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
 
   alias Bolognesa.Libraries.Support.SuccessfulMusicProbe
   alias Bolognesa.Music
@@ -39,7 +36,6 @@ defmodule Bolognesa.Music.MusicJourneyTest do
                SuccessfulMusicProbe
              )
 
-    assert {:ok, 1} = EctoMusicRefreshOutboxRepository.dispatch_batch(100)
     assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :music_imports)
     assert {:ok, %{items: [track]}} = Music.list_tracks(actor, "Sample", 1, library.id)
 

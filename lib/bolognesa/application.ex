@@ -64,17 +64,9 @@ defmodule Bolognesa.Application do
   end
 
   defp music_children do
-    dispatcher =
-      if Application.get_env(:bolognesa, :music_refresh_dispatcher, true),
-        do: [Bolognesa.Libraries.Infrastructure.Jobs.MusicRefreshDispatcher],
-        else: []
-
-    reconciler =
-      if Application.get_env(:bolognesa, :music_import_reconciler, true),
-        do: [Bolognesa.Music.Infrastructure.Jobs.ImportReconciler],
-        else: []
-
-    dispatcher ++ reconciler
+    if Application.get_env(:bolognesa, :music_import_reconciler, true),
+      do: [Bolognesa.Music.Infrastructure.Jobs.ImportReconciler],
+      else: []
   end
 
   # Tell Phoenix to update the endpoint configuration

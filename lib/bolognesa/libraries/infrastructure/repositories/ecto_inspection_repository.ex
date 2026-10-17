@@ -7,7 +7,6 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-  alias Bolognesa.Infrastructure.Persistence.MusicRefreshEventSchema
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
@@ -142,15 +141,11 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
 
   defp refresh_music(file, inspection) do
     if Repo.get!(LibrarySchema, file.library_id).content_type == :music do
-      Repo.insert!(
-        MusicRefreshEventSchema.changeset(%MusicRefreshEventSchema{}, %{
-          media_file_id: file.id,
-          revision: file.revision,
-          inspection_token: inspection.token
-        }),
-        on_conflict: :nothing,
-        conflict_target: [:media_file_id, :inspection_token]
-      )
+      Bolognesa.Music.request_import_in_transaction!(Repo, %{
+        file_id: file.id,
+        revision: file.revision,
+        inspection_token: inspection.token
+      })
     end
   end
 

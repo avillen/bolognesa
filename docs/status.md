@@ -18,7 +18,9 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Recorded verification
 
-- Direct inspection jobs: local `MIX_TEST_PARTITION=_direct_jobs mix precommit` passed compilation, Credo, and 520 tests with one skipped. Focused content checks passed 334 tests with one skipped. The disposable inspection migration verifier passed empty and seeded upgrades with more than 100 requests, linked/deleted jobs, obsolete observations and refused reversal. Inspection requests now commit with their Oban jobs; Music/video delivery still uses its existing outboxes. Not deployed.
+- Direct Music import jobs: local `MIX_TEST_PARTITION=_direct_jobs mix precommit` passed compilation, Credo, and 525 tests with one skipped. Handoff/import checks passed 35 tests, including same-revision stale-token rejection and real Oban insertion notification. The disposable Music migration verifier passed empty/seeded upgrades, stable-data comparison, refused reversal, and rollback of earlier batches on mismatched linkage. Pending imports now exist before execution; recovery no longer reads Libraries events. Not deployed.
+
+- Direct inspection jobs: local `MIX_TEST_PARTITION=_direct_jobs mix precommit` passed compilation, Credo, and 520 tests with one skipped. Focused content checks passed 334 tests with one skipped. The disposable inspection migration verifier passed empty and seeded upgrades with more than 100 requests, linked/deleted jobs, obsolete observations and refused reversal. Inspection requests now commit with their Oban jobs; Music delivery has since been converted separately; video delivery still uses its existing outboxes. Not deployed.
 
 Current content-context checks and deployment observations are distinguished from earlier device evidence.
 

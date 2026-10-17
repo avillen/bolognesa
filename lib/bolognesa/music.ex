@@ -12,9 +12,22 @@ defmodule Bolognesa.Music do
 
   alias Bolognesa.Music.Infrastructure.Readers.{EctoObservationsReader, EctoTracksReader}
   alias Bolognesa.Music.Infrastructure.Repositories.{EctoImportRepository, EctoMusicRepository}
-  @spec refresh_track(pos_integer(), pos_integer()) :: RefreshTrack.result()
-  def refresh_track(file_id, revision),
-    do: RefreshTrack.call(file_id, revision, EctoObservationsReader, EctoMusicRepository)
+  @type transaction_repository :: atom()
+  @type import_request :: %{
+          required(:file_id) => pos_integer(),
+          required(:revision) => pos_integer(),
+          required(:inspection_token) => String.t()
+        }
+
+  @doc "Accepts a current audio observation inside the caller's inventory transaction."
+  @spec request_import_in_transaction!(transaction_repository(), import_request()) ::
+          :requested | :unchanged | :stale
+  def request_import_in_transaction!(repo, request),
+    do: EctoImportRepository.request_in_transaction!(repo, request)
+
+  @spec refresh_track(pos_integer(), pos_integer(), String.t() | nil) :: RefreshTrack.result()
+  def refresh_track(file_id, revision, token \\ nil),
+    do: RefreshTrack.call(file_id, revision, EctoObservationsReader, EctoMusicRepository, token)
 
   @spec retry_import(AuthenticatedUser.t() | nil, pos_integer()) :: RetryImport.result()
   def retry_import(actor, file_id), do: RetryImport.call(actor, file_id, EctoImportRepository)

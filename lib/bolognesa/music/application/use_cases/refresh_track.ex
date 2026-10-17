@@ -8,13 +8,22 @@ defmodule Bolognesa.Music.Application.UseCases.RefreshTrack do
           pos_integer(),
           pos_integer(),
           ObservationsReader.adapter(),
-          MusicRepository.adapter()
+          MusicRepository.adapter(),
+          String.t() | nil
         ) :: result()
-  def call(file_id, revision, reader, repository) do
+  def call(file_id, revision, reader, repository, token \\ nil) do
     case reader.current(file_id, revision) do
-      {:ok, :stale} -> :ok
-      {:ok, observation} -> apply_current(observation, repository)
-      {:error, :unavailable} = error -> error
+      {:ok, :stale} ->
+        :ok
+
+      {:ok, observation} when is_nil(token) or observation.inspection_token == token ->
+        apply_current(observation, repository)
+
+      {:ok, _obsolete} ->
+        :ok
+
+      {:error, :unavailable} = error ->
+        error
     end
   end
 

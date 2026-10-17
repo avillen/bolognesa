@@ -23,7 +23,12 @@ defmodule Bolognesa.Music.Infrastructure.Jobs.RefreshWorker do
   def perform(_job), do: {:cancel, :unexpected_failure}
 
   defp refresh(job, attempt) do
-    result = Music.refresh_track(attempt.media_file_id, attempt.observed_revision)
+    result =
+      Music.refresh_track(
+        attempt.media_file_id,
+        attempt.observed_revision,
+        attempt.inspection_token
+      )
 
     if result != :ok && job.attempt >= job.max_attempts do
       EctoImportRepository.fail_attempt(attempt, :storage_unavailable)

@@ -1,6 +1,5 @@
 import Config
 
-config :bolognesa, :music_refresh_dispatcher, false
 config :bolognesa, :music_import_reconciler, false
 
 config :bolognesa, Bolognesa.Repo,

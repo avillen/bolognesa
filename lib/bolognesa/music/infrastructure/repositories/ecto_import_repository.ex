@@ -10,10 +10,59 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
     MusicImportSchema
   }
 
-  alias Bolognesa.Infrastructure.Persistence.MusicRefreshEventSchema
   alias Bolognesa.Music.Domain.Entities.ImportState
   alias Bolognesa.Music.Infrastructure.Jobs.RefreshWorker
   alias Bolognesa.Repo
+
+  @spec request_in_transaction!(
+          Bolognesa.Music.transaction_repository(),
+          Bolognesa.Music.import_request()
+        ) ::
+          :requested | :unchanged | :stale
+  def request_in_transaction!(repo, %{file_id: id, revision: revision, inspection_token: token}) do
+    unless repo.in_transaction?(),
+      do: raise(ArgumentError, "Music handoff requires a transaction")
+
+    case locked(id, repo) do
+      {:ok, %{revision: ^revision} = file, %{token: ^token} = inspection, state} ->
+        request_current(repo, file, inspection, state)
+
+      _ ->
+        :stale
+    end
+  end
+
+  defp request_current(_repo, _file, inspection, %{inspection_token: token})
+       when token == inspection.token,
+       do: :unchanged
+
+  defp request_current(repo, file, inspection, state) do
+    write_request(repo, file, inspection, state)
+    :requested
+  end
+
+  defp write_request(repo, file, inspection, state) do
+    row =
+      (state || %MusicImportSchema{})
+      |> MusicImportSchema.changeset(%{
+        media_file_id: file.id,
+        observed_revision: file.revision,
+        inspection_token: inspection.token,
+        state: :pending,
+        job_id: nil,
+        failure_reason: nil,
+        started_at: nil,
+        finished_at: nil
+      })
+      |> repo.insert_or_update!()
+
+    {:ok, %{job: job}} =
+      Ecto.Multi.new()
+      |> Oban.insert(:job, RefreshWorker.new(%{file_id: file.id, revision: file.revision}))
+      |> repo.transaction()
+
+    row |> MusicImportSchema.changeset(%{job_id: job.id}) |> repo.update!()
+  end
 
   @impl true
   def request_retry(file_id) do
@@ -67,29 +116,22 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
     end
   end
 
+  defp begin(_file, _inspection, nil, _job_id), do: {:ok, :stale}
+
   defp begin(file, inspection, state, job_id) do
-    cond do
-      state && state.inspection_token == inspection.token && state.state in [:succeeded, :failed] ->
-        {:ok, :stale}
+    if state.inspection_token == inspection.token and state.observed_revision == file.revision and
+         state.job_id == job_id and state.state in [:pending, :running] do
+      row =
+        save(state, %{
+          state: :running,
+          failure_reason: nil,
+          started_at: DateTime.utc_now(),
+          finished_at: nil
+        })
 
-      state && state.inspection_token == inspection.token && state.job_id &&
-          state.job_id != job_id ->
-        {:ok, :stale}
-
-      true ->
-        row =
-          save(state, %{
-            media_file_id: file.id,
-            observed_revision: file.revision,
-            inspection_token: inspection.token,
-            state: :running,
-            job_id: job_id,
-            failure_reason: nil,
-            started_at: DateTime.utc_now(),
-            finished_at: nil
-          })
-
-        {:ok, to_state(row)}
+      {:ok, to_state(row)}
+    else
+      {:ok, :stale}
     end
   end
 
@@ -98,55 +140,38 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
          state.state in [:pending, :running, :succeeded] do
       :ok
     else
-      {:ok, job} =
-        Oban.insert(
-          RefreshWorker.new(%{
-            file_id: file.id,
-            revision: file.revision
-          })
-        )
-
-      save(state, %{
-        media_file_id: file.id,
-        observed_revision: file.revision,
-        inspection_token: inspection.token,
-        state: :pending,
-        job_id: job.id,
-        failure_reason: nil,
-        started_at: nil,
-        finished_at: nil
-      })
+      write_request(Repo, file, inspection, state)
 
       :ok
     end
   end
 
-  defp locked(file_id) do
+  defp locked(file_id, repo \\ Repo) do
     file =
-      Repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
+      repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
         log: false
       )
 
     inspection =
-      Repo.one(
+      repo.one(
         from(row in InspectionSchema, where: row.media_file_id == ^file_id, lock: "FOR UPDATE"),
         log: false
       )
 
     state =
-      Repo.one(
+      repo.one(
         from(row in MusicImportSchema, where: row.media_file_id == ^file_id, lock: "FOR UPDATE")
       )
 
-    if eligible?(file, inspection), do: {:ok, file, inspection, state}, else: :stale
+    if eligible?(file, inspection, repo), do: {:ok, file, inspection, state}, else: :stale
   end
 
-  defp eligible?(nil, _inspection), do: false
-  defp eligible?(_file, nil), do: false
+  defp eligible?(nil, _inspection, _repo), do: false
+  defp eligible?(_file, nil, _repo), do: false
 
-  defp eligible?(file, inspection) do
+  defp eligible?(file, inspection, repo) do
     file.availability == :available &&
-      Repo.get!(LibrarySchema, file.library_id).content_type == :music &&
+      repo.get!(LibrarySchema, file.library_id).content_type == :music &&
       inspection.state == :succeeded && inspection.observed_revision == file.revision &&
       Enum.any?(inspection.tracks["items"] || [], &(&1["kind"] == "audio"))
   end
@@ -178,7 +203,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   def reconcile_jobs(now) do
     cutoff = DateTime.add(now, -60, :second)
 
-    ids = Enum.uniq(reconciliation_ids(cutoff) ++ unstarted_ids())
+    ids = reconciliation_ids(cutoff)
 
     Enum.reduce_while(ids, :ok, &reconcile_id(&1, cutoff, &2))
   rescue
@@ -186,85 +211,8 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  defp unstarted_ids do
-    Repo.all(
-      from(event in MusicRefreshEventSchema,
-        join: file in MediaFileSchema,
-        on: file.id == event.media_file_id,
-        join: library in LibrarySchema,
-        on: library.id == file.library_id,
-        join: inspection in InspectionSchema,
-        on:
-          inspection.media_file_id == event.media_file_id and
-            inspection.token == event.inspection_token,
-        left_join: import_state in MusicImportSchema,
-        on:
-          import_state.media_file_id == event.media_file_id and
-            import_state.inspection_token == event.inspection_token,
-        left_join: job in Oban.Job,
-        on: job.id == event.job_id,
-        where: file.availability == :available,
-        where: library.content_type == :music,
-        where: inspection.state == :succeeded,
-        where: inspection.observed_revision == file.revision,
-        where: event.revision == file.revision,
-        where: fragment(~s|? @> '{"items":[{"kind":"audio"}]}'::jsonb|, inspection.tracks),
-        where: not is_nil(event.delivered_at),
-        where: is_nil(import_state.id),
-        where: is_nil(job.id) or job.state in ["discarded", "cancelled", "completed"],
-        order_by: event.id,
-        limit: 100,
-        select: event.media_file_id
-      )
-    )
-  end
-
   defp job(nil), do: nil
   defp job(id), do: Repo.get(Oban.Job, id)
-
-  defp recover_unstarted(file, inspection) do
-    event =
-      Repo.get_by(MusicRefreshEventSchema,
-        media_file_id: file.id,
-        inspection_token: inspection.token
-      )
-
-    recover_event(file, inspection, event)
-  end
-
-  defp recover_event(_file, _inspection, nil), do: :ok
-  defp recover_event(_file, _inspection, %{delivered_at: nil}), do: :ok
-
-  defp recover_event(file, inspection, event) do
-    case recovery_reason(job(event.job_id), DateTime.utc_now()) do
-      reason when reason in [:attempts_exhausted, :unexpected_failure] ->
-        existing = Repo.get_by(MusicImportSchema, media_file_id: file.id)
-
-        save(existing, %{
-          media_file_id: file.id,
-          observed_revision: file.revision,
-          inspection_token: inspection.token,
-          state: :failed,
-          job_id: event.job_id,
-          failure_reason: reason,
-          finished_at: DateTime.utc_now()
-        })
-
-        :ok
-
-      _ ->
-        :ok
-    end
-  end
-
-  defp reconcile_existing(state, inspection, cutoff) do
-    if state.inspection_token == inspection.token do
-      reconcile_state(state, inspection, cutoff)
-    else
-      file = Repo.get!(MediaFileSchema, state.media_file_id)
-      recover_unstarted(file, inspection)
-    end
-  end
 
   defp reconciliation_ids(cutoff) do
     Repo.all(
@@ -307,10 +255,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   defp reconcile(id, cutoff) do
     case locked(id) do
       {:ok, _file, inspection, state} when not is_nil(state) ->
-        reconcile_existing(state, inspection, cutoff)
-
-      {:ok, file, inspection, nil} ->
-        recover_unstarted(file, inspection)
+        reconcile_state(state, inspection, cutoff)
 
       _ ->
         :ok

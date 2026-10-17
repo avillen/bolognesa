@@ -1,6 +1,6 @@
 # Plan 2: direct Music import jobs
 
-Status: proposed; implementation has not started.
+Status: implemented locally; verification recorded in project status. Not deployed.
 
 **Design:** [Shared ownership, invariants, migration and verification policy](direct-jobs-design.md). Read it before this plan.
 
@@ -54,15 +54,15 @@ Music recovery reads `music_imports` joined to current observations and Oban job
 
 **Deliverable:** Successful audio inspection, pending import, and linked job commit together; Music recovery needs no event for new requests.
 
-- [ ] Add facade/adapter tests for accepted handoff, wrong content type, missing file, stale token/revision, no audio, and a call outside a transaction.
-- [ ] Assert repeated current-token delivery creates one request/job, preserves terminal state, and creates no duplicate track. Cover concurrent delivery and inspection replacement without a revision change.
-- [ ] Inject failed job insertion and failed import persistence. Assert the successful inspection result and all handoff writes roll back together; Libraries emits no success hint for rolled-back work.
-- [ ] Implement the facade contract and request-writing helper using the supplied repository and the existing lock order.
-- [ ] Replace MusicRefreshEventSchema insertion in inspection completion with the Music facade call. Persist successful inspection before revalidating it through Music in the same transaction.
-- [ ] Tighten begin_attempt to reject absent requests and mismatched job IDs, including old jobs at the same file revision after a forced reinspection.
-- [ ] Preserve authorized retry behavior: pending/running/succeeded requests are not duplicated; failed current imports can be explicitly retried with a new linked job.
-- [ ] Simplify recovery to current persisted import requests. Verify never-started jobs that are deleted/discarded become visible failures without event lookup; healthy waiting jobs do not consume the recovery batch budget.
-- [ ] Run `mix test test/bolognesa/music test/bolognesa/libraries/music_import_handoff_test.exs test/bolognesa/libraries/inspect_media_file_test.exs`.
+- [x] Add facade/adapter tests for accepted handoff, wrong content type, missing file, stale token/revision, no audio, and a call outside a transaction.
+- [x] Assert repeated current-token delivery creates one request/job, preserves terminal state, and creates no duplicate track. Cover concurrent delivery and inspection replacement without a revision change.
+- [x] Inject failed job insertion and failed import persistence. Assert the successful inspection result and all handoff writes roll back together; Libraries emits no success hint for rolled-back work.
+- [x] Implement the facade contract and request-writing helper using the supplied repository and the existing lock order.
+- [x] Replace MusicRefreshEventSchema insertion in inspection completion with the Music facade call. Persist successful inspection before revalidating it through Music in the same transaction.
+- [x] Tighten begin_attempt to reject absent requests and mismatched job IDs, including old jobs at the same file revision after a forced reinspection.
+- [x] Preserve authorized retry behavior: pending/running/succeeded requests are not duplicated; failed current imports can be explicitly retried with a new linked job.
+- [x] Simplify recovery to current persisted import requests. Verify never-started jobs that are deleted/discarded become visible failures without event lookup; healthy waiting jobs do not consume the recovery batch budget.
+- [x] Run `mix test test/bolognesa/music test/bolognesa/libraries/music_import_handoff_test.exs test/bolognesa/libraries/inspect_media_file_test.exs`.
 
 ## Task 2: Migrate Music requests and remove event-based recovery
 
@@ -76,18 +76,18 @@ Music recovery reads `music_imports` joined to current observations and Oban job
 
 **Modify:** `lib/bolognesa/application.ex`, `config/config.exs`, `config/test.exs`, `config/screenshots.exs`, `test/bolognesa/libraries/music_refresh_recovery_test.exs`, affected fixtures/scripts.
 
-- [ ] Seed undelivered/delivered events with waiting, executing, terminal and deleted jobs; absent/old-token/current pending/running/succeeded/failed import states; non-audio, missing, changed-revision and same-revision/new-token observations.
-- [ ] For current successful audio events, preserve matching current import state. When no current-token request exists, materialize it from the legacy event/job: pending for a new undelivered job, running for an executing linked job, and failed for terminal or deleted delivered jobs. Preserve linked job IDs and failure semantics.
-- [ ] Never replace current-token succeeded/failed imports or schedule duplicates. For an old-token import, establish current event eligibility before replacing its attempt state. Preserve catalog track data independently of attempt replacement.
-- [ ] Validate recoverable state for every eligible event, then drop `music_refresh_events`. Refuse down and document backup restoration.
-- [ ] Remove event-based recovery helpers and event readers completely. Remove the dispatcher and its flags while preserving Music ImportReconciler and video dispatchers.
-- [ ] Verify empty/seeded upgrades, fresh setup, old payload execution and recovery before the worker's first attempt. Confirm old-token same-revision jobs cannot take over the migrated request.
+- [x] Seed undelivered/delivered events with waiting, executing, terminal and deleted jobs; absent/old-token/current pending/running/succeeded/failed import states; non-audio, missing, changed-revision and same-revision/new-token observations.
+- [x] For current successful audio events, preserve matching current import state. When no current-token request exists, materialize it from the legacy event/job: pending for a new undelivered job, running for an executing linked job, and failed for terminal or deleted delivered jobs. Preserve linked job IDs and failure semantics.
+- [x] Never replace current-token succeeded/failed imports or schedule duplicates. For an old-token import, establish current event eligibility before replacing its attempt state. Preserve catalog track data independently of attempt replacement.
+- [x] Validate recoverable state for every eligible event, then drop `music_refresh_events`. Refuse down and document backup restoration.
+- [x] Remove event-based recovery helpers and event readers completely. Remove the dispatcher and its flags while preserving Music ImportReconciler and video dispatchers.
+- [x] Verify empty/seeded upgrades, fresh setup, old payload execution and recovery before the worker's first attempt. Confirm old-token same-revision jobs cannot take over the migrated request.
 
 ## Task 3: Verify and document this release
 
-- [ ] Run `mix test test/bolognesa/music test/bolognesa/libraries` and the migration verifier, then `mix precommit`.
-- [ ] Review request ownership, supplied repository usage, file → inspection → import lock order, terminal retry policy and transaction rollback.
-- [ ] Update the shared decision, 0018, backend convention, deployment guide and status. Confirm only Music owns its pending import state and recovery needs no Libraries event table.
+- [x] Run `mix test test/bolognesa/music test/bolognesa/libraries` and the migration verifier, then `mix precommit`.
+- [x] Review request ownership, supplied repository usage, file → inspection → import lock order, terminal retry policy and transaction rollback.
+- [x] Update the shared decision, 0018, backend convention, deployment guide and status. Confirm only Music owns its pending import state and recovery needs no Libraries event table.
 
 ## Acceptance
 

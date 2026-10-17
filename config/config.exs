@@ -7,7 +7,6 @@
 # General application configuration
 import Config
 
-config :bolognesa, :music_refresh_dispatcher, true
 config :bolognesa, :music_import_reconciler, true
 
 config :bolognesa,
