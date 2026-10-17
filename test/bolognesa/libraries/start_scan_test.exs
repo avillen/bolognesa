@@ -7,7 +7,13 @@ defmodule Bolognesa.Libraries.StartScanTest do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
   alias Bolognesa.Libraries
-  alias Bolognesa.Libraries.Application.UseCases.{GetInspectionCounts, GetScanStatus, StartScan}
+
+  alias Bolognesa.Libraries.Application.UseCases.{
+    FetchInspectionCounts,
+    FetchScanStatus,
+    StartScan
+  }
+
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Ecto.Adapters.SQL
@@ -49,7 +55,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
     assert job.max_attempts == 3
     assert job.worker == "Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker"
     assert {:error, :scan_in_progress} = Libraries.start_scan(@admin, library.id)
-    assert {:ok, status} = Libraries.get_scan_status(@admin, library.id)
+    assert {:ok, status} = Libraries.fetch_scan_status(@admin, library.id)
     assert status.latest_scan == scan
     assert status.last_completed_at == nil
     refute_receive {:library_status_changed, _}
@@ -88,7 +94,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
   end
 
   test "reports no previous scan", %{library: library} do
-    assert {:ok, status} = Libraries.get_scan_status(@admin, library.id)
+    assert {:ok, status} = Libraries.fetch_scan_status(@admin, library.id)
     assert status.library_id == library.id
     assert status.latest_scan == nil
     assert status.last_completed_at == nil
@@ -96,27 +102,27 @@ defmodule Bolognesa.Libraries.StartScanTest do
 
   test "authorizes technical counters and reports empty libraries", %{library: library} do
     assert {:ok, %{uninspected: 0, pending: 0, running: 0, succeeded: 0, failed: 0} = counts} =
-             Libraries.get_inspection_counts(@admin, library.id)
+             Libraries.fetch_inspection_counts(@admin, library.id)
 
     assert counts.__struct__ == InspectionCounts
 
-    assert {:error, :forbidden} = Libraries.get_inspection_counts(@member, library.id)
-    assert {:error, :forbidden} = Libraries.get_inspection_counts(nil, library.id)
-    assert {:error, :not_found} = Libraries.get_inspection_counts(@admin, 0)
-    assert {:error, :forbidden} = GetInspectionCounts.call(@member, 0, __MODULE__)
+    assert {:error, :forbidden} = Libraries.fetch_inspection_counts(@member, library.id)
+    assert {:error, :forbidden} = Libraries.fetch_inspection_counts(nil, library.id)
+    assert {:error, :not_found} = Libraries.fetch_inspection_counts(@admin, 0)
+    assert {:error, :forbidden} = FetchInspectionCounts.call(@member, 0, __MODULE__)
   end
 
   test "rejects absent libraries" do
     assert {:error, :not_found} = Libraries.start_scan(@admin, 0)
-    assert {:error, :not_found} = Libraries.get_scan_status(@admin, 0)
+    assert {:error, :not_found} = Libraries.fetch_scan_status(@admin, 0)
   end
 
   test "requires an administrator for requests and status", %{library: library} do
     for actor <- [@member, nil] do
       assert {:error, :forbidden} = Libraries.start_scan(actor, library.id)
-      assert {:error, :forbidden} = Libraries.get_scan_status(actor, library.id)
+      assert {:error, :forbidden} = Libraries.fetch_scan_status(actor, library.id)
       assert {:error, :forbidden} = Libraries.start_scan(actor, 0)
-      assert {:error, :forbidden} = Libraries.get_scan_status(actor, 0)
+      assert {:error, :forbidden} = Libraries.fetch_scan_status(actor, 0)
     end
   end
 
@@ -125,7 +131,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
       assert {:error, :forbidden} =
                StartScan.call(actor, 0, __MODULE__, LibraryStatusNotifications)
 
-      assert {:error, :forbidden} = GetScanStatus.call(actor, 0, __MODULE__)
+      assert {:error, :forbidden} = FetchScanStatus.call(actor, 0, __MODULE__)
     end
   end
 
@@ -156,13 +162,13 @@ defmodule Bolognesa.Libraries.StartScanTest do
       scan |> ScanSchema.changeset(%{requested_at: time}) |> Repo.update!()
     end
 
-    assert {:ok, status} = Libraries.get_scan_status(@admin, library.id)
+    assert {:ok, status} = Libraries.fetch_scan_status(@admin, library.id)
     assert status.latest_scan.id == third.id
     assert status.latest_scan.state == :failed
     assert status.last_completed_at == time
 
     first |> ScanSchema.changeset(%{requested_at: DateTime.add(time, 120)}) |> Repo.update!()
-    assert {:ok, status} = Libraries.get_scan_status(@admin, library.id)
+    assert {:ok, status} = Libraries.fetch_scan_status(@admin, library.id)
     assert status.latest_scan.id == first.id
   end
 

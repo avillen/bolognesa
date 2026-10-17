@@ -34,8 +34,8 @@ defmodule BolognesaWeb.Library.Index.Reducers.FetchScanStatuses do
   end
 
   defp load_library(actor, library, rows) do
-    with {:ok, status} <- Libraries.get_scan_status(actor, library.id),
-         {:ok, counts} <- Libraries.get_inspection_counts(actor, library.id) do
+    with {:ok, status} <- Libraries.fetch_scan_status(actor, library.id),
+         {:ok, counts} <- Libraries.fetch_inspection_counts(actor, library.id) do
       {:cont, {:ok, [{library, status, counts} | rows]}}
     else
       {:error, reason} -> {:halt, {:error, reason}}

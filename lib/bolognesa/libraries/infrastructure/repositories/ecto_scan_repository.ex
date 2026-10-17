@@ -52,7 +52,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   end
 
   @impl true
-  def status(library_id) do
+  def fetch_status(library_id) do
     with {:ok, _library} <- find_library(Repo, library_id) do
       latest =
         Repo.one(

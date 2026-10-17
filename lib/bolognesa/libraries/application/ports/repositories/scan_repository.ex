@@ -6,13 +6,13 @@ defmodule Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository do
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
-  @type adapter :: atom()
+  @type adapter :: module()
 
   @callback request(Library.id()) ::
               {:ok, Scan.t()} | {:error, :not_found | :scan_in_progress | :unavailable}
   @callback request(Library.id(), boolean()) ::
               {:ok, Scan.t()} | {:error, :not_found | :scan_in_progress | :unavailable}
-  @callback status(Library.id()) ::
+  @callback fetch_status(Library.id()) ::
               {:ok, ScanStatus.t()} | {:error, :not_found | :unavailable}
   @callback begin_attempt(Scan.id(), pos_integer()) ::
               {:ok, Scan.t(), Library.t()}

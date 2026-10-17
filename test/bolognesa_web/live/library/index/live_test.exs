@@ -133,7 +133,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     view |> element("#library-scan-#{library.id}") |> render_click()
     assert has_element?(view, "#library-scan-#{library.id}[disabled]")
     assert has_element?(view, "#library-scan-state-#{library.id}[data-state='queued']")
-    assert {:ok, %{latest_scan: scan}} = Libraries.get_scan_status(actor, library.id)
+    assert {:ok, %{latest_scan: scan}} = Libraries.fetch_scan_status(actor, library.id)
     assert_enqueued(worker: ScanWorker, args: %{scan_id: scan.id})
     {:ok, reopened, _} = live(conn, ~p"/libraries")
     await_status_updates(reopened)
@@ -186,7 +186,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     view |> element("#library-reinspect-confirm-button-#{library.id}") |> render_click()
     assert has_element?(view, "#library-scan-state-#{library.id}[data-state='queued']")
     assert has_element?(view, "#library-reinspect-#{library.id}[disabled]")
-    assert {:ok, %{latest_scan: forced}} = Libraries.get_scan_status(actor, library.id)
+    assert {:ok, %{latest_scan: forced}} = Libraries.fetch_scan_status(actor, library.id)
     assert forced.id != first_scan.id
     assert forced.force_inspection?
 
@@ -319,7 +319,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     view |> element("#library-scan-#{library.id}") |> render_click()
 
     assert {:ok, %{latest_scan: %{state: :queued} = scan}} =
-             Libraries.get_scan_status(actor, library.id)
+             Libraries.fetch_scan_status(actor, library.id)
 
     await_status_updates(view)
     ref = Process.monitor(view.pid)
@@ -436,8 +436,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
       Libraries.create_library(actor, %{name: "Current", path: path, content_type: :movie})
 
     {:ok, scan} = Libraries.start_scan(actor, library.id)
-    {:ok, old_status} = Libraries.get_scan_status(actor, library.id)
-    {:ok, counts} = Libraries.get_inspection_counts(actor, library.id)
+    {:ok, old_status} = Libraries.fetch_scan_status(actor, library.id)
+    {:ok, counts} = Libraries.fetch_inspection_counts(actor, library.id)
     socket = status_socket(actor)
     socket = %{socket | transport_pid: self()}
     socket = Phoenix.Component.assign(socket, :scan_loading?, true)
@@ -523,8 +523,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
       Libraries.create_library(actor, %{name: "Retained", path: path, content_type: :movie})
 
     {:ok, _scan} = Libraries.start_scan(actor, library.id)
-    {:ok, status} = Libraries.get_scan_status(actor, library.id)
-    {:ok, counts} = Libraries.get_inspection_counts(actor, library.id)
+    {:ok, status} = Libraries.fetch_scan_status(actor, library.id)
+    {:ok, counts} = Libraries.fetch_inspection_counts(actor, library.id)
 
     socket =
       %Phoenix.LiveView.Socket{
@@ -547,7 +547,9 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
            |> LazyHTML.to_tree() != []
 
     assert LazyHTML.query(document, "#library-scan-feedback") |> LazyHTML.to_tree() != []
-    assert {:ok, %{latest_scan: %{state: :queued}}} = Libraries.get_scan_status(actor, library.id)
+
+    assert {:ok, %{latest_scan: %{state: :queued}}} =
+             Libraries.fetch_scan_status(actor, library.id)
   end
 
   test "scan reducer delegates authorization and creates no unauthorized job", %{

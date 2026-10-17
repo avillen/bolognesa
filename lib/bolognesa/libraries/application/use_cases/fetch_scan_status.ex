@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Application.UseCases.GetScanStatus do
+defmodule Bolognesa.Libraries.Application.UseCases.FetchScanStatus do
   @moduledoc "Authorize a library scan status query."
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
@@ -10,7 +10,7 @@ defmodule Bolognesa.Libraries.Application.UseCases.GetScanStatus do
           {:ok, ScanStatus.t()} | {:error, :forbidden | :not_found | :unavailable}
   def call(actor, library_id, repository) do
     with :ok <- Accounts.authorize(actor, :admin) do
-      repository.status(library_id)
+      repository.fetch_status(library_id)
     end
   end
 end

@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Application.UseCases.GetInspectionCounts do
+defmodule Bolognesa.Libraries.Application.UseCases.FetchInspectionCounts do
   @moduledoc "Authorize aggregate technical inspection counts for one library."
 
   alias Bolognesa.Accounts

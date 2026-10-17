@@ -3,7 +3,8 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Files.NewLibrary do
   alias Bolognesa.Libraries.Domain.Entities.Library
 
   @type attrs :: %{
-          optional(:name | :path) => String.t(),
+          optional(:name) => String.t(),
+          optional(:path) => String.t(),
           optional(:content_type) => Library.content_type()
         }
   @type error :: :invalid_name | :invalid_path | :invalid_content_type

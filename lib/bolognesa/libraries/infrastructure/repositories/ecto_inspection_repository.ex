@@ -17,7 +17,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   alias Bolognesa.Repo
 
   @impl true
-  def get(file_id) do
+  def fetch(file_id) do
     case Repo.get_by(InspectionSchema, media_file_id: file_id) do
       nil -> {:error, :not_found}
       inspection -> {:ok, InspectionMapper.to_inspection(inspection)}

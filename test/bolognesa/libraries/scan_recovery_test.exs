@@ -89,7 +89,7 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
                  LibraryStatusNotifications
                )
 
-      assert {:ok, %{latest_scan: ^current}} = EctoScanRepository.status(scan.library_id)
+      assert {:ok, %{latest_scan: ^current}} = EctoScanRepository.fetch_status(scan.library_id)
     end
   end
 
@@ -122,11 +122,11 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     job_state(scan, "executing")
     now = DateTime.add(current.attempt_started_at, 2_000)
     assert :ok = ReconcileScans.call(now, EctoScanRepository, LibraryStatusNotifications)
-    assert {:ok, %{latest_scan: ^current}} = EctoScanRepository.status(scan.library_id)
+    assert {:ok, %{latest_scan: ^current}} = EctoScanRepository.fetch_status(scan.library_id)
     {:ok, completed} = EctoScanRepository.complete(scan.id, current.generation)
     job_state(scan, "discarded")
     assert :ok = ReconcileScans.call(now, EctoScanRepository, LibraryStatusNotifications)
-    assert {:ok, %{latest_scan: ^completed}} = EctoScanRepository.status(scan.library_id)
+    assert {:ok, %{latest_scan: ^completed}} = EctoScanRepository.fetch_status(scan.library_id)
   end
 
   test "orphan running scan waits for budget then fails and queued orphan fails immediately", %{

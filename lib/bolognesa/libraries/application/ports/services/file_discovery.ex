@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.Application.Ports.Services.FileDiscovery do
 
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.{DiscoveryRequest, NewMediaFile}
 
-  @type adapter :: atom()
+  @type adapter :: module()
   @type error ::
           :source_inaccessible
           | :source_outside_roots

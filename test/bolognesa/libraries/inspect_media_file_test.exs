@@ -62,7 +62,7 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
     assert_receive {:library_status_changed, ^library_id}
 
     assert {:ok, %{state: :succeeded, format: "matroska", duration_ms: 2_500} = result} =
-             EctoInspectionRepository.get(inspection.media_file_id)
+             EctoInspectionRepository.fetch(inspection.media_file_id)
 
     assert result.__struct__ == Inspection
     assert [%TechnicalTrack{kind: :video}] = result.tracks
@@ -109,7 +109,7 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
              )
 
     assert {:ok, %{state: :failed, failure_reason: :invalid_output} = result} =
-             EctoInspectionRepository.get(inspection.media_file_id)
+             EctoInspectionRepository.fetch(inspection.media_file_id)
 
     assert result.__struct__ == Inspection
   end

@@ -37,7 +37,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
     assert Repo.get!(ScanSchema, context.scan.id).state == :running
     send(task.pid, {:finish, :ok})
     assert :ok = Task.await(task)
-    {:ok, before} = EctoScanRepository.status(context.scan.library_id)
+    {:ok, before} = EctoScanRepository.fetch_status(context.scan.library_id)
     assert before.latest_scan.state == :completed
     assert before.latest_scan.files_discovered == 1
 
@@ -50,7 +50,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
                LibraryStatusNotifications
              )
 
-    assert {:ok, ^before} = EctoScanRepository.status(context.scan.library_id)
+    assert {:ok, ^before} = EctoScanRepository.fetch_status(context.scan.library_id)
   end
 
   test "permanent disk failure preserves batches and permits explicit retry", context do
@@ -101,7 +101,10 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
     send(task.pid, {:batch, [entry()]})
     assert_receive {:batch_result, _, {:error, :stale_attempt}}
     assert :ok = Task.await(task)
-    assert {:ok, %{latest_scan: ^current}} = EctoScanRepository.status(context.scan.library_id)
+
+    assert {:ok, %{latest_scan: ^current}} =
+             EctoScanRepository.fetch_status(context.scan.library_id)
+
     assert Repo.all(MediaFileSchema) == []
   end
 

@@ -90,7 +90,7 @@ defmodule Bolognesa.Libraries.Application.UseCases.DiscoverFiles do
     do: metadata(scan) ++ [files_discovered: scan.files_discovered, duration_ms: elapsed(started)]
 
   defp failure_metadata(scan, repository, started) do
-    case repository.status(scan.library_id) do
+    case repository.fetch_status(scan.library_id) do
       {:ok, %{latest_scan: %{id: id} = latest}} when id == scan.id ->
         result_metadata(latest, started)
 

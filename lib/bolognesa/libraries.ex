@@ -2,8 +2,8 @@ defmodule Bolognesa.Libraries do
   @moduledoc "Configure and read media libraries."
   alias Bolognesa.Libraries.Application.UseCases.{
     CreateLibrary,
-    GetInspectionCounts,
-    GetScanStatus,
+    FetchInspectionCounts,
+    FetchScanStatus,
     ListLibraries,
     StartScan
   }
@@ -54,13 +54,13 @@ defmodule Bolognesa.Libraries do
   def start_scan(actor, library_id, opts \\ []),
     do: StartScan.call(actor, library_id, EctoScanRepository, LibraryStatusNotifications, opts)
 
-  @spec get_scan_status(AuthenticatedUser.t(), Library.id()) ::
+  @spec fetch_scan_status(AuthenticatedUser.t(), Library.id()) ::
           {:ok, ScanStatus.t()} | {:error, :forbidden | :not_found | :unavailable}
-  def get_scan_status(actor, library_id),
-    do: GetScanStatus.call(actor, library_id, EctoScanRepository)
+  def fetch_scan_status(actor, library_id),
+    do: FetchScanStatus.call(actor, library_id, EctoScanRepository)
 
-  @spec get_inspection_counts(AuthenticatedUser.t(), Library.id()) ::
+  @spec fetch_inspection_counts(AuthenticatedUser.t(), Library.id()) ::
           {:ok, InspectionCounts.t()} | {:error, :forbidden | :not_found | :unavailable}
-  def get_inspection_counts(actor, library_id),
-    do: GetInspectionCounts.call(actor, library_id, EctoInspectionRepository)
+  def fetch_inspection_counts(actor, library_id),
+    do: FetchInspectionCounts.call(actor, library_id, EctoInspectionRepository)
 end

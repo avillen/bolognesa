@@ -61,7 +61,8 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
             send(parent, :status_reader_ready)
 
             receive do
-              {:library_status_changed, ^library_id} -> EctoScanRepository.status(library_id)
+              {:library_status_changed, ^library_id} ->
+                EctoScanRepository.fetch_status(library_id)
             end
           end)
         end)
@@ -84,7 +85,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     refute_receive {:library_status_changed, _}
 
     assert {:ok, %{latest_scan: %{state: :completed, files_discovered: 1}}} =
-             EctoScanRepository.status(scan.library_id)
+             EctoScanRepository.fetch_status(scan.library_id)
   end
 
   @tag committed: true

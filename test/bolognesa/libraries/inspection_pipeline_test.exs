@@ -88,7 +88,7 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
   end
 
   defp counts(library_id) do
-    {:ok, result} = Libraries.get_inspection_counts(@admin, library_id)
+    {:ok, result} = Libraries.fetch_inspection_counts(@admin, library_id)
     result
   end
 end

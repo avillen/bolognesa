@@ -28,8 +28,8 @@ defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
 
     with {:ok, libraries} <- Libraries.list_libraries(actor),
          library when library != nil <- Enum.find(libraries, &(&1.id == id)),
-         {:ok, status} <- Libraries.get_scan_status(actor, id),
-         {:ok, counts} <- Libraries.get_inspection_counts(actor, id) do
+         {:ok, status} <- Libraries.fetch_scan_status(actor, id),
+         {:ok, counts} <- Libraries.fetch_inspection_counts(actor, id) do
       row = Library.from_domain(library, status, counts)
 
       socket
