@@ -53,19 +53,19 @@ Only a complete successful scan can mark unseen files as absent. An inaccessible
 
 ### Movies and Series
 
-Movies owns movie identities, metadata, versions, file decisions, matching, corrections, requests, outbox delivery, and recovery. Series independently owns the equivalent series/season/episode hierarchy and ordered episode selections. Both expose their own public facades; neither imports the other's internal models or adapters. Catalog and Identification are no longer business contexts. Persisted schemas remain under `Bolognesa.Infrastructure.Persistence`.
+Movies owns movie identities, metadata, versions, file decisions, matching, corrections, requests, durable jobs, and recovery. Series independently owns the equivalent series/season/episode hierarchy and ordered episode selections. Both expose their own public facades; neither imports the other's internal models or adapters. Catalog and Identification are no longer business contexts. Persisted schemas remain under `Bolognesa.Infrastructure.Persistence`.
 
 Each content table has an independent generated ID and unique `(provider, provider_id)` reference. A movie decision stores a nullable scalar `movie_id`; a series decision stores ordered episode associations. Confirmed relationships and newly created works commit together. Series selections contain at most one hundred unique episodes from one season and are replaced atomically. Unconfirmed decisions expose no active relationships. See [decision 0019](../decisions/0019-content-context-boundaries.md).
 
 Manual corrections survive later automatic results, retries, and concurrent work. Persisted request tokens and revisions reject stale responses; manual provider lookups recheck the observed file revision under lock. Provider calls remain outside transactions. TMDb receives only the inferred title and year, never local paths or library names; enabling lookup requires a runtime read token.
 
-Libraries explicitly routes inventory handoffs to the owning facade inside the inventory transaction. Inventory, requests, and outbox events commit or roll back together. Each owner revalidates content type, and filters backfill, dispatch, and recovery before batch limits. Workers and dispatcher/reconciler processes are separately named; both video owners initially share the existing `identifications` queue and its concurrency budget.
+Libraries explicitly routes inventory handoffs to the owning facade inside the inventory transaction. Inventory, owner requests, and their Oban jobs commit or roll back together. Each owner revalidates content type, and filters backfill and recovery before batch limits. Workers and reconciler processes are separately named; both video owners initially share the existing `identifications` queue and its concurrency budget.
 
 ### Music
 
 Owns library-local tracks, artists, albums, file associations, import attempts, and musical read models. Tracks have stable database IDs and one association per inventory file; copies remain distinct. Grouping preserves library and source boundaries rather than merging unrelated releases.
 
-Libraries owns sanitized observations and refresh outbox events; Music owns import state and recovery. Imports revalidate the current observation before writing, tolerate duplicate delivery, and reject stale revisions or inspection tokens. Reads are authorized and library-scoped; Playback reauthorizes each selected track.
+Libraries owns sanitized observations; Music accepts them through its transaction-aware facade and owns pending import state, linked jobs, and recovery from acceptance onward. Imports revalidate the current observation before writing, tolerate duplicate delivery, and reject stale revisions or inspection tokens. Reads are authorized and library-scoped; Playback reauthorizes each selected track.
 
 Identity keys, import locking and recovery, browsing limits, and album playback contracts are defined in [decision 0018](../decisions/0018-local-music-catalog.md). Current listening behavior and verification limits belong in [project status](../status.md).
 

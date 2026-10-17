@@ -3,7 +3,6 @@ defmodule Bolognesa.Series.RequestBackfillTest do
 
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-  alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationEventSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
   alias Bolognesa.Series.Infrastructure.Repositories.EctoRequestWriter
@@ -23,7 +22,11 @@ defmodule Bolognesa.Series.RequestBackfillTest do
              media_file_id: fixture.file.id
            ) == nil
 
-    assert Repo.all(Bolognesa.Infrastructure.Persistence.SeriesIdentificationEventSchema) == []
+    assert Repo.all(
+             from(j in Oban.Job,
+               where: j.worker == "Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker"
+             )
+           ) == []
   end
 
   test "backfills existing available files in bounded id order and is idempotent" do
@@ -37,7 +40,14 @@ defmodule Bolognesa.Series.RequestBackfillTest do
     assert {:ok, ^second_id, 0} = EctoRequestWriter.backfill_batch(second_id, 1)
     assert {:ok, ^second_id, 0} = EctoRequestWriter.backfill_batch(0, 100)
     assert Repo.aggregate(SeriesIdentificationSchema, :count, :id) == 2
-    assert Repo.aggregate(SeriesIdentificationEventSchema, :count, :id) == 2
+
+    assert Repo.aggregate(
+             from(j in Oban.Job,
+               where: j.worker == "Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker"
+             ),
+             :count,
+             :id
+           ) == 2
   end
 
   test "backfill skips unavailable files" do
@@ -62,7 +72,13 @@ defmodule Bolognesa.Series.RequestBackfillTest do
              end)
 
     assert {:ok, ^manual} = Repository.get(file.id)
-    assert Repo.aggregate(SeriesIdentificationEventSchema, :count) == 0
+
+    assert Repo.aggregate(
+             from(j in Oban.Job,
+               where: j.worker == "Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker"
+             ),
+             :count
+           ) == 0
   end
 
   defp file_fixture(path, library_id \\ nil) do

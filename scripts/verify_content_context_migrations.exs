@@ -55,7 +55,7 @@ defmodule Bolognesa.ContentContextMigrationCheck do
       {:ok, pid} = CheckRepo.start_link()
 
       try do
-        Ecto.Migrator.run(CheckRepo, migrations, :up, all: true, log: false)
+        Ecto.Migrator.run(CheckRepo, migrations, :up, to: 20_261_015_120_000, log: false)
 
         for table <-
               ~w(movies series seasons episodes movie_identifications movie_identification_events series_identifications series_identification_episodes series_identification_events) do

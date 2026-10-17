@@ -2,6 +2,19 @@ defmodule Bolognesa.DirectJobsMigrationCheckRepo do
   use Ecto.Repo, otp_app: :bolognesa, adapter: Ecto.Adapters.Postgres
 end
 
+defmodule Bolognesa.DirectJobsMigrationNoMatchProvider do
+  @moduledoc false
+  @spec search(String.t(), integer() | nil) :: {:ok, []}
+  def search(_title, _year), do: {:ok, []}
+end
+
+defmodule Bolognesa.DirectJobsMigrationNotifier do
+  @moduledoc false
+  @behaviour Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
+  @impl true
+  def notify(_id), do: :ok
+end
+
 defmodule Bolognesa.DirectJobsMigrationCheck do
   @moduledoc false
   alias Bolognesa.DirectJobsMigrationCheckRepo, as: CheckRepo
@@ -86,6 +99,7 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
           Ecto.Migrator.run(CheckRepo, migrations, :up, to: version, log: false)
           ^before = stable_snapshot()
           verify(kind, expected)
+          exercise(kind, expected)
 
           try do
             Ecto.Migrator.run(CheckRepo, migrations, :down, step: 1, log: false)
@@ -207,6 +221,55 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
     end
   end
 
+  defp seed(:video) do
+    for {type, owner, offset} <- [{"movie", "Movies", 0}, {"series", "Series", 1000}],
+        n <- 1..108 do
+      file = file(type, n)
+      token = Ecto.UUID.generate()
+
+      state =
+        cond do
+          n == 105 -> "manual_unidentified"
+          n == 107 -> "failed"
+          true -> "pending"
+        end
+
+      origin = if n == 105, do: "manual", else: "automatic"
+
+      linked =
+        if n in [102, 103],
+          do:
+            job("#{owner}.Infrastructure.Jobs.IdentificationWorker", "identifications", %{
+              "file_id" => file,
+              "token" => token
+            }),
+          else: nil
+
+      query(
+        "INSERT INTO #{type}_identifications(media_file_id,token,observed_revision,state,origin,job_id,inserted_at,updated_at) VALUES ($1,$2::text::uuid,1,$3,$4,$5,now(),now())",
+        [file, token, state, origin, linked]
+      )
+
+      query(
+        "INSERT INTO #{type}_identification_events(media_file_id,token,delivered_at,inserted_at,updated_at) VALUES ($1,$2::text::uuid,CASE WHEN $3 THEN now() END,now(),now())",
+        [file, if(n == 106, do: Ecto.UUID.generate(), else: token), n in [102, 103, 104]]
+      )
+
+      if n == 103, do: query("DELETE FROM oban_jobs WHERE id=$1", [linked])
+      if n == 106, do: query("UPDATE media_files SET revision=2 WHERE id=$1", [file])
+
+      if n == 108,
+        do:
+          query(
+            "UPDATE libraries SET content_type='music' WHERE id=(SELECT library_id FROM media_files WHERE id=$1)",
+            [file]
+          )
+
+      if n == 105, do: confirm_manual(type, file)
+      {file, token, linked, n + offset}
+    end
+  end
+
   defp verify(:inspection, expected) do
     [[nil]] = query("SELECT to_regclass('media_inspection_events')").rows
 
@@ -273,6 +336,185 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
     true = count == length(expected)
   end
 
+  defp verify(:video, expected) do
+    for table <- legacy_tables(:video),
+        do: [[nil]] = query("SELECT to_regclass($1)", [table]).rows
+
+    for {file, token, linked, number} <- expected do
+      {type, n} = if number > 1000, do: {"series", number - 1000}, else: {"movie", number}
+
+      [[state, ^token, job_id]] =
+        query(
+          "SELECT state,token::text,job_id FROM #{type}_identifications WHERE media_file_id=$1",
+          [file]
+        ).rows
+
+      cond do
+        n == 104 ->
+          true = state == "failed"
+
+        n == 105 ->
+          true = state == "manual"
+
+        n in [106, 108] ->
+          true = is_nil(job_id)
+
+        n == 107 ->
+          true = state == "failed"
+
+        n in [102, 103] ->
+          true = job_id == linked
+
+        true ->
+          [[%{"file_id" => ^file, "token" => ^token}, "identifications", 3]] =
+            query("SELECT args,queue,max_attempts FROM oban_jobs WHERE id=$1", [job_id]).rows
+      end
+    end
+
+    [[count]] = query("SELECT count(*) FROM media_files").rows
+    true = count == length(expected)
+  end
+
+  defp confirm_manual("movie", file) do
+    [[movie]] =
+      query(
+        "INSERT INTO movies(provider,provider_id,title,inserted_at,updated_at) VALUES ('tmdb',42,'Synthetic movie',now(),now()) RETURNING id"
+      ).rows
+
+    query("UPDATE movie_identifications SET state='manual',movie_id=$1 WHERE media_file_id=$2", [
+      movie,
+      file
+    ])
+  end
+
+  defp confirm_manual("series", file) do
+    [[series]] =
+      query(
+        "INSERT INTO series(provider,provider_id,title,inserted_at,updated_at) VALUES ('tmdb',42,'Synthetic series',now(),now()) RETURNING id"
+      ).rows
+
+    [[season]] =
+      query(
+        "INSERT INTO seasons(provider,provider_id,series_id,number,title,inserted_at,updated_at) VALUES ('tmdb',43,$1,1,'Synthetic season',now(),now()) RETURNING id",
+        [series]
+      ).rows
+
+    query("UPDATE series_identifications SET state='manual' WHERE media_file_id=$1", [file])
+
+    for n <- 1..2 do
+      [[episode]] =
+        query(
+          "INSERT INTO episodes(provider,provider_id,season_id,number,title,inserted_at,updated_at) VALUES ('tmdb',$1,$2,$3,'Synthetic episode',now(),now()) RETURNING id",
+          [43 + n, season, n]
+        ).rows
+
+      query(
+        "INSERT INTO series_identification_episodes(identification_id,episode_id,position) SELECT id,$1,$2 FROM series_identifications WHERE media_file_id=$3",
+        [episode, n, file]
+      )
+    end
+
+    query("UPDATE series_identifications SET state='manual' WHERE media_file_id=$1", [file])
+  end
+
+  defp exercise(_kind, []), do: :ok
+
+  defp exercise(kind, expected) do
+    previous = Bolognesa.Repo.put_dynamic_repo(CheckRepo)
+
+    try do
+      exercise_workers(kind, expected)
+    after
+      Bolognesa.Repo.put_dynamic_repo(previous)
+    end
+  end
+
+  defp exercise_workers(:inspection, [{file, _, _, _}, {lost, _, _, _} | _]) do
+    job = migrated_job("media_inspections", file)
+
+    :ok =
+      Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker.perform(
+        job,
+        Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository,
+        Bolognesa.Libraries.Support.SuccessfulMediaProbe,
+        Bolognesa.DirectJobsMigrationNotifier
+      )
+
+    [["succeeded"]] =
+      query("SELECT state FROM media_inspections WHERE media_file_id=$1", [file]).rows
+
+    query(
+      "DELETE FROM oban_jobs WHERE id=(SELECT job_id FROM media_inspections WHERE media_file_id=$1)",
+      [lost]
+    )
+
+    %{error: nil} =
+      Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.reconcile_jobs(
+        DateTime.utc_now()
+      )
+
+    [["failed"]] =
+      query("SELECT state FROM media_inspections WHERE media_file_id=$1", [lost]).rows
+  end
+
+  defp exercise_workers(:music, [{file, _, _, _}, {lost, _, _, _} | _]) do
+    :ok =
+      Bolognesa.Music.Infrastructure.Jobs.RefreshWorker.perform(
+        migrated_job("music_imports", file)
+      )
+
+    [["succeeded"]] = query("SELECT state FROM music_imports WHERE media_file_id=$1", [file]).rows
+
+    query(
+      "DELETE FROM oban_jobs WHERE id=(SELECT job_id FROM music_imports WHERE media_file_id=$1)",
+      [lost]
+    )
+
+    :ok =
+      Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository.reconcile_jobs(
+        DateTime.utc_now()
+      )
+
+    [["failed"]] = query("SELECT state FROM music_imports WHERE media_file_id=$1", [lost]).rows
+  end
+
+  defp exercise_workers(:video, expected) do
+    for {file, _, _, n} <- expected, n in [1, 1001] do
+      {table, worker, repository} =
+        if n == 1 do
+          {"movie_identifications", Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker,
+           Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository}
+        else
+          {"series_identifications", Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker,
+           Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository}
+        end
+
+      :ok =
+        worker.perform(
+          migrated_job(table, file),
+          repository,
+          Bolognesa.DirectJobsMigrationNoMatchProvider
+        )
+
+      [[state]] = query("SELECT state FROM #{table} WHERE media_file_id=$1", [file]).rows
+      true = state != "pending"
+      {lost, _, _, _} = Enum.find(expected, fn {_, _, _, number} -> number == n + 1 end)
+
+      query(
+        "DELETE FROM oban_jobs WHERE id=(SELECT job_id FROM #{table} WHERE media_file_id=$1)",
+        [lost]
+      )
+
+      :ok = repository.reconcile_jobs(DateTime.utc_now())
+      [["failed"]] = query("SELECT state FROM #{table} WHERE media_file_id=$1", [lost]).rows
+    end
+  end
+
+  defp migrated_job(table, file) do
+    [[id]] = query("SELECT job_id FROM #{table} WHERE media_file_id=$1", [file]).rows
+    %{Bolognesa.Repo.get!(Oban.Job, id) | attempt: 1}
+  end
+
   defp file(type, n) do
     [[library]] =
       query(
@@ -304,9 +546,16 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
   defp legacy_tables(:video), do: ["movie_identification_events", "series_identification_events"]
 
   defp stable_snapshot do
-    for table <-
-          ~w(accounts_users accounts_sessions libraries media_files movies series seasons episodes series_identification_episodes music_artists music_albums music_tracks),
-        do: {table, query("SELECT * FROM #{table} ORDER BY id").rows}
+    stable =
+      for table <-
+            ~w(accounts_users accounts_sessions libraries media_files movies series seasons episodes series_identification_episodes music_artists music_albums music_tracks),
+          do: {table, query("SELECT * FROM #{table} ORDER BY id").rows}
+
+    manual =
+      for table <- ~w(movie_identifications series_identifications),
+          do: {table, query("SELECT * FROM #{table} WHERE origin='manual' ORDER BY id").rows}
+
+    stable ++ manual
   end
 
   defp query(sql, params \\ []), do: Ecto.Adapters.SQL.query!(CheckRepo, sql, params, log: false)

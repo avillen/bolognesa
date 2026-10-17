@@ -4,7 +4,6 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationEventSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.ScanSchema
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
@@ -215,16 +214,16 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     first = Repo.get_by!(MovieIdentificationSchema, media_file_id: file.id)
     assert first.state == :pending
     assert first.observed_revision == 1
-    assert [_event] = identification_events(file.id)
+    assert [_event] = identification_jobs(file.id)
 
     save(running, [entry("a.mp4")])
     assert Repo.get_by!(MovieIdentificationSchema, media_file_id: file.id).token == first.token
-    assert length(identification_events(file.id)) == 1
+    assert length(identification_jobs(file.id)) == 1
     assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
 
     unchanged = next_scan(scan.library_id)
     save(unchanged, [entry("a.mp4")])
-    assert length(identification_events(file.id)) == 1
+    assert length(identification_jobs(file.id)) == 1
     assert {:ok, _} = EctoScanRepository.complete(unchanged.id, unchanged.generation)
 
     changed = next_scan(scan.library_id)
@@ -232,18 +231,18 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     second = Repo.get_by!(MovieIdentificationSchema, media_file_id: file.id)
     assert second.observed_revision == 2
     refute second.token == first.token
-    assert length(identification_events(file.id)) == 2
+    assert length(identification_jobs(file.id)) == 2
     assert {:ok, _} = EctoScanRepository.complete(changed.id, changed.generation)
 
     absent = next_scan(scan.library_id)
     assert {:ok, _} = EctoScanRepository.complete(absent.id, absent.generation)
     restored = next_scan(scan.library_id)
     save(restored, [entry("a.mp4", 6)])
-    assert length(identification_events(file.id)) == 3
+    assert length(identification_jobs(file.id)) == 3
   end
 
   @tag committed: true
-  test "rolls back inventory when identification event cannot be stored" do
+  test "rolls back inventory when identification job cannot be stored" do
     with_committed_scan(fn scan ->
       running = start(scan)
       existing = entry("existing.mp4")
@@ -252,8 +251,8 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       before = stored_scan(scan.id)
 
       SQL.query!(Repo, """
-      ALTER TABLE movie_identification_events ADD CONSTRAINT inventory_test_reject_identification
-      CHECK (media_file_id <> #{file.id}) NOT VALID
+      ALTER TABLE oban_jobs ADD CONSTRAINT inventory_test_reject_identification
+      CHECK (worker <> 'Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker') NOT VALID
       """)
 
       try do
@@ -270,17 +269,18 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
         assert [unchanged] = files(scan.library_id)
         assert unchanged.revision == file.revision
         assert stored_scan(scan.id) == before
-        assert length(identification_events(file.id)) == 1
+        assert length(identification_jobs(file.id)) == 1
       after
         SQL.query!(
           Repo,
-          "ALTER TABLE movie_identification_events DROP CONSTRAINT inventory_test_reject_identification"
+          "ALTER TABLE oban_jobs DROP CONSTRAINT inventory_test_reject_identification"
         )
       end
     end)
   end
 
-  test "series handoff failure rolls back inventory inspection requests and owner events" do
+  @tag committed: true
+  test "series handoff failure rolls back inventory inspection requests and owner jobs" do
     with_committed_scan(fn scan ->
       library = Repo.get!(LibrarySchema, scan.library_id)
       Repo.update!(Ecto.Changeset.change(library, content_type: :series))
@@ -297,7 +297,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
       SQL.query!(
         Repo,
-        "ALTER TABLE series_identification_events ADD CONSTRAINT inventory_test_reject_series CHECK (media_file_id <> #{file.id}) NOT VALID"
+        "ALTER TABLE oban_jobs ADD CONSTRAINT inventory_test_reject_series CHECK (worker <> 'Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker') NOT VALID"
       )
 
       try do
@@ -317,7 +317,9 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
                ) == decision
 
         assert Repo.aggregate(
-                 Bolognesa.Infrastructure.Persistence.SeriesIdentificationEventSchema,
+                 from(j in Oban.Job,
+                   where: j.worker == "Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker"
+                 ),
                  :count
                ) == 1
 
@@ -325,7 +327,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       after
         SQL.query!(
           Repo,
-          "ALTER TABLE series_identification_events DROP CONSTRAINT inventory_test_reject_series"
+          "ALTER TABLE oban_jobs DROP CONSTRAINT inventory_test_reject_series"
         )
       end
     end)
@@ -347,7 +349,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     current = Repo.get_by!(MovieIdentificationSchema, media_file_id: file.id)
     assert current.state == :manual_unidentified
     assert current.token == first.token
-    assert length(identification_events(file.id)) == 1
+    assert length(identification_jobs(file.id)) == 1
   end
 
   test "stores one technical state per file and links its durable job", %{scan: scan} do
@@ -846,7 +848,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     [file] = files(library.id)
     assert inspection(file.id).state == :pending
     assert length(inspection_jobs(file.id)) == 1
-    assert identification_events(file.id) == []
+    assert identification_jobs(file.id) == []
     assert Repo.get_by(MovieIdentificationSchema, media_file_id: file.id) == nil
   end
 
@@ -900,11 +902,12 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     )
   end
 
-  defp identification_events(file_id) do
+  defp identification_jobs(file_id) do
     Repo.all(
-      from event in MovieIdentificationEventSchema,
-        where: event.media_file_id == ^file_id,
-        order_by: event.id
+      from job in Oban.Job,
+        where: job.worker == "Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker",
+        where: fragment("?->>'file_id'", job.args) == ^Integer.to_string(file_id),
+        order_by: job.id
     )
   end
 

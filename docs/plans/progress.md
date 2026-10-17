@@ -18,3 +18,8 @@ Plan 2 broad precommit: 524 passed + 1 skipped after correcting committed-fixtur
 Ruling correction: installed Oban removes the insert notification trigger. A real LISTEN/NOTIFY regression exposed direct repo.insert! bypassing queue notification. Use supported Oban.insert with Ecto.Multi executed by the supplied repository, preserving both the outer transaction and notifier. Apply the same mechanism to video owners.
 
 Plan 2 complete: notifier regression RED (empty LISTEN mailbox) → GREEN through Oban.insert/Ecto.Multi. 35 focused tests passed; final precommit 525 passed + 1 skipped. Music migration empty/seeded and mismatched-link rollback passed.
+
+Plan 3 RED: all 10 direct-job/rollback/transaction-boundary tests failed against event-based writers. Both owner writers now create/link jobs through Oban.insert/Ecto.Multi on the supplied repository. No runtime event schemas, readers, dispatchers or flags remain.
+Ruling: pin the historical content-context verifier to its target migration so it continues testing that historical schema; the new direct-job verifiers exercise the full chain through each new release.
+
+Plan 3 focused verification: 163 passed. An unboxed Series constraint-injection test lacked its committed tag and blocked on its own sandbox's Oban lock; corrected the tag and reran in a fresh dedicated test database. All three migration verifiers now execute migrated jobs and deleted-before-start recovery, preserve stable data and manual associations, and abort/rollback earlier batches on mismatched job linkage. Historical content verifier passed two pinned rebuilds. Final integrated precommit/review pending.

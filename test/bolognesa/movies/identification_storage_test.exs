@@ -2,7 +2,6 @@ defmodule Bolognesa.Movies.IdentificationStorageTest do
   use Bolognesa.DataCase, async: true
 
   alias Bolognesa.Infrastructure.Persistence.{
-    MovieIdentificationEventSchema,
     MovieIdentificationSchema,
     MovieSchema
   }
@@ -37,7 +36,7 @@ defmodule Bolognesa.Movies.IdentificationStorageTest do
     assert Repo.get!(MovieSchema, movie.id)
   end
 
-  test "database rejects invalid choices revisions references and duplicate events" do
+  test "database rejects invalid choices revisions references" do
     file = Bolognesa.SeriesFixtures.file(Bolognesa.SeriesFixtures.library(:movie).id, "Movie.mp4")
 
     attrs = %{
@@ -81,17 +80,6 @@ defmodule Bolognesa.Movies.IdentificationStorageTest do
                  | state: :pending,
                    observed_revision: 0
                })
-             )
-
-    event = %{media_file_id: file.id, token: Ecto.UUID.generate()}
-
-    Repo.insert!(
-      MovieIdentificationEventSchema.changeset(%MovieIdentificationEventSchema{}, event)
-    )
-
-    assert {:error, _} =
-             Repo.insert(
-               MovieIdentificationEventSchema.changeset(%MovieIdentificationEventSchema{}, event)
              )
   end
 end

@@ -5,8 +5,8 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter do
 
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationEventSchema
   alias Bolognesa.Movies.Domain.Entities.Identification
+  alias Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
   alias Bolognesa.Movies.Infrastructure.Repositories.IdentificationMapper
   alias Bolognesa.Repo
@@ -19,6 +19,9 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter do
 
   @spec request_batch!(DecisionStore.repo(), [request_entry()]) :: non_neg_integer()
   def request_batch!(repo, entries) do
+    unless repo.in_transaction?(),
+      do: raise(ArgumentError, "Identification handoff requires a transaction")
+
     Enum.count(entries, fn entry ->
       if entry.requested?, do: request_one!(repo, entry.file_id, entry.revision), else: false
     end)
@@ -97,8 +100,8 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter do
   defp insert_request!(repo, file_id, revision) do
     token = Ecto.UUID.generate()
     {:ok, requested} = Identification.new(file_id, revision, token)
-    DecisionStore.save!(repo, nil, requested)
-    insert_event!(repo, file_id, token)
+    saved = DecisionStore.save!(repo, nil, requested)
+    insert_job!(repo, saved)
     true
   end
 
@@ -106,18 +109,21 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter do
     token = Ecto.UUID.generate()
     decision = IdentificationMapper.to_domain(existing)
     {:ok, requested} = Identification.request(decision, revision, token)
-    DecisionStore.save!(repo, existing, requested)
-    insert_event!(repo, existing.media_file_id, token)
+    saved = DecisionStore.save!(repo, existing, requested)
+    insert_job!(repo, saved)
     true
   end
 
-  defp insert_event!(repo, file_id, token) do
-    repo.insert!(
-      MovieIdentificationEventSchema.changeset(%MovieIdentificationEventSchema{}, %{
-        media_file_id: file_id,
-        token: token
-      }),
-      log: false
-    )
+  defp insert_job!(repo, decision) do
+    {:ok, %{job: job}} =
+      Ecto.Multi.new()
+      |> Oban.insert(
+        :job,
+        IdentificationWorker.new(%{file_id: decision.media_file_id, token: decision.token}),
+        log: false
+      )
+      |> repo.transaction()
+
+    decision |> Ecto.Changeset.change(job_id: job.id) |> repo.update!(log: false)
   end
 end

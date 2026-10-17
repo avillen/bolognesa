@@ -26,7 +26,6 @@ defmodule Bolognesa.Application do
       children ++
         scan_reconciler_children() ++
         inspection_reconciler_children() ++
-        identification_outbox_children() ++
         identification_reconciler_children() ++ music_children()
 
     opts = [strategy: :one_for_one, name: Bolognesa.Supervisor]
@@ -42,15 +41,6 @@ defmodule Bolognesa.Application do
   defp inspection_reconciler_children do
     if Application.get_env(:bolognesa, :inspection_reconciler, true),
       do: [Bolognesa.Libraries.Infrastructure.Jobs.InspectionReconciler],
-      else: []
-  end
-
-  defp identification_outbox_children do
-    if Application.get_env(:bolognesa, :identification_outbox_dispatcher, true),
-      do: [
-        Bolognesa.Movies.Infrastructure.Jobs.OutboxDispatcher,
-        Bolognesa.Series.Infrastructure.Jobs.OutboxDispatcher
-      ],
       else: []
   end
 

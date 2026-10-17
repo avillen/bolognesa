@@ -4,7 +4,7 @@ Last reviewed: 2026-10-17.
 
 ## Implemented behavior
 
-Movies, Series, and Music independently own their content and recovery. Video identities use independent sequences; Playback selects movies and episodes with explicit typed references. Bolognesa supports movie, series, and music libraries; recoverable scanning and technical inspection; TMDb identification and manual corrections; library-scoped catalog browsing; authorized direct playback; and optional FFmpeg/HLS video playback. Original media remains read-only. Scanning and identification are separate steps; automatic lookup requires a runtime TMDb token.
+Movies, Series, and Music independently own their content and recovery. Inspection and content requests now commit directly with their linked Oban jobs; the four intermediate event tables and polling dispatchers have been removed. Video identities use independent sequences; Playback selects movies and episodes with explicit typed references. Bolognesa supports movie, series, and music libraries; recoverable scanning and technical inspection; TMDb identification and manual corrections; library-scoped catalog browsing; authorized direct playback; and optional FFmpeg/HLS video playback. Original media remains read-only. Scanning and identification are separate steps; automatic lookup requires a runtime TMDb token.
 
 Music supports local tags with filename fallbacks, track/artist/album browsing, search, pagination, import retry, and ordered album playback with previous/next and automatic advance. Listening survives URL patches within music; full navigation or reload ends the queue. Identity, grouping, limits, and recovery contracts live in [decision 0018](decisions/0018-local-music-catalog.md).
 
@@ -18,9 +18,11 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Recorded verification
 
+- Direct video identification jobs: 163 focused Movies/Series/inventory tests passed. All three disposable direct-job migration verifiers passed empty/seeded upgrades, stable data and manual-association comparison, execution of migrated jobs, recovery of deleted never-started jobs, refused reversal, and atomic abort on mismatched linkage after earlier batches. The pinned historical content-context verifier passed two rebuilds. Final integrated precommit and independent review are in progress; not deployed.
+
 - Direct Music import jobs: local `MIX_TEST_PARTITION=_direct_jobs mix precommit` passed compilation, Credo, and 525 tests with one skipped. Handoff/import checks passed 35 tests, including same-revision stale-token rejection and real Oban insertion notification. The disposable Music migration verifier passed empty/seeded upgrades, stable-data comparison, refused reversal, and rollback of earlier batches on mismatched linkage. Pending imports now exist before execution; recovery no longer reads Libraries events. Not deployed.
 
-- Direct inspection jobs: local `MIX_TEST_PARTITION=_direct_jobs mix precommit` passed compilation, Credo, and 520 tests with one skipped. Focused content checks passed 334 tests with one skipped. The disposable inspection migration verifier passed empty and seeded upgrades with more than 100 requests, linked/deleted jobs, obsolete observations and refused reversal. Inspection requests now commit with their Oban jobs; Music delivery has since been converted separately; video delivery still uses its existing outboxes. Not deployed.
+- Direct inspection jobs: local `MIX_TEST_PARTITION=_direct_jobs mix precommit` passed compilation, Credo, and 520 tests with one skipped. Focused content checks passed 334 tests with one skipped. The disposable inspection migration verifier passed empty and seeded upgrades with more than 100 requests, linked/deleted jobs, obsolete observations and refused reversal. Inspection requests now commit with their Oban jobs; Music and video delivery have since been converted separately. Not deployed.
 
 Current content-context checks and deployment observations are distinguished from earlier device evidence.
 

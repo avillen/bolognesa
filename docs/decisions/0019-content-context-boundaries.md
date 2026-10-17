@@ -1,6 +1,6 @@
 # 0019. Content-owned contexts
 
-Status: Implemented and reviewed. Deployment evidence is tracked in [project status](../status.md).
+Status: Implemented and reviewed; its retained identification outbox mechanism is superseded by [0020](0020-direct-durable-jobs.md). Deployment evidence is tracked in [project status](../status.md).
 
 ## Purpose
 

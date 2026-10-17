@@ -2,10 +2,8 @@ defmodule Bolognesa.Movies.OwnershipTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationEventSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Movies
-  alias Bolognesa.Movies.Infrastructure.Repositories.EctoOutboxRepository
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter
 
   @actor %AuthenticatedUser{id: 1, role: :admin}
@@ -21,7 +19,13 @@ defmodule Bolognesa.Movies.OwnershipTest do
     end
 
     assert Repo.aggregate(MovieIdentificationSchema, :count) == 0
-    assert Repo.aggregate(MovieIdentificationEventSchema, :count) == 0
+
+    assert Repo.aggregate(
+             from(j in Oban.Job,
+               where: j.worker == "Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker"
+             ),
+             :count
+           ) == 0
   end
 
   test "mixed requests and backfill filter type before their batch limit" do
@@ -45,30 +49,5 @@ defmodule Bolognesa.Movies.OwnershipTest do
     assert cursor == file.id
     assert {:ok, next, 1} = EctoRequestWriter.backfill_batch(cursor, 1)
     assert next == second.id
-  end
-
-  test "outbox type filtering does not spend its batch on foreign events" do
-    foreign = Bolognesa.SeriesFixtures.library(:series)
-    foreign_file = Bolognesa.SeriesFixtures.file(foreign.id, "Foreign.mkv")
-
-    bad =
-      Repo.insert!(%MovieIdentificationEventSchema{
-        media_file_id: foreign_file.id,
-        token: Ecto.UUID.generate()
-      })
-
-    owned = Bolognesa.SeriesFixtures.library(:movie)
-    file = Bolognesa.SeriesFixtures.file(owned.id, "Owned.mkv")
-
-    assert {:ok, 1} =
-             Repo.transaction(fn ->
-               Movies.request_batch_in_transaction!(Repo, [
-                 %{file_id: file.id, revision: 1, requested?: true}
-               ])
-             end)
-
-    assert {:ok, 1} = EctoOutboxRepository.dispatch_batch(1)
-    assert Repo.get!(MovieIdentificationEventSchema, bad.id).delivered_at == nil
-    assert Repo.get_by!(MovieIdentificationSchema, media_file_id: file.id).job_id
   end
 end
