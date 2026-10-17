@@ -17,8 +17,8 @@ defmodule Bolognesa.Libraries.Application.UseCases.StartScan do
           {:ok, Scan.t()} | {:error, :forbidden | :not_found | :scan_in_progress | :unavailable}
   def call(actor, library_id, repository, notifications, opts \\ []) do
     with :ok <- Accounts.authorize(actor, :admin),
-         {:ok, scan} <-
-           repository.request(library_id, Keyword.get(opts, :force_inspection?, false)) do
+         force_inspection = Keyword.get(opts, :force_inspection?, false),
+         {:ok, scan} <- repository.request(library_id, force_inspection) do
       notifications.notify(scan.library_id)
       {:ok, scan}
     end
