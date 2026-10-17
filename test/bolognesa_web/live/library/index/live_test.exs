@@ -37,7 +37,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path = Path.join(root, "web-#{System.unique_integer([:positive])}")
     File.mkdir_p!(path)
     on_exit(fn -> File.rm_rf!(path) end)
-    {:ok, actor} = Accounts.fetch_actor(token)
+    {:ok, actor} = Accounts.fetch_authenticated_user(token)
     %{token: token, path: path, actor: actor}
   end
 

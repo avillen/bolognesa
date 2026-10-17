@@ -22,7 +22,7 @@ defmodule BolognesaWeb.Settings.LiveTest do
     assert has_element?(view, "#nav-settings[aria-current=page]")
     view |> form("#locale-form", preferences: %{locale: "en"}) |> render_submit()
     assert_redirect(view, "/settings")
-    assert {:ok, %{locale: "en"}} = Accounts.fetch_actor(token)
+    assert {:ok, %{locale: "en"}} = Accounts.fetch_authenticated_user(token)
     conn = get(init_test_session(build_conn(), user_token: token), "/settings")
 
     assert conn
@@ -35,7 +35,7 @@ defmodule BolognesaWeb.Settings.LiveTest do
     assert has_element?(view, "#save-locale", "Save")
     view |> form("#locale-form", preferences: %{locale: ""}) |> render_submit()
     assert_redirect(view, "/settings")
-    assert {:ok, %{locale: nil}} = Accounts.fetch_actor(token)
+    assert {:ok, %{locale: nil}} = Accounts.fetch_authenticated_user(token)
   end
 
   test "invalid and manipulated parameters never modify identity", %{conn: conn, token: token} do
@@ -46,6 +46,6 @@ defmodule BolognesaWeb.Settings.LiveTest do
     })
 
     assert has_element?(view, "#locale-form")
-    assert {:ok, %{locale: nil, role: :admin}} = Accounts.fetch_actor(token)
+    assert {:ok, %{locale: nil, role: :admin}} = Accounts.fetch_authenticated_user(token)
   end
 end

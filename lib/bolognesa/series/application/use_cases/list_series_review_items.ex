@@ -1,12 +1,12 @@
 defmodule Bolognesa.Series.Application.UseCases.ListSeriesReviewItems do
   @moduledoc "Authorize the paginated series review queue."
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Dto.SeriesReviewItem
   alias Bolognesa.Series.Application.Ports.Readers.SeriesReviewReader
   alias Bolognesa.Series.Application.UseCases.ListSeriesReviewItems.Response, as: SeriesReviewPage
 
-  @spec call(Actor.t(), pos_integer(), SeriesReviewReader.adapter()) ::
+  @spec call(AuthenticatedUser.t(), pos_integer(), SeriesReviewReader.adapter()) ::
           {:ok, SeriesReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}
   def call(actor, page, reader) do
     with :ok <- Accounts.authorize(actor, :admin),

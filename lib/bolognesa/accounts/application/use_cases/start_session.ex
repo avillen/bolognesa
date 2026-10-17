@@ -22,8 +22,8 @@ defmodule Bolognesa.Accounts.Application.UseCases.StartSession do
   def call(_, _, _repository, _hasher), do: {:error, :invalid_credentials}
 
   defp authenticate(email, password, repository, hasher) do
-    case repository.find_user_by_email(email) do
-      {:ok, user, hash} ->
+    case repository.fetch_user_by_email(email) do
+      {:ok, {user, hash}} ->
         verify_and_start_session(user, password, hash, repository, hasher)
 
       :not_found ->

@@ -1,6 +1,6 @@
 defmodule Bolognesa.SeriesFixtures do
   @moduledoc false
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Repo
@@ -35,7 +35,7 @@ defmodule Bolognesa.SeriesFixtures do
   def identify(file, season, numbers) do
     {:ok, decision} =
       CorrectSeriesIdentification.call(
-        %Actor{id: 1, role: :admin},
+        %AuthenticatedUser{id: 1, role: :admin},
         file.id,
         {:tmdb, 201, season, numbers},
         EctoIdentificationRepository,

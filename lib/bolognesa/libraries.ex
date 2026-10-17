@@ -22,10 +22,10 @@ defmodule Bolognesa.Libraries do
     EctoScanRepository
   }
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
-  @spec subscribe_status_updates(Actor.t() | nil) ::
+  @spec subscribe_status_updates(AuthenticatedUser.t() | nil) ::
           :ok | {:error, :forbidden | :unavailable}
   def subscribe_status_updates(actor) do
     with :ok <- Bolognesa.Accounts.authorize(actor, :admin) do
@@ -33,7 +33,7 @@ defmodule Bolognesa.Libraries do
     end
   end
 
-  @spec create_library(Actor.t(), NewLibrary.attrs()) ::
+  @spec create_library(AuthenticatedUser.t(), NewLibrary.attrs()) ::
           {:ok, Library.t()}
           | {:error,
              NewLibrary.error()
@@ -45,21 +45,21 @@ defmodule Bolognesa.Libraries do
   def create_library(actor, attrs),
     do: CreateLibrary.call(actor, attrs, EctoLibraryRepository, LocalFileSource)
 
-  @spec list_libraries(Actor.t()) ::
+  @spec list_libraries(AuthenticatedUser.t()) ::
           {:ok, [Library.t()]} | {:error, :forbidden | :unavailable}
   def list_libraries(actor), do: ListLibraries.call(actor, EctoLibraryRepository)
 
-  @spec start_scan(Actor.t(), Library.id(), keyword()) ::
+  @spec start_scan(AuthenticatedUser.t(), Library.id(), keyword()) ::
           {:ok, Scan.t()} | {:error, :forbidden | :not_found | :scan_in_progress | :unavailable}
   def start_scan(actor, library_id, opts \\ []),
     do: StartScan.call(actor, library_id, EctoScanRepository, LibraryStatusNotifications, opts)
 
-  @spec get_scan_status(Actor.t(), Library.id()) ::
+  @spec get_scan_status(AuthenticatedUser.t(), Library.id()) ::
           {:ok, ScanStatus.t()} | {:error, :forbidden | :not_found | :unavailable}
   def get_scan_status(actor, library_id),
     do: GetScanStatus.call(actor, library_id, EctoScanRepository)
 
-  @spec get_inspection_counts(Actor.t(), Library.id()) ::
+  @spec get_inspection_counts(AuthenticatedUser.t(), Library.id()) ::
           {:ok, InspectionCounts.t()} | {:error, :forbidden | :not_found | :unavailable}
   def get_inspection_counts(actor, library_id),
     do: GetInspectionCounts.call(actor, library_id, EctoInspectionRepository)

@@ -44,21 +44,23 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
   end
 
   @impl true
-  def find_user_by_email(email) do
+  def fetch_user_by_email(email) do
     case Repo.get_by(UserSchema, [email: email], log: false) do
       nil -> :not_found
-      stored -> {:ok, UserMapper.to_user(stored), stored.hashed_password}
+      stored -> {:ok, {UserMapper.to_user(stored), stored.hashed_password}}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
   end
 
   @impl true
-  def find_admin do
+  def fetch_admin do
     case Repo.one(from u in UserSchema, where: u.role == "admin") do
-      nil -> nil
-      stored -> UserMapper.to_user(stored)
+      nil -> :not_found
+      stored -> {:ok, UserMapper.to_user(stored)}
     end
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
   end
 
   @impl true
@@ -80,7 +82,7 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
   end
 
   @impl true
-  def find_active_session(token_hash, now) do
+  def fetch_active_session(token_hash, now) do
     query =
       from s in SessionSchema,
         where: s.token_hash == ^token_hash and s.expires_at > ^now,

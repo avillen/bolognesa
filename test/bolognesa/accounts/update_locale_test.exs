@@ -17,11 +17,11 @@ defmodule Bolognesa.Accounts.UpdateLocaleTest do
     {:ok, first} = Accounts.start_session("ada@example.com", @password)
     {:ok, second} = Accounts.start_session("ada@example.com", @password)
     assert {:ok, %{locale: "en"}} = Accounts.update_locale(actor, "en")
-    assert {:ok, %{locale: "en"}} = Accounts.fetch_actor(first)
-    assert {:ok, %{locale: "en"}} = Accounts.fetch_actor(second)
+    assert {:ok, %{locale: "en"}} = Accounts.fetch_authenticated_user(first)
+    assert {:ok, %{locale: "en"}} = Accounts.fetch_authenticated_user(second)
     assert {:ok, %{locale: "es"}} = Accounts.update_locale(actor, "es")
     assert {:ok, %{locale: nil}} = Accounts.update_locale(actor, nil)
-    assert {:ok, %{locale: nil}} = Accounts.fetch_actor(first)
+    assert {:ok, %{locale: nil}} = Accounts.fetch_authenticated_user(first)
   end
 
   test "invalid values and anonymous actors never write", %{actor: actor} do

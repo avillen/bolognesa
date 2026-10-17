@@ -1,6 +1,6 @@
 defmodule Bolognesa.MusicFixtures do
   @moduledoc false
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, LibrarySchema, MediaFileSchema}
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
   alias Bolognesa.Repo
@@ -47,7 +47,12 @@ defmodule Bolognesa.MusicFixtures do
         log: false
       )
 
-    %{actor: %Actor{id: 1, role: :admin}, library: library, file: file, inspection: inspection}
+    %{
+      actor: %AuthenticatedUser{id: 1, role: :admin},
+      library: library,
+      file: file,
+      inspection: inspection
+    }
   end
 
   @spec refresh_fixture(keyword()) :: map()

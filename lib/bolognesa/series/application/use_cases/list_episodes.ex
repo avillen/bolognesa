@@ -1,12 +1,17 @@
 defmodule Bolognesa.Series.Application.UseCases.ListEpisodes do
   @moduledoc "Authorize a bounded season episode page."
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Ports.Readers.SeriesReader
   alias Bolognesa.Series.Application.UseCases.ListEpisodes.Response, as: EpisodePage
   alias Bolognesa.Series.Domain.ReadModels.Season
 
-  @spec call(Actor.t(), Season.id(), SeriesReader.page_number(), SeriesReader.adapter()) ::
+  @spec call(
+          AuthenticatedUser.t(),
+          Season.id(),
+          SeriesReader.page_number(),
+          SeriesReader.adapter()
+        ) ::
           {:ok, EpisodePage.t()}
           | {:error, :forbidden | :not_found | :invalid_page | :unavailable}
   def call(actor, id, page, reader) do

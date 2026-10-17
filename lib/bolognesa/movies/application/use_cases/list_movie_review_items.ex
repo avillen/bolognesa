@@ -7,7 +7,7 @@ defmodule Bolognesa.Movies.Application.UseCases.ListMovieReviewItems do
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems.Response, as: MovieReviewPage
 
   @spec call(
-          Bolognesa.Accounts.Domain.Entities.Actor.t(),
+          Bolognesa.Accounts.Domain.Entities.AuthenticatedUser.t(),
           pos_integer(),
           MovieReviewReader.adapter()
         ) ::

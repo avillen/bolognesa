@@ -2,11 +2,11 @@ defmodule Bolognesa.Playback.Application.UseCases.StartTrackPlayback do
   @moduledoc "Authorize and select a currently linked physical movie version."
 
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Playback.Application.Ports.Repositories.PlaybackRepository
   alias Bolognesa.Playback.Domain.ReadModels.Source
 
-  @spec call(Actor.t(), integer(), integer(), PlaybackRepository.adapter()) ::
+  @spec call(AuthenticatedUser.t(), integer(), integer(), PlaybackRepository.adapter()) ::
           {:ok, Source.t()}
           | {:error, :forbidden | :not_found | :missing | :unavailable}
   def call(actor, track_id, file_id, repository) do

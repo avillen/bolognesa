@@ -3,7 +3,7 @@ defmodule Bolognesa.Accounts.InstallAdminTest do
   alias Ecto.Adapters.SQL.Sandbox
 
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.UserSchema
 
   @password "correct horse battery staple"
@@ -11,7 +11,7 @@ defmodule Bolognesa.Accounts.InstallAdminTest do
   test "the first valid administrator is stored with a normalized email and a password hash" do
     assert {:ok, :open} = Accounts.setup_status()
 
-    assert {:ok, %Actor{} = actor} =
+    assert {:ok, %AuthenticatedUser{} = actor} =
              Accounts.install_admin(%{
                name: "Ada",
                email: "  ADA@Example.COM ",
@@ -40,7 +40,7 @@ defmodule Bolognesa.Accounts.InstallAdminTest do
     assert {:ok, installed} = Accounts.update_locale(installed, "en")
 
     {_result, bindings} = Code.eval_file("rel/overlays/bin/.iex.exs")
-    assert %Actor{} = bindings[:admin]
+    assert %AuthenticatedUser{} = bindings[:admin]
     assert bindings[:admin] == installed
     refute Map.has_key?(Map.from_struct(bindings[:admin]), :hashed_password)
   end
@@ -141,11 +141,13 @@ defmodule Bolognesa.Accounts.InstallAdminTest do
   test "only an administrator actor is authorized for administrator actions" do
     assert :ok =
              Accounts.authorize(
-               %Actor{id: 1, name: "Ada", email: "ada@example.com", role: :admin},
+               %AuthenticatedUser{id: 1, name: "Ada", email: "ada@example.com", role: :admin},
                :admin
              )
 
-    assert {:error, :forbidden} = Accounts.authorize(%Actor{id: 2, role: :member}, :admin)
+    assert {:error, :forbidden} =
+             Accounts.authorize(%AuthenticatedUser{id: 2, role: :member}, :admin)
+
     assert {:error, :forbidden} = Accounts.authorize(nil, :admin)
   end
 end

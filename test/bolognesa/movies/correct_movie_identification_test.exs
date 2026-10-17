@@ -1,7 +1,7 @@
 defmodule Bolognesa.Movies.CorrectIdentificationTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
@@ -21,7 +21,7 @@ defmodule Bolognesa.Movies.CorrectIdentificationTest do
     assert {:error, :forbidden} =
              CorrectMovieIdentification.call(nil, file.id, :unidentified, Repository, Provider)
 
-    actor = %Actor{id: 1, role: :admin}
+    actor = %AuthenticatedUser{id: 1, role: :admin}
 
     assert {:ok, %Identification{state: :manual, movie_id: movie_id}} =
              CorrectMovieIdentification.call(actor, file.id, {:tmdb, 51}, Repository, Provider)

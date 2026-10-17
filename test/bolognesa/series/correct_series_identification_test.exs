@@ -1,7 +1,7 @@
 defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -20,7 +20,7 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
   alias Ecto.Adapters.SQL
   alias Ecto.Adapters.SQL.Sandbox
 
-  @actor %Actor{id: 1, role: :admin}
+  @actor %AuthenticatedUser{id: 1, role: :admin}
 
   test "corrects a complete set protects manual choices and rejects invalid or foreign types" do
     {file, _token} = pending(:series)

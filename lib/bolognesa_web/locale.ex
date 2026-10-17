@@ -64,7 +64,7 @@ defmodule BolognesaWeb.Locale do
   end
 
   defp session_scope(session) do
-    case Accounts.fetch_actor(session["user_token"]) do
+    case Accounts.fetch_authenticated_user(session["user_token"]) do
       {:ok, actor} -> %{actor: actor}
       _ -> nil
     end

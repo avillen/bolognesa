@@ -1,7 +1,7 @@
 defmodule Bolognesa.Playback do
   @moduledoc "Authorize a movie version for direct or compatible playback."
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Playback.Application.UseCases.StartPlayback
   alias Bolognesa.Playback.Application.UseCases.StartTrackPlayback
   alias Bolognesa.Playback.Domain.Policies.TranscodeProfile
@@ -15,17 +15,17 @@ defmodule Bolognesa.Playback do
   @type compatible_reason ::
           reason() | LocalMediaFile.failure() | TranscodeManager.failure() | :unsupported
 
-  @spec start(Actor.t(), ContentRef.t(), integer()) ::
+  @spec start(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
           {:ok, Source.t()} | {:error, :forbidden | :not_found | :missing | :unavailable}
   def start(actor, content_ref, file_id),
     do: StartPlayback.call(actor, content_ref, file_id, EctoPlaybackRepository)
 
-  @spec start_track(Actor.t() | nil, integer(), integer()) ::
+  @spec start_track(AuthenticatedUser.t() | nil, integer(), integer()) ::
           {:ok, Source.t()} | {:error, :forbidden | :not_found | :missing | :unavailable}
   def start_track(actor, track_id, file_id),
     do: StartTrackPlayback.call(actor, track_id, file_id, EctoPlaybackRepository)
 
-  @spec prepare(Actor.t(), ContentRef.t(), integer()) ::
+  @spec prepare(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
           :ok
           | {:error, :forbidden | :not_found | :missing | :unavailable | LocalMediaFile.failure()}
   def prepare(actor, content_ref, file_id) do
@@ -42,7 +42,7 @@ defmodule Bolognesa.Playback do
     end
   end
 
-  @spec delivery(Actor.t(), ContentRef.t(), integer()) ::
+  @spec delivery(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
           {:ok, :direct | :audio | :video, Source.t()} | {:error, reason()}
   def delivery(actor, content_ref, file_id) do
     with {:ok, source} <- start(actor, content_ref, file_id) do
@@ -50,7 +50,13 @@ defmodule Bolognesa.Playback do
     end
   end
 
-  @spec start_compatible(Actor.t(), ContentRef.t(), integer(), integer(), :auto | :video) ::
+  @spec start_compatible(
+          AuthenticatedUser.t(),
+          ContentRef.t(),
+          integer(),
+          integer(),
+          :auto | :video
+        ) ::
           {:ok, Bolognesa.Playback.Domain.ReadModels.TranscodeSession.t()}
           | {:error, compatible_reason()}
   def start_compatible(actor, content_ref, file_id, offset_ms, mode \\ :auto) do
@@ -64,7 +70,7 @@ defmodule Bolognesa.Playback do
   defp selected_profile(_profile, :video), do: :video
   defp selected_profile(profile, _mode), do: profile
 
-  @spec compatible_session(Actor.t(), ContentRef.t(), integer(), String.t()) ::
+  @spec compatible_session(AuthenticatedUser.t(), ContentRef.t(), integer(), String.t()) ::
           {:ok, Bolognesa.Playback.Domain.ReadModels.TranscodeSession.t()}
           | {:error, compatible_reason()}
   def compatible_session(actor, content_ref, file_id, session_id) do
@@ -102,7 +108,7 @@ defmodule Bolognesa.Playback do
     end
   end
 
-  @spec stop_compatible(Actor.t(), String.t()) :: :ok | {:error, :forbidden}
+  @spec stop_compatible(AuthenticatedUser.t(), String.t()) :: :ok | {:error, :forbidden}
   def stop_compatible(actor, session_id) do
     case TranscodeManager.lookup(session_id) do
       {:ok, %{actor_id: actor_id}} when actor_id == actor.id -> TranscodeManager.stop(session_id)
@@ -111,13 +117,13 @@ defmodule Bolognesa.Playback do
     end
   end
 
-  @spec stop_actor_compatible(Actor.t()) :: :ok
+  @spec stop_actor_compatible(AuthenticatedUser.t()) :: :ok
   def stop_actor_compatible(actor), do: TranscodeManager.stop_by_actor(actor.id)
 
-  @spec pause_compatible(Actor.t(), String.t()) :: :ok | {:error, :not_found}
+  @spec pause_compatible(AuthenticatedUser.t(), String.t()) :: :ok | {:error, :not_found}
   def pause_compatible(actor, session_id), do: signal_compatible(actor, session_id, :suspend)
 
-  @spec resume_compatible(Actor.t(), String.t()) :: :ok | {:error, :not_found}
+  @spec resume_compatible(AuthenticatedUser.t(), String.t()) :: :ok | {:error, :not_found}
   def resume_compatible(actor, session_id), do: signal_compatible(actor, session_id, :resume)
 
   @spec compatible_status(String.t()) :: :ready | :waiting | :failed | :not_found

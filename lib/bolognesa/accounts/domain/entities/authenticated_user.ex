@@ -1,4 +1,4 @@
-defmodule Bolognesa.Accounts.Domain.Entities.Actor do
+defmodule Bolognesa.Accounts.Domain.Entities.AuthenticatedUser do
   @moduledoc "The verified identity passed to protected use cases."
   alias Bolognesa.Accounts.Domain.ValueObjects.Locale
 

@@ -95,7 +95,7 @@ defmodule Bolognesa.Music.BrowseTest do
   end
 
   test "a count becoming stale during import cannot admit an oversized queue" do
-    actor = %Bolognesa.Accounts.Domain.Entities.Actor{id: 1, role: :admin}
+    actor = %Bolognesa.Accounts.Domain.Entities.AuthenticatedUser{id: 1, role: :admin}
 
     assert {:error, :album_too_large} =
              AlbumTracks.queue(

@@ -5,10 +5,11 @@ defmodule Bolognesa.Release do
   """
   @app :bolognesa
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
 
-  @spec admin_actor() :: Actor.t() | nil
-  def admin_actor, do: Accounts.admin_actor()
+  @spec fetch_authenticated_admin() ::
+          {:ok, AuthenticatedUser.t()} | :not_found | {:error, :unavailable}
+  def fetch_authenticated_admin, do: Accounts.fetch_authenticated_admin()
 
   @spec migrate() :: [{:ok, [integer()], [atom()]}]
   def migrate do

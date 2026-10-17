@@ -11,6 +11,15 @@
 - Model lifecycle stages with distinct types when a value such as an ID exists only after persistence. Do not widen both stages to `id() | nil`.
 - Callback implementations do not need a duplicate `@spec`; private and macro-generated functions do not require specs.
 
+## Lookup names and results
+
+- Prefer `fetch_<resource>/...` for single-resource lookups, returning `{:ok, value}`, `:not_found`, or `{:error, reason}`. Absence is a distinct result, not necessarily an error; reserve error tuples for failures such as authorization, persistence, or integration failures.
+- Use `get_<resource>/...` when absence is an expected optional result and `value | nil` is sufficient. Do not collapse authorization, persistence, or integration failures into `nil`.
+- Use `fetch_<resource>!/...` or `get_<resource>!/...` only when failure should raise an exception. Successful calls return the value directly. Expected application failures should normally use the non-bang tuple contract.
+- Standard-library APIs may use `:error` (for example, `Map.fetch/2`); preserve external API contracts at their boundary. Project-owned lookup APIs distinguish `:not_found` from `{:error, reason}`.
+- Name collection queries `list_<resources>/...` and predicates with `?`; do not force these operations into the single-resource lookup convention. Preserve callback names required by behaviours and framework APIs.
+- Apply these names consistently across facades, use cases, ports, adapters, and callers when introducing or revising a lookup. Existing names are migrated with their contracts; do not infer a return shape from a legacy name alone.
+
 ## Struct declaration order
 
 Define struct modules in this order, after module documentation, aliases, and other setup:

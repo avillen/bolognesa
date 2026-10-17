@@ -1,12 +1,12 @@
 defmodule Bolognesa.Series.Application.UseCases.SearchSeries do
   @moduledoc "Authorize and bound the series catalog search."
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Ports.Readers.SeriesReader
   alias Bolognesa.Series.Application.UseCases.SearchSeries.Response, as: SeriesPage
 
   @spec call(
-          Actor.t(),
+          AuthenticatedUser.t(),
           String.t(),
           SeriesReader.page_number(),
           SeriesReader.adapter(),

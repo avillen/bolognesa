@@ -1,13 +1,13 @@
 defmodule Bolognesa.Music.Application.UseCases.ListTracks do
   @moduledoc "Authorize and validate local musical reads."
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Dto.TrackPage
   alias Bolognesa.Music.Application.Ports.Readers.TracksReader
   @type error :: :forbidden | :invalid_query | :not_found | :unavailable
   @type result :: {:ok, TrackPage.t()} | {:error, error()}
   @spec call(
-          Actor.t() | nil,
+          AuthenticatedUser.t() | nil,
           String.t(),
           pos_integer(),
           pos_integer() | nil,

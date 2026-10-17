@@ -1,12 +1,12 @@
 defmodule Bolognesa.Libraries.LibraryTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries
   alias Ecto.Adapters.SQL.Sandbox
 
-  @admin %Actor{id: 1, name: "Ada", email: "ada@example.com", role: :admin}
-  @member %Actor{id: 2, name: "Joe", email: "joe@example.com", role: :member}
+  @admin %AuthenticatedUser{id: 1, name: "Ada", email: "ada@example.com", role: :admin}
+  @member %AuthenticatedUser{id: 2, name: "Joe", email: "joe@example.com", role: :member}
 
   setup do
     root = Application.fetch_env!(:bolognesa, :library_roots) |> hd()

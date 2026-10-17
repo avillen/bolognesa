@@ -2,7 +2,7 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
   use Bolognesa.DataCase, async: false
   use Oban.Testing, repo: Bolognesa.Repo
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.{InspectionEventSchema, InspectionSchema}
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries
@@ -12,7 +12,7 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoOutboxRepository
   alias Bolognesa.Libraries.Support.SuccessfulMediaProbe
 
-  @admin %Actor{id: 1, name: "Admin", email: "admin@example.com", role: :admin}
+  @admin %AuthenticatedUser{id: 1, name: "Admin", email: "admin@example.com", role: :admin}
 
   setup do
     root = Application.fetch_env!(:bolognesa, :library_roots) |> hd()

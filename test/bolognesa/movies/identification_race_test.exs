@@ -1,7 +1,7 @@
 defmodule Bolognesa.Movies.IdentificationRaceTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
@@ -51,7 +51,7 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
         Process.put(:owner, owner)
 
         CorrectMovieIdentification.call(
-          %Actor{id: 1, role: :admin},
+          %AuthenticatedUser{id: 1, role: :admin},
           file.id,
           {:tmdb, 9184},
           Repository,
@@ -116,7 +116,7 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
 
       assert {:ok, corrected} =
                CorrectMovieIdentification.call(
-                 %Actor{id: 1, role: :admin},
+                 %AuthenticatedUser{id: 1, role: :admin},
                  file.id,
                  choice,
                  Repository,

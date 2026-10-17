@@ -6,7 +6,7 @@ defmodule Bolognesa.Movies.Application.UseCases.CorrectMovieIdentification do
   alias Bolognesa.Movies.Domain.Entities.Identification
 
   @spec call(
-          Bolognesa.Accounts.Domain.Entities.Actor.t(),
+          Bolognesa.Accounts.Domain.Entities.AuthenticatedUser.t(),
           pos_integer(),
           :unidentified | {:tmdb, pos_integer()},
           IdentificationRepository.adapter(),

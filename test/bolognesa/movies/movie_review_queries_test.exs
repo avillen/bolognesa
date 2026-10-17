@@ -1,7 +1,7 @@
 defmodule Bolognesa.Movies.MovieReviewQueriesTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
@@ -80,7 +80,7 @@ defmodule Bolognesa.Movies.MovieReviewQueriesTest do
     assert {:error, :forbidden} = Movies.list_review_items(nil, 1)
 
     assert {:ok, %MovieReviewPage{items: [%MovieReviewItem{} | _] = items, total: 4}} =
-             Movies.list_review_items(%Actor{id: 1, role: :admin}, 1)
+             Movies.list_review_items(%AuthenticatedUser{id: 1, role: :admin}, 1)
 
     assert Enum.map(items, & &1.filename) == ["a.mkv", "b.mkv", "c.mkv", "d.mkv"]
     assert List.last(items).movie_title == "Película dudosa"

@@ -1,6 +1,6 @@
 defmodule Bolognesa.Movies.OwnershipTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationEventSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
@@ -8,7 +8,7 @@ defmodule Bolognesa.Movies.OwnershipTest do
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoOutboxRepository
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter
 
-  @actor %Actor{id: 1, role: :admin}
+  @actor %AuthenticatedUser{id: 1, role: :admin}
 
   test "public corrections and retries authorize first and reject both foreign content types without writes" do
     for type <- [:series, :music] do

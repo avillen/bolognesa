@@ -1,14 +1,14 @@
 defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
   @moduledoc "Authorize album tracks and bounded album playback queues."
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Dto.{Track, TrackPage}
   alias Bolognesa.Music.Application.Ports.Readers.TracksReader
   @type error :: :forbidden | :invalid_query | :not_found | :unavailable | :album_too_large
   @type result :: {:ok, TrackPage.t()} | {:error, error()}
   @type queue_result :: {:ok, [Track.t()]} | {:error, error()}
   @spec call(
-          Actor.t() | nil,
+          AuthenticatedUser.t() | nil,
           pos_integer(),
           String.t(),
           pos_integer(),
@@ -22,7 +22,12 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
     end
   end
 
-  @spec queue(Actor.t() | nil, pos_integer(), pos_integer() | nil, TracksReader.adapter()) ::
+  @spec queue(
+          AuthenticatedUser.t() | nil,
+          pos_integer(),
+          pos_integer() | nil,
+          TracksReader.adapter()
+        ) ::
           queue_result()
   def queue(actor, id, library, reader) do
     with :ok <- validate(actor, id, "", 1, library),

@@ -19,10 +19,10 @@ defmodule Bolognesa.Accounts.PersistencePrivacyTest do
     log =
       ExUnit.CaptureLog.capture_log([level: :debug], fn ->
         assert {:ok, user} = Repository.insert_initial_admin(admin, password_hash)
-        assert {:ok, _, ^password_hash} = Repository.find_user_by_email(admin.email)
+        assert {:ok, {_, ^password_hash}} = Repository.fetch_user_by_email(admin.email)
         session = Session.new(user.id, token_hash, DateTime.utc_now())
         assert :ok = Repository.insert_session(session)
-        assert {:ok, _} = Repository.find_active_session(token_hash, session.issued_at)
+        assert {:ok, _} = Repository.fetch_active_session(token_hash, session.issued_at)
         assert :ok = Repository.delete_session(token_hash)
       end)
 

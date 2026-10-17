@@ -1,7 +1,7 @@
 defmodule Bolognesa.Playback.StartPlaybackTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -11,7 +11,7 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
   alias Bolognesa.Playback.Domain.ReadModels.Source
 
   test "authorizes only a currently linked available version" do
-    actor = %Actor{id: 1, role: :admin}
+    actor = %AuthenticatedUser{id: 1, role: :admin}
     movie = movie(100)
     other = movie(101)
 
@@ -56,7 +56,7 @@ defmodule Bolognesa.Playback.StartPlaybackTest do
   end
 
   test "uses only a successful inspection for the current file revision" do
-    actor = %Actor{id: 1, role: :admin}
+    actor = %AuthenticatedUser{id: 1, role: :admin}
     movie = movie(102)
 
     library =

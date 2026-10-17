@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
   alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
   alias Bolognesa.Libraries
@@ -16,8 +16,8 @@ defmodule Bolognesa.Libraries.StartScanTest do
 
   use Oban.Testing, repo: Bolognesa.Repo
 
-  @admin %Actor{id: 1, name: "Ada", email: "ada@example.com", role: :admin}
-  @member %Actor{id: 2, name: "Joe", email: "joe@example.com", role: :member}
+  @admin %AuthenticatedUser{id: 1, name: "Ada", email: "ada@example.com", role: :admin}
+  @member %AuthenticatedUser{id: 2, name: "Joe", email: "joe@example.com", role: :member}
 
   setup do
     root = Application.fetch_env!(:bolognesa, :library_roots) |> hd()

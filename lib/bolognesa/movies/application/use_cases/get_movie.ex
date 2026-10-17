@@ -1,12 +1,12 @@
 defmodule Bolognesa.Movies.Application.UseCases.GetMovie do
   @moduledoc "Authorize a movie detail read."
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Movies.Application.Ports.Readers.MoviesReader
   alias Bolognesa.Movies.Application.UseCases.GetMovie.Response, as: MovieDetail
   alias Bolognesa.Movies.Domain.ReadModels.Movie
 
-  @spec call(Actor.t(), Movie.id(), MoviesReader.adapter()) ::
+  @spec call(AuthenticatedUser.t(), Movie.id(), MoviesReader.adapter()) ::
           {:ok, MovieDetail.t()}
           | {:error, :forbidden | :not_found | :unavailable | :too_many_versions}
   def call(actor, id, reader) do

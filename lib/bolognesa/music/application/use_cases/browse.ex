@@ -1,7 +1,7 @@
 defmodule Bolognesa.Music.Application.UseCases.Browse do
   @moduledoc "Authorized, bounded browsing of existing local identities."
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Dto.BrowsePage
   alias Bolognesa.Music.Application.Ports.Readers.BrowseReader
 
@@ -9,7 +9,7 @@ defmodule Bolognesa.Music.Application.UseCases.Browse do
           {:ok, BrowsePage.t()}
           | {:error, :forbidden | :invalid_query | :not_found | :unavailable}
   @spec call(
-          Actor.t() | nil,
+          AuthenticatedUser.t() | nil,
           BrowseReader.kind(),
           pos_integer() | nil,
           String.t(),

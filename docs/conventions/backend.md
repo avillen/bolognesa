@@ -43,7 +43,7 @@ Organize domain modules by concept type where useful: `entities/`, `value_object
 
 ### Accounts
 
-Owns accounts, credentials, sessions, and authorization through `Bolognesa.Accounts`. Persistence uses the `accounts_users` and `accounts_sessions` tables. Initial setup creates one administrator; there is no public registration or hard-coded user. Protected use cases receive an authenticated `Actor` established by trusted authentication, never an arbitrary client-supplied ID. Authorization is enforced in the backend, including media delivery.
+Owns accounts, credentials, sessions, and authorization through `Bolognesa.Accounts`. Persistence uses the `accounts_users` and `accounts_sessions` tables. Initial setup creates one administrator; there is no public registration or hard-coded user. Protected use cases receive an `AuthenticatedUser` established by trusted authentication, never an arbitrary client-supplied ID. `User` represents the persisted account inside Accounts; `AuthenticatedUser` represents the verified caller supplied to protected operations. Its `from_user/1` conversion copies account data and does not authenticate a caller by itself. Authorization is enforced in the backend, including media delivery.
 
 ### Libraries
 

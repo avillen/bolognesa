@@ -1,7 +1,7 @@
 defmodule Bolognesa.Movies.CatalogQueriesTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
@@ -15,7 +15,7 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
   alias Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader
 
   test "groups physical versions and retains movies with missing files" do
-    actor = %Actor{id: 1, role: :admin}
+    actor = %AuthenticatedUser{id: 1, role: :admin}
 
     library =
       Repo.insert!(
@@ -86,7 +86,7 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
   end
 
   test "library catalogs isolate titles, counts and pagination while retaining missing files" do
-    actor = %Actor{id: 1, role: :admin}
+    actor = %AuthenticatedUser{id: 1, role: :admin}
     first = Bolognesa.SeriesFixtures.library(:movie)
     second = Bolognesa.SeriesFixtures.library(:movie)
     shared = Repo.insert!(movie_changeset(%{provider_id: 901, title: "Shared"}))
@@ -124,7 +124,7 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
   end
 
   test "movie details reject more than one hundred versions without returning a partial list" do
-    actor = %Actor{id: 1, role: :admin}
+    actor = %AuthenticatedUser{id: 1, role: :admin}
     library = Bolognesa.SeriesFixtures.library(:movie)
     movie = Repo.insert!(movie_changeset(%{provider_id: 903, title: "Many versions"}))
 

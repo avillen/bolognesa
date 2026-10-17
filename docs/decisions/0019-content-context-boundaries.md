@@ -85,7 +85,7 @@ Use current behavior tests as refactor protection. Reorganize them with their ow
 - Injected persistence failure rolls back inventory/request/event together and identity/details/association together. Multi-episode selection never persists only a subset.
 - Library scoping, literal search, pagination, constant-query episode/version reads, review screens, correction feedback, and authenticated playback keep their existing contracts.
 - Music import, conservative grouping, inspection handoff, retry, and bounded album playback remain unaffected after reimport. Equal movie/episode/track IDs cannot select another content type, including through HLS session and segment endpoints.
-- No production caller imports removed Catalog/Identification modules or references obsolete tables. No Movies/Series/Music context imports another content context's internal modules. Global persistence schemas and Accounts' Actor contract remain permitted contracts under existing conventions.
+- No production caller imports removed Catalog/Identification modules or references obsolete tables. No Movies/Series/Music context imports another content context's internal modules. Global persistence schemas and Accounts' AuthenticatedUser contract remain permitted contracts under existing conventions.
 - Tests run against controlled providers and PostgreSQL. Record actual commands and results; automated success does not establish deployment or device compatibility.
 
 Existing regression anchors include `test/bolognesa/movies/`, `test/bolognesa/series/`, `test/bolognesa/libraries/scan_inventory_test.exs`, `test/bolognesa/playback/`, `test/bolognesa/music/`, and movie/series/music LiveView and media controller tests. Detailed task commands must track their destination paths as tests move.

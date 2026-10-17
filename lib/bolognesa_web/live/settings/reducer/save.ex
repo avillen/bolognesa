@@ -4,12 +4,13 @@ defmodule BolognesaWeb.Settings.Reducer.Save do
   import Phoenix.LiveView, only: [put_flash: 3, redirect: 2]
   use Gettext, backend: BolognesaWeb.Gettext
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Accounts.Domain.ValueObjects.Locale
   alias BolognesaWeb.Settings.Forms.Preferences
 
-  @type operation :: (Actor.t(), Locale.t() ->
-                        {:ok, Actor.t()} | {:error, :forbidden | :invalid_locale | :unavailable})
+  @type operation :: (AuthenticatedUser.t(), Locale.t() ->
+                        {:ok, AuthenticatedUser.t()}
+                        | {:error, :forbidden | :invalid_locale | :unavailable})
   @spec call(Phoenix.LiveView.Socket.t(), map(), operation()) :: Phoenix.LiveView.Socket.t()
   def call(socket, params, operation \\ &Accounts.update_locale/2) do
     changeset = Preferences.changeset(socket.assigns.current_scope.actor.locale, params)

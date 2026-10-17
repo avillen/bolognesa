@@ -1,10 +1,10 @@
 defmodule BolognesaWeb.Settings.ReducerTest do
   use ExUnit.Case, async: true
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias BolognesaWeb.Settings.Reducer
 
   test "failed save preserves selection for retry and never reports success" do
-    actor = %Actor{id: 1, name: "Ada", email: "ada@example.com", role: :admin}
+    actor = %AuthenticatedUser{id: 1, name: "Ada", email: "ada@example.com", role: :admin}
 
     socket =
       %Phoenix.LiveView.Socket{

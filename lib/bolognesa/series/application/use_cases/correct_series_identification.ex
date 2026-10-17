@@ -1,7 +1,7 @@
 defmodule Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification do
   @moduledoc "Replace a file's entire episode selection after validating its current revision."
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Series.Application.Ports.Repositories.IdentificationRepository
   alias Bolognesa.Series.Domain.Entities.Identification
@@ -19,7 +19,7 @@ defmodule Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification do
           | SeriesProvider.reason()
 
   @spec call(
-          Actor.t(),
+          AuthenticatedUser.t(),
           pos_integer(),
           choice(),
           IdentificationRepository.adapter(),

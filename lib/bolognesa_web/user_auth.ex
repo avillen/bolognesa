@@ -5,19 +5,19 @@ defmodule BolognesaWeb.UserAuth do
   import Phoenix.Controller, only: [redirect: 2]
 
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
 
   @spec fetch_current_scope(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
   def fetch_current_scope(conn, _opts) do
     case get_session(conn, :user_token) do
       nil -> assign(conn, :current_scope, nil)
-      token -> assign_scope_result(conn, Accounts.fetch_actor(token))
+      token -> assign_scope_result(conn, Accounts.fetch_authenticated_user(token))
     end
   end
 
   @spec assign_scope_result(
           Plug.Conn.t(),
-          {:ok, Actor.t()} | {:error, :unauthenticated | :unavailable}
+          {:ok, AuthenticatedUser.t()} | {:error, :unauthenticated | :unavailable}
         ) :: Plug.Conn.t()
   def assign_scope_result(conn, {:ok, actor}), do: assign(conn, :current_scope, %{actor: actor})
   def assign_scope_result(conn, {:error, :unauthenticated}), do: assign(conn, :current_scope, nil)
@@ -40,7 +40,7 @@ defmodule BolognesaWeb.UserAuth do
   @spec require_admin_user(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
   def require_admin_user(conn, _opts) do
     case conn.assigns.current_scope do
-      %{actor: %Actor{role: :admin}} -> conn
+      %{actor: %AuthenticatedUser{role: :admin}} -> conn
       _ -> conn |> send_resp(403, "Forbidden") |> halt()
     end
   end
@@ -73,7 +73,7 @@ defmodule BolognesaWeb.UserAuth do
     result =
       case session["user_token"] do
         nil -> {:error, :unauthenticated}
-        token -> Accounts.fetch_actor(token)
+        token -> Accounts.fetch_authenticated_user(token)
       end
 
     case result do
@@ -97,7 +97,7 @@ defmodule BolognesaWeb.UserAuth do
 
   def on_mount(:require_admin, params, session, socket) do
     case on_mount(:require_authenticated, params, session, socket) do
-      {:cont, %{assigns: %{current_scope: %{actor: %Actor{role: :admin}}}} = socket} ->
+      {:cont, %{assigns: %{current_scope: %{actor: %AuthenticatedUser{role: :admin}}}} = socket} ->
         {:cont, socket}
 
       {:cont, socket} ->

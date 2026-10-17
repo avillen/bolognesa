@@ -1,6 +1,6 @@
 defmodule Bolognesa.Series do
   @moduledoc "Owns series browsing, identification, corrections, and recovery."
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Dto.SeriesReviewItem
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification
@@ -51,31 +51,33 @@ defmodule Bolognesa.Series do
           required(:requested?) => boolean()
         }
 
-  @spec search_series(Actor.t(), String.t(), pos_integer(), pos_integer() | nil) ::
+  @spec search_series(AuthenticatedUser.t(), String.t(), pos_integer(), pos_integer() | nil) ::
           {:ok, SeriesPage.t()} | {:error, reason()}
   def search_series(actor, query, page, library_id \\ nil),
     do: SearchSeries.call(actor, query, page, EctoSeriesReader, library_id)
 
-  @spec get_series(Actor.t(), pos_integer()) :: {:ok, SeriesDetail.t()} | {:error, reason()}
+  @spec get_series(AuthenticatedUser.t(), pos_integer()) ::
+          {:ok, SeriesDetail.t()} | {:error, reason()}
   def get_series(actor, id), do: GetSeries.call(actor, id, EctoSeriesReader)
 
-  @spec list_episodes(Actor.t(), pos_integer(), pos_integer()) ::
+  @spec list_episodes(AuthenticatedUser.t(), pos_integer(), pos_integer()) ::
           {:ok, EpisodePage.t()} | {:error, reason()}
   def list_episodes(actor, id, page), do: ListEpisodes.call(actor, id, page, EctoSeriesReader)
 
-  @spec get_episode(Actor.t(), pos_integer()) :: {:ok, EpisodeDetail.t()} | {:error, reason()}
+  @spec get_episode(AuthenticatedUser.t(), pos_integer()) ::
+          {:ok, EpisodeDetail.t()} | {:error, reason()}
   def get_episode(actor, id), do: GetEpisode.call(actor, id, EctoSeriesReader)
 
-  @spec list_review_items(Actor.t(), pos_integer()) ::
+  @spec list_review_items(AuthenticatedUser.t(), pos_integer()) ::
           {:ok, SeriesReviewPage.t()} | {:error, reason()}
   def list_review_items(actor, page),
     do: ListSeriesReviewItems.call(actor, page, EctoSeriesReviewReader)
 
-  @spec search_candidates(Actor.t(), String.t()) ::
+  @spec search_candidates(AuthenticatedUser.t(), String.t()) ::
           {:ok, [Bolognesa.Series.Domain.ValueObjects.SeriesCandidate.t()]} | {:error, reason()}
   def search_candidates(actor, query), do: SearchSeriesCandidates.call(actor, query, provider())
 
-  @spec correct(Actor.t(), pos_integer(), CorrectSeriesIdentification.choice()) ::
+  @spec correct(AuthenticatedUser.t(), pos_integer(), CorrectSeriesIdentification.choice()) ::
           {:ok, Identification.t()} | {:error, reason()}
   def correct(actor, id, choice),
     do:
@@ -87,7 +89,8 @@ defmodule Bolognesa.Series do
         provider()
       )
 
-  @spec retry(Actor.t(), pos_integer()) :: {:ok, Identification.t()} | {:error, reason()}
+  @spec retry(AuthenticatedUser.t(), pos_integer()) ::
+          {:ok, Identification.t()} | {:error, reason()}
   def retry(actor, id), do: RetryIdentification.call(actor, id, EctoIdentificationRepository)
 
   @spec request_batch_in_transaction!(
@@ -110,11 +113,11 @@ defmodule Bolognesa.Series do
         job_id
       )
 
-  @spec get_review_item(Actor.t(), pos_integer()) ::
+  @spec get_review_item(AuthenticatedUser.t(), pos_integer()) ::
           {:ok, SeriesReviewItem.t()} | {:error, reason()}
   def get_review_item(actor, id), do: GetSeriesReviewItem.call(actor, id, EctoSeriesReviewReader)
 
-  @spec series_season(Actor.t(), pos_integer(), non_neg_integer()) ::
+  @spec series_season(AuthenticatedUser.t(), pos_integer(), non_neg_integer()) ::
           {:ok, Bolognesa.Series.Domain.ValueObjects.SeasonDetails.t()} | {:error, reason()}
   def series_season(actor, id, number), do: GetSeriesSeason.call(actor, id, number, provider())
 

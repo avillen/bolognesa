@@ -1,14 +1,14 @@
 defmodule Bolognesa.Libraries.Application.UseCases.StartScan do
   @moduledoc "Authorizes and persists a scan request, then signals its queued state."
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
   alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
   alias Bolognesa.Libraries.Domain.Entities.Library
   alias Bolognesa.Libraries.Domain.Entities.Scan
 
   @spec call(
-          Actor.t(),
+          AuthenticatedUser.t(),
           Library.id(),
           ScanRepository.adapter(),
           LibraryStatusNotifier.adapter(),

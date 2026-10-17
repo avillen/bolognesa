@@ -5,7 +5,7 @@ defmodule Bolognesa.Movies.Application.UseCases.ListMovies do
   alias Bolognesa.Movies.Application.UseCases.ListMovies.Response, as: MoviePage
 
   @spec call(
-          Bolognesa.Accounts.Domain.Entities.Actor.t(),
+          Bolognesa.Accounts.Domain.Entities.AuthenticatedUser.t(),
           String.t(),
           MoviesReader.page_number(),
           MoviesReader.adapter(),

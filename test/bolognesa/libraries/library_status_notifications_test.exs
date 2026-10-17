@@ -3,14 +3,17 @@ defmodule Bolognesa.Libraries.LibraryStatusNotificationsTest do
 
   import ExUnit.CaptureLog
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
   test "only administrators may subscribe to status updates" do
     assert {:error, :forbidden} = Libraries.subscribe_status_updates(nil)
-    assert {:error, :forbidden} = Libraries.subscribe_status_updates(%Actor{role: :member})
-    assert :ok = Libraries.subscribe_status_updates(%Actor{role: :admin})
+
+    assert {:error, :forbidden} =
+             Libraries.subscribe_status_updates(%AuthenticatedUser{role: :member})
+
+    assert :ok = Libraries.subscribe_status_updates(%AuthenticatedUser{role: :admin})
     assert :ok = LibraryStatusNotifications.notify(17)
     assert_receive {:library_status_changed, 17}
   end

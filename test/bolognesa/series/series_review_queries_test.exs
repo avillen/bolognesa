@@ -1,10 +1,10 @@
 defmodule Bolognesa.Series.SeriesReviewQueriesTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
   alias Bolognesa.Series
   alias Bolognesa.SeriesFixtures
-  @actor %Actor{id: 1, role: :admin}
+  @actor %AuthenticatedUser{id: 1, role: :admin}
 
   test "review queues are separated by library type and a double file is one row" do
     library = SeriesFixtures.library()

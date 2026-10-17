@@ -1,11 +1,11 @@
 defmodule Bolognesa.Series.SeriesQueriesTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Series
   alias Bolognesa.SeriesFixtures
-  @actor %Actor{id: 1, role: :admin}
+  @actor %AuthenticatedUser{id: 1, role: :admin}
 
   test "episode detail query count stays constant as physical versions increase" do
     library = SeriesFixtures.library()

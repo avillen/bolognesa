@@ -2,7 +2,7 @@ defmodule Bolognesa.Accounts.SessionTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.SessionSchema
 
   alias Bolognesa.Accounts.Domain.Entities.Session
@@ -23,7 +23,10 @@ defmodule Bolognesa.Accounts.SessionTest do
     assert {:ok, token} = Accounts.start_session(" ADA@Example.COM ", @password)
     assert is_binary(token)
     assert byte_size(token) == 43
-    assert {:ok, %Actor{id: actor_id, email: "ada@example.com"}} = Accounts.fetch_actor(token)
+
+    assert {:ok, %AuthenticatedUser{id: actor_id, email: "ada@example.com"}} =
+             Accounts.fetch_authenticated_user(token)
+
     assert actor_id == actor.id
     assert stored = Repo.one!(SessionSchema)
     refute stored.token_hash == token
@@ -67,8 +70,10 @@ defmodule Bolognesa.Accounts.SessionTest do
     assert {:ok, second} = Accounts.start_session("ada@example.com", @password)
     assert first != second
     assert :ok = Accounts.end_session(first)
-    assert {:error, :unauthenticated} = Accounts.fetch_actor(first)
-    assert {:ok, %Actor{email: "ada@example.com"}} = Accounts.fetch_actor(second)
+    assert {:error, :unauthenticated} = Accounts.fetch_authenticated_user(first)
+
+    assert {:ok, %AuthenticatedUser{email: "ada@example.com"}} =
+             Accounts.fetch_authenticated_user(second)
   end
 
   test "an expired token does not resolve even when its row remains" do
@@ -79,17 +84,17 @@ defmodule Bolognesa.Accounts.SessionTest do
     |> Ecto.Changeset.change(expires_at: DateTime.add(DateTime.utc_now(), -1, :second))
     |> Repo.update!()
 
-    assert {:error, :unauthenticated} = Accounts.fetch_actor(token)
+    assert {:error, :unauthenticated} = Accounts.fetch_authenticated_user(token)
   end
 
   test "malformed and missing tokens never resolve" do
     for token <- [nil, "", "invalid", String.duplicate("!", 43), String.duplicate("a", 1000)] do
-      assert {:error, :unauthenticated} = Accounts.fetch_actor(token)
+      assert {:error, :unauthenticated} = Accounts.fetch_authenticated_user(token)
     end
   end
 
   test "a padded version of a valid token is rejected" do
     assert {:ok, token} = Accounts.start_session("ada@example.com", @password)
-    assert {:error, :unauthenticated} = Accounts.fetch_actor(token <> "=")
+    assert {:error, :unauthenticated} = Accounts.fetch_authenticated_user(token <> "=")
   end
 end

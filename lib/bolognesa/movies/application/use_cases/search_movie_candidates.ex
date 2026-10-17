@@ -2,11 +2,11 @@ defmodule Bolognesa.Movies.Application.UseCases.SearchMovieCandidates do
   @moduledoc "Authorize and validate a manual movie search."
   alias Bolognesa.Accounts
 
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Movies.Application.Ports.Providers.MovieProvider
   alias Bolognesa.Movies.Domain.ValueObjects.MovieCandidate
 
-  @spec call(Actor.t(), String.t(), MovieProvider.adapter()) ::
+  @spec call(AuthenticatedUser.t(), String.t(), MovieProvider.adapter()) ::
           {:ok, [MovieCandidate.t()]}
           | {:error, :forbidden | :invalid_query | MovieProvider.reason()}
   def call(actor, query, provider) do

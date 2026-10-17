@@ -1,11 +1,11 @@
 defmodule Bolognesa.Series.Application.UseCases.GetSeriesReviewItem do
   @moduledoc "Authorize correction of a series file, including files outside the review queue."
   alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Dto.SeriesReviewItem
   alias Bolognesa.Series.Application.Ports.Readers.SeriesReviewReader
 
-  @spec call(Actor.t(), pos_integer(), SeriesReviewReader.adapter()) ::
+  @spec call(AuthenticatedUser.t(), pos_integer(), SeriesReviewReader.adapter()) ::
           {:ok, SeriesReviewItem.t()} | {:error, :forbidden | :not_found | :unavailable}
   def call(actor, id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),

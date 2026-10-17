@@ -1,6 +1,6 @@
 defmodule Bolognesa.Music.MusicJourneyTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Accounts.Domain.Entities.Actor
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, MediaFileSchema}
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
@@ -22,7 +22,7 @@ defmodule Bolognesa.Music.MusicJourneyTest do
     File.mkdir_p!(path)
     on_exit(fn -> File.rm_rf!(path) end)
     File.write!(Path.join(path, "sample.mp3"), "controlled audio")
-    actor = %Actor{id: 1, role: :admin}
+    actor = %AuthenticatedUser{id: 1, role: :admin}
 
     {:ok, library} =
       Libraries.create_library(actor, %{name: "Sample music", path: path, content_type: :music})

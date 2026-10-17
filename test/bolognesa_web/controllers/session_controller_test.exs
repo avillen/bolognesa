@@ -20,7 +20,7 @@ defmodule BolognesaWeb.SessionControllerTest do
 
     assert redirected_to(conn) == ~p"/"
     assert token = get_session(conn, :user_token)
-    assert {:ok, _actor} = Accounts.fetch_actor(token)
+    assert {:ok, _actor} = Accounts.fetch_authenticated_user(token)
     assert conn |> recycle() |> get(~p"/") |> html_response(200)
   end
 
@@ -42,7 +42,7 @@ defmodule BolognesaWeb.SessionControllerTest do
     token = get_session(login, :user_token)
     logout = login |> recycle() |> delete(~p"/logout")
     assert redirected_to(logout) == ~p"/login"
-    assert {:error, :unauthenticated} = Accounts.fetch_actor(token)
+    assert {:error, :unauthenticated} = Accounts.fetch_authenticated_user(token)
     assert get_session(logout, :user_token) == nil
     assert redirected_to(login |> recycle() |> get(~p"/")) == ~p"/login"
   end
