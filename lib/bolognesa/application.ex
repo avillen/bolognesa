@@ -25,7 +25,6 @@ defmodule Bolognesa.Application do
     children =
       children ++
         scan_reconciler_children() ++
-        outbox_dispatcher_children() ++
         inspection_reconciler_children() ++
         identification_outbox_children() ++
         identification_reconciler_children() ++ music_children()
@@ -37,12 +36,6 @@ defmodule Bolognesa.Application do
   defp scan_reconciler_children do
     if Application.get_env(:bolognesa, :scan_reconciler, true),
       do: [Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler],
-      else: []
-  end
-
-  defp outbox_dispatcher_children do
-    if Application.get_env(:bolognesa, :inspection_outbox_dispatcher, true),
-      do: [Bolognesa.Libraries.Infrastructure.Jobs.OutboxDispatcher],
       else: []
   end
 

@@ -3,13 +3,12 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
   use Oban.Testing, repo: Bolognesa.Repo
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
-  alias Bolognesa.Infrastructure.Persistence.{InspectionEventSchema, InspectionSchema}
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
-  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoOutboxRepository
   alias Bolognesa.Libraries.Support.SuccessfulMediaProbe
 
   @admin %AuthenticatedUser{id: 1, name: "Admin", email: "admin@example.com", role: :admin}
@@ -36,7 +35,6 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
     {:ok, _} = Libraries.start_scan(@admin, library.id)
     assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
     assert %InspectionCounts{pending: 1} = counts(library.id)
-    assert {:ok, 1} = EctoOutboxRepository.dispatch_batch(25)
 
     first = Repo.one!(InspectionSchema)
     job = Repo.get!(Oban.Job, first.job_id)
@@ -55,8 +53,7 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
 
     {:ok, _} = Libraries.start_scan(@admin, library.id)
     assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
-    assert Repo.aggregate(InspectionEventSchema, :count) == 1
-    assert {:ok, 0} = EctoOutboxRepository.dispatch_batch(25)
+    assert length(all_enqueued(queue: "media_inspections")) == 1
     assert Repo.get!(InspectionSchema, first.id).token == first.token
 
     {:ok, forced} = Libraries.start_scan(@admin, library.id, force_inspection?: true)

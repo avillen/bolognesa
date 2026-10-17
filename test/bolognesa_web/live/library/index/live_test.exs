@@ -16,7 +16,6 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
 
   alias Bolognesa.Libraries.Infrastructure.Repositories.{
     EctoInspectionRepository,
-    EctoOutboxRepository,
     EctoScanRepository
   }
 
@@ -404,7 +403,6 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
 
     {:ok, _} = Libraries.start_scan(actor, library.id)
     assert %{success: 1} = Oban.drain_queue(queue: :library_scans)
-    assert {:ok, 1} = EctoOutboxRepository.dispatch_batch(25)
     inspection = Repo.one!(InspectionSchema)
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
     await_status_updates(view)

@@ -4,7 +4,6 @@ config :bolognesa, :music_refresh_dispatcher, false
 config :bolognesa, :music_import_reconciler, false
 
 config :bolognesa, Oban, testing: :manual, queues: false, plugins: false
-config :bolognesa, :inspection_outbox_dispatcher, false
 config :bolognesa, :identification_outbox_dispatcher, false
 config :bolognesa, :inspection_reconciler, false
 config :bolognesa, :identification_reconciler, false

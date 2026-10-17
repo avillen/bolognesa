@@ -15,7 +15,7 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
-  alias Bolognesa.Libraries.Infrastructure.Repositories.{EctoOutboxRepository, EctoScanRepository}
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Libraries.Support.{BlockingMediaProbe, RaisingMediaProbe, SuccessfulMediaProbe}
 
   setup do
@@ -38,7 +38,6 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
       })
 
     {:ok, _} = EctoScanRepository.save_batch(scan.id, running.generation, [entry])
-    assert {:ok, 1} = EctoOutboxRepository.dispatch_batch(25)
     inspection = Repo.one!(InspectionSchema)
     %{inspection: inspection}
   end
@@ -262,7 +261,6 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
       })
 
     assert {:ok, _} = EctoScanRepository.save_batch(scan.id, scan.generation, [entry])
-    assert {:ok, 1} = EctoOutboxRepository.dispatch_batch(25)
 
     handler = {__MODULE__, make_ref()}
 

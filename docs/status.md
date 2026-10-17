@@ -18,6 +18,8 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Recorded verification
 
+- Direct inspection jobs: local `MIX_TEST_PARTITION=_direct_jobs mix precommit` passed compilation, Credo, and 520 tests with one skipped. Focused content checks passed 334 tests with one skipped. The disposable inspection migration verifier passed empty and seeded upgrades with more than 100 requests, linked/deleted jobs, obsolete observations and refused reversal. Inspection requests now commit with their Oban jobs; Music/video delivery still uses its existing outboxes. Not deployed.
+
 Current content-context checks and deployment observations are distinguished from earlier device evidence.
 
 - Libraries convention review: scan status lookups use `fetch_status` / `fetch_scan_status`; inspection lookup and count APIs use `fetch` / `fetch_inspection_counts` across facades, use cases, ports, adapters, and callers. Adapter aliases consistently use `module()`. `mix format` and `git diff --check` passed; tests and `mix precommit` have not been run for these naming-only changes.

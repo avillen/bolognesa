@@ -169,3 +169,9 @@ The console connects to the running release container. `deploy-stop` preserves c
 | `DEPLOY_WAIT_INTERVAL` | `2` | Interval in seconds between health check retries. |
 
 These are configurable initial budgets, not strict minimum requirements or benchmarked capacity. Container memory includes Phoenix, FFmpeg, and tmpfs; monitor usage and container restarts during real-world operation.
+
+## Direct job migrations
+
+The direct-job releases replace inspection, Music import, and video identification outboxes incrementally. Before applying each migration, stop all old application instances and workers and validate a pre-migration database backup with its matching image reference. Do not run old and new workers concurrently. Use the normal release process; no database reset or source rescan is required.
+
+Migrations preserve current requests and linked jobs, backfill undelivered work in bounded batches, and then drop the corresponding event tables. Rehearse large backlogs to estimate the maintenance window: batches still run inside the overall migration transaction. Reversal is refused; restore the pre-migration backup with the matching old release to return to the prior schema. After startup, verify authenticated scanning, inspection and the content owner affected by that release.

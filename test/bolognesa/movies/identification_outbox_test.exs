@@ -253,7 +253,9 @@ defmodule Bolognesa.Movies.IdentificationOutboxTest do
   end
 
   defp cleanup(scan) do
-    Repo.delete_all(from job in Oban.Job, where: job.queue == "identifications")
+    Repo.delete_all(
+      from job in Oban.Job, where: job.queue in ["identifications", "media_inspections"]
+    )
 
     Repo.delete_all(
       from file in Bolognesa.Infrastructure.Persistence.MediaFileSchema,

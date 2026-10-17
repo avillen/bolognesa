@@ -7,8 +7,7 @@ defmodule Bolognesa.Music.MusicJourneyTest do
 
   alias Bolognesa.Libraries.Infrastructure.Repositories.{
     EctoInspectionRepository,
-    EctoMusicRefreshOutboxRepository,
-    EctoOutboxRepository
+    EctoMusicRefreshOutboxRepository
   }
 
   alias Bolognesa.Libraries.Support.SuccessfulMusicProbe
@@ -29,7 +28,6 @@ defmodule Bolognesa.Music.MusicJourneyTest do
 
     assert {:ok, _scan} = Libraries.start_scan(actor, library.id)
     assert %{success: 1, failure: 0} = Oban.drain_queue(queue: :library_scans)
-    assert {:ok, 1} = EctoOutboxRepository.dispatch_batch(100)
     file = Repo.one!(MediaFileSchema)
     inspection = Repo.get_by!(InspectionSchema, media_file_id: file.id)
     job = Repo.get!(Oban.Job, inspection.job_id)

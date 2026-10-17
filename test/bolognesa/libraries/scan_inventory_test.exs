@@ -1,7 +1,6 @@
 defmodule Bolognesa.Libraries.ScanInventoryTest do
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Infrastructure.Persistence.InspectionEventSchema
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -12,7 +11,6 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
-  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoOutboxRepository
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
   alias Bolognesa.Libraries.Support.ControlledFileDiscovery
@@ -129,9 +127,6 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     library_ids =
       with_committed_scans(2, fn [first, second] ->
         for scan <- [first, second], do: save(start(scan), [entry("a.mp4")])
-
-        assert {:ok, 2} =
-                 EctoOutboxRepository.dispatch_batch(25)
 
         [first_file] = files(first.library_id)
         [second_file] = files(second.library_id)
@@ -315,7 +310,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
         assert [unchanged] = files(scan.library_id)
         assert unchanged.revision == file.revision
         assert stored_scan(scan.id) == before
-        assert length(events(file.id)) == 1
+        assert length(inspection_jobs(file.id)) == 1
 
         assert Repo.get_by!(Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema,
                  media_file_id: file.id
@@ -355,7 +350,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     assert length(identification_events(file.id)) == 1
   end
 
-  test "stores one technical state per file and one event per token", %{scan: scan} do
+  test "stores one technical state per file and links its durable job", %{scan: scan} do
     running = start(scan)
     save(running, [entry("a.mp4")])
     [file] = files(scan.library_id)
@@ -373,10 +368,10 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
              |> InspectionSchema.changeset(%{attrs | token: Ecto.UUID.generate()})
              |> Repo.insert()
 
-    assert {:error, _changeset} =
-             struct(InspectionEventSchema)
-             |> InspectionEventSchema.changeset(%{media_file_id: file.id, token: token})
-             |> Repo.insert()
+    job = Repo.get!(Oban.Job, inspection(file.id).job_id)
+    assert job.args == %{"media_file_id" => file.id, "token" => token}
+    assert job.queue == "media_inspections"
+    assert job.max_attempts == 3
   end
 
   test "schedules first inspection once and reuses it on an unchanged scan", %{scan: scan} do
@@ -384,31 +379,31 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     save(running, [entry("a.mp4")])
     [file] = files(scan.library_id)
     assert %{state: :pending, observed_revision: 1, token: token} = inspection(file.id)
-    assert [%{token: ^token, delivered_at: nil}] = events(file.id)
+    assert [%{args: %{"token" => ^token}}] = inspection_jobs(file.id)
 
     save(running, [entry("a.mp4")])
-    assert [event] = events(file.id)
-    assert event.token == token
+    assert [event] = inspection_jobs(file.id)
+    assert event.args["token"] == token
     assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
 
     unchanged = next_scan(scan.library_id)
     save(unchanged, [entry("a.mp4")])
     assert inspection(file.id).token == token
-    assert length(events(file.id)) == 1
+    assert length(inspection_jobs(file.id)) == 1
   end
 
   test "schedules an existing H2b file without technical state", %{scan: scan} do
     running = start(scan)
     save(running, [entry("a.mp4")])
     [file] = files(scan.library_id)
-    Repo.delete_all(from event in InspectionEventSchema, where: event.media_file_id == ^file.id)
+    Repo.delete_all(from job in Oban.Job, where: job.id == ^inspection(file.id).job_id)
     Repo.delete!(inspection(file.id))
     assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
 
     unchanged = next_scan(scan.library_id)
     save(unchanged, [entry("a.mp4")])
     assert %{state: :pending, observed_revision: 1} = inspection(file.id)
-    assert [_event] = events(file.id)
+    assert [_event] = inspection_jobs(file.id)
   end
 
   test "reschedules changed and restored files while keeping their IDs", %{scan: scan} do
@@ -422,7 +417,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     save(changed, [entry("a.mp4", 6)])
     assert inspection(original.id).observed_revision == 2
     refute inspection(original.id).token == old_token
-    assert length(events(original.id)) == 2
+    assert length(inspection_jobs(original.id)) == 2
     assert {:ok, _} = EctoScanRepository.complete(changed.id, changed.generation)
 
     absent = next_scan(scan.library_id)
@@ -433,7 +428,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     restored = next_scan(scan.library_id)
     save(restored, [entry("a.mp4", 6)])
     assert inspection(original.id).observed_revision == 2
-    assert length(events(original.id)) == 3
+    assert length(inspection_jobs(original.id)) == 3
   end
 
   test "forced scan creates a new token without changing revision", %{scan: scan} do
@@ -449,7 +444,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     save(forced, [entry("a.mp4")])
     assert inspection(file.id).observed_revision == 1
     refute inspection(file.id).token == old_token
-    assert length(events(file.id)) == 2
+    assert length(inspection_jobs(file.id)) == 2
   end
 
   test "begins each invocation with a new generation and preserves the first start",
@@ -779,18 +774,18 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   end
 
   @tag committed: true
-  test "rolls back file, inspection and counter when outbox insertion fails" do
+  test "rolls back file, inspection and counter when inspection job insertion fails" do
     with_committed_scan(fn scan ->
       running = start(scan)
       save(running, [entry("existing.mp4")])
       [existing] = files(scan.library_id)
       before_scan = stored_scan(scan.id)
       before_inspection = inspection(existing.id)
-      before_events = events(existing.id)
+      before_events = inspection_jobs(existing.id)
 
       SQL.query!(Repo, """
-      ALTER TABLE media_inspection_events ADD CONSTRAINT inventory_test_reject_event
-      CHECK (media_file_id <> #{existing.id}) NOT VALID
+      ALTER TABLE oban_jobs ADD CONSTRAINT inventory_test_reject_event
+      CHECK (worker <> 'Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker') NOT VALID
       """)
 
       try do
@@ -803,12 +798,12 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
         assert [file] = files(scan.library_id)
         assert file == existing
         assert inspection(existing.id) == before_inspection
-        assert events(existing.id) == before_events
+        assert inspection_jobs(existing.id) == before_events
         assert stored_scan(scan.id) == before_scan
       after
         SQL.query!(
           Repo,
-          "ALTER TABLE media_inspection_events DROP CONSTRAINT inventory_test_reject_event"
+          "ALTER TABLE oban_jobs DROP CONSTRAINT inventory_test_reject_event"
         )
       end
     end)
@@ -850,7 +845,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
     save(running, [entry("song.mp3")])
     [file] = files(library.id)
     assert inspection(file.id).state == :pending
-    assert length(events(file.id)) == 1
+    assert length(inspection_jobs(file.id)) == 1
     assert identification_events(file.id) == []
     assert Repo.get_by(MovieIdentificationSchema, media_file_id: file.id) == nil
   end
@@ -896,11 +891,12 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
   defp inspection(file_id), do: Repo.get_by!(InspectionSchema, media_file_id: file_id)
 
-  defp events(file_id) do
+  defp inspection_jobs(file_id) do
     Repo.all(
-      from event in InspectionEventSchema,
-        where: event.media_file_id == ^file_id,
-        order_by: event.id
+      from job in Oban.Job,
+        where: job.worker == "Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker",
+        where: fragment("?->>'media_file_id'", job.args) == ^Integer.to_string(file_id),
+        order_by: job.id
     )
   end
 
@@ -933,6 +929,19 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
             Repo.all(
               from row in ScanSchema, where: row.library_id == ^library.id, select: row.job_id
             )
+
+          file_ids =
+            Repo.all(
+              from row in MediaFileSchema, where: row.library_id == ^library.id, select: row.id
+            )
+            |> Enum.map(&Integer.to_string/1)
+
+          Repo.delete_all(
+            from job in Oban.Job,
+              where:
+                fragment("?->>'media_file_id'", job.args) in ^file_ids or
+                  fragment("?->>'file_id'", job.args) in ^file_ids
+          )
 
           Repo.delete_all(from row in MediaFileSchema, where: row.library_id == ^library.id)
           Repo.delete_all(from row in ScanSchema, where: row.library_id == ^library.id)

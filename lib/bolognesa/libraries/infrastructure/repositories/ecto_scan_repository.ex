@@ -4,7 +4,6 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
 
   import Ecto.Query
 
-  alias Bolognesa.Infrastructure.Persistence.InspectionEventSchema
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -13,6 +12,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   alias Bolognesa.Libraries.Domain.Entities.Scan
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
+  alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository.LibraryMapper
@@ -381,17 +381,14 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
       finished_at: nil
     }
 
-    case current do
-      nil -> Repo.insert!(InspectionSchema.changeset(%InspectionSchema{}, attrs))
-      schema -> Repo.update!(InspectionSchema.changeset(schema, attrs))
-    end
+    inspection =
+      case current do
+        nil -> Repo.insert!(InspectionSchema.changeset(%InspectionSchema{}, attrs))
+        schema -> Repo.update!(InspectionSchema.changeset(schema, attrs))
+      end
 
-    Repo.insert!(
-      InspectionEventSchema.changeset(%InspectionEventSchema{}, %{
-        media_file_id: file.id,
-        token: token
-      })
-    )
+    {:ok, job} = Oban.insert(InspectionWorker.new(%{media_file_id: file.id, token: token}))
+    inspection |> InspectionSchema.changeset(%{job_id: job.id}) |> Repo.update!()
   end
 
   defp schedule_identifications(library_id, entries, saved, plans) do

@@ -1,6 +1,6 @@
 # 0004. Durable technical inspection by file revision
 
-Status: Accepted; implemented. Recovery behavior and playback compatibility are separate verification concerns.
+Status: Implemented; the inspection outbox mechanism is superseded by [0020](0020-direct-durable-jobs.md). Recovery behavior and playback compatibility are separate verification concerns.
 
 ## Context
 
