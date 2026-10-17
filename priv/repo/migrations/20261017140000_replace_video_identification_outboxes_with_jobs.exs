@@ -64,6 +64,15 @@ defmodule Bolognesa.Repo.Migrations.ReplaceVideoIdentificationOutboxesWithJobs d
         AND d.observed_revision=f.revision) THEN
         RAISE EXCEPTION 'Current identification request has no legacy event or linked job';
       END IF;
+      IF EXISTS (SELECT 1 FROM #{type}_identifications d
+        JOIN media_files f ON f.id=d.media_file_id JOIN libraries l ON l.id=f.library_id
+        JOIN oban_jobs j ON j.id=d.job_id
+        WHERE l.content_type='#{type}' AND d.state='pending'
+          AND f.availability='available' AND d.observed_revision=f.revision AND
+          (j.worker <> 'Bolognesa.#{owner}.Infrastructure.Jobs.IdentificationWorker' OR
+           j.args IS DISTINCT FROM jsonb_build_object('file_id',d.media_file_id,'token',d.token::text))) THEN
+        RAISE EXCEPTION 'Current identification request has a mismatched linked job';
+      END IF;
     END $$;
     """
   end

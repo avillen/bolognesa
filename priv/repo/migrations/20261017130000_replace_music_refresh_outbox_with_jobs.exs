@@ -57,6 +57,19 @@ defmodule Bolognesa.Repo.Migrations.ReplaceMusicRefreshOutboxWithJobs do
         EXIT WHEN last_id=cursor_id;
         cursor_id := last_id;
       END LOOP;
+      IF EXISTS (SELECT 1 FROM music_imports m
+        JOIN media_files f ON f.id=m.media_file_id JOIN libraries l ON l.id=f.library_id
+        JOIN media_inspections i ON i.media_file_id=f.id
+        LEFT JOIN oban_jobs j ON j.id=m.job_id
+        WHERE m.state IN ('pending','running') AND l.content_type='music'
+          AND f.availability='available' AND i.state='succeeded'
+          AND i.observed_revision=f.revision AND m.inspection_token=i.token
+          AND i.tracks @> '{"items":[{"kind":"audio"}]}'::jsonb
+          AND (m.observed_revision IS DISTINCT FROM f.revision OR
+            (j.id IS NOT NULL AND (j.worker <> 'Bolognesa.Music.Infrastructure.Jobs.RefreshWorker' OR
+             j.args IS DISTINCT FROM jsonb_build_object('file_id',m.media_file_id,'revision',m.observed_revision))))) THEN
+        RAISE EXCEPTION 'Current Music request has inconsistent revision or mismatched linked job';
+      END IF;
     END $$;
     """
 

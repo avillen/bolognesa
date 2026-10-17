@@ -72,7 +72,20 @@ defmodule Bolognesa.Libraries.InspectionJobsTest do
   end
 
   defp cleanup(scan) do
-    Repo.delete_all(from job in Oban.Job, where: job.queue == "media_inspections")
+    file_ids =
+      Repo.all(
+        from file in Bolognesa.Infrastructure.Persistence.MediaFileSchema,
+          where: file.library_id == ^scan.library_id,
+          select: file.id
+      )
+      |> Enum.map(&Integer.to_string/1)
+
+    Repo.delete_all(
+      from job in Oban.Job,
+        where:
+          fragment("?->>'media_file_id'", job.args) in ^file_ids or
+            fragment("?->>'file_id'", job.args) in ^file_ids
+    )
 
     Repo.delete_all(
       from file in Bolognesa.Infrastructure.Persistence.MediaFileSchema,

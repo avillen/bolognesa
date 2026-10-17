@@ -1,6 +1,6 @@
 # Plan 3: direct Movies and Series identification jobs
 
-Status: proposed; implementation has not started.
+Status: implemented and verified locally; not deployed.
 
 **Design:** [Shared ownership, invariants, migration and verification policy](direct-jobs-design.md). Read it first.
 
@@ -30,12 +30,12 @@ Scan handoff, backfill and explicit retry must all use the owner's request write
 - `test/bolognesa/movies/ownership_test.exs`
 - `test/bolognesa/libraries/scan_inventory_test.exs`
 
-- [ ] Update request tests to assert a pending decision with a matching linked Oban job immediately after commit. Cover scan, backfill and explicit retry, plus rejection outside a transaction.
-- [ ] Preserve manual-origin rejection, wrong-type protection, unchanged scan behavior and type filtering before backfill limits. Repeated scans must not introduce extra work; explicit new requests retain their existing fresh-token semantics.
-- [ ] Replace movie-event failure injection with a PostgreSQL rejection of job insertion and separately job linking. Assert full inventory/request/inspection/counter rollback, with no orphan job. Keep Series event rollback tests intact until Task 2.
-- [ ] Run changed tests to observe the expected failure. Replace insert_event! with the owner's worker construction, transactional Oban insertion and decision job link. Keep event infrastructure only until migration, with no new runtime event writes.
-- [ ] Verify discarded, cancelled, completed and deleted jobs still recover pending decisions without needing event rows. Waiting retries and unexpired execution must not starve recovery limits.
-- [ ] Run `mix test test/bolognesa/movies test/bolognesa/libraries/scan_inventory_test.exs`.
+- [x] Update request tests to assert a pending decision with a matching linked Oban job immediately after commit. Cover scan, backfill and explicit retry, plus rejection outside a transaction.
+- [x] Preserve manual-origin rejection, wrong-type protection, unchanged scan behavior and type filtering before backfill limits. Repeated scans must not introduce extra work; explicit new requests retain their existing fresh-token semantics.
+- [x] Replace movie-event failure injection with a PostgreSQL rejection of job insertion and separately job linking. Assert full inventory/request/inspection/counter rollback, with no orphan job. Keep Series event rollback tests intact until Task 2.
+- [x] Run changed tests to observe the expected failure. Replace insert_event! with the owner's worker construction, transactional Oban insertion and decision job link. Keep event infrastructure only until migration, with no new runtime event writes.
+- [x] Verify discarded, cancelled, completed and deleted jobs still recover pending decisions without needing event rows. Waiting retries and unexpired execution must not starve recovery limits.
+- [x] Run `mix test test/bolognesa/movies test/bolognesa/libraries/scan_inventory_test.exs`.
 
 ## Task 2: Series request creation
 
@@ -50,12 +50,12 @@ Scan handoff, backfill and explicit retry must all use the owner's request write
 - `test/bolognesa/series/episode_selection_test.exs`
 - `test/bolognesa/libraries/scan_inventory_test.exs`
 
-- [ ] Assert immediate pending decision/job linkage for scan, backfill and retry, and no mutation for movie/music files or calls outside a transaction.
-- [ ] Replace the Series event failure injection with rejected job insertion/linking. Assert inventory, inspection, decision, ordered episode association changes and scan counter all roll back.
-- [ ] Implement direct job creation inside the existing writer transaction. Keep EntryStore.replace! atomic with the decision and job. Preserve manual episode choices, same-season and maximum-selection rules.
-- [ ] Exercise stale token/revision results, manual correction racing automatic work, duplicate jobs and interruption recovery using current regressions. Fill uncovered Series manual-race scenarios without weakening Movies coverage.
-- [ ] Verify bounded backfill/recovery filters by Series type before the batch limit. Assert the two owners cannot consume or mutate one another's requests despite sharing a queue.
-- [ ] Run `mix test test/bolognesa/series test/bolognesa/libraries/scan_inventory_test.exs`.
+- [x] Assert immediate pending decision/job linkage for scan, backfill and retry, and no mutation for movie/music files or calls outside a transaction.
+- [x] Replace the Series event failure injection with rejected job insertion/linking. Assert inventory, inspection, decision, ordered episode association changes and scan counter all roll back.
+- [x] Implement direct job creation inside the existing writer transaction. Keep EntryStore.replace! atomic with the decision and job. Preserve manual episode choices, same-season and maximum-selection rules.
+- [x] Exercise stale token/revision results, manual correction racing automatic work, duplicate jobs and interruption recovery using current regressions. Fill uncovered Series manual-race scenarios without weakening Movies coverage.
+- [x] Verify bounded backfill/recovery filters by Series type before the batch limit. Assert the two owners cannot consume or mutate one another's requests despite sharing a queue.
+- [x] Run `mix test test/bolognesa/series test/bolognesa/libraries/scan_inventory_test.exs`.
 
 ## Task 3: Migrate pending video requests and remove dispatchers
 
@@ -73,19 +73,19 @@ Scan handoff, backfill and explicit retry must all use the owner's request write
 
 **Modify:** `lib/bolognesa/application.ex`, `config/config.exs`, `config/test.exs`, `config/screenshots.exs`, affected fixtures and scripts. Keep both identification reconcilers.
 
-- [ ] Seed both owners with undelivered requests, healthy linked jobs, terminal/deleted linked jobs, obsolete events, manually corrected decisions, missing files and mismatched owner types. Capture movie/series/season/episode IDs and ordered association snapshots.
-- [ ] In migration-local keyset batches, preserve matching jobs and link existing matching worker/file/token jobs before considering insertion. Materialize jobs only for current eligible undelivered pending decisions. Preserve terminal/missing linked evidence for existing recovery; do not retry failed/unmatched/manual decisions or recreate cleared associations.
-- [ ] Validate ownership, token and revision before converting each current request. Abort unexplained inconsistencies. Drop `movie_identification_events` and `series_identification_events` after successful conversion. Explicitly refuse down and document backup restoration.
-- [ ] Remove identification_outbox_dispatcher flags, dispatcher supervision and runtime references. Update startup expectations to the actual remaining processes, without combining reconcilers.
-- [ ] Verify empty and seeded upgrades, full fresh migration chain, and cumulative upgrade from the original schema through all three plans. Run new workers/recovery on migrated requests and compare stable data/association snapshots.
-- [ ] Preserve historical migrations/verifiers: inspect their assumptions and adapt only current fixture/bootstrap helpers required by the new schema. Do not rewrite historical migration behavior.
+- [x] Seed both owners with undelivered requests, healthy linked jobs, terminal/deleted linked jobs, obsolete events, manually corrected decisions, missing files and mismatched owner types. Capture movie/series/season/episode IDs and ordered association snapshots.
+- [x] In migration-local keyset batches, preserve matching jobs and link existing matching worker/file/token jobs before considering insertion. Materialize jobs only for current eligible undelivered pending decisions. Preserve terminal/missing linked evidence for existing recovery; do not retry failed/unmatched/manual decisions or recreate cleared associations.
+- [x] Validate ownership, token and revision before converting each current request. Abort unexplained inconsistencies. Drop `movie_identification_events` and `series_identification_events` after successful conversion. Explicitly refuse down and document backup restoration.
+- [x] Remove identification_outbox_dispatcher flags, dispatcher supervision and runtime references. Update startup expectations to the actual remaining processes, without combining reconcilers.
+- [x] Verify empty and seeded upgrades, full fresh migration chain, and cumulative upgrade from the original schema through all three plans. Run new workers/recovery on migrated requests and compare stable data/association snapshots.
+- [x] Preserve historical migrations/verifiers: inspect their assumptions and adapt only current fixture/bootstrap helpers required by the new schema. Do not rewrite historical migration behavior.
 
 ## Task 4: Integrated verification and decision update
 
-- [ ] Run `mix test test/bolognesa/movies test/bolognesa/series test/bolognesa/libraries test/bolognesa/playback` and all three new migration verifiers against disposable databases.
-- [ ] Run `mix precommit`. Review rollback boundaries, stale/manual races, owner separation, recovery limits, nil job-ID contracts, private SQL/job errors and provider calls outside transactions.
-- [ ] Update the shared direct-job decision, decision 0019's retained-outbox conclusion, decision index, backend convention, deployment guide and status. Clearly mark only superseded mechanisms; preserve unrelated accepted ownership rules.
-- [ ] Confirm no production event writers/readers/dispatchers remain for these pipelines. PubSub hints, correction UI, catalog queries and typed Playback contracts must remain intact.
+- [x] Run `mix test test/bolognesa/movies test/bolognesa/series test/bolognesa/libraries test/bolognesa/playback` and all three new migration verifiers against disposable databases.
+- [x] Run `mix precommit`. Review rollback boundaries, stale/manual races, owner separation, recovery limits, nil job-ID contracts, private SQL/job errors and provider calls outside transactions.
+- [x] Update the shared direct-job decision, decision 0019's retained-outbox conclusion, decision index, backend convention, deployment guide and status. Clearly mark only superseded mechanisms; preserve unrelated accepted ownership rules.
+- [x] Confirm no production event writers/readers/dispatchers remain for these pipelines. PubSub hints, correction UI, catalog queries and typed Playback contracts must remain intact.
 
 ## Acceptance
 

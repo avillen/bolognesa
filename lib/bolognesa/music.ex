@@ -19,7 +19,7 @@ defmodule Bolognesa.Music do
           required(:inspection_token) => String.t()
         }
 
-  @doc "Accepts a current audio observation inside the caller's inventory transaction."
+  @doc "Accepts a current audio observation inside the caller's database transaction."
   @spec request_import_in_transaction!(transaction_repository(), import_request()) ::
           :requested | :unchanged | :stale
   def request_import_in_transaction!(repo, request),

@@ -55,6 +55,14 @@ defmodule Bolognesa.Repo.Migrations.ReplaceInspectionOutboxWithJobs do
           AND f.availability = 'available' AND i.observed_revision = f.revision) THEN
         RAISE EXCEPTION 'Current inspection request has no legacy event or linked job';
       END IF;
+      IF EXISTS (SELECT 1 FROM media_inspections i
+        JOIN media_files f ON f.id=i.media_file_id JOIN oban_jobs j ON j.id=i.job_id
+        WHERE i.state IN ('pending','running') AND f.availability='available'
+          AND i.observed_revision=f.revision AND
+          (j.worker <> 'Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker' OR
+           j.args IS DISTINCT FROM jsonb_build_object('media_file_id',i.media_file_id,'token',i.token::text))) THEN
+        RAISE EXCEPTION 'Current inspection request has a mismatched linked job';
+      END IF;
     END $$;
     """
 

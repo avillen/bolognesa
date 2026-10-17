@@ -23,5 +23,4 @@
 | [0017](0017-generic-linux-compose-deployment.md) | Implemented | Configurable generic Linux Compose deployment |
 | [0018](0018-local-music-catalog.md) | Implemented | Local music identity, durable inspection handoff, and direct audio |
 | [0019](0019-content-context-boundaries.md) | Implemented and reviewed | Content-owned Movies, Series, and Music contexts with a clean database rebuild |
-
-[0020](0020-direct-durable-jobs.md) replaces redundant outbox delivery with transactionally created Oban jobs, incrementally by owner.
+| [0020](0020-direct-durable-jobs.md) | Implemented locally | Atomic request/job creation without intermediate inspection, Music or video outboxes |

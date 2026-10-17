@@ -18,13 +18,7 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Recorded verification
 
-- Direct video identification jobs: 163 focused Movies/Series/inventory tests passed. All three disposable direct-job migration verifiers passed empty/seeded upgrades, stable data and manual-association comparison, execution of migrated jobs, recovery of deleted never-started jobs, refused reversal, and atomic abort on mismatched linkage after earlier batches. The pinned historical content-context verifier passed two rebuilds. Final integrated precommit and independent review are in progress; not deployed.
-
-- Direct Music import jobs: local `MIX_TEST_PARTITION=_direct_jobs mix precommit` passed compilation, Credo, and 525 tests with one skipped. Handoff/import checks passed 35 tests, including same-revision stale-token rejection and real Oban insertion notification. The disposable Music migration verifier passed empty/seeded upgrades, stable-data comparison, refused reversal, and rollback of earlier batches on mismatched linkage. Pending imports now exist before execution; recovery no longer reads Libraries events. Not deployed.
-
-- Direct inspection jobs: local `MIX_TEST_PARTITION=_direct_jobs mix precommit` passed compilation, Credo, and 520 tests with one skipped. Focused content checks passed 334 tests with one skipped. The disposable inspection migration verifier passed empty and seeded upgrades with more than 100 requests, linked/deleted jobs, obsolete observations and refused reversal. Inspection requests now commit with their Oban jobs; Music and video delivery have since been converted separately. Not deployed.
-
-Current content-context checks and deployment observations are distinguished from earlier device evidence.
+- Direct durable jobs: local `MIX_TEST_PARTITION=_direct_jobs mix precommit` passed compilation, Credo, and 521 tests with one skipped. All three disposable upgrade verifiers passed empty/seeded migrations, stable catalog/account/manual-association snapshots, migrated-worker execution, deleted-before-start recovery, refused reversal, and atomic rollback of earlier batches on inconsistent active request links. Coverage includes requests without matching events and existing same-token Music imports with invalid jobs/revisions; combined checks carry original-schema inspection/Music backlogs through the video upgrade. Real PostgreSQL notifications verify that supported Oban insertion wakes the queues. The historical content-context verifier passed two pinned rebuilds. Independent review's active-request validation finding was reproduced and fixed; no runtime correctness findings remained. Not deployed.
 
 - Libraries convention review: scan status lookups use `fetch_status` / `fetch_scan_status`; inspection lookup and count APIs use `fetch` / `fetch_inspection_counts` across facades, use cases, ports, adapters, and callers. Adapter aliases consistently use `module()`. `mix format` and `git diff --check` passed; tests and `mix precommit` have not been run for these naming-only changes.
 
@@ -44,6 +38,8 @@ Current content-context checks and deployment observations are distinguished fro
 - Local Compose startup, migrations, and initial setup were verified on x86_64. A compatible MP4 played in Chrome on a private deployment. Music inspection handles attached cover art without rejecting valid audio.
 
 ## Limits and next work
+
+The direct-job refactor is implemented and locally verified on `refactor/direct-jobs`; it has not been published or deployed. The next release step is integration and CI, followed by the normal stopped-worker update with a validated backup. The three migrations preserve data and pending work, require no reset or rescan, and refuse reversal; returning to the old release requires the matching backup. Representative-backlog maintenance duration remains unmeasured.
 
 The [content-context change](decisions/0019-content-context-boundaries.md) is implemented, reviewed, published, and deployed. The agreed whole-database rebuild removed accounts, library configuration, corrections, imported catalog data, and Oban jobs while preserving original media mounts. The installation is at initial setup: create the administrator, register the sources using their existing internal paths, then scan and identify again. The [deployment guide](../deploy/compose/README.md#one-time-content-context-rebuild) documents the rebuild and backup/restore contract.
 

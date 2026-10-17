@@ -1,6 +1,6 @@
 # Direct durable jobs: shared design
 
-Status: proposed; no implementation or deployment has started.
+Status: implemented and verified locally; not deployed.
 
 ## Outcome
 
@@ -36,7 +36,7 @@ The implementing release must document validated backup, maintenance window, act
 
 ## Execution and verification
 
-Implement each plan sequentially with the executing-plans workflow. Read the product/status/roadmap, applicable decisions and backend/Elixir/testing/observability/documentation conventions; inspect Git and preserve unrelated work. All plans are proposed and require review before implementation.
+Implement each plan sequentially with the executing-plans workflow. Read the product/status/roadmap, applicable decisions and backend/Elixir/testing/observability/documentation conventions; inspect Git and preserve unrelated work. All three plans have been implemented and locally verified.
 
 For each release: update relevant behavior tests, demonstrate meaningful new regressions fail before implementing them, run focused PostgreSQL checks, its migration verifier, and `mix precommit`. Review atomicity, lock order, stale results, bounded recovery, private SQL/job error fields and data preservation. Record actual results and next steps in `docs/status.md`.
 

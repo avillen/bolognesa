@@ -30,6 +30,7 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
     if Mix.env() != :test or Process.whereis(Bolognesa.Repo),
       do: raise("Run with MIX_ENV=test mix run --no-start")
 
+    Logger.configure(level: :warning)
     {:ok, _} = Application.ensure_all_started(:ecto_sql)
 
     config = [
@@ -54,13 +55,17 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
 
     version = Map.fetch!(@versions, kind)
 
-    for scenario <- [:empty, :seeded, :mismatched] do
+    scenarios =
+      [:empty, :seeded, :mismatched, :orphan_mismatched] ++
+        if(kind == :music, do: [:current_mismatched, :current_revision], else: [])
+
+    for scenario <- scenarios do
       Ecto.Adapters.Postgres.storage_down(config)
       :ok = Ecto.Adapters.Postgres.storage_up(config)
       {:ok, pid} = CheckRepo.start_link()
 
       try do
-        Ecto.Migrator.run(CheckRepo, migrations, :up, to: version - 1, log: false)
+        migrate_previous(kind, scenario, migrations, version)
 
         if scenario != :empty do
           query(
@@ -71,11 +76,26 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
         expected = if scenario == :empty, do: [], else: seed(kind)
         before = stable_snapshot()
 
-        if scenario == :mismatched do
-          {_file, _token, linked, _n} =
+        if scenario not in [:empty, :seeded] do
+          {file, token, linked, _n} =
             Enum.find(expected, fn {_file, _token, job, _n} -> not is_nil(job) end)
 
-          query("UPDATE oban_jobs SET worker='Bolognesa.WrongWorker' WHERE id=$1", [linked])
+          if scenario != :current_revision do
+            query("UPDATE oban_jobs SET worker='Bolognesa.WrongWorker' WHERE id=$1", [linked])
+          end
+
+          if kind == :music and scenario != :mismatched do
+            query(
+              "INSERT INTO music_imports(media_file_id,observed_revision,inspection_token,state,job_id,inserted_at,updated_at) VALUES ($1,$2,$3::text::uuid,'pending',$4,now(),now())",
+              [file, if(scenario == :current_revision, do: 2, else: 1), token, linked]
+            )
+          end
+
+          if scenario == :orphan_mismatched do
+            [table | _] = legacy_tables(kind)
+            query("DELETE FROM #{table} WHERE media_file_id=$1", [file])
+          end
+
           jobs = query("SELECT * FROM oban_jobs ORDER BY id").rows
 
           try do
@@ -83,7 +103,9 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
             raise "Inconsistent job linkage unexpectedly accepted"
           rescue
             error in Postgrex.Error ->
-              true = String.contains?(error.postgres.message, "mismatched")
+              true =
+                String.contains?(error.postgres.message, "mismatched") or
+                  String.contains?(error.postgres.message, "inconsistent")
           end
 
           ^jobs = query("SELECT * FROM oban_jobs ORDER BY id").rows
@@ -92,9 +114,7 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
           for table <- legacy_tables(kind),
               do: [[true]] = query("SELECT to_regclass($1) IS NOT NULL", [table]).rows
 
-          IO.puts(
-            "#{kind} jobs migration: mismatched linkage aborts and rolls back earlier batches"
-          )
+          IO.puts("#{kind} jobs migration: #{scenario} aborts and rolls back earlier batches")
         else
           Ecto.Migrator.run(CheckRepo, migrations, :up, to: version, log: false)
           ^before = stable_snapshot()
@@ -118,6 +138,25 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
 
     :ok
   end
+
+  defp migrate_previous(:video, scenario, migrations, version) when scenario != :empty do
+    Ecto.Migrator.run(CheckRepo, migrations, :up,
+      to: Map.fetch!(@versions, :inspection) - 1,
+      log: false
+    )
+
+    inspections = seed(:inspection)
+    imports = seed(:music)
+    before = stable_snapshot()
+    Ecto.Migrator.run(CheckRepo, migrations, :up, to: version - 1, log: false)
+    ^before = stable_snapshot()
+    verify(:inspection, inspections)
+    verify(:music, imports)
+    IO.puts("Combined original-schema backlog preserved through inspection and Music upgrades")
+  end
+
+  defp migrate_previous(_kind, _scenario, migrations, version),
+    do: Ecto.Migrator.run(CheckRepo, migrations, :up, to: version - 1, log: false)
 
   defp seed(:inspection) do
     for n <- 1..106 do
@@ -152,7 +191,7 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
   end
 
   defp seed(:music) do
-    for n <- 1..110 do
+    for n <- 1..111 do
       file = file("music", n)
       token = Ecto.UUID.generate()
       tracks = if n == 106, do: %{"items" => []}, else: %{"items" => [%{"kind" => "audio"}]}
@@ -163,7 +202,7 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
       )
 
       linked =
-        if n in [101, 102, 103, 108, 109],
+        if n in [101, 102, 103, 108, 109, 111],
           do:
             job("Music.Infrastructure.Jobs.RefreshWorker", "music_imports", %{
               "file_id" => file,
@@ -216,6 +255,26 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
           [artist, album, token, file]
         )
       end
+
+      linked =
+        if n == 111 do
+          query("UPDATE oban_jobs SET state='discarded' WHERE id=$1", [linked])
+
+          retry_job =
+            job("Music.Infrastructure.Jobs.RefreshWorker", "music_imports", %{
+              "file_id" => file,
+              "revision" => 1
+            })
+
+          query(
+            "INSERT INTO music_imports(media_file_id,observed_revision,inspection_token,state,job_id,inserted_at,updated_at) VALUES ($1,1,$2::text::uuid,'pending',$3,now(),now())",
+            [file, token, retry_job]
+          )
+
+          retry_job
+        else
+          linked
+        end
 
       {file, token, linked, n}
     end
@@ -296,7 +355,11 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
       end
     end
 
-    [[count]] = query("SELECT count(*) FROM media_files").rows
+    [[count]] =
+      query("SELECT count(*) FROM media_files WHERE id=ANY($1)", [
+        Enum.map(expected, &elem(&1, 0))
+      ]).rows
+
     true = count == length(expected)
   end
 
@@ -332,7 +395,11 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
       end
     end
 
-    [[count]] = query("SELECT count(*) FROM media_files").rows
+    [[count]] =
+      query("SELECT count(*) FROM media_files WHERE id=ANY($1)", [
+        Enum.map(expected, &elem(&1, 0))
+      ]).rows
+
     true = count == length(expected)
   end
 
@@ -371,7 +438,11 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
       end
     end
 
-    [[count]] = query("SELECT count(*) FROM media_files").rows
+    [[count]] =
+      query("SELECT count(*) FROM media_files WHERE id=ANY($1)", [
+        Enum.map(expected, &elem(&1, 0))
+      ]).rows
+
     true = count == length(expected)
   end
 
@@ -519,7 +590,7 @@ defmodule Bolognesa.DirectJobsMigrationCheck do
     [[library]] =
       query(
         "INSERT INTO libraries (name,path,content_type,inserted_at,updated_at) VALUES ('Synthetic', $1,$2,now(),now()) RETURNING id",
-        ["/synthetic/#{type}/#{n}", type]
+        ["/synthetic/#{type}/#{n}/#{System.unique_integer([:positive])}", type]
       ).rows
 
     [[file]] =
