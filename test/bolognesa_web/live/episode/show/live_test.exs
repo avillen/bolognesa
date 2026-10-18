@@ -131,7 +131,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     [_, session] = Regex.run(~r/data-session-id="([^"]+)"/, html)
     render_hook(view, "playback_ended", %{session_id: session})
     assert_redirect(view, "/episodes/#{next}")
-    assert :not_found = Bolognesa.Playback.compatible_status(session)
+    assert :not_found = Bolognesa.Playback.video_compatible_status(session)
   end
 
   test "stale completion and the final episode do not navigate", ctx do

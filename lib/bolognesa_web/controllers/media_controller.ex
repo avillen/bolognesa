@@ -18,7 +18,7 @@ defmodule BolognesaWeb.MediaController do
 
     with {:ok, movie_id} <- positive_id(entry_text),
          {:ok, file_id} <- positive_id(file_text),
-         {:ok, source} <- Playback.start(actor, {kind, movie_id}, file_id),
+         {:ok, source} <- Playback.start_video(actor, {kind, movie_id}, file_id),
          {:ok, mime_type} <- MediaMime.for_path(source.relative_path) do
       MediaDelivery.serve(conn, source, mime_type)
     else

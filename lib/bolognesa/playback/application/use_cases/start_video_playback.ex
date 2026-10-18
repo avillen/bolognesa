@@ -1,5 +1,5 @@
-defmodule Bolognesa.Playback.Application.UseCases.StartPlayback do
-  @moduledoc "Authorize and select a currently linked physical movie version."
+defmodule Bolognesa.Playback.Application.UseCases.StartVideoPlayback do
+  @moduledoc "Authorize and select a currently linked movie or episode video file."
 
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
@@ -15,7 +15,7 @@ defmodule Bolognesa.Playback.Application.UseCases.StartPlayback do
          true <-
            ContentRef.valid?(content_ref) and is_integer(file_id) and
              file_id > 0 do
-      repository.find_source(content_ref, file_id)
+      repository.find_video_source(content_ref, file_id)
     else
       false -> {:error, :not_found}
       error -> error

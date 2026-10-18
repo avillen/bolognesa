@@ -21,7 +21,7 @@ defmodule BolognesaWeb.TranscodeController do
     with {:ok, movie_id} <- positive_id(entry_param(conn.path_params)),
          {:ok, file_id} <- positive_id(conn.path_params["file_id"]),
          {:ok, session} <-
-           Playback.compatible_session(
+           Playback.video_compatible_session(
              conn.assigns.current_scope.actor,
              {entry_kind(conn.path_params), movie_id},
              file_id,

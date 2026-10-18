@@ -9,7 +9,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
     content_ref = socket.assigns.content_ref
     stop_previous(socket)
 
-    case Playback.delivery(actor, content_ref, file_id) do
+    case Playback.video_delivery(actor, content_ref, file_id) do
       {:ok, :direct, _source} -> prepare_direct(socket, file_id)
       {:ok, _profile, _source} -> start_compatible(socket, file_id, 0, :auto)
       {:error, reason} -> PlaybackState.preparation_failed(socket, reason)
@@ -27,7 +27,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
     actor = socket.assigns.current_scope.actor
     content_ref = socket.assigns.content_ref
 
-    case Playback.start_compatible(actor, content_ref, file_id, offset_ms, mode) do
+    case Playback.start_video_compatible(actor, content_ref, file_id, offset_ms, mode) do
       {:ok, session} ->
         Process.send_after(self(), {:compatible_poll, session.id}, 250)
         PlaybackState.preparing(socket, session)
@@ -41,12 +41,16 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
   def stop_previous(socket) do
     case socket.assigns.compatible_session do
       nil -> :ok
-      session -> Playback.stop_compatible(socket.assigns.current_scope.actor, session.id)
+      session -> Playback.stop_video_compatible(socket.assigns.current_scope.actor, session.id)
     end
   end
 
   defp prepare_direct(socket, file_id) do
-    case Playback.prepare(socket.assigns.current_scope.actor, socket.assigns.content_ref, file_id) do
+    case Playback.prepare_video(
+           socket.assigns.current_scope.actor,
+           socket.assigns.content_ref,
+           file_id
+         ) do
       :ok -> PlaybackState.direct(socket, file_id)
       {:error, reason} -> PlaybackState.preparation_failed(socket, reason)
     end

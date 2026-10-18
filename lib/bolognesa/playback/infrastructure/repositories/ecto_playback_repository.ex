@@ -17,7 +17,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
   alias Bolognesa.Repo
 
   @impl true
-  def find_source({:movie, id}, file_id) when is_integer(id) and id > 0 do
+  def find_video_source({:movie, id}, file_id) when is_integer(id) and id > 0 do
     base =
       from identification in MovieIdentificationSchema,
         where: identification.movie_id == ^id,
@@ -26,7 +26,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
     video_source(base, :movie, file_id)
   end
 
-  def find_source({:episode, id}, file_id) when is_integer(id) and id > 0 do
+  def find_video_source({:episode, id}, file_id) when is_integer(id) and id > 0 do
     base =
       from identification in SeriesIdentificationSchema,
         join: relation in SeriesIdentificationEpisodeSchema,
@@ -37,7 +37,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
     video_source(base, :series, file_id)
   end
 
-  def find_source(_, _), do: {:error, :not_found}
+  def find_video_source(_, _), do: {:error, :not_found}
 
   defp video_source(base, content_type, file_id) do
     query =

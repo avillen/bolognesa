@@ -36,7 +36,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
     file = ctx.media_file
 
     assert {:ok, session} =
-             Playback.start_compatible(ctx.actor, {:episode, first}, file.id, 0, :video)
+             Playback.start_video_compatible(ctx.actor, {:episode, first}, file.id, 0, :video)
 
     for {actor, entry, file_id} <- [
           {%{ctx.actor | id: ctx.actor.id + 1}, first, file.id},
@@ -44,7 +44,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
           {ctx.actor, first, file.id + 1}
         ] do
       assert {:error, :not_found} =
-               Playback.compatible_session(actor, {:episode, entry}, file_id, session.id)
+               Playback.video_compatible_session(actor, {:episode, entry}, file_id, session.id)
     end
 
     write_hls(session)
@@ -68,13 +68,13 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
     assert response(get(ctx.conn, "/episodes/#{second}/media/#{file.id}"), 200) == "abcdefgh"
 
     assert {:ok, next} =
-             Playback.start_compatible(ctx.actor, {:episode, second}, file.id, 0, :video)
+             Playback.start_video_compatible(ctx.actor, {:episode, second}, file.id, 0, :video)
 
     write_hls(next)
     Repo.update!(MediaFileSchema.changeset(file, %{revision: file.revision + 1}))
 
     assert {:error, :source_changed} =
-             Playback.compatible_session(ctx.actor, {:episode, second}, file.id, next.id)
+             Playback.video_compatible_session(ctx.actor, {:episode, second}, file.id, next.id)
 
     assert {:error, :not_found} = TranscodeManager.lookup(next.id)
 
@@ -137,13 +137,14 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
       movie.id
     )
 
-    assert {:ok, %{relative_path: "Movie.avi"}} = Playback.start(ctx.actor, {:movie, id}, file.id)
+    assert {:ok, %{relative_path: "Movie.avi"}} =
+             Playback.start_video(ctx.actor, {:movie, id}, file.id)
 
     assert {:ok, %{relative_path: "Serie S00E01E02.mp4"}} =
-             Playback.start(ctx.actor, {:episode, id}, ctx.media_file.id)
+             Playback.start_video(ctx.actor, {:episode, id}, ctx.media_file.id)
 
-    assert {:error, :not_found} = Playback.start(ctx.actor, {:episode, id}, file.id)
-    assert {:error, :not_found} = Playback.start(ctx.actor, {:movie, id}, ctx.media_file.id)
+    assert {:error, :not_found} = Playback.start_video(ctx.actor, {:episode, id}, file.id)
+    assert {:error, :not_found} = Playback.start_video(ctx.actor, {:movie, id}, ctx.media_file.id)
     assert response(get(ctx.conn, "/movies/#{id}/media/#{file.id}"), 200) == "movie bytes"
 
     assert response(get(ctx.conn, "/episodes/#{id}/media/#{ctx.media_file.id}"), 200) ==
@@ -157,7 +158,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
           {:episode, ctx.media_file, :movie}
         ] do
       assert {:ok, session} =
-               Playback.start_compatible(ctx.actor, {kind, id}, source_file.id, 0, :video)
+               Playback.start_video_compatible(ctx.actor, {kind, id}, source_file.id, 0, :video)
 
       assert session.content_ref == {kind, id}
       write_hls(session)
@@ -179,9 +180,14 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
       assert injected_statuses == [404, 404]
 
       assert {:ok, _} =
-               Playback.compatible_session(ctx.actor, {kind, id}, source_file.id, session.id)
+               Playback.video_compatible_session(
+                 ctx.actor,
+                 {kind, id},
+                 source_file.id,
+                 session.id
+               )
 
-      Playback.stop_compatible(ctx.actor, session.id)
+      Playback.stop_video_compatible(ctx.actor, session.id)
     end
   end
 
@@ -197,7 +203,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
   test "container references remain unplayable when their numeric IDs overlap episodes", ctx do
     for kind <- [:series, :season] do
       assert {:error, :not_found} =
-               Playback.prepare(ctx.actor, {kind, ctx.episode_id}, ctx.media_file.id)
+               Playback.prepare_video(ctx.actor, {kind, ctx.episode_id}, ctx.media_file.id)
     end
   end
 end

@@ -1,5 +1,5 @@
 defmodule Bolognesa.Playback.Application.UseCases.StartTrackPlayback do
-  @moduledoc "Authorize and select a currently linked physical movie version."
+  @moduledoc "Authorize and select a currently linked music track file."
 
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser

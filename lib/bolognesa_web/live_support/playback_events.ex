@@ -59,7 +59,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   def handle_event("playback_pause", %{"session_id" => id}, socket) do
     case socket.assigns.compatible_session do
       %{id: ^id} ->
-        Playback.pause_compatible(socket.assigns.current_scope.actor, id)
+        Playback.pause_video_compatible(socket.assigns.current_scope.actor, id)
         {:noreply, PlaybackState.paused(socket, true)}
 
       _ ->
@@ -118,9 +118,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   end
 
   defp poll_compatible(socket, id) do
-    case Playback.compatible_status(id) do
+    case Playback.video_compatible_status(id) do
       :ready ->
-        Playback.pause_compatible(socket.assigns.current_scope.actor, id)
+        Playback.pause_video_compatible(socket.assigns.current_scope.actor, id)
 
         {:noreply, PlaybackState.ready(socket)}
 
@@ -144,7 +144,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   end
 
   defp resume_session(socket, session, position) do
-    case Playback.resume_compatible(socket.assigns.current_scope.actor, session.id) do
+    case Playback.resume_video_compatible(socket.assigns.current_scope.actor, session.id) do
       :ok -> {:noreply, PlaybackState.paused(socket, false)}
       _ -> resume_expired(socket, session, position)
     end
