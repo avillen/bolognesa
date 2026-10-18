@@ -33,7 +33,7 @@ defmodule BolognesaWeb.Player do
         {gettext("Preparando reproducción…")}
       </p>
       <video
-        :if={!@compatible_session}
+        :if={!@compatible_session && !@playback_error}
         id={"#{@prefix}-video-#{@selected_file_id}"}
         phx-hook="VideoError"
         data-file-id={@selected_file_id}
@@ -85,16 +85,6 @@ defmodule BolognesaWeb.Player do
     >
       {@playback_error}
     </p>
-    <button
-      :if={@selected_file_id && @playback_error_reason == "browser_error"}
-      id={"#{@prefix}-compatible-#{@selected_file_id}"}
-      type="button"
-      phx-click="compatible"
-      phx-value-file_id={@selected_file_id}
-      class="min-h-11 rounded-xl bg-accent px-5 py-3 font-semibold text-canvas"
-    >
-      {gettext("Probar modo compatible")}
-    </button>
     """
   end
 

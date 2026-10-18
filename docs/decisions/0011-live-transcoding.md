@@ -8,7 +8,7 @@ Direct playback worked for a compatible MP4 but browser tests showed that some a
 
 ## Decision
 
-Use technical inspection to choose direct delivery, audio conversion with H.264 video copied, or conversion to H.264/AAC. For unknown profiles, try direct playback and offer a compatible mode after a browser failure.
+Use technical inspection to choose direct delivery, audio conversion with H.264 video copied, or conversion to H.264/AAC. For unknown profiles, try direct playback. A browser failure automatically starts full H.264/AAC conversion at the reported playback position for movies and episodes. Duplicate or stale direct-player errors do not restart conversion, and conversion failures remain visible without automatic retry. Browser autoplay restrictions can still require pressing play.
 
 FFmpeg produces HLS MPEG-TS in a private temporary directory. A supervised `GenServer` owns the single allowed FFmpeg process. Sessions expire after five minutes of inactivity, cap fragments at 512 MiB, and clean up their temporary files. The original library remains mounted read-only; deployment scratch space uses tmpfs.
 

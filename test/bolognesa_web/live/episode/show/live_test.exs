@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Episode.Show.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias BolognesaWeb.SeriesFixtures
 
   setup %{conn: conn} do
@@ -20,8 +21,28 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
              "#episode-video-#{ctx.media_file.id}[src='/episodes/#{ctx.episode_id}/media/#{ctx.media_file.id}']"
            )
 
-    render_hook(view, "playback_error", %{file_id: Integer.to_string(ctx.media_file.id)})
-    assert has_element?(view, "#episode-compatible-#{ctx.media_file.id}")
+    executable = Path.join(ctx.directory, "fake-ffmpeg")
+    File.write!(executable, "#!/bin/sh\nwhile :; do sleep 1; done\n")
+    File.chmod!(executable, 0o700)
+    old_executable = Application.get_env(:bolognesa, :ffmpeg_executable)
+    Application.put_env(:bolognesa, :ffmpeg_executable, executable)
+
+    on_exit(fn ->
+      TranscodeManager.stop_all()
+
+      if old_executable,
+        do: Application.put_env(:bolognesa, :ffmpeg_executable, old_executable),
+        else: Application.delete_env(:bolognesa, :ffmpeg_executable)
+    end)
+
+    render_hook(view, "playback_error", %{
+      file_id: Integer.to_string(ctx.media_file.id),
+      position_ms: "invalid"
+    })
+
+    assert has_element?(view, "#episode-playback-preparing[role='status']")
+    refute has_element?(view, "#episode-player video")
+    refute has_element?(view, "#episode-playback-error")
   end
 
   test "direct delivery checks each episode association and supports ranges", ctx do

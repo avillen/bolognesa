@@ -4,6 +4,8 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
   import Phoenix.LiveView, only: [stream: 3, start_async: 3]
   alias Bolognesa.Movies
 
+  alias BolognesaWeb.LiveSupport.PlaybackState
+
   @spec call(
           Phoenix.LiveView.Socket.t(),
           Bolognesa.Accounts.Domain.Entities.AuthenticatedUser.t(),
@@ -18,14 +20,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
     |> assign(:detail, nil)
     |> assign(:loading?, true)
     |> assign(:error, nil)
-    |> assign(:selected_file_id, nil)
-    |> assign(:compatible_session, nil)
-    |> assign(:compatible_ready?, false)
-    |> assign(:compatible_paused?, false)
-    |> assign(:compatible_poll_attempts, 0)
-    |> assign(:compatible_autoplay?, false)
-    |> assign(:playback_error, nil)
-    |> assign(:playback_error_reason, nil)
+    |> PlaybackState.initialize()
     |> assign(:request_id, request_id)
     |> stream(:versions, [])
     |> start_async({:movie, request_id}, fn -> Movies.get_movie(actor, id) end)
