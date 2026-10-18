@@ -196,6 +196,59 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
     Postgrex.Error -> {:error, :unavailable}
   end
 
+  @impl true
+  def fetch_next_episode(episode_id, file_id) do
+    completed =
+      from relation in SeriesIdentificationEpisodeSchema,
+        join: decision in SeriesIdentificationSchema,
+        on: decision.id == relation.identification_id,
+        join: episode in EpisodeSchema,
+        on: episode.id == relation.episode_id,
+        join: season in SeasonSchema,
+        on: season.id == episode.season_id,
+        where: decision.media_file_id == ^file_id and decision.state in [:automatic, :manual],
+        select: %{
+          id: episode.id,
+          number: episode.number,
+          season_number: season.number,
+          series_id: season.series_id
+        }
+
+    boundary =
+      from row in subquery(completed),
+        where: exists(from current in subquery(completed), where: current.id == ^episode_id),
+        order_by: [desc: row.season_number, desc: row.number],
+        limit: 1
+
+    query =
+      from episode in EpisodeSchema,
+        join: season in SeasonSchema,
+        on: season.id == episode.season_id,
+        join: previous in subquery(boundary),
+        on: previous.series_id == season.series_id,
+        join: relation in SeriesIdentificationEpisodeSchema,
+        on: relation.episode_id == episode.id,
+        join: decision in SeriesIdentificationSchema,
+        on: decision.id == relation.identification_id,
+        join: file in MediaFileSchema,
+        on: file.id == decision.media_file_id,
+        where: decision.state in [:automatic, :manual] and file.availability == :available,
+        where:
+          season.number > previous.season_number or
+            (season.number == previous.season_number and episode.number > previous.number),
+        order_by: [asc: season.number, asc: episode.number, asc: episode.id],
+        limit: 1,
+        select: episode
+
+    next_episode(Repo.one(query, log: false))
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp next_episode(nil), do: :not_found
+  defp next_episode(episode), do: {:ok, SeriesMapper.episode(episode)}
+
   defp episode_detail(episode, season, series) do
     with {:ok, versions} <- versions(episode.id) do
       {:ok,

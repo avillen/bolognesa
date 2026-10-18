@@ -93,6 +93,57 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     refute has_element?(view, "#episode-playback-error")
   end
 
+  test "finishing direct playback advances past episodes sharing the file", ctx do
+    next_file = Bolognesa.SeriesFixtures.file(ctx.library.id, "next.mp4")
+
+    next =
+      Bolognesa.SeriesFixtures.identify(next_file, 1, [1]) |> Map.fetch!(:episode_ids) |> hd()
+
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    render_hook(view, "playback_ended", %{file_id: to_string(ctx.media_file.id)})
+    assert_redirect(view, "/episodes/#{next}")
+  end
+
+  test "finishing compatible playback advances and releases the session", ctx do
+    executable = Path.join(ctx.directory, "fake-ffmpeg")
+    File.write!(executable, "#!/bin/sh\nwhile :; do sleep 1; done\n")
+    File.chmod!(executable, 0o700)
+    old = Application.get_env(:bolognesa, :ffmpeg_executable)
+    Application.put_env(:bolognesa, :ffmpeg_executable, executable)
+
+    on_exit(fn ->
+      TranscodeManager.stop_all()
+
+      if old,
+        do: Application.put_env(:bolognesa, :ffmpeg_executable, old),
+        else: Application.delete_env(:bolognesa, :ffmpeg_executable)
+    end)
+
+    next_file = Bolognesa.SeriesFixtures.file(ctx.library.id, "next.mp4")
+
+    next =
+      Bolognesa.SeriesFixtures.identify(next_file, 1, [1]) |> Map.fetch!(:episode_ids) |> hd()
+
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    html = render_hook(view, "playback_error", %{file_id: to_string(ctx.media_file.id)})
+    [_, session] = Regex.run(~r/data-session-id="([^"]+)"/, html)
+    render_hook(view, "playback_ended", %{session_id: session})
+    assert_redirect(view, "/episodes/#{next}")
+    assert :not_found = Bolognesa.Playback.compatible_status(session)
+  end
+
+  test "stale completion and the final episode do not navigate", ctx do
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    render_hook(view, "playback_ended", %{file_id: "0"})
+    render_hook(view, "playback_ended", %{session_id: "stale"})
+    render_hook(view, "playback_ended", %{file_id: to_string(ctx.media_file.id)})
+    render_async(view)
+    assert has_element?(view, "#episode-title")
+  end
+
   defp add_version(ctx) do
     name = "Second S00E01E02.mp4"
 
@@ -101,11 +152,14 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
       Path.join(ctx.directory, name)
     )
 
+    {:ok, stat} = File.stat(Path.join(ctx.directory, name), time: :posix)
+
     file =
       ctx.media_file
       |> Map.from_struct()
       |> Map.drop([:__meta__, :id, :inserted_at, :updated_at])
       |> Map.put(:relative_path, name)
+      |> Map.put(:modified_at, DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond))
       |> then(&struct!(Bolognesa.Infrastructure.Persistence.MediaFileSchema, &1))
       |> Bolognesa.Repo.insert!()
 

@@ -10,10 +10,13 @@ const VideoError = {
         file_id: this.el.dataset.fileId, position_ms: String(position),
       })
     }
+    this.onEnded = () => this.pushEvent("playback_ended", {file_id: this.el.dataset.fileId})
+    this.el.addEventListener("ended", this.onEnded)
     this.el.addEventListener("error", this.onError)
     if (this.el.error) this.onError()
   },
   destroyed() {
+    this.el.removeEventListener("ended", this.onEnded)
     this.el.removeEventListener("error", this.onError)
   },
 }

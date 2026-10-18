@@ -8,15 +8,33 @@ defmodule BolognesaWeb.Episode.Show.Live do
     do: {:ok, Reducer.Initialize.call(socket, socket.assigns.current_scope.actor, parse_id(id))}
 
   @impl true
+  def handle_async({:next_episode, request}, result, socket),
+    do: {:noreply, Reducer.Advance.apply_result(socket, request, result)}
+
   def handle_async({:episode, request_id}, result, socket),
     do: {:noreply, Reducer.ApplyResult.call(socket, request_id, result)}
 
   @impl true
+  def handle_event("playback_ended", params, socket),
+    do: {:noreply, Reducer.Advance.call(socket, params)}
+
+  def handle_event(event, params, socket)
+      when event in ["play", "playback_seek", "playback_resume", "playback_error"],
+      do: handle_playback_action(event, params, socket)
+
   def handle_event(event, params, socket), do: PlaybackEvents.handle_event(event, params, socket)
   @impl true
   def handle_info(message, socket), do: PlaybackEvents.handle_info(message, socket)
   @impl true
   def terminate(_reason, socket), do: PlaybackEvents.terminate(socket)
+
+  defp handle_playback_action(event, params, socket) do
+    {:noreply, updated} = PlaybackEvents.handle_event(event, params, socket)
+
+    if updated == socket,
+      do: {:noreply, updated},
+      else: {:noreply, assign(updated, :advance_request, nil)}
+  end
 
   defp parse_id(text) do
     case Integer.parse(text) do

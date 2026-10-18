@@ -77,6 +77,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
     end
   end
 
+  def handle_event("playback_ended", %{"file_id" => _id}, socket), do: {:noreply, socket}
+
   def handle_event("playback_ended", %{"session_id" => id}, socket) do
     case socket.assigns.compatible_session do
       %{id: ^id} ->

@@ -30,4 +30,7 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReader do
               {:ok, {Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()]}}
               | :not_found
               | {:error, :unavailable | :too_many_versions}
+  @doc "Next available episode in season/episode order, after all episodes in the completed file."
+  @callback fetch_next_episode(Episode.id(), file_id :: pos_integer()) ::
+              {:ok, Episode.t()} | :not_found | {:error, :unavailable}
 end

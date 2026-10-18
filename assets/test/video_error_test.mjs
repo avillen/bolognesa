@@ -31,3 +31,19 @@ test("handles an error already present when mounted and an unknown position", ()
   hook.mounted.call(context)
   assert.deepEqual(events, [["playback_error", {file_id: "8", position_ms: "0"}]])
 })
+
+test("reports completion with the current file and cleans up", () => {
+  const events = []
+  const listeners = new Map()
+  const context = {
+    el: {dataset: {fileId: "9"}, error: null,
+      addEventListener: (name, fn) => listeners.set(name, fn),
+      removeEventListener: name => listeners.delete(name)},
+    pushEvent: (...args) => events.push(args),
+  }
+  hook.mounted.call(context)
+  listeners.get("ended")()
+  assert.deepEqual(events, [["playback_ended", {file_id: "9"}]])
+  hook.destroyed.call(context)
+  assert.equal(listeners.size, 0)
+})

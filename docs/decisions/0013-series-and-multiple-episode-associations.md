@@ -14,10 +14,10 @@ Libraries have an immutable `movie` or `series` type; existing libraries migrate
 
 Each file has one identification decision and may have an ordered set of confirmed entries. A movie selects one work. A series file selects one to one hundred unique episodes from a single season. Validate and replace the complete set in one transaction; incomplete provider responses never confirm a subset. Manual corrections replace the full set and remain protected from stale automatic work.
 
-Automatic matching requires an unambiguous normalized title and explicit year. Ambiguous names, missing episodes, or unclear numbering require review. Playback is available for confirmed movies and episodes, not series or season containers. A multi-episode file plays from the beginning in full with a visible notice; it is not cut into separate files or advanced automatically.
+Automatic matching requires an unambiguous normalized title and explicit year. Ambiguous names, missing episodes, or unclear numbering require review. Playback is available for confirmed movies and episodes, not series or season containers. A multi-episode file plays from the beginning in full with a visible notice; it is not cut into separate files. On completion, automatic continuation skips every episode associated with that file and selects the next available episode of the same series in season/episode order, crossing seasons when needed. Season zero follows the same numeric ordering; completion never loops back to earlier seasons. Missing versions are skipped, and the final available episode stops playback.
 
 ## Migration and consequences
 
 Preserve prior movie IDs and confirmed associations. Rollback must reject series libraries, series identities, and multi-association decisions before removing data; never silently convert series to movies or collapse associations. Schema and code changes require coordinated activation.
 
-The model adds joins and requires atomic replacement of associations. It does not implement next-episode playback, file cutting, absolute numbering, or date-based identification. Automated checks do not verify deployment, device compatibility, or NAS performance.
+The model adds joins and requires atomic replacement of associations. It does not implement file cutting, absolute numbering, or date-based identification. Automated checks do not verify deployment, device compatibility, or NAS performance.

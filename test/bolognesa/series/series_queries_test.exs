@@ -7,6 +7,37 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
   alias Bolognesa.SeriesFixtures
   @actor %AuthenticatedUser{id: 1, role: :admin}
 
+  test "next episode skips the completed file and missing versions across seasons" do
+    library = SeriesFixtures.library()
+    first = SeriesFixtures.file(library.id, "double.mkv")
+    decision = SeriesFixtures.identify(first, 1, [1, 2])
+    missing = SeriesFixtures.file(library.id, "missing.mkv")
+    SeriesFixtures.identify(missing, 2, [1])
+    missing |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+    next = SeriesFixtures.file(library.id, "next.mkv")
+    next_decision = SeriesFixtures.identify(next, 2, [2])
+
+    assert {:ok, episode} = Series.fetch_next_episode(@actor, hd(decision.episode_ids), first.id)
+    assert episode.id == hd(next_decision.episode_ids)
+    assert :not_found = Series.fetch_next_episode(@actor, episode.id, next.id)
+    assert :not_found = Series.fetch_next_episode(@actor, episode.id, first.id)
+    assert {:error, :forbidden} = Series.fetch_next_episode(nil, episode.id, next.id)
+  end
+
+  test "next episode follows episode number within the same season" do
+    library = SeriesFixtures.library()
+    later = SeriesFixtures.file(library.id, "later.mkv")
+    later_decision = SeriesFixtures.identify(later, 1, [2])
+    earlier = SeriesFixtures.file(library.id, "earlier.mkv")
+    earlier_decision = SeriesFixtures.identify(earlier, 1, [1])
+
+    assert {:ok, episode} =
+             Series.fetch_next_episode(@actor, hd(earlier_decision.episode_ids), earlier.id)
+
+    assert episode.id == hd(later_decision.episode_ids)
+    assert :not_found = Series.fetch_next_episode(@actor, episode.id, later.id)
+  end
+
   test "episode detail query count stays constant as physical versions increase" do
     library = SeriesFixtures.library()
     first = SeriesFixtures.file(library.id, "first.mkv")
