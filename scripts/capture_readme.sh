@@ -85,13 +85,14 @@ docker run --detach --rm \
 container_started="true"
 db_port="$(docker port "$container_name" 5432/tcp | awk -F: '{print $NF}')"
 
+# The initialization server accepts only Unix sockets; wait for the final TCP listener.
 for _ in $(seq 1 40); do
-  if docker exec "$container_name" pg_isready -U postgres -d bolognesa_screenshots >/dev/null 2>&1; then
+  if docker exec "$container_name" pg_isready -h 127.0.0.1 -U postgres -d bolognesa_screenshots >/dev/null 2>&1; then
     break
   fi
   sleep 1
 done
-docker exec "$container_name" pg_isready -U postgres -d bolognesa_screenshots >/dev/null
+docker exec "$container_name" pg_isready -h 127.0.0.1 -U postgres -d bolognesa_screenshots >/dev/null
 
 export MIX_ENV=screenshots
 export BOLOGNESA_SCREENSHOT_DB_PORT="$db_port"

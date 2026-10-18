@@ -172,7 +172,7 @@ try {
     await page.getByRole("heading").first().waitFor();
     await waitForStablePage();
     await waitForTheme();
-    await page.screenshot({ path: screenshotPath("setup.png"), fullPage: true });
+    await page.screenshot({ animations: "disabled", path: screenshotPath("setup.png"), fullPage: true });
 
   }
 
@@ -182,7 +182,7 @@ try {
     await page.getByRole("heading").first().waitFor();
     await waitForStablePage();
     await waitForTheme();
-    await page.screenshot({ path: screenshotPath("login.png"), fullPage: true });
+    await page.screenshot({ animations: "disabled", path: screenshotPath("login.png"), fullPage: true });
     const csrfToken = await page.locator('input[name="_csrf_token"]').inputValue();
     const loginResponse = await page.request.post(`${baseUrl}/login`, {
       form: {
@@ -241,7 +241,7 @@ try {
       await normalizeDemoDetails();
       await page.evaluate(() => document.activeElement?.blur());
       await page.mouse.move(1430, 990);
-      await withStableVideoFrame(() => page.screenshot({ path: screenshotPath(name), fullPage: true }));
+      await withStableVideoFrame(() => page.screenshot({ animations: "disabled", path: screenshotPath(name), fullPage: true }));
     };
 
     await capture("home.png", "/");
@@ -287,7 +287,7 @@ try {
     await normalizeDemoDetails();
     await page.evaluate(() => document.activeElement?.blur());
     await page.mouse.move(1430, 990);
-    await withStableVideoFrame(() => page.locator("#movie-player").screenshot({ path: screenshotPath("player.png") }));
+    await withStableVideoFrame(() => page.locator("#movie-player").screenshot({ animations: "disabled", path: screenshotPath("player.png") }));
 
     await capture("music.png", `/music?library_id=${ids.music_library}`, "main h1", "#music-loading");
     await page.locator(`#play-track-${ids.music_track}`).click();
@@ -322,7 +322,7 @@ try {
     await waitForStablePage();
     await page.evaluate(() => document.activeElement?.blur());
     await page.mouse.move(1430, 990);
-    await page.screenshot({ path: screenshotPath("music-player.png"), fullPage: true });
+    await page.screenshot({ animations: "disabled", path: screenshotPath("music-player.png"), fullPage: true });
     console.log(`Verified synthetic PCM WAV audio: play, seek, pause and refresh in Chromium ${browser.version()}.`);
 
     // Exercise artist -> album navigation and native ended-driven playback.
@@ -398,8 +398,31 @@ try {
     await page.locator("#episode-list a").first().click();
     await page.locator("#episode-title").waitFor();
     await assertSeriesFits();
-    await page.setViewportSize({width: 1440, height: 1000});
     console.log("Verified mobile series layouts and catalog/series/season/episode navigation with library context.");
+
+    const assertMoviesFit = async () => {
+      if (new URL(page.url()).searchParams.get("library_id") !== String(ids.movie_library)) {
+        throw new Error("Mobile movie navigation lost its library context.");
+      }
+      if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) {
+        throw new Error("Movie layout overflows the mobile viewport.");
+      }
+    };
+    await capture("movies-mobile.png", `/movies?library_id=${ids.movie_library}`, "#movies-screen h1", "#movies-loading");
+    await assertMoviesFit();
+    await page.locator("#movies-list a").first().click();
+    await page.locator("#movie-title").waitFor();
+    await waitForStablePage();
+    await assertMoviesFit();
+    await capture("movie-mobile.png", `/movies/${ids.movie}?library_id=${ids.movie_library}`, "#movie-title", "#movie-loading");
+    await assertMoviesFit();
+    await page.locator('[id^="movie-play-"]').first().click();
+    await page.locator("#movie-player video").waitFor({state: "attached"});
+    await assertMoviesFit();
+    await page.locator('[id^="movie-correct-"]').first().click();
+    await page.locator("#movie-review").waitFor();
+    await page.setViewportSize({width: 1440, height: 1000});
+    console.log("Verified mobile movie layouts, library context, playback entry and manual-correction navigation.");
 
     await capture("settings.png", "/settings");
     await capture("about.png", "/about");

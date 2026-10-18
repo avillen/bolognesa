@@ -9,7 +9,7 @@
   <section class="series-screen mx-auto max-w-6xl space-y-6">
     <.link
       navigate={~p"/series?#{@library_params}"}
-      class="series-back-link"
+      class="media-back-link"
     >{gettext("← Series")}</.link>
     <p :if={@loading?} id="episodes-loading" role="status" class="text-muted">
       {gettext("Cargando episodios…")}
@@ -20,7 +20,7 @@
     <header :if={@detail} class="series-season-heading">
       <.link
         navigate={~p"/series/#{@detail.series.id}?#{@library_params}"}
-        class="series-back-link"
+        class="media-back-link"
       >{@detail.series.title}</.link>
       <h1 id="season-title" class="mt-3 text-3xl font-semibold text-ink">
         {if @detail.season.number == 0,
@@ -88,7 +88,7 @@
         </.link>
       </article>
     </div>
-    <nav aria-label={gettext("Páginas de episodios")} class="series-pagination">
+    <nav aria-label={gettext("Páginas de episodios")} class="media-pagination">
       <.link
         :if={@page > 1}
         patch={

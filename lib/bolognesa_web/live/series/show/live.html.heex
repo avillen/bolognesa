@@ -9,7 +9,7 @@
   <section class="series-screen mx-auto max-w-6xl space-y-6">
     <.link
       navigate={~p"/series?#{@library_params}"}
-      class="series-back-link"
+      class="media-back-link"
     >{gettext("← Todas las series")}</.link>
     <p :if={@loading?} id="series-loading" role="status" class="text-muted">
       {gettext("Cargando serie…")}
@@ -17,9 +17,9 @@
     <p :if={@error} id="series-error" role="alert" class="text-red-200">
       {@error} <button phx-click="retry" class="min-h-11 px-4">{gettext("Reintentar")}</button>
     </p>
-    <div :if={@detail} class="series-detail-panel">
-      <div class="series-hero">
-        <div :if={@detail.series.backdrop_path} class="series-backdrop">
+    <div :if={@detail} class="media-detail-panel">
+      <div class="media-hero">
+        <div :if={@detail.series.backdrop_path} class="media-backdrop">
           <img
             id={"series-backdrop-#{@detail.series.id}"}
             phx-hook="ImageFallback"
@@ -29,9 +29,9 @@
             class="size-full object-cover"
           />
         </div>
-        <div class="series-hero-content">
-          <div class="series-hero-poster">
-            <div class="series-art-fallback" aria-hidden="true">
+        <div class="media-hero-content">
+          <div class="media-hero-poster">
+            <div class="media-art-fallback" aria-hidden="true">
               <.icon name="hero-tv" class="size-10" />
             </div>
             <img
@@ -44,8 +44,8 @@
               class="absolute inset-0 size-full object-cover"
             />
           </div>
-          <div class="series-hero-copy">
-            <p class="series-eyebrow">{gettext("Series")}</p>
+          <div class="media-hero-copy">
+            <p class="media-eyebrow">{gettext("Series")}</p>
             <h1 id="series-title" class="text-4xl font-semibold text-ink">
               {@detail.series.title}
             </h1>
@@ -54,7 +54,7 @@
               <span aria-hidden="true" class="text-accent">/</span>
               <span>{ngettext("%{count} temporada", "%{count} temporadas", @total)}</span>
             </p>
-            <p :if={@detail.series.overview} class="series-synopsis">
+            <p :if={@detail.series.overview} class="media-synopsis">
               {@detail.series.overview}
             </p>
           </div>

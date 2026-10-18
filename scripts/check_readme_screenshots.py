@@ -9,6 +9,9 @@ MAX_CHANNEL_DELTA = 64
 RASTER_LIMITS = {
     "music-player.png": (MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA, 0, 0, 0),
     "music.png": (16, 1, 0, 0, 0),
+    "series-detail.png": (16, 1, 0, 0, 0),
+    "season.png": (16, 1, 0, 0, 0),
+    "movie-mobile.png": (128, 1, 0, 0, 0),
     "episode.png": (32, 2, 1, 16, 20),
     "movie.png": (0, 0, 1, 16, 20),
     "player.png": (0, 0, 1, 16, 20),

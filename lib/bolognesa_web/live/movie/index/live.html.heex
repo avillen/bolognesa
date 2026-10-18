@@ -7,44 +7,39 @@
   active_section={:movies}
 >
   <section id="movies-screen" class="mx-auto max-w-6xl space-y-8">
-    <header class="flex flex-wrap items-end justify-between gap-4">
+    <header class="media-catalog-heading">
       <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">
-          {gettext("Colección")}
-        </p>
-        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-ink">
+        <p class="media-eyebrow">{gettext("Tu biblioteca")}</p>
+        <h1 class="mt-3 text-4xl font-semibold text-ink">
           {@library_name || gettext("Películas")}
         </h1>
-        <p class="mt-3 text-sm text-muted">
-          {gettext("Obras identificadas de tus bibliotecas.")}
-        </p>
       </div>
-      <.link
-        navigate={~p"/movies/review"}
-        id="movies-review-link"
-        class="min-h-11 rounded-xl border border-accent/50 px-5 py-3 text-sm font-semibold text-accent-soft transition hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >{gettext("Revisar identificaciones")}</.link>
+      <.link navigate={~p"/movies/review"} id="movies-review-link" class="media-secondary-action">
+        <.icon name="hero-adjustments-horizontal" class="size-4" />
+        {gettext("Revisar identificaciones")}
+      </.link>
     </header>
-
-    <.form
-      for={@form}
-      id="movie-search-form"
-      phx-submit="search"
-      class="flex flex-col gap-3 sm:flex-row"
-    >
-      <.input
-        field={@form[:query]}
-        id="movie-search-query"
-        type="search"
-        label={gettext("Buscar película")}
-        class="w-full rounded-xl border border-border-strong bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
-      />
-      <button
-        id="movie-search-button"
-        type="submit"
-        class="min-h-12 rounded-xl bg-accent px-6 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >{gettext("Buscar")}</button>
-    </.form>
+    <div class="media-toolbar">
+      <.form for={@form} id="movie-search-form" phx-submit="search" class="media-search-form">
+        <div class="media-search-field">
+          <.icon name="hero-magnifying-glass" class="size-5 text-muted" />
+          <.input
+            field={@form[:query]}
+            id="movie-search-query"
+            type="search"
+            label={gettext("Buscar película")}
+            placeholder={gettext("Buscar por título…")}
+            class="media-search-input"
+          />
+        </div>
+        <button id="movie-search-button" type="submit" class="media-primary-action">{gettext(
+          "Buscar"
+        )}</button>
+      </.form>
+      <p :if={!@loading? && !@error} id="movies-count" class="media-result-count">
+        {ngettext("%{count} película", "%{count} películas", @total)}
+      </p>
+    </div>
 
     <p :if={@loading?} id="movies-loading" role="status" class="text-sm text-muted">
       {gettext("Cargando películas…")}
@@ -57,23 +52,22 @@
     >
       {@error}
     </p>
-    <p :if={!@loading? && !@error} id="movies-count" class="text-sm text-muted">
-      {ngettext("%{count} película", "%{count} películas", @total)}
-    </p>
-
-    <div id="movies-list" phx-update="stream" class="poster-grid">
+    <div id="movies-list" phx-update="stream" class="media-poster-grid">
       <div
         :for={{dom_id, movie} <- @streams.movies}
         id={dom_id}
-        class="poster-card group"
+        class="poster-card"
       >
         <.link
           navigate={~p"/movies/#{movie.id}?#{@library_params}"}
           id={"movie-link-#{movie.id}"}
-          class="block h-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          class="media-catalog-link"
         >
-          <div class="poster-art relative flex aspect-[2/3] items-center justify-center overflow-hidden rounded-lg bg-raised text-4xl font-bold text-accent-soft/50">
-            <span aria-hidden="true">{String.first(movie.title)}</span>
+          <div class="poster-art media-poster-art">
+            <div class="media-art-fallback" aria-hidden="true">
+              <.icon name="hero-film" class="size-9" />
+              <span>{movie.title}</span>
+            </div>
             <img
               :if={movie.poster_path}
               id={"movie-poster-#{movie.id}"}
@@ -84,11 +78,12 @@
               loading="lazy"
               class="absolute inset-0 size-full object-cover"
             />
+            <span class="media-year">{movie.year || gettext("Año desconocido")}</span>
           </div>
-          <div class="py-3">
-            <h2 class="text-sm font-semibold text-ink">{movie.title}</h2>
+          <div class="pt-4">
+            <h2 class="text-base font-semibold leading-snug text-ink">{movie.title}</h2>
             <p class="mt-1 text-xs text-muted">
-              {movie.year || gettext("Año desconocido")} · {ngettext(
+              {ngettext(
                 "%{count} versión",
                 "%{count} versiones",
                 movie.version_count
@@ -114,7 +109,7 @@
       :if={@total > 24}
       id="movies-pagination"
       aria-label={gettext("Páginas del catálogo")}
-      class="flex items-center justify-center gap-4"
+      class="media-pagination items-center"
     >
       <.link
         :if={@page > 1}

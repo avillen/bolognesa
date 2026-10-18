@@ -25,17 +25,18 @@ class ScreenshotCheckTest(unittest.TestCase):
                 (actual / name).write_bytes(png(2, 2, [101] + [100] * 11))
             self.assertEqual(checker.differences(expected, actual), ['home.png'])
 
-    def test_music_list_allows_only_tiny_navigation_antialiasing(self):
-        with tempfile.TemporaryDirectory() as folder:
-            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
-            expected.mkdir(); actual.mkdir()
-            (expected / 'music.png').write_bytes(png(8, 8, [100] * 192))
-            (actual / 'music.png').write_bytes(png(8, 8, [101] + [100] * 191))
-            self.assertEqual(checker.differences(expected, actual), [])
-            (actual / 'music.png').write_bytes(png(8, 8, [102] + [100] * 191))
-            self.assertEqual(checker.differences(expected, actual), ['music.png'])
-            (actual / 'music.png').write_bytes(png(8, 8, [101] * 192))
-            self.assertEqual(checker.differences(expected, actual), ['music.png'])
+    def test_catalog_surfaces_allow_only_tiny_antialiasing(self):
+        for name in ['music.png', 'series-detail.png', 'season.png', 'movie-mobile.png']:
+            with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:
+                expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
+                expected.mkdir(); actual.mkdir()
+                (expected / name).write_bytes(png(16, 16, [100] * 768))
+                (actual / name).write_bytes(png(16, 16, [101] + [100] * 767))
+                self.assertEqual(checker.differences(expected, actual), [])
+                (actual / name).write_bytes(png(16, 16, [102] + [100] * 767))
+                self.assertEqual(checker.differences(expected, actual), [name])
+                (actual / name).write_bytes(png(16, 16, [101] * 768))
+                self.assertEqual(checker.differences(expected, actual), [name])
 
     def test_episode_play_icon_allows_bounded_antialiasing(self):
         with tempfile.TemporaryDirectory() as folder:
