@@ -2,7 +2,7 @@ defmodule Bolognesa.Movies.Infrastructure.Providers.TmdbMovieProvider do
   @moduledoc "TMDb v3 adapter using bounded Req requests."
   @behaviour Bolognesa.Movies.Application.Ports.Providers.MovieProvider
 
-  alias Bolognesa.Movies.Infrastructure.Providers.TmdbClient
+  alias Bolognesa.Infrastructure.Providers.TmdbClient
   alias Bolognesa.Movies.Infrastructure.Providers.TmdbMovieResponse
 
   @impl true

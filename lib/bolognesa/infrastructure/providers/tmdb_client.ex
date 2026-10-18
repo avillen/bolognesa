@@ -1,10 +1,17 @@
-defmodule Bolognesa.Movies.Infrastructure.Providers.TmdbClient do
+defmodule Bolognesa.Infrastructure.Providers.TmdbClient do
   @moduledoc "Bounded authenticated TMDb HTTP transport."
-  alias Bolognesa.Movies.Application.Ports.Providers.MovieProvider
   @base_url "https://api.themoviedb.org/3"
   @max_bytes 1_048_576
 
-  @spec get(binary(), keyword(), keyword()) :: {:ok, binary()} | {:error, MovieProvider.reason()}
+  @type reason ::
+          :not_configured
+          | :rate_limited
+          | :provider_unavailable
+          | :unauthorized
+          | :invalid_response
+          | :not_found
+
+  @spec get(String.t(), keyword(), keyword()) :: {:ok, binary()} | {:error, reason()}
   def get(path, params, opts) do
     token = Keyword.get(opts, :token, Application.get_env(:bolognesa, :tmdb_read_token))
 

@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-17.
+Last reviewed: 2026-10-18.
 
 ## Implemented behavior
 
@@ -17,6 +17,8 @@ The account and access context is `Bolognesa.Accounts`, including its `Authentic
 Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`, or explicit error tuples. `Accounts.fetch_authenticated_admin/0` and `Release.fetch_authenticated_admin/0` replace `admin_actor/0`; the release console still binds `admin` to the actor or `nil` when setup is open. Authentication preserves its `:invalid_credentials` and `:unauthenticated` failure contracts.
 
 ## Recorded verification
+
+- Movies and Series now use `Bolognesa.Infrastructure.Providers.TmdbClient` for the identical bounded HTTP transport, with a neutral error type. Provider ports, endpoints, payload mappers, and behavior remain context-owned. Existing focused provider coverage passed before extraction (10 tests); local `mix precommit` passed after extraction with compilation, formatting, Credo, and 521 tests passed, one skipped. This change has not been deployed.
 
 - Direct durable jobs: local `MIX_TEST_PARTITION=_direct_jobs mix precommit` passed compilation, Credo, and 521 tests with one skipped. All three disposable upgrade verifiers passed empty/seeded migrations, stable catalog/account/manual-association snapshots, migrated-worker execution, deleted-before-start recovery, refused reversal, and atomic rollback of earlier batches on inconsistent active request links. Coverage includes requests without matching events and existing same-token Music imports with invalid jobs/revisions; combined checks carry original-schema inspection/Music backlogs through the video upgrade. Real PostgreSQL notifications verify that supported Oban insertion wakes the queues. The historical content-context verifier passed two pinned rebuilds. Independent review's active-request validation finding was reproduced and fixed; no runtime correctness findings remained. Included in the deployed release described below.
 
