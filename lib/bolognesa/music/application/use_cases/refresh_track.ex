@@ -3,6 +3,7 @@ defmodule Bolognesa.Music.Application.UseCases.RefreshTrack do
   alias Bolognesa.Music.Application.Ports.Readers.ObservationsReader
   alias Bolognesa.Music.Application.Ports.Repositories.MusicRepository
   alias Bolognesa.Music.Domain.ValueObjects.TrackMetadata
+
   @type result :: :ok | {:error, :unavailable}
   @spec call(
           pos_integer(),

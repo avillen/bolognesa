@@ -42,6 +42,8 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Limits and next work
 
+The library repository query import follows the module-level convention, and the Music refresh worker defines its policy alias before the Oban macro that uses it. `MIX_TEST_PARTITION=_review_import_scope mix precommit` passed compilation, formatting, Credo, and 521 tests with one skipped. The initial default-database run failed an inspection recovery assertion that counted six completed jobs instead of two; the isolated run passed. The source of the extra jobs in the default database remains unconfirmed.
+
 The direct-job refactor is implemented, reviewed, published, and deployed. Representative-backlog maintenance duration remains unmeasured.
 
 The [content-context change](decisions/0019-content-context-boundaries.md) is implemented, reviewed, published, and deployed. The agreed whole-database rebuild removed accounts, library configuration, corrections, imported catalog data, and Oban jobs while preserving original media mounts. The installation is at initial setup: create the administrator, register the sources using their existing internal paths, then scan and identify again. The [deployment guide](../deploy/compose/README.md#one-time-content-context-rebuild) documents the rebuild and backup/restore contract.

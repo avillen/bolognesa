@@ -2,10 +2,13 @@ defmodule Bolognesa.Music.Infrastructure.Jobs.RefreshWorker do
   @moduledoc "Bounded durable music import with token and job ownership checks."
   alias Bolognesa.Music.Infrastructure.Jobs.ImportPolicy
   use Oban.Worker, queue: :music_imports, max_attempts: ImportPolicy.max_attempts()
+
   alias Bolognesa.Music
   alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository
+
   @impl Oban.Worker
   def timeout(_job), do: ImportPolicy.timeout_ms()
+
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"file_id" => id, "revision" => revision}} = job)
       when is_integer(id) and id > 0 and is_integer(revision) and revision > 0 do

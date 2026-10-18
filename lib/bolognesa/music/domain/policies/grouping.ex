@@ -1,6 +1,7 @@
 defmodule Bolognesa.Music.Domain.Policies.Grouping do
   @moduledoc "Conservative, library-local artist and album identities."
   @type album_key :: {pos_integer(), binary(), String.t(), String.t()}
+
   @spec artist_key(String.t() | nil) :: String.t() | nil
   def artist_key(nil), do: nil
 

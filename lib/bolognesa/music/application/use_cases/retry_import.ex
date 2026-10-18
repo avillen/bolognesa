@@ -3,10 +3,12 @@ defmodule Bolognesa.Music.Application.UseCases.RetryImport do
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Ports.Repositories.ImportRepository
+
   @type result :: :ok | {:error, :forbidden | :not_found | :unavailable}
   @spec call(AuthenticatedUser.t() | nil, pos_integer(), ImportRepository.adapter()) :: result()
   def call(actor, file_id, repository) do
-    with :ok <- Accounts.authorize(actor, :admin), true <- is_integer(file_id) and file_id > 0 do
+    with :ok <- Accounts.authorize(actor, :admin),
+         true <- is_integer(file_id) and file_id > 0 do
       repository.request_retry(file_id)
     else
       false -> {:error, :not_found}

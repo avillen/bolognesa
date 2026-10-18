@@ -2,6 +2,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository 
   @moduledoc false
   @behaviour Bolognesa.Libraries.Application.Ports.Repositories.LibraryRepository
 
+  import Ecto.Query
+
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository.LibraryMapper
   alias Bolognesa.Repo
@@ -32,7 +34,6 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository 
   end
 
   defp from_library_query do
-    import Ecto.Query
     from library in LibrarySchema, order_by: [asc: library.name, asc: library.id]
   end
 

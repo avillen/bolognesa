@@ -19,6 +19,7 @@ defmodule Bolognesa.Music.Infrastructure.Jobs.ImportReconciler do
 
   @impl true
   def handle_continue(:reconcile, state), do: {:noreply, run(state)}
+
   @impl true
   def handle_info(:reconcile, state), do: {:noreply, run(state)}
 

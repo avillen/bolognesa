@@ -4,6 +4,7 @@ defmodule Bolognesa.Music.Application.UseCases.ListTracks do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Dto.TrackPage
   alias Bolognesa.Music.Application.Ports.Readers.TracksReader
+
   @type error :: :forbidden | :invalid_query | :not_found | :unavailable
   @type result :: {:ok, TrackPage.t()} | {:error, error()}
   @spec call(
