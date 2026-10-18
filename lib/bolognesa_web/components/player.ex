@@ -13,6 +13,11 @@ defmodule BolognesaWeb.Player do
   attr :playback_error_reason, :string, default: nil
   @spec player(map()) :: Phoenix.LiveView.Rendered.t()
   def player(assigns) do
+    assigns =
+      assigns
+      |> assign(:video_id, video_id(assigns))
+      |> assign(:video_src, video_src(assigns))
+
     ~H"""
     <section
       :if={@selected_file_id}
@@ -32,48 +37,34 @@ defmodule BolognesaWeb.Player do
       >
         {gettext("Preparando reproducción…")}
       </p>
-      <video
-        :if={!@compatible_session && !@playback_error}
-        id={"#{@prefix}-video-#{@selected_file_id}"}
-        phx-hook="VideoError"
+      <div
+        :if={!@playback_error}
+        id={"#{@prefix}-video-frame"}
+        phx-hook="VideoPlayer"
+        data-video-id={@video_id}
         data-file-id={@selected_file_id}
-        autoplay
-        controls
-        playsinline
-        preload="metadata"
-        src={media_url(@kind, @entry_id, @selected_file_id)}
-        class="aspect-video w-full rounded-xl bg-black"
+        data-session-id={@compatible_session && @compatible_session.id}
+        data-paused-server={to_string(@compatible_paused?)}
+        data-autoplay={to_string(!@compatible_session || @compatible_autoplay?)}
+        data-offset-ms={@compatible_session && @compatible_session.offset_ms}
+        data-duration-ms={@compatible_session && @compatible_session.duration_ms}
+        data-src={@video_src}
+        class="bolognesa-video-frame"
       >
-        {gettext("Tu navegador no admite la reproducción de vídeo.")}
-      </video>
-      <div :if={@compatible_session && @compatible_ready?} class="space-y-3">
-        <video
-          id={"#{@prefix}-video-#{@compatible_session.id}"}
-          phx-hook="CompatibleVideo"
-          data-session-id={@compatible_session.id}
-          data-paused-server={to_string(@compatible_paused?)}
-          data-autoplay={to_string(@compatible_autoplay?)}
-          data-offset-ms={@compatible_session.offset_ms}
-          data-duration-ms={@compatible_session.duration_ms}
-          data-src={hls_url(@kind, @entry_id, @selected_file_id, @compatible_session.id)}
-          controls
-          playsinline
-          preload="auto"
-          class="aspect-video w-full rounded-xl bg-black"
-        >{gettext("Tu navegador no admite la reproducción de vídeo.")}</video>
-        <div :if={@compatible_session.duration_ms} class="space-y-1 text-sm text-ink">
-          <label for={"#{@prefix}-seek-#{@compatible_session.id}"}>{gettext("Posición")}</label>
-          <input
-            id={"#{@prefix}-seek-#{@compatible_session.id}"}
-            type="range"
-            min="0"
-            max={@compatible_session.duration_ms}
-            value={@compatible_session.offset_ms}
-            data-compatible-seek={@compatible_session.id}
-            aria-label={gettext("Ir a una posición del archivo")}
-            class="w-full accent-accent"
-          />
-          <span data-compatible-position={@compatible_session.id}></span>
+        <div id={"#{@prefix}-video-ui"} phx-update="ignore">
+          <media-i18n lang={Gettext.get_locale(BolognesaWeb.Gettext)}>
+            <video
+              id={@video_id}
+              autoplay={!@compatible_session}
+              controls
+              playsinline
+              preload="metadata"
+              src={!@compatible_session && @video_src}
+              class="aspect-video w-full bg-black"
+            >
+              {gettext("Tu navegador no admite la reproducción de vídeo.")}
+            </video>
+          </media-i18n>
         </div>
       </div>
     </section>
@@ -88,6 +79,27 @@ defmodule BolognesaWeb.Player do
     </p>
     """
   end
+
+  defp video_id(%{compatible_session: %{id: id}, prefix: prefix}),
+    do: "#{prefix}-video-#{id}"
+
+  defp video_id(assigns), do: "#{assigns.prefix}-video-#{assigns.selected_file_id}"
+
+  defp video_src(%{selected_file_id: nil}), do: nil
+
+  defp video_src(%{compatible_session: nil} = assigns),
+    do: media_url(assigns.kind, assigns.entry_id, assigns.selected_file_id)
+
+  defp video_src(%{compatible_ready?: true} = assigns),
+    do:
+      hls_url(
+        assigns.kind,
+        assigns.entry_id,
+        assigns.selected_file_id,
+        assigns.compatible_session.id
+      )
+
+  defp video_src(_assigns), do: nil
 
   defp media_url(:movie, id, file), do: ~p"/movies/#{id}/media/#{file}"
   defp media_url(:episode, id, file), do: ~p"/episodes/#{id}/media/#{file}"

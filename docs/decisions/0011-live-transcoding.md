@@ -1,6 +1,6 @@
 # 0011. On-demand compatible playback
 
-Status: Implemented and deployed. Performance and playback quality must be verified on the target server and clients.
+Status: HLS delivery implemented and deployed; Video.js controls implemented locally. Performance and playback quality must be verified on the target server and clients.
 
 ## Context
 
@@ -13,6 +13,23 @@ Use technical inspection to choose direct delivery, audio conversion with H.264 
 FFmpeg produces HLS MPEG-TS in a private temporary directory. A supervised `GenServer` owns the single allowed FFmpeg process. Sessions expire after five minutes of inactivity, cap fragments at 512 MiB, and clean up their temporary files. The original library remains mounted read-only; deployment scratch space uses tmpfs.
 
 Authenticate every playlist and segment request and recheck actor, catalog/file relationship, revision, and source availability. Only application-generated segment names are accepted. The browser uses hls.js with native HLS as a fallback. Pause suspends FFmpeg; seeking restarts it at the requested position.
+
+## Player controls
+
+Movies and episodes use the vendored HTML build of Video.js 10.1.0 for controls, with
+hls.js retained for compatible delivery. A time/buffer feature adapter presents the
+original file's duration, current position, buffered ranges, and full seekable range.
+Committed compatible seeks use the existing server event to replace FFmpeg's session;
+drag previews do not start conversions. The native video remains responsible for decoding.
+
+LiveView owns source/session attributes on the hook's outer frame. JavaScript owns an
+ignored inner subtree and keeps the player and skin mounted across session changes,
+including the preparing state. Mount the player before connecting its skin so controls
+receive the player context. Native controls remain the initial HTML fallback.
+
+The pinned dependency is rebuilt with `npm ci` and `npm run vendor-videojs`. Its bundled
+module and license notices are checked in under `assets/vendor/`, so release builds and
+browsers do not require npm or a CDN. English and Spanish controls are bundled locally.
 
 ## Consequences
 

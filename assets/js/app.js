@@ -26,14 +26,13 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/bolognesa"
 import topbar from "../vendor/topbar"
 import ImageFallback from "./hooks/image_fallback"
-import VideoError from "./hooks/video_error"
-import CompatibleVideo from "./hooks/compatible_video"
+import VideoPlayer from "./hooks/video_player"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {AudioError, ...colocatedHooks, ImageFallback, VideoError, CompatibleVideo},
+  hooks: {AudioError, ...colocatedHooks, ImageFallback, VideoPlayer},
 })
 
 // Show progress bar on live navigation and form submits

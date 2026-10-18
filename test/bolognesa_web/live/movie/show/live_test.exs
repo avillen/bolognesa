@@ -165,7 +165,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
       assert has_element?(
                view,
-               "#movie-player video[autoplay][controls][src='/movies/#{movie.id}/media/#{first.id}']"
+               "#movie-video-frame[data-autoplay='true'][data-src='/movies/#{movie.id}/media/#{first.id}']"
              )
 
       render_click(element(view, "#movie-play-#{second.id}"))
@@ -173,10 +173,10 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
       assert has_element?(
                view,
-               "#movie-player video[src='/movies/#{movie.id}/media/#{second.id}']"
+               "#movie-video-frame[data-src='/movies/#{movie.id}/media/#{second.id}']"
              )
 
-      refute has_element?(view, "#movie-video-#{first.id}")
+      refute has_element?(view, "#movie-video-frame[data-video-id='movie-video-#{first.id}']")
       refute has_element?(view, "#movie-playback-error")
       refute has_element?(view, "#movie-playback-preparing")
     end
@@ -186,7 +186,11 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       {:ok, view, _} = live(ctx.conn, ~p"/movies/#{ctx.movie.id}")
       render_async(view)
 
-      assert has_element?(view, "#movie-video-#{ctx.second.id}")
+      assert has_element?(
+               view,
+               "#movie-video-frame[data-video-id='movie-video-#{ctx.second.id}']"
+             )
+
       refute has_element?(view, "#movie-playback-error")
     end
 
@@ -208,7 +212,10 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       session = preparing_session(view)
       make_ready(view, session)
 
-      assert has_element?(view, "#movie-video-#{session.id}[data-autoplay='true'][controls]")
+      assert has_element?(
+               view,
+               "#movie-video-frame[data-video-id='movie-video-#{session.id}'][data-autoplay='true']"
+             )
     end
 
     test "automatically converts a browser failure at its position without duplicate starts",
@@ -233,7 +240,12 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       session = start_inspected_version(ctx)
       render_click(element(ctx.view, "#movie-play-#{ctx.first.id}"))
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
-      assert has_element?(ctx.view, "#movie-video-#{ctx.first.id}")
+
+      assert has_element?(
+               ctx.view,
+               "#movie-video-frame[data-video-id='movie-video-#{ctx.first.id}']"
+             )
+
       refute has_element?(ctx.view, "#movie-playback-preparing")
     end
 
@@ -241,10 +253,20 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       session = start_inspected_version(ctx)
       assert session.profile == :audio
       assert has_element?(ctx.view, "#movie-playback-preparing", "Preparando reproducción")
-      refute has_element?(ctx.view, "#movie-player video[src]")
+      refute has_element?(ctx.view, "#movie-video-frame[data-src]")
       make_ready(ctx.view, session)
-      assert has_element?(ctx.view, "#movie-video-#{session.id}[data-src$='/index.m3u8']")
-      assert has_element?(ctx.view, "#movie-seek-#{session.id}")
+
+      assert has_element?(
+               ctx.view,
+               "#movie-video-frame[data-video-id='movie-video-#{session.id}'][data-src$='/index.m3u8']"
+             )
+
+      assert has_element?(
+               ctx.view,
+               "#movie-video-frame[phx-hook='VideoPlayer'] #movie-video-ui[phx-update='ignore'] video"
+             )
+
+      refute has_element?(ctx.view, "input[data-compatible-seek]")
       refute has_element?(ctx.view, "#movie-playback-preparing")
     end
 
@@ -253,21 +275,32 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       make_ready(ctx.view, session)
       render_hook(ctx.view, "playback_pause", %{"session_id" => session.id})
       assert {:ok, _} = TranscodeManager.lookup(session.id)
-      assert has_element?(ctx.view, "#movie-video-#{session.id}[data-paused-server='true']")
+
+      assert has_element?(
+               ctx.view,
+               "#movie-video-frame[data-video-id='movie-video-#{session.id}'][data-paused-server='true']"
+             )
 
       render_hook(ctx.view, "playback_resume", %{
         "session_id" => session.id,
         "position_ms" => "1000"
       })
 
-      assert has_element?(ctx.view, "#movie-video-#{session.id}[data-paused-server='false']")
+      assert has_element?(
+               ctx.view,
+               "#movie-video-frame[data-video-id='movie-video-#{session.id}'][data-paused-server='false']"
+             )
     end
 
     test "seeking replaces the compatible session and rejects malformed positions", ctx do
       session = start_inspected_version(ctx)
       make_ready(ctx.view, session)
       render_hook(ctx.view, "playback_seek", %{"session_id" => session.id, "position_ms" => 1000})
-      assert has_element?(ctx.view, "#movie-video-#{session.id}")
+
+      assert has_element?(
+               ctx.view,
+               "#movie-video-frame[data-video-id='movie-video-#{session.id}']"
+             )
 
       render_hook(ctx.view, "playback_seek", %{
         "session_id" => session.id,
@@ -281,7 +314,11 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       assert next.profile == :audio
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
       make_ready(ctx.view, next)
-      assert has_element?(ctx.view, "#movie-video-#{next.id}[data-autoplay='true']")
+
+      assert has_element?(
+               ctx.view,
+               "#movie-video-frame[data-video-id='movie-video-#{next.id}'][data-autoplay='true']"
+             )
     end
 
     test "conversion failure stays visible until an explicit retry", ctx do
@@ -312,7 +349,12 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       refute has_element?(view, "#movie-playback-preparing")
       refute has_element?(view, "#movie-player video")
       render_click(element(view, "#movie-play-#{ctx.second.id}"))
-      assert has_element?(view, "#movie-video-#{ctx.second.id}")
+
+      assert has_element?(
+               view,
+               "#movie-video-frame[data-video-id='movie-video-#{ctx.second.id}']"
+             )
+
       refute has_element?(view, "#movie-playback-error")
     end
 

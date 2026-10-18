@@ -24,21 +24,48 @@ try {
     await page.evaluate(async (artwork) => {
       window.screenshotVideoFrames = [];
       for (const video of document.querySelectorAll("video")) {
+        // MediaRecorder omits a duration header. Normalize its known six-second
+        // timeline for captures while keeping the real Video.js controls mounted.
+        video.pause();
+        const descriptors = Object.fromEntries(["duration", "seekable", "buffered"]
+          .map(key => [key, Object.getOwnPropertyDescriptor(video, key)]));
+        const ranges = {length: 1, start: () => 0, end: () => 6};
+        Object.defineProperties(video, {
+          duration: {configurable: true, get: () => 6},
+          seekable: {configurable: true, get: () => ranges},
+          buffered: {configurable: true, get: () => ranges},
+        });
+        video.currentTime = 2;
+        for (const event of ["durationchange", "progress", "timeupdate"]) video.dispatchEvent(new Event(event));
         const image = new Image();
         image.src = `data:image/svg+xml,${encodeURIComponent(artwork)}`;
         image.width = video.getBoundingClientRect().width;
         image.height = video.getBoundingClientRect().height;
         image.style.cssText = "display:block;max-width:100%;border-radius:inherit;";
         await image.decode();
-        video.replaceWith(image);
-        window.screenshotVideoFrames.push({video, image});
+        const container = video.closest("video-skin")?.shadowRoot.querySelector("media-container");
+        if (!container) throw new Error("Video.js controls did not mount.");
+        image.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:0;";
+        container.append(image);
+        window.screenshotVideoFrames.push({video, image, descriptors});
       }
     }, '<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720"><rect width="1440" height="720" fill="#10191e"/><circle cx="1050" cy="260" r="220" fill="#e47755" opacity=".42"/><path d="m0 530 260-210 190 142 210-232 230 302 180-165 370 260v93H0Z" fill="#283239"/><path d="m0 620 350-190 220 168 260-210 260 170 190-132 160 112v182H0Z" fill="#171f24"/><text x="110" y="565" fill="#f4f1ed" font-family="Arial,sans-serif" font-size="55" font-weight="700">AFTER THE SIGNAL</text></svg>');
     try {
+      // Settle metadata-availability fades before capturing the fixed timeline.
+      await page.waitForFunction(() => Array.from(document.querySelectorAll("video-skin")).every(skin =>
+        Array.from(skin.shadowRoot.querySelectorAll("media-time")).every(time => getComputedStyle(time).opacity === "1")
+      ));
       await capture();
     } finally {
       await page.evaluate(() => {
-        for (const {video, image} of window.screenshotVideoFrames) image.replaceWith(video);
+        for (const {video, image, descriptors} of window.screenshotVideoFrames) {
+          image.remove();
+          for (const [key, descriptor] of Object.entries(descriptors)) {
+            if (descriptor) Object.defineProperty(video, key, descriptor);
+            else delete video[key];
+          }
+          video.dispatchEvent(new Event("durationchange"));
+        }
         delete window.screenshotVideoFrames;
       });
     }
@@ -241,6 +268,17 @@ try {
       await seeked;
       element.pause();
     });
+    const playButton = page.locator("#movie-player media-play-button");
+    await playButton.click();
+    await page.waitForFunction(() => !document.querySelector("#movie-player video").paused);
+    await playButton.click();
+    await page.waitForFunction(() => document.querySelector("#movie-player video").paused);
+    const timeline = page.locator("#movie-player media-time-slider");
+    await timeline.focus();
+    await page.keyboard.press("Home");
+    await page.keyboard.press("ArrowRight");
+    await page.waitForFunction(() => document.querySelector("#movie-player video").currentTime > 0);
+    await video.evaluate(element => { element.currentTime = 2; });
     await page.waitForTimeout(500);
     await normalizeDemoDetails();
     await page.evaluate(() => document.activeElement?.blur());

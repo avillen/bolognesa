@@ -106,3 +106,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .poster-art, .app-nav-link { transition: none; }
   .poster-card:hover .poster-art { transform: none; }
 }
+
+/* Video.js owns the controls inside its shadow root; the frame survives HLS session changes. */
+.bolognesa-video-frame { overflow: hidden; border-radius: 12px; background: #000; }
+.bolognesa-video-frame bolognesa-video-player { display: contents; }
+.bolognesa-video-frame video-skin { display: block; --media-accent-color: var(--color-accent); }

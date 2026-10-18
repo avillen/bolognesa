@@ -17,7 +17,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
 
     assert has_element?(
              view,
-             "#episode-video-#{ctx.media_file.id}[autoplay][controls][src='/episodes/#{ctx.episode_id}/media/#{ctx.media_file.id}']"
+             "#episode-video-frame[data-video-id='episode-video-#{ctx.media_file.id}'][data-autoplay='true'][data-src='/episodes/#{ctx.episode_id}/media/#{ctx.media_file.id}']"
            )
 
     executable = Path.join(ctx.directory, "fake-ffmpeg")
@@ -40,7 +40,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     })
 
     assert has_element?(view, "#episode-playback-preparing[role='status']")
-    refute has_element?(view, "#episode-player video")
+    refute has_element?(view, "#episode-video-frame[data-src]")
     refute has_element?(view, "#episode-playback-error")
   end
 
@@ -54,7 +54,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
       assert response(conn, 206) == "cde"
     end
 
-    conn = get(ctx.conn, "/episodes/#{ctx.series_id}/media/#{ctx.media_file.id}")
+    conn = get(ctx.conn, "/episodes/#{Enum.max(ctx.episode_ids) + 1}/media/#{ctx.media_file.id}")
     assert response(conn, 404) == ""
 
     conn =
@@ -68,9 +68,13 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
 
-    assert has_element?(view, "#episode-video-#{ctx.media_file.id}")
+    assert has_element?(
+             view,
+             "#episode-video-frame[data-video-id='episode-video-#{ctx.media_file.id}']"
+           )
+
     view |> element("#episode-play-#{second.id}") |> render_click()
-    assert has_element?(view, "#episode-video-#{second.id}")
+    assert has_element?(view, "#episode-video-frame[data-video-id='episode-video-#{second.id}']")
   end
 
   test "skips unavailable versions when loading the episode", ctx do
@@ -79,7 +83,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
 
-    assert has_element?(view, "#episode-video-#{second.id}")
+    assert has_element?(view, "#episode-video-frame[data-video-id='episode-video-#{second.id}']")
     refute has_element?(view, "#episode-playback-error")
   end
 

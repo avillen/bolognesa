@@ -1,9 +1,13 @@
 {
   "scripts": {
     "screenshots": "make screenshots",
-    "capture-screenshots": "node scripts/capture_readme.mjs"
+    "capture-screenshots": "node scripts/capture_readme.mjs",
+    "vendor-videojs": "node scripts/vendor_videojs.mjs",
+    "test-video-player": "node scripts/verify_video_player.mjs"
   },
   "devDependencies": {
+    "@videojs/html": "10.1.0",
+    "esbuild": "0.25.4",
     "playwright": "^1.55.1"
   }
 }
