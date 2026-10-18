@@ -278,7 +278,11 @@ try {
     await page.keyboard.press("Home");
     await page.keyboard.press("ArrowRight");
     await page.waitForFunction(() => document.querySelector("#movie-player video").currentTime > 0);
-    await video.evaluate(element => { element.currentTime = 2; });
+    await video.evaluate(async element => {
+      const seeked = new Promise(resolve => element.addEventListener("seeked", resolve, {once: true}));
+      element.currentTime = 2;
+      await seeked;
+    });
     await page.waitForTimeout(500);
     await normalizeDemoDetails();
     await page.evaluate(() => document.activeElement?.blur());
@@ -369,6 +373,34 @@ try {
     await capture("series-detail.png", `/series/${ids.series}?library_id=${ids.series_library}`);
     await capture("season.png", `/series/seasons/${ids.season}?library_id=${ids.series_library}`);
     await capture("episode.png", `/episodes/${ids.episode}?library_id=${ids.series_library}`);
+
+    // Exercise the series journey at a narrow viewport, using actual LiveView navigation.
+    await page.setViewportSize({width: 390, height: 844});
+    const assertSeriesFits = async () => {
+      if (new URL(page.url()).searchParams.get("library_id") !== String(ids.series_library)) {
+        throw new Error("Mobile series navigation lost its library context.");
+      }
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+      if (overflow) throw new Error("Series layout overflows the mobile viewport.");
+    };
+    await capture("series-mobile.png", `/series?library_id=${ids.series_library}`, "#series-screen h1", "#series-loading");
+    await assertSeriesFits();
+    await page.locator("#series-list a").first().click();
+    await page.locator("#series-title").waitFor();
+    await waitForStablePage();
+    await assertSeriesFits();
+    await capture("series-detail-mobile.png", `/series/${ids.series}?library_id=${ids.series_library}`, "#series-title");
+    await page.locator("#season-list a").first().click();
+    await page.locator("#season-title").waitFor();
+    await page.locator("#episodes-loading").waitFor({state: "detached"});
+    await assertSeriesFits();
+    await capture("season-mobile.png", `/series/seasons/${ids.season}?library_id=${ids.series_library}`, "#season-title", "#episodes-loading");
+    await page.locator("#episode-list a").first().click();
+    await page.locator("#episode-title").waitFor();
+    await assertSeriesFits();
+    await page.setViewportSize({width: 1440, height: 1000});
+    console.log("Verified mobile series layouts and catalog/series/season/episode navigation with library context.");
+
     await capture("settings.png", "/settings");
     await capture("about.png", "/about");
   }

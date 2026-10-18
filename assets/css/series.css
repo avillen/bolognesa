@@ -1,0 +1,73 @@
+/* Series: artwork-led browsing within the shared charcoal and coral palette. */
+.series-catalog-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
+.series-eyebrow { color: var(--color-accent-soft); font-size: 11px; font-weight: 650; letter-spacing: .16em; text-transform: uppercase; }
+.series-secondary-action, .series-primary-action { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 11px 16px; font-size: 13px; font-weight: 600; border-radius: 7px; }
+.series-secondary-action { border: 1px solid var(--color-border); color: var(--color-muted); }
+.series-secondary-action:hover { border-color: var(--color-border-strong); color: var(--color-ink); background: var(--color-surface); }
+.series-primary-action { background: var(--color-accent); color: var(--color-canvas); }
+.series-primary-action:hover { background: var(--color-accent-hover); }
+.series-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+.series-search-form { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 540px; }
+.series-search-field { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding-left: 14px; border: 1px solid var(--color-border-strong); border-radius: 7px; background: var(--color-surface); }
+.series-search-field > .size-5 { flex-shrink: 0; }
+.series-search-field > div { flex: 1; min-width: 0; margin: 0; }
+.series-search-field label > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.series-search-input { width: 100%; min-height: 44px; padding: 10px 10px 10px 0; background: transparent; color: var(--color-ink); font-size: 14px; }
+.series-search-input::placeholder { color: var(--color-muted); opacity: 1; }
+.series-search-field:focus-within { outline: 2px solid var(--color-accent-soft); outline-offset: 3px; }
+.series-search-input:focus-visible { outline: none; }
+.series-result-count { color: var(--color-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.series-poster-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 18px; }
+.series-catalog-link { display: block; border-radius: 9px; }
+.series-catalog-link:hover h2 { color: var(--color-accent-soft); }
+.series-poster-art { position: relative; display: flex; aspect-ratio: 2 / 3; align-items: center; justify-content: center; overflow: hidden; border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-raised); }
+.series-art-fallback { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; width: 100%; height: 100%; padding: 20px; color: var(--color-muted); background: linear-gradient(145deg, var(--color-raised), var(--color-surface)); }
+.series-art-fallback span { text-align: center; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.series-year { position: absolute; bottom: 12px; left: 12px; max-width: calc(100% - 24px); padding: 4px 8px; border: 1px solid var(--color-border-strong); border-radius: 5px; background: var(--color-canvas); color: var(--color-ink); font-size: 11px; }
+.series-pagination { display: flex; justify-content: flex-end; gap: 24px; color: var(--color-accent-soft); }
+.series-pagination:has(a) { border-top: 1px solid var(--color-border); padding-top: 12px; }
+.series-back-link { display: inline-flex; min-height: 44px; align-items: center; color: var(--color-muted); font-size: 13px; }
+.series-back-link:hover { color: var(--color-accent-soft); }
+.series-detail-panel { overflow: hidden; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
+.series-hero { position: relative; isolation: isolate; background: var(--color-surface); }
+.series-backdrop { position: absolute; inset: 0; z-index: -2; overflow: hidden; }
+.series-backdrop img { object-position: center 25%; }
+.series-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, var(--color-surface) 2%, #171b1eeb 20%, #0e111387 100%), linear-gradient(90deg, #0e1113c9, transparent); }
+.series-hero-content { display: flex; align-items: flex-end; gap: 32px; min-height: 380px; padding: 100px 24px 32px; }
+.series-hero-poster { display: none; position: relative; flex-shrink: 0; width: 172px; aspect-ratio: 2 / 3; overflow: hidden; border: 1px solid var(--color-border-strong); border-radius: 8px; box-shadow: 0 16px 40px #0006; }
+.series-hero-copy { min-width: 0; }
+.series-hero-copy h1 { margin-top: 12px; font-size: clamp(32px, 4vw, 52px); line-height: 1.08; overflow-wrap: anywhere; }
+.series-synopsis { max-width: 640px; margin-top: 24px; font-size: 14px; line-height: 1.85; color: var(--color-muted); }
+.series-seasons-body { padding: 24px; }
+.series-seasons-body > h2 { padding-bottom: 20px; border-bottom: 1px solid var(--color-border); }
+.series-season-grid { display: grid; gap: 16px; margin-top: 24px; }
+.series-season-card { display: flex; align-items: center; gap: 18px; height: 100%; padding: 12px 18px 12px 12px; border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-canvas); }
+.series-season-card:hover { border-color: var(--color-border-strong); background: var(--color-raised); }
+.series-season-art { position: relative; display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 64px; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 5px; background: var(--color-raised); color: var(--color-accent-soft); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.series-season-heading { border-bottom: 1px solid var(--color-border); padding-bottom: 28px; }
+.series-episode-list { display: grid; gap: 12px; }
+.series-episode-card { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 16px; padding: 12px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); }
+.series-episode-card:hover { border-color: var(--color-border-strong); background: var(--color-raised); }
+.series-episode-art { position: relative; display: flex; align-items: center; justify-content: center; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 6px; background: var(--color-raised); }
+.series-episode-number { position: absolute; bottom: 6px; left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--color-canvas); color: var(--color-ink); font-size: 11px; font-variant-numeric: tabular-nums; }
+.series-episode-copy { min-width: 0; padding: 6px 0; overflow-wrap: anywhere; }
+.series-episode-overview { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; margin-top: 8px; color: var(--color-muted); font-size: 13px; line-height: 1.7; }
+.series-availability-dot { flex-shrink: 0; width: 6px; height: 6px; margin-top: 7px; border-radius: 50%; background: var(--color-muted); }
+.series-availability-dot.is-available { background: var(--color-accent-soft); }
+.series-episode-open { display: none; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--color-border); border-radius: 50%; color: var(--color-accent-soft); }
+@media (min-width: 640px) {
+  .series-poster-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 24px; }
+  .series-hero-poster { display: block; }
+  .series-hero-content { min-height: 430px; padding: 100px 32px 32px; }
+  .series-seasons-body { padding: 24px 32px 32px; }
+  .series-season-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .series-episode-card { grid-template-columns: 180px minmax(0, 1fr) 40px; gap: 24px; padding: 16px; }
+  .series-episode-art { aspect-ratio: 16 / 9; }
+  .series-episode-open { display: flex; }
+}
+@media (min-width: 1024px) {
+  .series-poster-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 1440px) {
+  .series-poster-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}

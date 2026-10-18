@@ -6,10 +6,10 @@
   current_scope={@current_scope}
   active_section={:series}
 >
-  <section class="mx-auto max-w-5xl space-y-7">
+  <section class="series-screen mx-auto max-w-6xl space-y-6">
     <.link
       navigate={~p"/series?#{@library_params}"}
-      class="inline-flex min-h-11 items-center text-accent-soft"
+      class="series-back-link"
     >{gettext("← Series")}</.link>
     <p :if={@loading?} id="episodes-loading" role="status" class="text-muted">
       {gettext("Cargando episodios…")}
@@ -17,10 +17,10 @@
     <p :if={@error} id="episodes-error" role="alert" class="text-red-200">
       {@error} <button phx-click="retry" class="min-h-11 px-4">{gettext("Reintentar")}</button>
     </p>
-    <div :if={@detail}>
+    <header :if={@detail} class="series-season-heading">
       <.link
         navigate={~p"/series/#{@detail.series.id}?#{@library_params}"}
-        class="inline-flex min-h-11 items-center text-accent-soft"
+        class="series-back-link"
       >{@detail.series.title}</.link>
       <h1 id="season-title" class="mt-3 text-3xl font-semibold text-ink">
         {if @detail.season.number == 0,
@@ -30,28 +30,65 @@
       <p :if={@total == 0} id="episodes-empty" class="mt-5 text-muted">
         {gettext("No hay episodios identificados.")}
       </p>
-    </div>
-    <div id="episode-list" phx-update="stream" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      <article
-        :for={{id, episode} <- @streams.episodes}
-        id={id}
-        class="rounded-xl border border-border bg-surface p-5"
-      >
+    </header>
+    <div id="episode-list" phx-update="stream" class="series-episode-list">
+      <article :for={{id, episode} <- @streams.episodes} id={id}>
         <.link
           navigate={~p"/episodes/#{episode.id}?#{@library_params}"}
-          class="inline-flex min-h-11 items-center font-semibold text-accent-soft"
-        >{episode.number}. {episode.title}</.link>
-        <p class="text-sm text-muted">
-          {ngettext(
-            "%{available} de %{count} versión disponible",
-            "%{available} de %{count} versiones disponibles",
-            episode.version_count,
-            available: episode.available_version_count
-          )}
-        </p>
+          class="series-episode-card"
+          aria-labelledby={"episode-label-#{episode.id}"}
+          aria-describedby={"episode-availability-#{episode.id}"}
+        >
+          <div class="series-episode-art">
+            <.icon name="hero-film" class="size-8 text-muted" />
+            <img
+              :if={episode.still_path}
+              id={"episode-still-#{episode.id}"}
+              phx-hook="ImageFallback"
+              phx-update="ignore"
+              src={"https://image.tmdb.org/t/p/w300#{episode.still_path}"}
+              alt=""
+              loading="lazy"
+              class="absolute inset-0 size-full object-cover"
+            />
+            <span class="series-episode-number">{String.pad_leading(
+              to_string(episode.number),
+              2,
+              "0"
+            )}</span>
+          </div>
+          <div class="series-episode-copy">
+            <h2 id={"episode-label-#{episode.id}"} class="font-semibold leading-snug text-ink">
+              {episode.number}. {episode.title}
+            </h2>
+            <p :if={episode.overview} class="series-episode-overview">{episode.overview}</p>
+            <p
+              id={"episode-availability-#{episode.id}"}
+              class="mt-3 flex items-start gap-2 text-xs leading-5 text-muted"
+            >
+              <span
+                class={[
+                  "series-availability-dot",
+                  episode.available_version_count > 0 && "is-available"
+                ]}
+                aria-hidden="true"
+              ></span>
+              {ngettext(
+                "%{available} de %{count} versión disponible",
+                "%{available} de %{count} versiones disponibles",
+                episode.version_count,
+                available: episode.available_version_count
+              )}
+            </p>
+          </div>
+          <span class="series-episode-open" aria-hidden="true"><.icon
+            name="hero-chevron-right"
+            class="size-5"
+          /></span>
+        </.link>
       </article>
     </div>
-    <nav aria-label={gettext("Páginas de episodios")} class="flex gap-5 text-accent-soft">
+    <nav aria-label={gettext("Páginas de episodios")} class="series-pagination">
       <.link
         :if={@page > 1}
         patch={

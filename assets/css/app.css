@@ -1,4 +1,5 @@
 @import "tailwindcss" source(none);
+@import "./series.css";
 @import "phoenix-colocated/bolognesa/colocated.css";
 @source "../css";
 @source "../js";

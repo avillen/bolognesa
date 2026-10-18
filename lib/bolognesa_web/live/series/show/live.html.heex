@@ -6,10 +6,10 @@
   current_scope={@current_scope}
   active_section={:series}
 >
-  <section class="mx-auto max-w-5xl space-y-7">
+  <section class="series-screen mx-auto max-w-6xl space-y-6">
     <.link
       navigate={~p"/series?#{@library_params}"}
-      class="inline-flex min-h-11 items-center text-accent-soft"
+      class="series-back-link"
     >{gettext("← Todas las series")}</.link>
     <p :if={@loading?} id="series-loading" role="status" class="text-muted">
       {gettext("Cargando serie…")}
@@ -17,9 +17,9 @@
     <p :if={@error} id="series-error" role="alert" class="text-red-200">
       {@error} <button phx-click="retry" class="min-h-11 px-4">{gettext("Reintentar")}</button>
     </p>
-    <div :if={@detail} class="detail-panel">
-      <div class="detail-hero">
-        <div :if={@detail.series.backdrop_path} class="detail-backdrop">
+    <div :if={@detail} class="series-detail-panel">
+      <div class="series-hero">
+        <div :if={@detail.series.backdrop_path} class="series-backdrop">
           <img
             id={"series-backdrop-#{@detail.series.id}"}
             phx-hook="ImageFallback"
@@ -29,44 +29,79 @@
             class="size-full object-cover"
           />
         </div>
-        <div class="detail-heading">
-          <div class="detail-copy">
+        <div class="series-hero-content">
+          <div class="series-hero-poster">
+            <div class="series-art-fallback" aria-hidden="true">
+              <.icon name="hero-tv" class="size-10" />
+            </div>
+            <img
+              :if={@detail.series.poster_path}
+              id={"series-detail-poster-#{@detail.series.id}"}
+              phx-hook="ImageFallback"
+              phx-update="ignore"
+              src={"https://image.tmdb.org/t/p/w342#{@detail.series.poster_path}"}
+              alt={gettext("Cartel de %{value0}", value0: @detail.series.title)}
+              class="absolute inset-0 size-full object-cover"
+            />
+          </div>
+          <div class="series-hero-copy">
+            <p class="series-eyebrow">{gettext("Series")}</p>
             <h1 id="series-title" class="text-4xl font-semibold text-ink">
               {@detail.series.title}
             </h1>
-            <p class="mt-3 text-muted">{@detail.series.year || gettext("Año desconocido")}</p>
-            <p :if={@detail.series.overview} class="mt-6 max-w-3xl leading-7 text-muted">
+            <p class="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted">
+              <span>{@detail.series.year || gettext("Año desconocido")}</span>
+              <span aria-hidden="true" class="text-accent">/</span>
+              <span>{ngettext("%{count} temporada", "%{count} temporadas", @total)}</span>
+            </p>
+            <p :if={@detail.series.overview} class="series-synopsis">
               {@detail.series.overview}
             </p>
           </div>
         </div>
       </div>
-      <div class="detail-body">
-        <h2 class="mt-8 text-xl font-semibold text-ink">
+      <div class="series-seasons-body">
+        <h2 class="text-xl font-semibold text-ink">
           {gettext("Temporadas en tu biblioteca")}
         </h2>
         <p :if={@total == 0} id="seasons-empty" class="mt-4 text-muted">
           {gettext("No hay temporadas identificadas.")}
         </p>
-        <div id="season-list" phx-update="stream" class="mt-4 grid gap-4 sm:grid-cols-2">
-          <article
-            :for={{id, season} <- @streams.seasons}
-            id={id}
-            class="rounded-xl border border-border p-5"
-          >
+        <div id="season-list" phx-update="stream" class="series-season-grid">
+          <article :for={{id, season} <- @streams.seasons} id={id}>
             <.link
               navigate={~p"/series/seasons/#{season.id}?#{@library_params}"}
-              class="inline-flex min-h-11 items-center text-lg font-semibold text-accent-soft"
-            >{if season.number == 0,
-              do: gettext("Especiales"),
-              else: gettext("Temporada %{value0}", value0: season.number)}</.link>
-            <p class="text-sm text-muted">
-              {ngettext(
-                "%{count} episodio identificado",
-                "%{count} episodios identificados",
-                season.episode_count
-              )}
-            </p>
+              class="series-season-card"
+            >
+              <div class="series-season-art">
+                <span aria-hidden="true">{String.pad_leading(to_string(season.number), 2, "0")}</span>
+                <img
+                  :if={season.poster_path}
+                  id={"season-poster-#{season.id}"}
+                  phx-hook="ImageFallback"
+                  phx-update="ignore"
+                  src={"https://image.tmdb.org/t/p/w185#{season.poster_path}"}
+                  alt=""
+                  loading="lazy"
+                  class="absolute inset-0 size-full object-cover"
+                />
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-base font-semibold text-ink">
+                  {if season.number == 0,
+                    do: gettext("Especiales"),
+                    else: gettext("Temporada %{value0}", value0: season.number)}
+                </h3>
+                <p class="mt-2 text-sm leading-6 text-muted">
+                  {ngettext(
+                    "%{count} episodio identificado",
+                    "%{count} episodios identificados",
+                    season.episode_count
+                  )}
+                </p>
+              </div>
+              <.icon name="hero-chevron-right" class="size-5 shrink-0 text-accent-soft" />
+            </.link>
           </article>
         </div>
       </div>

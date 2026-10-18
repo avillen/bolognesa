@@ -6,26 +6,35 @@
   current_scope={@current_scope}
   active_section={:series}
 >
-  <section id="series-screen" class="mx-auto max-w-5xl space-y-7">
-    <header class="flex flex-wrap items-center justify-between gap-4">
-      <h1 class="text-4xl font-semibold text-ink">{@library_name || gettext("Series")}</h1>
-      <.link
-        id="series-review-link"
-        navigate={~p"/series/review"}
-        class="min-h-11 rounded-xl border border-accent/40 px-5 py-3 text-accent-soft"
-      >{gettext("Revisar identificaciones")}</.link>
+  <section id="series-screen" class="series-screen mx-auto max-w-6xl space-y-8">
+    <header class="series-catalog-heading">
+      <div>
+        <p class="series-eyebrow">{gettext("Tu biblioteca")}</p>
+        <h1 class="mt-3 text-4xl font-semibold text-ink">{@library_name || gettext("Series")}</h1>
+      </div>
+      <.link id="series-review-link" navigate={~p"/series/review"} class="series-secondary-action">
+        <.icon name="hero-adjustments-horizontal" class="size-4" />
+        {gettext("Revisar identificaciones")}
+      </.link>
     </header>
-    <.form
-      for={@form}
-      id="series-search"
-      phx-submit="search"
-      class="flex flex-wrap items-end gap-3"
-    >
-      <.input field={@form[:query]} type="search" label={gettext("Buscar series")} />
-      <button type="submit" class="min-h-11 rounded-xl bg-accent px-5 py-3 text-canvas">{gettext(
-        "Buscar"
-      )}</button>
-    </.form>
+    <div class="series-toolbar">
+      <.form for={@form} id="series-search" phx-submit="search" class="series-search-form">
+        <div class="series-search-field">
+          <.icon name="hero-magnifying-glass" class="size-5 text-muted" />
+          <.input
+            field={@form[:query]}
+            type="search"
+            label={gettext("Buscar series")}
+            placeholder={gettext("Buscar por título…")}
+            class="series-search-input"
+          />
+        </div>
+        <button type="submit" class="series-primary-action">{gettext("Buscar")}</button>
+      </.form>
+      <p :if={!@loading? && !@error} id="series-count" class="series-result-count">
+        {ngettext("%{count} serie", "%{count} series", @total)}
+      </p>
+    </div>
     <p :if={@loading?} id="series-loading" role="status" class="text-muted">
       {gettext("Cargando series…")}
     </p>
@@ -44,15 +53,18 @@
         "No hay series para esta búsqueda. Añade una biblioteca de series y escanéala para empezar."
       )}
     </p>
-    <div id="series-list" phx-update="stream" class="poster-grid">
+    <div id="series-list" phx-update="stream" class="series-poster-grid">
       <article
         :for={{id, series} <- @streams.series}
         id={id}
-        class="poster-card"
+        class="poster-card series-catalog-card"
       >
-        <.link navigate={~p"/series/#{series.id}?#{@library_params}"} class="block rounded-lg">
-          <div class="poster-art relative flex aspect-[2/3] items-center justify-center overflow-hidden rounded-lg bg-raised text-4xl text-muted">
-            <span aria-hidden="true">{String.first(series.title)}</span>
+        <.link navigate={~p"/series/#{series.id}?#{@library_params}"} class="series-catalog-link">
+          <div class="poster-art series-poster-art">
+            <div class="series-art-fallback" aria-hidden="true">
+              <.icon name="hero-tv" class="size-9" />
+              <span>{series.title}</span>
+            </div>
             <img
               :if={series.poster_path}
               id={"series-poster-#{series.id}"}
@@ -63,11 +75,12 @@
               loading="lazy"
               class="absolute inset-0 size-full object-cover"
             />
+            <span class="series-year">{series.year || gettext("Año desconocido")}</span>
           </div>
-          <h2 class="mt-3 text-sm font-semibold text-ink">{series.title}</h2>
+          <h2 class="mt-4 text-base font-semibold leading-snug text-ink">{series.title}</h2>
         </.link>
-        <p class="mt-1 text-xs text-muted">
-          {series.year || gettext("Año desconocido")} · {ngettext(
+        <p class="mt-2 text-xs leading-5 text-muted">
+          {ngettext(
             "%{available} de %{count} episodio disponible",
             "%{available} de %{count} episodios disponibles",
             series.episode_count,
@@ -76,7 +89,7 @@
         </p>
       </article>
     </div>
-    <nav aria-label={gettext("Páginas de series")} class="flex gap-5 text-accent-soft">
+    <nav aria-label={gettext("Páginas de series")} class="series-pagination">
       <.link
         :if={@page > 1}
         id="series-previous"
