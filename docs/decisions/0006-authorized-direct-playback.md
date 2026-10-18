@@ -8,7 +8,7 @@ Playback must keep private libraries out of `Plug.Static`, support browser seeki
 
 ## Decision
 
-- Let the user select an available file explicitly. Use the native `<video>` or music `<audio>` element without autoplay. Durable playback progress is a separate feature.
+- Movie and episode details load the first available version in the existing version order and allow manual switching. Music file selection remains explicit. Movie and episode video players attempt autoplay for both direct and compatible delivery, subject to browser restrictions; native controls remain available to start playback manually. Music uses its existing explicit playback controls. Durable playback progress is a separate feature.
 - Video media URLs contain catalog and file IDs; music URLs contain track and file IDs. Both selectors recheck their own current associations. URLs contain IDs, never disk paths or credentials. Resolve the current session and reauthorize the relationship on every `GET` and `HEAD`. An unauthenticated request returns an empty `401` response.
 - Validate the source, relative path, physical ancestors, regular file, size, modification time, and identity. Open the file and compare its descriptor with the validated state; stream bounded chunks from that descriptor instead of reopening the path.
 - Support a full response and one byte range. Return `400` for invalid syntax, `416` for an unsatisfiable range, and no body for `HEAD`. Use separate closed video/audio MIME policies with shared descriptor and range delivery.

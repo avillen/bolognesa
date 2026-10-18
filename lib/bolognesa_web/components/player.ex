@@ -37,6 +37,7 @@ defmodule BolognesaWeb.Player do
         id={"#{@prefix}-video-#{@selected_file_id}"}
         phx-hook="VideoError"
         data-file-id={@selected_file_id}
+        autoplay
         controls
         playsinline
         preload="metadata"

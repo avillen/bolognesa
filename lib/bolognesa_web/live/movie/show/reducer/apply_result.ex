@@ -3,6 +3,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.ApplyResult do
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream: 4]
+  alias BolognesaWeb.LiveSupport.SelectVersion
 
   @spec call(Phoenix.LiveView.Socket.t(), reference(), term()) :: Phoenix.LiveView.Socket.t()
   def call(socket, request_id, result) do
@@ -16,6 +17,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.ApplyResult do
     |> assign(:loading?, false)
     |> assign(:detail, detail)
     |> stream(:versions, detail.versions, reset: true)
+    |> select_first_available(detail.versions)
   end
 
   defp apply_result(socket, {:ok, {:error, :too_many_versions}}),
@@ -27,4 +29,11 @@ defmodule BolognesaWeb.Movie.Show.Reducer.ApplyResult do
   defp apply_result(socket, _),
     do:
       socket |> assign(:loading?, false) |> assign(:error, gettext("No se encontró la película."))
+
+  defp select_first_available(socket, versions) do
+    case Enum.find(versions, &(&1.availability == :available)) do
+      nil -> socket
+      version -> SelectVersion.call(socket, Integer.to_string(version.id))
+    end
+  end
 end

@@ -10,15 +10,14 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     ctx
   end
 
-  test "shows a multi episode warning and starts the selected complete file", ctx do
+  test "automatically loads the first version and shows the multi episode warning", ctx do
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
     assert has_element?(view, "#multi-episode-notice", "principio del archivo")
-    view |> element("#episode-play-#{ctx.media_file.id}") |> render_click()
 
     assert has_element?(
              view,
-             "#episode-video-#{ctx.media_file.id}[src='/episodes/#{ctx.episode_id}/media/#{ctx.media_file.id}']"
+             "#episode-video-#{ctx.media_file.id}[autoplay][controls][src='/episodes/#{ctx.episode_id}/media/#{ctx.media_file.id}']"
            )
 
     executable = Path.join(ctx.directory, "fake-ffmpeg")
@@ -62,5 +61,61 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
       get(Phoenix.ConnTest.build_conn(), "/episodes/#{ctx.episode_id}/media/#{ctx.media_file.id}")
 
     assert response(conn, 401) == ""
+  end
+
+  test "defaults to the first version and still allows switching versions", ctx do
+    second = add_version(ctx)
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+
+    assert has_element?(view, "#episode-video-#{ctx.media_file.id}")
+    view |> element("#episode-play-#{second.id}") |> render_click()
+    assert has_element?(view, "#episode-video-#{second.id}")
+  end
+
+  test "skips unavailable versions when loading the episode", ctx do
+    second = add_version(ctx)
+    mark_unavailable(ctx.media_file)
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+
+    assert has_element?(view, "#episode-video-#{second.id}")
+    refute has_element?(view, "#episode-playback-error")
+  end
+
+  test "leaves the player empty when no version is available", ctx do
+    mark_unavailable(ctx.media_file)
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+
+    assert has_element?(view, "#episode-title")
+    refute has_element?(view, "#episode-player")
+    refute has_element?(view, "#episode-playback-error")
+  end
+
+  defp add_version(ctx) do
+    name = "Second S00E01E02.mp4"
+
+    File.cp!(
+      Path.join(ctx.directory, ctx.media_file.relative_path),
+      Path.join(ctx.directory, name)
+    )
+
+    file =
+      ctx.media_file
+      |> Map.from_struct()
+      |> Map.drop([:__meta__, :id, :inserted_at, :updated_at])
+      |> Map.put(:relative_path, name)
+      |> then(&struct!(Bolognesa.Infrastructure.Persistence.MediaFileSchema, &1))
+      |> Bolognesa.Repo.insert!()
+
+    Bolognesa.SeriesFixtures.identify(file, 0, [1, 2])
+    file
+  end
+
+  defp mark_unavailable(file) do
+    file
+    |> Ecto.Changeset.change(availability: :missing)
+    |> Bolognesa.Repo.update!()
   end
 end

@@ -34,6 +34,8 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     render_async(view)
     assert has_element?(view, "#movie-versions")
     assert has_element?(view, "#movie-title", "Mi pelicula")
+    refute has_element?(view, "#movie-player")
+    refute has_element?(view, "#movie-playback-error")
   end
 
   test "each confirmed version can open manual correction", %{conn: conn} do
@@ -144,6 +146,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       render_async(view)
 
       %{
+        conn: init_test_session(conn, user_token: token),
         view: view,
         movie: movie,
         first: first,
@@ -153,16 +156,16 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       }
     end
 
-    test "selects only available versions and ignores errors from the previous version", ctx do
+    test "loads the first available version and allows switching while ignoring stale errors",
+         ctx do
       %{view: view, movie: movie, first: first, second: second, missing: missing} = ctx
       assert has_element?(view, "#movie-play-#{first.id}")
       assert has_element?(view, "#movie-play-#{second.id}")
       refute has_element?(view, "#movie-play-#{missing.id}")
-      render_click(element(view, "#movie-play-#{first.id}"))
 
       assert has_element?(
                view,
-               "#movie-player video[src='/movies/#{movie.id}/media/#{first.id}']"
+               "#movie-player video[autoplay][controls][src='/movies/#{movie.id}/media/#{first.id}']"
              )
 
       render_click(element(view, "#movie-play-#{second.id}"))
@@ -176,6 +179,36 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       refute has_element?(view, "#movie-video-#{first.id}")
       refute has_element?(view, "#movie-playback-error")
       refute has_element?(view, "#movie-playback-preparing")
+    end
+
+    test "skips unavailable versions when opening the movie", ctx do
+      mark_unavailable(ctx.first)
+      {:ok, view, _} = live(ctx.conn, ~p"/movies/#{ctx.movie.id}")
+      render_async(view)
+
+      assert has_element?(view, "#movie-video-#{ctx.second.id}")
+      refute has_element?(view, "#movie-playback-error")
+    end
+
+    test "leaves the player empty when every version is unavailable", ctx do
+      mark_unavailable(ctx.first)
+      mark_unavailable(ctx.second)
+      {:ok, view, _} = live(ctx.conn, ~p"/movies/#{ctx.movie.id}")
+      render_async(view)
+
+      assert has_element?(view, "#movie-title")
+      refute has_element?(view, "#movie-player")
+      refute has_element?(view, "#movie-playback-error")
+    end
+
+    test "automatically selected compatible delivery requests autoplay when ready", ctx do
+      insert_incompatible_inspection(ctx.first)
+      {:ok, view, _} = live(ctx.conn, ~p"/movies/#{ctx.movie.id}")
+      render_async(view)
+      session = preparing_session(view)
+      make_ready(view, session)
+
+      assert has_element?(view, "#movie-video-#{session.id}[data-autoplay='true'][controls]")
     end
 
     test "automatically converts a browser failure at its position without duplicate starts",
@@ -292,11 +325,17 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
   end
 
   defp start_inspected_version(ctx) do
+    insert_incompatible_inspection(ctx.second)
+    render_click(element(ctx.view, "#movie-play-#{ctx.second.id}"))
+    preparing_session(ctx.view)
+  end
+
+  defp insert_incompatible_inspection(file) do
     Repo.insert!(
       InspectionSchema.changeset(%InspectionSchema{}, %{
-        media_file_id: ctx.second.id,
+        media_file_id: file.id,
         token: Ecto.UUID.generate(),
-        observed_revision: ctx.second.revision,
+        observed_revision: file.revision,
         state: :succeeded,
         format: "matroska,webm",
         duration_ms: 60_000,
@@ -308,9 +347,6 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         }
       })
     )
-
-    render_click(element(ctx.view, "#movie-play-#{ctx.second.id}"))
-    preparing_session(ctx.view)
   end
 
   defp preparing_session(view) do
@@ -371,4 +407,10 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
   defp movie_changeset(attrs),
     do: MovieSchema.changeset(%MovieSchema{}, Map.put_new(attrs, :provider, :tmdb))
+
+  defp mark_unavailable(file) do
+    file
+    |> Ecto.Changeset.change(availability: :missing)
+    |> Repo.update!()
+  end
 end
