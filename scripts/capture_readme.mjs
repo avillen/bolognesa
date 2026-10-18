@@ -19,6 +19,31 @@ try {
     locale: "en-US"
   });
   page.setDefaultTimeout(15_000);
+  // Use the same illustration across captures; encoded video frames vary between runs.
+  const withStableVideoFrame = async (capture) => {
+    await page.evaluate(async (artwork) => {
+      window.screenshotVideoFrames = [];
+      for (const video of document.querySelectorAll("video")) {
+        const image = new Image();
+        image.src = `data:image/svg+xml,${encodeURIComponent(artwork)}`;
+        image.width = video.getBoundingClientRect().width;
+        image.height = video.getBoundingClientRect().height;
+        image.style.cssText = "display:block;max-width:100%;border-radius:inherit;";
+        await image.decode();
+        video.replaceWith(image);
+        window.screenshotVideoFrames.push({video, image});
+      }
+    }, '<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720"><rect width="1440" height="720" fill="#10191e"/><circle cx="1050" cy="260" r="220" fill="#e47755" opacity=".42"/><path d="m0 530 260-210 190 142 210-232 230 302 180-165 370 260v93H0Z" fill="#283239"/><path d="m0 620 350-190 220 168 260-210 260 170 190-132 160 112v182H0Z" fill="#171f24"/><text x="110" y="565" fill="#f4f1ed" font-family="Arial,sans-serif" font-size="55" font-weight="700">AFTER THE SIGNAL</text></svg>');
+    try {
+      await capture();
+    } finally {
+      await page.evaluate(() => {
+        for (const {video, image} of window.screenshotVideoFrames) image.replaceWith(video);
+        delete window.screenshotVideoFrames;
+      });
+    }
+  };
+
   const stylesheetResponses = [];
   const stylesheetFailures = [];
   page.on("response", (response) => {
@@ -189,7 +214,7 @@ try {
       await normalizeDemoDetails();
       await page.evaluate(() => document.activeElement?.blur());
       await page.mouse.move(1430, 990);
-      await page.screenshot({ path: screenshotPath(name), fullPage: true });
+      await withStableVideoFrame(() => page.screenshot({ path: screenshotPath(name), fullPage: true }));
     };
 
     await capture("home.png", "/");
@@ -217,61 +242,10 @@ try {
       element.pause();
     });
     await page.waitForTimeout(500);
-    await video.evaluate((element) => {
-      element.removeAttribute("controls");
-    });
-    await video.evaluate((element) => {
-      const player = document.querySelector("#movie-player");
-      const playerRect = player.getBoundingClientRect();
-      const videoRect = element.getBoundingClientRect();
-      const frame = document.createElement("div");
-      frame.setAttribute("aria-hidden", "true");
-      frame.style.cssText = `position:absolute;z-index:1;left:${videoRect.left - playerRect.left}px;top:${videoRect.top - playerRect.top}px;width:${videoRect.width}px;height:${videoRect.height}px;background:#10191e url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720"><rect width="1440" height="720" fill="#10191e"/><circle cx="1050" cy="260" r="220" fill="#e47755" opacity=".42"/><path d="m0 530 260-210 190 142 210-232 230 302 180-165 370 260v93H0Z" fill="#283239"/><path d="m0 620 350-190 220 168 260-210 260 170 190-132 160 112v182H0Z" fill="#171f24"/><text x="110" y="565" fill="#f4f1ed" font-family="Arial,sans-serif" font-size="55" font-weight="700">AFTER THE SIGNAL</text></svg>')}" center / 100% 100% no-repeat;pointer-events:none;`;
-      // Keep the verified video's layout while removing its compositor surface.
-      const spacer = document.createElement("div");
-      spacer.style.cssText = `display:block;width:${videoRect.width}px;height:${videoRect.height}px;`;
-      element.replaceWith(spacer);
-      player.append(frame);
-    });
-    await page.addStyleTag({
-      content: `
-        #movie-player { position: relative; }
-        #movie-player video { display: block; }
-        #movie-player::after {
-          content: "▶   0:02 / 0:04                                      ◖   ⛶";
-          position: absolute;
-          left: 16px;
-          right: 16px;
-          bottom: 0;
-          height: 44px;
-          display: flex;
-          align-items: flex-end;
-          padding: 0 12px 12px;
-          box-sizing: border-box;
-          color: #fff;
-          font: 13px Arial, sans-serif;
-          white-space: pre;
-          background: linear-gradient(transparent, rgba(0, 0, 0, .9));
-          pointer-events: none;
-          z-index: 2;
-        }
-      `
-    });
-    await page.evaluate(() => {
-      // Separate the progress track from the gradient to avoid Chromium's
-      // intermittent clipping of the last background layer in a multi-layer background.
-      const progress = document.createElement("div");
-      progress.setAttribute("aria-hidden", "true");
-      progress.style.cssText = "position:absolute;z-index:3;left:132px;right:80px;bottom:12px;height:3px;background:#aaa;pointer-events:none;";
-      const played = document.createElement("div");
-      played.style.cssText = "width:calc(50% + 90px);height:100%;background:#e47755;";
-      progress.append(played);
-      document.querySelector("#movie-player").append(progress);
-    });
     await normalizeDemoDetails();
     await page.evaluate(() => document.activeElement?.blur());
     await page.mouse.move(1430, 990);
-    await page.screenshot({ path: screenshotPath("player.png"), fullPage: true });
+    await withStableVideoFrame(() => page.locator("#movie-player").screenshot({ path: screenshotPath("player.png") }));
 
     await capture("music.png", `/music?library_id=${ids.music_library}`, "main h1", "#music-loading");
     await page.locator(`#play-track-${ids.music_track}`).click();
