@@ -29,7 +29,7 @@ Audio conversion, external identification/artwork, manual music metadata editing
 
 Additional user accounts, general remote access, and dedicated clients may make sense if people need them and someone can maintain them. Discuss the problem and a small first step before starting substantial work. Their appearance here does not mean they are scheduled or accepted.
 
-Series support is implemented in the codebase. A file containing multiple episodes is played in full from its beginning; the application does not cut it into episodes or automatically advance playback.
+Series support is implemented in the codebase. A file containing multiple episodes is played in full from its beginning; the application does not cut it into episodes. At the end of the file, playback advances to the next available episode after all episodes associated with that file.
 
 ## Working on a roadmap item
 
