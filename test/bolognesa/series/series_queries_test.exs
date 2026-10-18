@@ -13,7 +13,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     decision = SeriesFixtures.identify(first, 1, [1, 2])
     episode_id = hd(decision.episode_ids)
 
-    {initial, initial_queries} = count_queries(fn -> Series.get_episode(@actor, episode_id) end)
+    {initial, initial_queries} = count_queries(fn -> Series.fetch_episode(@actor, episode_id) end)
     assert {:ok, %{versions: [%{id: first_id, episode_numbers: [1, 2]}]}} = initial
     assert first_id == first.id
 
@@ -23,7 +23,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     SeriesFixtures.identify(third, 1, [1, 2])
 
     {expanded, expanded_queries} =
-      count_queries(fn -> Series.get_episode(@actor, episode_id) end)
+      count_queries(fn -> Series.fetch_episode(@actor, episode_id) end)
 
     assert {:ok, %{versions: versions}} = expanded
 
@@ -44,12 +44,12 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     assert page.total == 1
     assert [item] = page.items
     assert item.episode_count == 2
-    assert {:ok, detail} = Series.get_series(@actor, item.id)
+    assert {:ok, detail} = Series.fetch_series(@actor, item.id)
     assert [%{number: 0, episode_count: 2} = season] = detail.seasons
     assert {:ok, episodes} = Series.list_episodes(@actor, season.id, 1)
     assert Enum.map(episodes.items, & &1.number) == [1, 2]
     assert hd(episodes.items).version_count == 2
-    assert {:ok, episode} = Series.get_episode(@actor, hd(decision.episode_ids))
+    assert {:ok, episode} = Series.fetch_episode(@actor, hd(decision.episode_ids))
     assert episode.series.title == "Serie"
     assert length(episode.versions) == 2
     assert Enum.map(episode.versions, & &1.episode_numbers) == [[1, 2], [1]]
@@ -92,8 +92,12 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     assert {:error, :invalid_query} = Series.search_series(@actor, String.duplicate("x", 257), 1)
     assert {:error, :invalid_page} = Series.search_series(@actor, "", 0)
     assert {:ok, %{items: [], total: 0}} = Series.search_series(@actor, "", 1)
-    assert {:error, :not_found} = Series.get_series(@actor, 9_999_999)
-    assert {:error, :not_found} = Series.get_episode(@actor, 9_999_999)
+    assert {:error, :forbidden} = Series.fetch_series(nil, 1)
+    assert {:error, :forbidden} = Series.fetch_episode(nil, 1)
+    assert :not_found = Series.fetch_series(@actor, 0)
+    assert :not_found = Series.fetch_episode(@actor, "invalid")
+    assert :not_found = Series.fetch_series(@actor, 9_999_999)
+    assert :not_found = Series.fetch_episode(@actor, 9_999_999)
     assert {:error, :not_found} = Series.list_episodes(@actor, 9_999_999, 1)
   end
 
@@ -119,7 +123,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
       })
 
     assert {:ok, %{versions: [version]}} =
-             Series.get_episode(@actor, hd(decision.episode_ids))
+             Series.fetch_episode(@actor, hd(decision.episode_ids))
 
     assert version.format == "matroska"
     assert version.duration_ms == 120_000
@@ -127,7 +131,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     Repo.update!(Ecto.Changeset.change(inspection, observed_revision: file.revision + 1))
 
     assert {:ok, %{versions: [version]}} =
-             Series.get_episode(@actor, hd(decision.episode_ids))
+             Series.fetch_episode(@actor, hd(decision.episode_ids))
 
     assert version.format == nil
     assert version.codecs == []
@@ -142,16 +146,16 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
       SeriesFixtures.identify(SeriesFixtures.file(library.id, "version-#{index}.mkv"), 1, [1])
     end
 
-    assert {:ok, %{versions: versions}} = Series.get_episode(@actor, episode_id)
+    assert {:ok, %{versions: versions}} = Series.fetch_episode(@actor, episode_id)
     assert length(versions) == 100
     SeriesFixtures.identify(SeriesFixtures.file(library.id, "version-101.mkv"), 1, [1])
-    assert {:error, :too_many_versions} = Series.get_episode(@actor, episode_id)
+    assert {:error, :too_many_versions} = Series.fetch_episode(@actor, episode_id)
   end
 
   test "series details reject more than one hundred seasons" do
     library = SeriesFixtures.library()
     decision = SeriesFixtures.identify(SeriesFixtures.file(library.id, "first.mkv"), 1, [1])
-    assert {:ok, detail} = Series.get_episode(@actor, hd(decision.episode_ids))
+    assert {:ok, detail} = Series.fetch_episode(@actor, hd(decision.episode_ids))
     series_id = detail.series.id
 
     for number <- 2..100 do
@@ -163,7 +167,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
       })
     end
 
-    assert {:ok, %{seasons: seasons}} = Series.get_series(@actor, series_id)
+    assert {:ok, %{seasons: seasons}} = Series.fetch_series(@actor, series_id)
     assert length(seasons) == 100
 
     Repo.insert!(%Bolognesa.Infrastructure.Persistence.SeasonSchema{
@@ -173,7 +177,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
       number: 101
     })
 
-    assert {:error, :too_many_seasons} = Series.get_series(@actor, series_id)
+    assert {:error, :too_many_seasons} = Series.fetch_series(@actor, series_id)
   end
 
   defp count_queries(fun) do

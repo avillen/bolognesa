@@ -28,5 +28,5 @@ defmodule BolognesaWeb.Series.Review.Reducer.Load do
   end
 
   defp selected(_, nil), do: {:ok, nil}
-  defp selected(actor, id), do: Series.get_review_item(actor, id)
+  defp selected(actor, id), do: Series.fetch_review_item(actor, id)
 end

@@ -10,6 +10,6 @@ defmodule BolognesaWeb.Series.Show.Reducer.Load do
 
     socket
     |> assign(content_id: id, page: page, request_id: request, loading?: true, error: nil)
-    |> start_async({:series_detail, request}, fn -> Series.get_series(actor, id) end)
+    |> start_async({:series_detail, request}, fn -> Series.fetch_series(actor, id) end)
   end
 end

@@ -41,7 +41,13 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReviewReader do
         log: false
       )
 
-    values = Enum.map(rows, &review_row/1)
+    episodes = episodes_by_decision(Enum.map(rows, fn {decision, _file} -> decision.id end))
+
+    values =
+      Enum.map(rows, fn {decision, _file} = row ->
+        review_row(row, Map.get(episodes, decision.id, []))
+      end)
+
     {:ok, {values, total}}
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -49,7 +55,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReviewReader do
   end
 
   @impl true
-  def get_series_review_item(id) do
+  def fetch_series_review_item(id) do
     row =
       Repo.one(
         from decision in SeriesIdentificationSchema,
@@ -63,40 +69,47 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReviewReader do
       )
 
     case row do
-      nil -> {:error, :not_found}
-      value -> {:ok, review_row(value)}
+      nil ->
+        :not_found
+
+      {decision, _file} = value ->
+        episodes = episodes_by_decision([decision.id])
+        {:ok, review_row(value, Map.get(episodes, decision.id, []))}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  defp review_row({decision, file}) do
-    episodes =
-      Repo.all(
-        from(relation in SeriesIdentificationEpisodeSchema,
-          join: episode in EpisodeSchema,
-          on: episode.id == relation.episode_id,
-          join: season in SeasonSchema,
-          on: season.id == episode.season_id,
-          join: series in SeriesSchema,
-          on: series.id == season.series_id,
-          where: relation.identification_id == ^decision.id,
-          order_by: relation.position,
-          select: {episode, season, series}
-        ),
-        log: false
-      )
-      |> Enum.map(fn {episode, season, series} ->
-        %ReviewEpisode{
-          id: episode.id,
-          number: episode.number,
-          season_number: season.number,
-          series_title: series.title,
-          series_provider_id: series.provider_id
-        }
-      end)
+  defp episodes_by_decision([]), do: %{}
 
+  defp episodes_by_decision(ids) do
+    Repo.all(
+      from(relation in SeriesIdentificationEpisodeSchema,
+        join: episode in EpisodeSchema,
+        on: episode.id == relation.episode_id,
+        join: season in SeasonSchema,
+        on: season.id == episode.season_id,
+        join: series in SeriesSchema,
+        on: series.id == season.series_id,
+        where: relation.identification_id in ^ids,
+        order_by: [relation.identification_id, relation.position],
+        select: {relation.identification_id, episode, season, series}
+      ),
+      log: false
+    )
+    |> Enum.group_by(fn {id, _, _, _} -> id end, fn {_id, episode, season, series} ->
+      %ReviewEpisode{
+        id: episode.id,
+        number: episode.number,
+        season_number: season.number,
+        series_title: series.title,
+        series_provider_id: series.provider_id
+      }
+    end)
+  end
+
+  defp review_row({decision, file}, episodes) do
     {%ReviewSeriesFile{
        id: file.id,
        relative_path: file.relative_path,

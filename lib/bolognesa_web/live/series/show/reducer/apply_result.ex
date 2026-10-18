@@ -3,12 +3,13 @@ defmodule BolognesaWeb.Series.Show.Reducer.ApplyResult do
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2]
   import Phoenix.LiveView, only: [stream: 4]
-  alias Bolognesa.Series.Application.UseCases.GetSeries.Response, as: SeriesDetail
+  alias Bolognesa.Series.Application.UseCases.FetchSeries.Response, as: SeriesDetail
 
   @type result ::
           {:ok,
            {:ok, SeriesDetail.t()}
-           | {:error, :forbidden | :not_found | :invalid_page | :unavailable | :too_many_seasons}}
+           | :not_found
+           | {:error, :forbidden | :invalid_page | :unavailable | :too_many_seasons}}
           | {:exit, term()}
   @spec call(Phoenix.LiveView.Socket.t(), reference(), result()) :: Phoenix.LiveView.Socket.t()
   def call(socket, request, result) do

@@ -1,4 +1,4 @@
-defmodule Bolognesa.Series.Application.UseCases.GetSeries.Season do
+defmodule Bolognesa.Series.Application.UseCases.FetchSeries.Season do
   @moduledoc "Public season list item projection."
   alias Bolognesa.Series.Domain.ReadModels.Episode
   alias Bolognesa.Series.Domain.ReadModels.Season

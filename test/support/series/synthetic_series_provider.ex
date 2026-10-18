@@ -22,6 +22,9 @@ defmodule Bolognesa.Test.SyntheticSeriesProvider do
   @impl true
   def details(id), do: {:ok, %SeriesDetails{provider_id: id, title: "Serie"}}
   @impl true
+  def season(404, _number), do: {:error, :not_found}
+  def season(503, _number), do: {:error, :provider_unavailable}
+
   def season(id, number),
     do:
       {:ok,

@@ -29,6 +29,6 @@ defmodule BolognesaWeb.Episode.Show.Reducer.Initialize do
     |> assign(:playback_error_reason, nil)
     |> assign(:request_id, request_id)
     |> stream(:versions, [])
-    |> start_async({:episode, request_id}, fn -> Series.get_episode(actor, id) end)
+    |> start_async({:episode, request_id}, fn -> Series.fetch_episode(actor, id) end)
   end
 end

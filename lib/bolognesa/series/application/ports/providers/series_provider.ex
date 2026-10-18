@@ -4,7 +4,7 @@ defmodule Bolognesa.Series.Application.Ports.Providers.SeriesProvider do
   alias Bolognesa.Series.Domain.ValueObjects.SeriesCandidate
   alias Bolognesa.Series.Domain.ValueObjects.SeriesDetails
 
-  @type adapter :: atom()
+  @type adapter :: module()
   @type reason ::
           :not_configured
           | :rate_limited

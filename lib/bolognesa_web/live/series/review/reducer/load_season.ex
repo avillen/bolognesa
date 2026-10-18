@@ -24,6 +24,6 @@ defmodule BolognesaWeb.Series.Review.Reducer.LoadSeason do
       season_form: to_form(%{"number" => number}, as: :season)
     )
     |> stream(:episodes, [], reset: true)
-    |> AsyncRequest.start(:season, fn -> Series.series_season(actor, id, number) end)
+    |> AsyncRequest.start(:season, fn -> Series.fetch_series_season(actor, id, number) end)
   end
 end

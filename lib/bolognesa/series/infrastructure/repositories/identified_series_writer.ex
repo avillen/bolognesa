@@ -76,7 +76,6 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.IdentifiedSeriesWriter do
     :ok
   end
 
-  @spec upsert!(EpisodeSelection.t()) :: [pos_integer()]
   @spec upsert!(EpisodeSelection.t(), DecisionStore.repo()) :: [pos_integer()]
   def upsert!(%EpisodeSelection{} = selection, repo \\ Repo) do
     {:ok, validated} =

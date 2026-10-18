@@ -1,4 +1,4 @@
-defmodule Bolognesa.Series.Application.UseCases.GetEpisode.Version do
+defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Version do
   @moduledoc "Public episode version projection."
   alias Bolognesa.Series.Domain.ReadModels.EpisodeVersion, as: DomainEpisodeVersion
 

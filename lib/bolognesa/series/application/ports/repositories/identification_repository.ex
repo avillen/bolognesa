@@ -5,7 +5,7 @@ defmodule Bolognesa.Series.Application.Ports.Repositories.IdentificationReposito
   alias Bolognesa.Series.Domain.ValueObjects.EpisodeSelection
   alias Bolognesa.Series.Domain.ValueObjects.SeriesCandidate
 
-  @type adapter :: atom()
+  @type adapter :: module()
   @type review_reason :: Bolognesa.Series.Domain.Policies.IdentificationPolicy.review_reason()
   @type failure_reason ::
           Bolognesa.Series.Domain.Policies.IdentificationPolicy.provider_reason()

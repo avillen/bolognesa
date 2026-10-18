@@ -1,6 +1,6 @@
-defmodule Bolognesa.Series.Application.UseCases.GetSeries.Response do
+defmodule Bolognesa.Series.Application.UseCases.FetchSeries.Response do
   @moduledoc "Public series detail result."
-  alias Bolognesa.Series.Application.UseCases.GetSeries.Season, as: SeasonListItem
+  alias Bolognesa.Series.Application.UseCases.FetchSeries.Season, as: SeasonListItem
   alias Bolognesa.Series.Domain.ReadModels.Episode
   alias Bolognesa.Series.Domain.ReadModels.Season
   alias Bolognesa.Series.Domain.ReadModels.Series

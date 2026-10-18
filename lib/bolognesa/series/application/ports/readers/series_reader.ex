@@ -5,7 +5,7 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReader do
   alias Bolognesa.Series.Domain.ReadModels.Season
   alias Bolognesa.Series.Domain.ReadModels.Series
 
-  @type adapter :: atom()
+  @type adapter :: module()
   @type library_id :: pos_integer() | nil
   @type page_number :: pos_integer()
 
@@ -14,9 +14,10 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReader do
               | {:error, :unavailable}
 
   @doc "At most 100 seasons, ordered by number then ID; larger collections return an error."
-  @callback get_series(Series.id()) ::
+  @callback fetch_series(Series.id()) ::
               {:ok, {Series.t(), [{Season.t(), Episode.count()}]}}
-              | {:error, :not_found | :unavailable | :too_many_seasons}
+              | :not_found
+              | {:error, :unavailable | :too_many_seasons}
 
   @callback list_episodes(Season.id(), page :: page_number()) ::
               {:ok,
@@ -25,7 +26,8 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReader do
               | {:error, :not_found | :unavailable}
 
   @doc "At most 100 versions, ordered by file ID; larger collections return an error."
-  @callback get_episode(Episode.id()) ::
+  @callback fetch_episode(Episode.id()) ::
               {:ok, {Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()]}}
-              | {:error, :not_found | :unavailable | :too_many_versions}
+              | :not_found
+              | {:error, :unavailable | :too_many_versions}
 end

@@ -88,10 +88,10 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
     do: from([file: file] in query, where: file.library_id == ^library_id)
 
   @impl true
-  def get_series(id) do
+  def fetch_series(id) do
     case series_row(id) do
       nil ->
-        {:error, :not_found}
+        :not_found
 
       series ->
         seasons =
@@ -170,7 +170,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   end
 
   @impl true
-  def get_episode(id) do
+  def fetch_episode(id) do
     row =
       Repo.one(
         from(episode in EpisodeSchema,
@@ -186,7 +186,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
 
     case row do
       nil ->
-        {:error, :not_found}
+        :not_found
 
       {episode, season, series} ->
         episode_detail(episode, season, series)

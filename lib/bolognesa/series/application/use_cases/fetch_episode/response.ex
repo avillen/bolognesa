@@ -1,6 +1,6 @@
-defmodule Bolognesa.Series.Application.UseCases.GetEpisode.Response do
+defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Response do
   @moduledoc "Public episode detail result."
-  alias Bolognesa.Series.Application.UseCases.GetEpisode.Version, as: EpisodeVersionDto
+  alias Bolognesa.Series.Application.UseCases.FetchEpisode.Version, as: EpisodeVersionDto
   alias Bolognesa.Series.Domain.ReadModels.Episode
   alias Bolognesa.Series.Domain.ReadModels.EpisodeVersion
   alias Bolognesa.Series.Domain.ReadModels.Season

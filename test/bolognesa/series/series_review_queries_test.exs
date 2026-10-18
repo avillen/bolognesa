@@ -46,16 +46,75 @@ defmodule Bolognesa.Series.SeriesReviewQueriesTest do
     assert {:error, :invalid_page} = Series.list_review_items(@actor, 0)
   end
 
+  test "review query count stays constant as files increase and preserves episode order" do
+    library = SeriesFixtures.library()
+    first = review_file(library.id, "first.mkv", [2, 1])
+    {initial, initial_queries} = count_queries(fn -> Series.list_review_items(@actor, 1) end)
+    assert {:ok, %{items: [%{file_id: first_id, episode_numbers: [2, 1]}]}} = initial
+    assert first_id == first.id
+
+    second = review_file(library.id, "second.mkv", [1])
+    {expanded, expanded_queries} = count_queries(fn -> Series.list_review_items(@actor, 1) end)
+    assert {:ok, %{items: items, total: 2}} = expanded
+
+    assert Enum.map(items, &{&1.file_id, &1.episode_numbers}) ==
+             [{first.id, [2, 1]}, {second.id, [1]}]
+
+    assert initial_queries > 0
+    assert expanded_queries == initial_queries
+  end
+
+  defp review_file(library_id, path, numbers) do
+    file = SeriesFixtures.file(library_id, path)
+    SeriesFixtures.identify(file, 1, numbers)
+
+    Repo.get_by!(SeriesIdentificationSchema, media_file_id: file.id)
+    |> Ecto.Changeset.change(needs_review: true)
+    |> Repo.update!()
+
+    file
+  end
+
   test "reads an identified file for correction even outside the review queue" do
     library = SeriesFixtures.library()
     file = SeriesFixtures.file(library.id, "Serie S00E01E02.mkv")
     SeriesFixtures.identify(file, 0, [1, 2])
 
     assert {:ok, %{file_id: id, episode_numbers: [1, 2]}} =
-             Series.get_review_item(@actor, file.id)
+             Series.fetch_review_item(@actor, file.id)
 
     assert id == file.id
-    assert {:error, :forbidden} = Series.get_review_item(nil, file.id)
-    assert {:error, :not_found} = Series.get_review_item(@actor, 9_999_999)
+    assert {:error, :forbidden} = Series.fetch_review_item(nil, file.id)
+    assert :not_found = Series.fetch_review_item(@actor, 0)
+    assert :not_found = Series.fetch_review_item(@actor, 9_999_999)
+  end
+
+  defp count_queries(fun) do
+    reference = make_ref()
+
+    :ok =
+      :telemetry.attach(
+        reference,
+        [:bolognesa, :repo, :query],
+        fn _event, _measurements, _metadata, {owner, tag} ->
+          if self() == owner, do: send(owner, {tag, :query})
+        end,
+        {self(), reference}
+      )
+
+    try do
+      result = fun.()
+      {result, query_count(reference, 0)}
+    after
+      :telemetry.detach(reference)
+    end
+  end
+
+  defp query_count(reference, count) do
+    receive do
+      {^reference, :query} -> query_count(reference, count + 1)
+    after
+      0 -> count
+    end
   end
 end

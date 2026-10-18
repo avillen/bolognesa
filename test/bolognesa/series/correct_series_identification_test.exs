@@ -11,7 +11,7 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
   alias Bolognesa.Movies.Application.UseCases.CorrectMovieIdentification
   alias Bolognesa.Series
   alias Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification
-  alias Bolognesa.Series.Application.UseCases.GetSeriesSeason
+  alias Bolognesa.Series.Application.UseCases.FetchSeriesSeason
   alias Bolognesa.Series.Application.UseCases.IdentifySeriesFile
   alias Bolognesa.Series.Application.UseCases.SearchSeriesCandidates
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
@@ -173,7 +173,7 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
 
   test "manual lookup APIs authorize and bound their input" do
     assert {:error, :forbidden} = Series.search_candidates(nil, "Serie")
-    assert {:error, :forbidden} = Series.series_season(nil, 201, 0)
+    assert {:error, :forbidden} = Series.fetch_series_season(nil, 201, 0)
 
     assert {:error, :invalid_query} =
              SearchSeriesCandidates.call(
@@ -185,9 +185,14 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
     assert {:ok, [_]} = SearchSeriesCandidates.call(@actor, " Serie ", SyntheticSeriesProvider)
 
     assert {:error, :invalid_selection} =
-             GetSeriesSeason.call(@actor, 201, -1, SyntheticSeriesProvider)
+             FetchSeriesSeason.call(@actor, 201, -1, SyntheticSeriesProvider)
 
-    assert {:ok, %{number: 0}} = GetSeriesSeason.call(@actor, 201, 0, SyntheticSeriesProvider)
+    assert :not_found = FetchSeriesSeason.call(@actor, 404, 1, SyntheticSeriesProvider)
+
+    assert {:error, :provider_unavailable} =
+             FetchSeriesSeason.call(@actor, 503, 1, SyntheticSeriesProvider)
+
+    assert {:ok, %{number: 0}} = FetchSeriesSeason.call(@actor, 201, 0, SyntheticSeriesProvider)
   end
 
   @tag committed: true
