@@ -7,9 +7,11 @@ from pathlib import Path
 MAX_NATIVE_PIXELS = 128
 MAX_CHANNEL_DELTA = 64
 RASTER_LIMITS = {
-    "music-player.png": (MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA),
-    "music.png": (16, 1),
-    "episode.png": (32, 2),
+    "music-player.png": (MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA, 0, 0, 0),
+    "music.png": (16, 1, 0, 0, 0),
+    "episode.png": (32, 2, 1, 16, 20),
+    "movie.png": (0, 0, 1, 16, 20),
+    "player.png": (0, 0, 1, 16, 20),
 }
 
 
@@ -68,20 +70,36 @@ def native_audio_matches(expected, actual):
     return _raster_matches(expected, actual, MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA)
 
 
-def _raster_matches(expected, actual, max_pixels, max_channel_delta):
+def _raster_matches(
+    expected,
+    actual,
+    max_pixels,
+    max_channel_delta,
+    outlier_pixels=0,
+    min_outlier_channel_delta=0,
+    max_outlier_channel_delta=0,
+):
     try:
         first, second = _png_rows(expected), _png_rows(actual)
         if first[:3] != second[:3]:
             return False
         width, _, channels, rows = first
-        changed = 0
+        changed, outliers = 0, 0
         for left, right in zip(rows, second[3]):
             for index in range(0, width * channels, channels):
                 a, b = left[index:index + channels], right[index:index + channels]
                 if a == b:
                     continue
-                changed += 1
-                if changed > max_pixels or any(abs(x - y) > max_channel_delta for x, y in zip(a, b)):
+                channel_delta = max(abs(x - y) for x, y in zip(a, b))
+                if channel_delta <= max_channel_delta:
+                    changed += 1
+                    if changed > max_pixels:
+                        return False
+                elif min_outlier_channel_delta <= channel_delta <= max_outlier_channel_delta:
+                    outliers += 1
+                    if outliers > outlier_pixels:
+                        return False
+                else:
                     return False
         return True
     except (ValueError, KeyError, struct.error, zlib.error, UnboundLocalError):

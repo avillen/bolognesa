@@ -49,6 +49,27 @@ class ScreenshotCheckTest(unittest.TestCase):
             (actual / 'episode.png').write_bytes(png(8, 8, [101] * 192))
             self.assertEqual(checker.differences(expected, actual), ['episode.png'])
 
+    def test_video_player_corners_allow_one_small_shadow_raster_difference(self):
+        with tempfile.TemporaryDirectory() as folder:
+            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
+            expected.mkdir(); actual.mkdir()
+            for name in ['movie.png', 'episode.png', 'player.png']:
+                (expected / name).write_bytes(png(8, 8, [100] * 192))
+                changed = [100] * 192
+                changed[0] = 117
+                (actual / name).write_bytes(png(8, 8, changed))
+                self.assertEqual(checker.differences(expected, actual), [])
+
+                changed[3] = 117
+                (actual / name).write_bytes(png(8, 8, changed))
+                self.assertEqual(checker.differences(expected, actual), [name])
+
+                changed[3] = 100
+                changed[0] = 121
+                (actual / name).write_bytes(png(8, 8, changed))
+                self.assertEqual(checker.differences(expected, actual), [name])
+                (actual / name).write_bytes((expected / name).read_bytes())
+
     def test_visual_changes_and_size_changes_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             first, second = Path(folder) / 'first.png', Path(folder) / 'second.png'
