@@ -5,10 +5,10 @@
   navigation_error={@navigation_error}
   active_library_id={@active_library_id}
 >
-  <section class="space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-3">
+  <section class="music-library">
+    <header class="music-header">
       <div>
-        <p class="text-xs text-accent-soft">{gettext("Biblioteca local")}</p><h1 class="text-3xl font-semibold">
+        <p class="music-eyebrow">{gettext("Biblioteca local")}</p><h1 class="music-title">
           {@library_name || gettext("Música")}
         </h1>
       </div>
@@ -19,28 +19,34 @@
         class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
         disabled={@loading?}
       >{gettext("Actualizar")}</button>
-    </div>
-    <nav aria-label={gettext("Explorar música")} class="flex flex-wrap gap-3">
+    </header>
+    <nav aria-label={gettext("Explorar música")} class="music-tabs">
       <.link
         id="music-artists-link"
         patch={~p"/music?#{Map.put(@library_params, :view, :artists)}"}
         aria-current={@browse_kind == :artists && "page"}
-        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 hover:bg-raised"
+        class="music-tab"
       >{gettext("Artistas")}</.link>
       <.link
         id="music-albums-link"
         patch={~p"/music?#{Map.put(@library_params, :view, :albums)}"}
         aria-current={@browse_kind == :albums && !@artist_id && "page"}
-        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 hover:bg-raised"
+        class="music-tab"
       >{gettext("Álbumes")}</.link>
       <.link
         id="music-songs-link"
         patch={~p"/music?#{@library_params}"}
         aria-current={@browse_kind == :tracks && "page"}
-        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 hover:bg-raised"
+        class="music-tab"
       >{gettext("Canciones")}</.link>
     </nav>
-    <div :if={@browse_kind == :album || (@browse_kind == :albums && @artist_id)} class="space-y-3">
+    <div
+      :if={@browse_kind == :album || (@browse_kind == :albums && @artist_id)}
+      class="music-album-heading"
+    >
+      <div class="music-detail-art" aria-hidden="true">
+        <.icon name="hero-musical-note" class="size-16" />
+      </div>
       <.link
         :if={@browse_kind == :albums}
         patch={~p"/music?#{Map.put(@library_params, :view, :artists)}"}
@@ -73,7 +79,7 @@
       for={@form}
       id="music-search"
       phx-submit="search"
-      class="flex flex-wrap items-end gap-3"
+      class="music-search"
     >
       <.input
         field={@form[:query]}
@@ -86,20 +92,160 @@
       >{gettext("Buscar")}</button>
     </.form>
     <p :if={@queue_loading?} id="queue-loading" role="status">{gettext("Preparando álbum…")}</p>
+    <p
+      :if={@audio_error}
+      id="audio-error"
+      role="alert"
+      class="music-feedback music-feedback-error"
+    >
+      {@audio_error}
+    </p>
+    <p :if={@loading?} id="music-loading" role="status" class="music-feedback">
+      {gettext("Cargando música…")}
+    </p>
+    <div
+      :if={@error}
+      id="music-read-error"
+      role="alert"
+      class="music-feedback music-feedback-error"
+    >
+      <p>{@error}</p><button
+        type="button"
+        phx-click="refresh"
+        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+      >{gettext("Reintentar")}</button>
+    </div>
+    <p :if={!@loading? && !@error && @total == 0} id="music-empty" class="music-feedback">
+      {gettext("No hay resultados. Prueba otra búsqueda o escanea tu biblioteca de música.")}
+    </p>
+    <div
+      id="music-browse"
+      phx-update="stream"
+      hidden={@browse_kind not in [:artists, :albums] || @loading? || @error != nil}
+      class="music-browse-grid"
+    >
+      <article :for={{dom_id, item} <- @streams.groups} id={dom_id}>
+        <.link
+          id={"#{if @browse_kind == :artists, do: "artist", else: "album"}-#{item.id}"}
+          patch={
+            ~p"/music?#{if @browse_kind == :artists, do: Map.merge(@library_params, %{view: :albums, artist_id: item.id}), else: Map.merge(@browse_params, %{view: :album, album_id: item.id})}"
+          }
+          class="music-group-card"
+        >
+          <div
+            class={["music-group-art", @browse_kind == :artists && "music-artist-art"]}
+            aria-hidden="true"
+          >
+            <div class="music-art-ring"></div>
+            <.icon
+              name={if @browse_kind == :artists, do: "hero-user", else: "hero-musical-note"}
+              class="size-12"
+            />
+          </div>
+          <div class="min-w-0">
+            <h2 class="font-semibold break-words">{item.title}</h2><p
+              :if={item.subtitle}
+              class="text-sm text-muted break-words"
+            >
+              {item.subtitle}
+            </p><p :if={item.year} class="text-sm text-muted">{item.year}</p>
+          </div>
+        </.link>
+      </article>
+    </div>
+    <div
+      id="music-tracks"
+      phx-update="stream"
+      class="music-track-list"
+      hidden={@browse_kind in [:artists, :albums] || @loading? || @error != nil}
+    >
+      <article
+        :for={{dom_id, track} <- @streams.tracks}
+        id={dom_id}
+        data-state={track.state}
+        class="music-track-row"
+      >
+        <div class="music-track-art" aria-hidden="true">
+          <.icon name="hero-musical-note" class="size-5" />
+        </div>
+        <div class="music-track-copy">
+          <p
+            :if={@browse_kind == :album && (track.disc_number || track.track_number)}
+            class="text-xs text-muted"
+          >
+            {gettext("Disco %{disc} · Pista %{track}",
+              disc: track.disc_number || "—",
+              track: track.track_number || "—"
+            )}
+          </p>
+          <h2 class="font-semibold break-words">{track.title}</h2><p class="text-sm break-words">
+            {track.artist} · {track.album}
+          </p><p class="music-track-meta">
+            <span>{track.duration}</span><span class="music-track-state">{track.state_label}</span>
+          </p>
+        </div>
+        <button
+          :if={track.state == :ready}
+          id={"play-track-#{track.track_id}"}
+          type="button"
+          phx-click="play"
+          phx-value-track_id={track.track_id}
+          phx-value-file_id={track.id}
+          class="min-h-11 rounded-lg bg-accent px-4 py-2 font-semibold text-canvas hover:bg-accent-hover disabled:opacity-50"
+          aria-label={gettext("Reproducir %{title}", title: track.title)}
+        ><.icon name="hero-play-solid" class="size-4" /><span class="music-play-label">{gettext(
+          "Reproducir"
+        )}</span></button>
+        <button
+          :if={track.state == :import_failed}
+          type="button"
+          phx-click="retry-import"
+          phx-value-file_id={track.id}
+          class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+        >{gettext("Reintentar importación")}</button>
+        <.link
+          :if={track.state == :inspection_failed}
+          navigate={~p"/libraries"}
+          class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+        >{gettext("Reanalizar en bibliotecas")}</.link>
+      </article>
+    </div>
+    <nav
+      :if={@total > @page_size}
+      aria-label={gettext("Paginación de música")}
+      class="flex items-center justify-between gap-3"
+    >
+      <.link
+        :if={@page > 1}
+        patch={~p"/music?#{Map.merge(@browse_params, %{query: @query, page: @page - 1})}"}
+        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+      >{gettext("Anterior")}</.link>
+      <span>{gettext("Página %{page}", page: @page)}</span>
+      <.link
+        :if={@page * @page_size < @total}
+        patch={~p"/music?#{Map.merge(@browse_params, %{query: @query, page: @page + 1})}"}
+        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+      >{gettext("Siguiente")}</.link>
+    </nav>
     <div
       :if={@selected || @queue != []}
       id="music-playback"
-      class="rounded-xl border border-border p-4 space-y-3"
+      class="music-playback"
     >
-      <h2 class="font-semibold">{gettext("Reproductor de música")}</h2>
-      <p
-        :if={@selected && @selected.title}
-        id="now-playing"
-        aria-live="polite"
-        class="break-words"
-      >
-        {@selected.title}
-      </p>
+      <div class="music-player-art" aria-hidden="true">
+        <.icon name="hero-musical-note" class="size-7" />
+      </div>
+      <div class="music-player-copy">
+        <h2 class="music-eyebrow">{gettext("Reproductor de música")}</h2>
+        <p
+          :if={@selected && @selected.title}
+          id="now-playing"
+          aria-live="polite"
+          class="break-words"
+        >
+          {@selected.title}
+        </p>
+      </div>
       <audio
         :if={@selected}
         id="music-player"
@@ -137,113 +283,5 @@
       </div>
       <p :if={@queue_finished?} id="queue-finished" role="status">{gettext("Álbum terminado")}</p>
     </div>
-    <p :if={@audio_error} id="audio-error" role="alert" class="text-red-100">{@audio_error}</p>
-    <p :if={@loading?} id="music-loading" role="status">{gettext("Cargando música…")}</p>
-    <div :if={@error} id="music-read-error" role="alert">
-      <p>{@error}</p><button
-        type="button"
-        phx-click="refresh"
-        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
-      >{gettext("Reintentar")}</button>
-    </div>
-    <p :if={!@loading? && !@error && @total == 0} id="music-empty">
-      {gettext("No hay resultados. Prueba otra búsqueda o escanea tu biblioteca de música.")}
-    </p>
-    <div
-      id="music-browse"
-      phx-update="stream"
-      hidden={@browse_kind not in [:artists, :albums] || @loading? || @error != nil}
-      class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-    >
-      <article :for={{dom_id, item} <- @streams.groups} id={dom_id}>
-        <.link
-          id={"#{if @browse_kind == :artists, do: "artist", else: "album"}-#{item.id}"}
-          patch={
-            ~p"/music?#{if @browse_kind == :artists, do: Map.merge(@library_params, %{view: :albums, artist_id: item.id}), else: Map.merge(@browse_params, %{view: :album, album_id: item.id})}"
-          }
-          class="flex min-h-28 items-center gap-4 rounded-xl border border-border p-4 hover:bg-raised"
-        >
-          <.icon
-            name={if @browse_kind == :artists, do: "hero-user", else: "hero-musical-note"}
-            class="size-8 shrink-0 text-accent-soft"
-          />
-          <div class="min-w-0">
-            <h2 class="font-semibold break-words">{item.title}</h2><p
-              :if={item.subtitle}
-              class="text-sm text-muted break-words"
-            >
-              {item.subtitle}
-            </p><p :if={item.year} class="text-sm text-muted">{item.year}</p>
-          </div>
-        </.link>
-      </article>
-    </div>
-    <div
-      id="music-tracks"
-      phx-update="stream"
-      class="space-y-3"
-      hidden={@browse_kind in [:artists, :albums] || @loading? || @error != nil}
-    >
-      <article
-        :for={{dom_id, track} <- @streams.tracks}
-        id={dom_id}
-        data-state={track.state}
-        class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border p-4"
-      >
-        <div class="min-w-0 flex-1">
-          <p
-            :if={@browse_kind == :album && (track.disc_number || track.track_number)}
-            class="text-xs text-muted"
-          >
-            {gettext("Disco %{disc} · Pista %{track}",
-              disc: track.disc_number || "—",
-              track: track.track_number || "—"
-            )}
-          </p>
-          <h2 class="font-semibold break-words">{track.title}</h2><p class="text-sm break-words">
-            {track.artist} · {track.album}
-          </p><p class="text-sm text-muted">{track.duration} · {track.state_label}</p>
-        </div>
-        <button
-          :if={track.state == :ready}
-          id={"play-track-#{track.track_id}"}
-          type="button"
-          phx-click="play"
-          phx-value-track_id={track.track_id}
-          phx-value-file_id={track.id}
-          class="min-h-11 rounded-lg bg-accent px-4 py-2 font-semibold text-canvas hover:bg-accent-hover disabled:opacity-50"
-          aria-label={gettext("Reproducir %{title}", title: track.title)}
-        >{gettext("Reproducir")}</button>
-        <button
-          :if={track.state == :import_failed}
-          type="button"
-          phx-click="retry-import"
-          phx-value-file_id={track.id}
-          class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
-        >{gettext("Reintentar importación")}</button>
-        <.link
-          :if={track.state == :inspection_failed}
-          navigate={~p"/libraries"}
-          class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
-        >{gettext("Reanalizar en bibliotecas")}</.link>
-      </article>
-    </div>
-    <nav
-      :if={@total > @page_size}
-      aria-label={gettext("Paginación de música")}
-      class="flex items-center justify-between gap-3"
-    >
-      <.link
-        :if={@page > 1}
-        patch={~p"/music?#{Map.merge(@browse_params, %{query: @query, page: @page - 1})}"}
-        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
-      >{gettext("Anterior")}</.link>
-      <span>{gettext("Página %{page}", page: @page)}</span>
-      <.link
-        :if={@page * @page_size < @total}
-        patch={~p"/music?#{Map.merge(@browse_params, %{query: @query, page: @page + 1})}"}
-        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
-      >{gettext("Siguiente")}</.link>
-    </nav>
   </section>
 </Layouts.app>

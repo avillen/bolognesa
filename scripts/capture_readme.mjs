@@ -325,6 +325,38 @@ try {
     await page.screenshot({ animations: "disabled", path: screenshotPath("music-player.png"), fullPage: true });
     console.log(`Verified synthetic PCM WAV audio: play, seek, pause and refresh in Chromium ${browser.version()}.`);
 
+    // Keep the music player and every browse view usable on narrow screens.
+    await page.setViewportSize({width: 390, height: 844});
+    const assertMusicFits = async () => {
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+      if (overflow) throw new Error("Music layout overflows the mobile viewport.");
+      if (!await audio.isVisible()) throw new Error("Music player is hidden on mobile.");
+      const overlapsTracks = await page.evaluate(() => {
+        const tracks = document.querySelector("#music-tracks");
+        const player = document.querySelector("#music-playback");
+        return tracks && !tracks.hidden && player
+          && player.getBoundingClientRect().top < tracks.getBoundingClientRect().bottom;
+      });
+      if (overlapsTracks) throw new Error("Music player covers track controls on mobile.");
+    };
+    await assertMusicFits();
+    await waitForStablePage();
+    await page.screenshot({animations: "disabled", path: screenshotPath("music-mobile.png"), fullPage: true});
+    await page.locator("#music-artists-link").click();
+    await page.locator(`#artist-${ids.music_artist}`).waitFor();
+    await assertMusicFits();
+    await page.locator(`#artist-${ids.music_artist}`).click();
+    await page.locator(`#album-${ids.music_album}`).waitFor();
+    await assertMusicFits();
+    await page.locator(`#album-${ids.music_album}`).click();
+    await page.locator("#play-album").waitFor();
+    await assertMusicFits();
+    await page.setViewportSize({width: 1440, height: 1000});
+    await page.locator("#music-albums-link").click();
+    await page.locator(`#album-${ids.music_album}`).waitFor();
+    await waitForStablePage();
+    await page.screenshot({animations: "disabled", path: screenshotPath("music-albums.png"), fullPage: true});
+
     // Exercise artist -> album navigation and native ended-driven playback.
     await page.locator("#music-artists-link").click();
     await page.locator(`#artist-${ids.music_artist}`).click();
