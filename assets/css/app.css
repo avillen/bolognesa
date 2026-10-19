@@ -122,5 +122,5 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: #000 url("/images/logo.svg") center / clamp(80px, 20%, 180px) auto no-repeat;
+  background: #c26e54 url("/images/bolognesa-cat.svg") center / clamp(80px, 20%, 180px) auto no-repeat;
 }

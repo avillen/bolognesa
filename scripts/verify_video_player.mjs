@@ -25,7 +25,7 @@ const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><style>
 const server = createServer(async (request, response) => {
   try {
     const name = new URL(request.url, "http://localhost").pathname.slice(1)
-    const files = {"player.js": bundle, "images/logo.svg": resolve("priv/static/images/logo.svg")}
+    const files = {"player.js": bundle, "images/bolognesa-cat.svg": resolve("priv/static/images/bolognesa-cat.svg")}
     const path = files[name] ?? resolve(mediaDirectory, name)
     if (name && !files[name] && !/^(sample\.mp4|index\.m3u8|segment\d+\.ts)$/.test(name)) {
       response.writeHead(404).end()
@@ -63,7 +63,11 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}`, {waitUntil: "domcontentloaded"})
   await page.waitForFunction(() => !!window.context?.sync)
   assert.equal(await page.locator("video-skin").getAttribute("data-initial-loading"), "")
-  assert.match(await page.locator("video-skin").evaluate(skin => getComputedStyle(skin, "::after").backgroundImage), /images\/logo.svg/)
+  assert.match(await page.locator("video-skin").evaluate(skin => getComputedStyle(skin, "::after").backgroundImage), /images\/bolognesa-cat.svg/)
+  assert.equal(await page.locator("video-skin").evaluate(skin => getComputedStyle(skin, "::after").backgroundColor), "rgb(194, 110, 84)")
+  if (process.env.BOLOGNESA_OPENING_SCREENSHOT) {
+    await page.screenshot({path: process.env.BOLOGNESA_OPENING_SCREENSHOT})
+  }
   releaseInitialLoad()
   await page.waitForFunction(() => document.querySelector("video").currentTime > 0.1).catch(async error => {
     console.error(await page.evaluate(() => ({
