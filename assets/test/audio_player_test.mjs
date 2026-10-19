@@ -32,9 +32,38 @@ test("audio controls preserve refresh state, load new generations once and stop 
     play: () => { plays++; return Promise.resolve() },
   }
   const originalDocument = globalThis.document
-  globalThis.document = {createElement: () => ({append() {}})}
+  const documentListeners = new Map()
+  const document = {
+    createElement: () => ({append() {}}),
+    addEventListener: (name, fn) => documentListeners.set(name, fn),
+    removeEventListener: name => documentListeners.delete(name),
+  }
+  const miniPlayer = {
+    setAttribute() {},
+    focus() { document.activeElement = this },
+  }
+  const closePlayer = {focus() { document.activeElement = this }}
+  const background = {inert: false}
+  const pageSibling = {inert: false}
+  const root = {
+    dataset: {src: "/first", generation: "1", playRequested: "false", stopped: "false", expanded: "false"},
+    attributes: {}, listeners: new Map(),
+    parentElement: {children: null, parentElement: {children: null}},
+    querySelector(selector) {
+      if (selector === "audio") return audio
+      return selector.includes("collapse") ? closePlayer : miniPlayer
+    },
+    setAttribute(name, value) { this.attributes[name] = value },
+    removeAttribute(name) { delete this.attributes[name] },
+    addEventListener(name, fn) { this.listeners.set(name, fn) },
+    removeEventListener(name) { this.listeners.delete(name) },
+    contains(target) { return target === this || target === miniPlayer || target === closePlayer },
+  }
+  root.parentElement.children = [root, background]
+  root.parentElement.parentElement.children = [root.parentElement, pageSibling]
+  globalThis.document = {...document, body: root.parentElement.parentElement}
   const context = {
-    el: {querySelector: () => audio, dataset: {src: "/first", generation: "1", playRequested: "false", stopped: "false"}},
+    el: root,
     pushEvent() {},
   }
   try {
@@ -50,8 +79,23 @@ test("audio controls preserve refresh state, load new generations once and stop 
     assert.equal(loads, 1)
     assert.equal(plays, 1)
     assert.equal(audio.dataset.generation, "2")
+    root.listeners.get("click")({target: {closest: () => ({dataset: {playerAction: "expand"}})}})
+    assert.equal(root.attributes.role, "dialog")
+    assert.equal(root.attributes["aria-modal"], "true")
+    assert.equal(background.inert, true)
+    assert.equal(pageSibling.inert, true)
+    root.dataset.expanded = "false"
+    hook.updated.call(context)
+    assert.equal(root.dataset.expanded, "true")
+    assert.equal(background.inert, true)
+    documentListeners.get("keydown")({key: "Escape"})
+    assert.equal(root.dataset.expanded, "false")
+    assert.equal(background.inert, false)
+    assert.equal(pageSibling.inert, false)
+    assert.equal(document.activeElement, miniPlayer)
     hook.destroyed.call(context)
     assert.equal(listeners.size, 0)
+    assert.equal(documentListeners.size, 0)
     assert.equal(pauses, 1)
     assert.equal(loads, 2)
     assert.equal(source, null)

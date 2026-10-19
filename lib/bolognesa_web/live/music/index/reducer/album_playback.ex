@@ -82,7 +82,12 @@ defmodule BolognesaWeb.Music.Index.Reducer.AlbumPlayback do
     case Playback.start_track(socket.assigns.current_scope.actor, track.id, track.file_id) do
       {:ok, _source} ->
         socket
-        |> assign(:selected, %{track_id: track.id, file_id: track.file_id, title: track.title})
+        |> assign(:selected, %{
+          track_id: track.id,
+          file_id: track.file_id,
+          title: track.title,
+          artist: Map.get(track, :artist)
+        })
         |> assign(:player_stopped?, false)
         |> assign(:play_requested?, true)
         |> assign(:audio_error, nil)

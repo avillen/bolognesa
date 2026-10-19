@@ -30,7 +30,9 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     assert has_element?(view, "#music-tracks", "Sample Song")
     assert has_element?(view, "#music-tracks", "Sample Artist")
     view |> element("#play-track-#{fixture.track.id}") |> render_click()
-    assert has_element?(view, "#music-player-frame[phx-hook=AudioPlayer][phx-update=ignore]")
+    assert has_element?(view, "#music-playback[phx-hook=AudioPlayer]")
+    assert has_element?(view, "#music-player-frame[phx-update=ignore]")
+    assert has_element?(view, "#music-playback .music-mini-artist", "Sample Artist")
     assert has_element?(view, "#music-player-frame media-i18n[lang=es]")
     assert has_element?(view, "audio#music-player[controls]")
     assert has_element?(view, "#now-playing", "Sample Song")
@@ -40,7 +42,7 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
              "audio#music-player source[src='/music/tracks/#{fixture.track.id}/media/#{fixture.file.id}']"
            )
 
-    assert has_element?(view, "#music-player-frame[data-play-requested=true]")
+    assert has_element?(view, "#music-playback[data-play-requested=true]")
 
     assert has_element?(
              view,
@@ -178,11 +180,13 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     assert has_element?(view, "#audio-error", "Unavailable")
     refute has_element?(view, "#music-player")
     refute has_element?(view, "#now-playing", "Available")
+    assert has_element?(view, "#music-playback[data-has-player=false]")
+    refute has_element?(view, "#music-playback [data-player-action=expand]")
   end
 
   defp player_generation(view) do
     view
-    |> element("#music-player-frame")
+    |> element("#music-playback")
     |> render()
     |> then(fn html -> Regex.run(~r/data-generation="([^"]+)"/, html) |> Enum.at(1) end)
   end

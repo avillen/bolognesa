@@ -19,7 +19,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
     |> assign(:total, page.total)
     |> assign(:heading, page.heading)
     |> stream(:groups, page.items, reset: true)
-    |> assign(:page_titles, %{})
+    |> assign(:page_tracks, %{})
     |> stream(:tracks, [], reset: true)
   end
 
@@ -31,7 +31,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
     |> assign(:page_size, page.page_size)
     |> assign(:heading, page.heading)
     |> stream(:groups, [], reset: true)
-    |> assign(:page_titles, Map.new(page.items, &{&1.id, &1.title}))
+    |> assign(:page_tracks, Map.new(page.items, &{&1.id, %{title: &1.title, artist: &1.artist}}))
     |> stream(:tracks, Enum.map(page.items, &Track.from_dto/1), reset: true)
   end
 

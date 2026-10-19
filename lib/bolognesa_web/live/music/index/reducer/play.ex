@@ -14,7 +14,8 @@ defmodule BolognesaWeb.Music.Index.Reducer.Play do
       |> assign(:selected, %{
         track_id: track_id,
         file_id: file_id,
-        title: Map.get(socket.assigns.page_titles, track_id)
+        title: get_in(socket.assigns.page_tracks, [track_id, :title]),
+        artist: get_in(socket.assigns.page_tracks, [track_id, :artist])
       })
       |> assign(:queue, [])
       |> assign(:queue_position, 0)

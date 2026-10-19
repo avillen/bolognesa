@@ -359,12 +359,39 @@ try {
       await assertMusicSearchAligned();
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
       if (overflow) throw new Error("Music layout overflows the mobile viewport.");
-      if (!await audioFrame.isVisible()) throw new Error("Music player is hidden on mobile.");
+      const miniPlayer = page.locator('#music-playback [data-player-action="expand"]');
+      if (!await miniPlayer.isVisible()) throw new Error("Compact music player is hidden on mobile.");
+      await miniPlayer.click();
+      if (!await audioFrame.isVisible()) throw new Error("Expanded music player is hidden on mobile.");
+      const playback = page.locator("#music-playback");
+      if (await playback.getAttribute("role") !== "dialog" || await playback.getAttribute("aria-modal") !== "true") {
+        throw new Error("Expanded music player is not exposed as a modal dialog.");
+      }
+      if (!await page.locator(".music-header").evaluate(element => element.inert)) {
+        throw new Error("Background music controls remain available while the player is expanded.");
+      }
+      await page.setViewportSize({width: 700, height: 844});
+      const keepsFullscreen = await playback.evaluate(element => getComputedStyle(element).position === "fixed");
+      if (!keepsFullscreen) throw new Error("Expanded player stopped covering the page after a mobile rotation.");
+      await page.setViewportSize({width: 390, height: 844});
+      await page.keyboard.press("Escape");
+      if (await miniPlayer.getAttribute("aria-expanded") !== "false") throw new Error("Escape did not minimize the music player.");
+      if (!await miniPlayer.evaluate(element => document.activeElement === element)) throw new Error("Focus was not restored to the compact player.");
+      await miniPlayer.click();
+      await page.locator('#music-playback [data-player-action="collapse"]').click();
+      const trackButtons = page.locator("#music-tracks .music-track-play");
+      if (await trackButtons.count()) {
+        await trackButtons.last().evaluate(element => element.scrollIntoView({block: "center"}));
+      }
       const overlapsTracks = await page.evaluate(() => {
         const tracks = document.querySelector("#music-tracks");
-        const player = document.querySelector("#music-playback");
-        return tracks && !tracks.hidden && player
-          && player.getBoundingClientRect().top < tracks.getBoundingClientRect().bottom;
+        const player = document.querySelector("#music-playback")?.getBoundingClientRect();
+        if (!tracks || tracks.hidden || !player) return false;
+        return [...tracks.querySelectorAll("button")].some(button => {
+          const rect = button.getBoundingClientRect();
+          return rect.width && rect.height && rect.bottom > 0 && rect.top < innerHeight
+            && rect.bottom > player.top && rect.top < player.bottom;
+        });
       });
       if (overlapsTracks) throw new Error("Music player covers track controls on mobile.");
     };

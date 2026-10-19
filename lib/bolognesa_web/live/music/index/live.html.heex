@@ -238,9 +238,47 @@
       :if={@selected || @queue != []}
       id="music-playback"
       class="music-playback"
+      data-expanded="false"
+      data-has-player={to_string(not is_nil(@selected))}
+      phx-hook={if(@selected, do: "AudioPlayer")}
+      data-src={
+        if(@selected, do: "/music/tracks/#{@selected.track_id}/media/#{@selected.file_id}")
+      }
+      data-generation={@player_generation}
+      data-play-requested={to_string(@play_requested?)}
+      data-stopped={to_string(@player_stopped?)}
+      role="region"
+      aria-label={gettext("Reproductor de música")}
     >
+      <button
+        :if={@selected}
+        type="button"
+        class="music-mini-player"
+        data-player-action="expand"
+        aria-label={gettext("Abrir reproductor")}
+        aria-expanded="false"
+        aria-controls="music-player-frame"
+      >
+        <span class="music-player-art" aria-hidden="true">
+          <img src={~p"/images/bolognesa-cat.svg"} width="96" height="96" alt="" />
+        </span>
+        <span class="music-mini-copy">
+          <span class="music-mini-title">{@selected.title}</span>
+          <span class="music-mini-artist">{Map.get(@selected, :artist)}</span>
+        </span>
+        <span aria-hidden="true"><.icon name="hero-chevron-up" class="size-5" /></span>
+      </button>
+      <button
+        :if={@selected}
+        type="button"
+        class="music-player-close"
+        data-player-action="collapse"
+        aria-label={gettext("Minimizar reproductor")}
+      >
+        <span aria-hidden="true"><.icon name="hero-chevron-down" class="size-6" /></span>
+      </button>
       <div class="music-player-art" aria-hidden="true">
-        <.icon name="hero-musical-note" class="size-7" />
+        <img src={~p"/images/bolognesa-cat.svg"} width="96" height="96" alt="" />
       </div>
       <div class="music-player-copy">
         <h2 class="music-eyebrow">{gettext("Reproductor de música")}</h2>
@@ -256,12 +294,7 @@
       <div
         :if={@selected}
         id="music-player-frame"
-        phx-hook="AudioPlayer"
         phx-update="ignore"
-        data-src={"/music/tracks/#{@selected.track_id}/media/#{@selected.file_id}"}
-        data-generation={@player_generation}
-        data-play-requested={to_string(@play_requested?)}
-        data-stopped={to_string(@player_stopped?)}
         class="music-player-frame"
       >
         <media-i18n lang={Gettext.get_locale(BolognesaWeb.Gettext)}>

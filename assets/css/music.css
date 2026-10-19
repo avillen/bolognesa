@@ -42,11 +42,13 @@
 .music-feedback button { margin-top: 16px; }
 .music-playback { position: static; bottom: 16px; z-index: 10; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: 16px; padding: 20px; border: 1px solid var(--color-border-strong); border-radius: 14px; background: var(--color-surface); box-shadow: 0 8px 40px #0008; }
 .music-player-art { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 8px; background: var(--color-raised); color: var(--color-accent-soft); }
+.music-player-art img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .music-player-copy { min-width: 0; }
 .music-player-copy > p { margin-top: 6px; font-weight: 600; font-size: 14px; }
 .music-player-frame { grid-column: 1 / -1; width: 100%; min-width: 0; color-scheme: dark; }
 .music-queue-controls { grid-column: 1 / -1; }
 .music-playback > p { grid-column: 1 / -1; }
+.music-mini-player, .music-player-close { display: none; }
 .music-library [hidden] { display: none; }
 @media (min-width: 640px) {
   .music-playback { position: sticky; }
@@ -70,6 +72,44 @@
   .music-album-heading { grid-template-columns: 1fr; padding: 20px; }
   .music-detail-art { width: 100px; grid-row: auto; }
 }
+@media (max-width: 639px) {
+  .music-library { padding-bottom: 88px; }
+  .music-mini-player { display: none; }
+  .music-playback[data-expanded="false"][data-has-player="true"] {
+    position: fixed; inset-inline: 10px; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 50;
+    display: block; padding: 0; overflow: hidden; border: 1px solid var(--color-border-strong);
+    border-radius: 14px; background: var(--color-surface); box-shadow: 0 8px 32px #000b;
+  }
+  .music-playback[data-expanded="false"][data-has-player="true"] > :not(.music-mini-player) { display: none; }
+  .music-playback[data-expanded="false"][data-has-player="true"] .music-mini-player {
+    display: grid; grid-template-columns: 44px minmax(0, 1fr) 24px; align-items: center; gap: 12px;
+    width: 100%; min-height: 64px; padding: 9px 12px; text-align: start;
+  }
+  .music-mini-player .music-player-art { width: 44px; height: 44px; }
+  .music-mini-copy { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+  .music-mini-title, .music-mini-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .music-mini-title { font-size: 14px; font-weight: 600; }
+  .music-mini-artist { color: var(--color-muted); font-size: 12px; }
+  .music-playback[data-has-player="false"] { position: static; margin: 0; padding: 20px; overflow: visible; }
+}
+/* An open player stays modal if a phone rotates into a wider viewport. */
+.music-playback[data-expanded="true"] {
+  position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; justify-content: center;
+  gap: 24px; width: 100%; height: 100vh; height: 100dvh; max-width: none; margin: 0; padding:
+    max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  overflow-y: auto; border: 0; border-radius: 0; background: var(--color-canvas); box-shadow: none;
+}
+.music-playback[data-expanded="true"] .music-mini-player { display: none; }
+.music-playback[data-expanded="true"] .music-player-close {
+  position: absolute; top: max(12px, env(safe-area-inset-top)); inset-inline-end: 16px;
+  display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; color: var(--color-ink);
+}
+.music-playback[data-expanded="true"] > .music-player-art { width: min(72vw, 340px); height: auto; aspect-ratio: 1; align-self: center; border-radius: 12px; }
+.music-playback[data-expanded="true"] .music-player-copy { width: 100%; padding-inline: 4px; }
+.music-playback[data-expanded="true"] .music-player-copy > p { font-size: 20px; }
+.music-playback[data-expanded="true"] .music-player-frame, .music-playback[data-expanded="true"] .music-queue-controls,
+.music-playback[data-expanded="true"] > p { width: 100%; }
+.music-playback[data-expanded="true"] .music-queue-controls { justify-content: center; }
 @media (prefers-reduced-motion: reduce) { .music-group-card { transition: none; } }
 
 .music-player-frame media-i18n, .music-player-frame audio-player { display: contents; }

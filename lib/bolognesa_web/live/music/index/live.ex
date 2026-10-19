@@ -11,7 +11,7 @@ defmodule BolognesaWeb.Music.Index.Live do
      |> assign(:artist_id, nil)
      |> assign(:album_id, nil)
      |> assign(:heading, nil)
-     |> assign(:page_titles, %{})
+     |> assign(:page_tracks, %{})
      |> assign(:queue, [])
      |> assign(:queue_position, 0)
      |> assign(:queue_loading?, false)
