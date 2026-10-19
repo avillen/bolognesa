@@ -12,6 +12,8 @@ await build({
   stdin: {
     contents: `export {createPlayer, videoFeatures, timeFeature, bufferFeature} from "@videojs/html";
 import "@videojs/html/video/skin";
+import "@videojs/html/audio/player";
+import "@videojs/html/audio/skin";
 import "@videojs/html/i18n/locales/es/register";`,
     resolveDir: process.cwd(),
   },

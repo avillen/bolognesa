@@ -246,21 +246,29 @@
           {@selected.title}
         </p>
       </div>
-      <audio
+      <div
         :if={@selected}
-        id="music-player"
-        controls
-        preload="metadata"
-        phx-hook="AudioError"
+        id="music-player-frame"
+        phx-hook="AudioPlayer"
+        phx-update="ignore"
+        data-src={"/music/tracks/#{@selected.track_id}/media/#{@selected.file_id}"}
         data-generation={@player_generation}
         data-play-requested={to_string(@play_requested?)}
         data-stopped={to_string(@player_stopped?)}
-        class="w-full"
-        aria-label={gettext("Reproductor de música")}
+        class="music-player-frame"
       >
-        <source src={"/music/tracks/#{@selected.track_id}/media/#{@selected.file_id}"} />
-      </audio>
-      <div :if={@queue != []} class="flex flex-wrap items-center gap-3">
+        <media-i18n lang={Gettext.get_locale(BolognesaWeb.Gettext)}>
+          <audio
+            id="music-player"
+            controls
+            preload="metadata"
+            aria-label={gettext("Reproductor de música")}
+          >
+            <source src={"/music/tracks/#{@selected.track_id}/media/#{@selected.file_id}"} />
+          </audio>
+        </media-i18n>
+      </div>
+      <div :if={@queue != []} class="music-queue-controls flex flex-wrap items-center gap-3">
         <button
           id="queue-previous"
           type="button"

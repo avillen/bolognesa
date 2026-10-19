@@ -30,6 +30,8 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     assert has_element?(view, "#music-tracks", "Sample Song")
     assert has_element?(view, "#music-tracks", "Sample Artist")
     view |> element("#play-track-#{fixture.track.id}") |> render_click()
+    assert has_element?(view, "#music-player-frame[phx-hook=AudioPlayer][phx-update=ignore]")
+    assert has_element?(view, "#music-player-frame media-i18n[lang=es]")
     assert has_element?(view, "audio#music-player[controls]")
     assert has_element?(view, "#now-playing", "Sample Song")
 
@@ -168,7 +170,7 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
 
   defp player_generation(view) do
     view
-    |> element("#music-player")
+    |> element("#music-player-frame")
     |> render()
     |> then(fn html -> Regex.run(~r/data-generation="([^"]+)"/, html) |> Enum.at(1) end)
   end

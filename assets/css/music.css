@@ -10,7 +10,7 @@
 .music-tab[aria-current="page"] { color: var(--color-accent-soft); }
 .music-tab[aria-current="page"]::after { content: ""; position: absolute; bottom: -1px; inset-inline: 0; height: 3px; background: var(--color-accent); border-radius: 3px; }
 .music-search { display: flex; align-items: end; gap: 12px; padding: 20px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; }
-.music-search > div { flex: 1; min-width: 0; }
+.music-search > div { flex: 1; min-width: 0; margin-bottom: 0; }
 .music-search label { color: var(--color-muted); font-size: 12px; }
 .music-search input { width: 100%; background: var(--color-canvas); }
 .music-search button { flex-shrink: 0; }
@@ -44,8 +44,8 @@
 .music-player-art { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 8px; background: var(--color-raised); color: var(--color-accent-soft); }
 .music-player-copy { min-width: 0; }
 .music-player-copy > p { margin-top: 6px; font-weight: 600; font-size: 14px; }
-.music-playback audio { grid-column: 1 / -1; width: 100%; height: 42px; color-scheme: dark; }
-.music-playback > div:last-of-type:not(.music-player-copy) { grid-column: 1 / -1; }
+.music-player-frame { grid-column: 1 / -1; width: 100%; min-width: 0; color-scheme: dark; }
+.music-queue-controls { grid-column: 1 / -1; }
 .music-playback > p { grid-column: 1 / -1; }
 .music-library [hidden] { display: none; }
 @media (min-width: 640px) {
@@ -58,8 +58,6 @@
 }
 @media (min-width: 1100px) {
   .music-browse-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .music-playback { grid-template-columns: 48px minmax(140px, 1fr) minmax(240px, 1.5fr); }
-  .music-playback audio { grid-column: 3; }
 }
 @media (max-width: 479px) {
   .music-header { align-items: start; gap: 12px; }
@@ -74,3 +72,7 @@
   .music-detail-art { width: 100px; grid-row: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .music-group-card { transition: none; } }
+
+.music-player-frame media-i18n, .music-player-frame audio-player { display: contents; }
+.music-player-frame audio-skin { display: block; width: 100%; --media-accent-color: var(--color-accent); --media-accent-text-color: var(--color-canvas); --media-font-family: inherit; }
+.music-player-frame audio { width: 100%; }

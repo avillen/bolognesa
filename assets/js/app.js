@@ -1,4 +1,4 @@
-import AudioError from "./hooks/audio_error"
+import AudioPlayer from "./hooks/audio_player"
 // If you want to use Phoenix channels, run `mix help phx.gen.channel`
 // to get started and then uncomment the line below.
 // import "./user_socket.js"
@@ -32,7 +32,7 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {AudioError, ...colocatedHooks, ImageFallback, VideoPlayer},
+  hooks: {AudioPlayer, ...colocatedHooks, ImageFallback, VideoPlayer},
 })
 
 // Show progress bar on live navigation and form submits

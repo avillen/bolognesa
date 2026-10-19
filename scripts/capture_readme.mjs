@@ -293,20 +293,43 @@ try {
     await page.locator(`#play-track-${ids.music_track}`).click();
     const audio = page.locator("audio#music-player");
     await audio.waitFor({ state: "attached" });
-    await audio.evaluate((element) => {
-      element.preload = "auto";
-      return element.play();
-    });
+    const assertMusicSearchAligned = async () => {
+      const aligned = await page.locator("#music-search").evaluate(form => {
+        const field = form.querySelector("input").getBoundingClientRect();
+        const button = form.querySelector("button[type=submit]").getBoundingClientRect();
+        return Math.abs(field.top - button.top) <= 1 && Math.abs(field.bottom - button.bottom) <= 1;
+      });
+      if (!aligned) throw new Error("Music search field and submit button are not aligned.");
+    };
+    await assertMusicSearchAligned();
+    const audioFrame = page.locator("#music-player-frame");
+    const audioPlay = audioFrame.locator("media-play-button");
+    await audioPlay.click();
     await page.waitForFunction(() => {
       const element = document.querySelector("audio#music-player");
       return element && element.readyState >= 2 && !element.paused && element.currentTime > 0;
     });
+    await audioPlay.click();
+    await page.waitForFunction(() => document.querySelector("#music-player")?.paused);
+    const audioSlider = audioFrame.locator("media-time-slider");
+    await audioSlider.focus();
+    await page.keyboard.press("ArrowRight");
+    await page.waitForFunction(() => document.querySelector("#music-player")?.currentTime >= 4);
     await audio.evaluate(async (element) => {
       element.pause();
       const seeked = new Promise((resolve) => element.addEventListener("seeked", resolve, { once: true }));
       element.currentTime = 2;
       await seeked;
     });
+    const audioMute = audioFrame.locator("media-mute-button");
+    await audioMute.click();
+    await page.waitForFunction(() => document.querySelector("#music-player")?.muted);
+    await audioMute.click();
+    await page.waitForFunction(() => !document.querySelector("#music-player")?.muted);
+    await audioFrame.locator("media-i18n").evaluate(element => { element.lang = "es"; });
+    await page.waitForFunction(() => document.querySelector("audio-skin").shadowRoot.querySelector("media-play-button").getAttribute("aria-label") === "Reproducir");
+    await audioFrame.locator("media-i18n").evaluate(element => { element.lang = "en"; });
+    await page.waitForFunction(() => document.querySelector("audio-skin").shadowRoot.querySelector("media-play-button").getAttribute("aria-label") === "Play");
     await page.locator("#refresh-music").click();
     await page.locator("#music-loading").waitFor({ state: "detached" });
     const audioState = await audio.evaluate((element) => ({paused: element.paused, position: element.currentTime, error: element.error?.code}));
@@ -323,14 +346,15 @@ try {
     await page.evaluate(() => document.activeElement?.blur());
     await page.mouse.move(1430, 990);
     await page.screenshot({ animations: "disabled", path: screenshotPath("music-player.png"), fullPage: true });
-    console.log(`Verified synthetic PCM WAV audio: play, seek, pause and refresh in Chromium ${browser.version()}.`);
+    console.log(`Verified Video.js audio controls with synthetic PCM WAV: play, keyboard seek, pause, mute, English/Spanish labels and refresh in Chromium ${browser.version()}.`);
 
     // Keep the music player and every browse view usable on narrow screens.
     await page.setViewportSize({width: 390, height: 844});
     const assertMusicFits = async () => {
+      await assertMusicSearchAligned();
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
       if (overflow) throw new Error("Music layout overflows the mobile viewport.");
-      if (!await audio.isVisible()) throw new Error("Music player is hidden on mobile.");
+      if (!await audioFrame.isVisible()) throw new Error("Music player is hidden on mobile.");
       const overlapsTracks = await page.evaluate(() => {
         const tracks = document.querySelector("#music-tracks");
         const player = document.querySelector("#music-playback");
