@@ -25,9 +25,16 @@ const VideoPlayer = {
     for (const slider of this.el.querySelector("video-skin").shadowRoot.querySelectorAll("media-time-slider")) {
       slider.pauseOnDrag = false
     }
+    this.clearInitialLoading = () => skin.removeAttribute("data-initial-loading")
+    this.video.addEventListener("loadeddata", this.clearInitialLoading)
     this.sync = () => {
       const data = this.el.dataset
       const source = data.src || ""
+      // A new file starts a new opening; HLS session replacements and stalls do not.
+      if (this.fileId !== data.fileId) {
+        this.fileId = data.fileId
+        skin.setAttribute("data-initial-loading", "")
+      }
       const signature = `${data.videoId}:${source}`
       if (this.signature === signature) {
         this.video.dataset.pausedServer = data.pausedServer
@@ -58,6 +65,7 @@ const VideoPlayer = {
   updated() { this.sync() },
   destroyed() {
     this.control?.destroyed.call(this.context)
+    this.video.removeEventListener("loadeddata", this.clearInitialLoading)
     this.video.pause()
     this.video.removeAttribute("src")
     this.video.load()

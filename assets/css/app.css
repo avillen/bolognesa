@@ -114,4 +114,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 /* Video.js owns the controls inside its shadow root; the frame survives HLS session changes. */
 .bolognesa-video-frame { overflow: hidden; border-radius: 12px; background: #000; }
 .bolognesa-video-frame bolognesa-video-player { display: contents; }
-.bolognesa-video-frame video-skin { display: block; --media-accent-color: var(--color-accent); }
+.bolognesa-video-frame video-skin { position: relative; display: block; --media-accent-color: var(--color-accent); }
+
+.bolognesa-video-frame video-skin[data-initial-loading]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: #000 url("/images/logo.svg") center / clamp(80px, 20%, 180px) auto no-repeat;
+}

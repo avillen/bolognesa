@@ -17,20 +17,21 @@ window.events = [];
 window.context = {el: document.querySelector('#frame'), pushEvent: (...event) => window.events.push(event)};
 window.hook = hook;
 hook.mounted.call(window.context);`, resolveDir: process.cwd()}, bundle: true, format: "esm", outfile: bundle})
-const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"></head><body>
-<div id="frame" data-video-id="video-1" data-file-id="1" data-src="/sample.mp4" data-autoplay="true" data-paused-server="false" style="width:800px">
+const playerStyles = (await readFile("assets/css/app.css", "utf8")).split("/* Video.js owns")[1]
+const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><style>/* Video.js owns${playerStyles}</style></head><body>
+<div id="frame" data-video-id="video-1" data-file-id="1" data-src="/sample.mp4" data-autoplay="true" data-paused-server="false" class="bolognesa-video-frame" style="width:800px">
 <media-i18n lang="en"><video muted playsinline style="width:100%;aspect-ratio:16/9"></video></media-i18n>
 </div><script type="module" src="/player.js"></script></body></html>`
 const server = createServer(async (request, response) => {
   try {
     const name = new URL(request.url, "http://localhost").pathname.slice(1)
-    const files = {"player.js": bundle}
+    const files = {"player.js": bundle, "images/logo.svg": resolve("priv/static/images/logo.svg")}
     const path = files[name] ?? resolve(mediaDirectory, name)
     if (name && !files[name] && !/^(sample\.mp4|index\.m3u8|segment\d+\.ts)$/.test(name)) {
       response.writeHead(404).end()
       return
     }
-    const types = {js: "text/javascript", mp4: "video/mp4", m3u8: "application/vnd.apple.mpegurl", ts: "video/mp2t"}
+    const types = {svg: "image/svg+xml", js: "text/javascript", mp4: "video/mp4", m3u8: "application/vnd.apple.mpegurl", ts: "video/mp2t"}
     const content = name ? await readFile(path) : Buffer.from(html)
     const headers = {"Content-Type": types[name.split(".").pop()] ?? "text/html", "Accept-Ranges": "bytes"}
     const range = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range || "")
@@ -53,7 +54,17 @@ try {
   const page = await browser.newPage({viewport: {width: 1000, height: 800}})
   const errors = []
   page.on("pageerror", error => { errors.push(error.message); console.error(error.stack) })
-  await page.goto(`http://127.0.0.1:${server.address().port}`)
+  let releaseInitialLoad
+  const initialLoad = new Promise(resolve => { releaseInitialLoad = resolve })
+  await page.route("**/sample.mp4", async route => {
+    await initialLoad
+    await route.continue()
+  })
+  await page.goto(`http://127.0.0.1:${server.address().port}`, {waitUntil: "domcontentloaded"})
+  await page.waitForFunction(() => !!window.context?.sync)
+  assert.equal(await page.locator("video-skin").getAttribute("data-initial-loading"), "")
+  assert.match(await page.locator("video-skin").evaluate(skin => getComputedStyle(skin, "::after").backgroundImage), /images\/logo.svg/)
+  releaseInitialLoad()
   await page.waitForFunction(() => document.querySelector("video").currentTime > 0.1).catch(async error => {
     console.error(await page.evaluate(() => ({
       video: {
@@ -65,6 +76,9 @@ try {
     })))
     throw error
   })
+  assert.equal(await page.locator("video-skin").getAttribute("data-initial-loading"), null)
+  await page.locator("video").evaluate(video => video.dispatchEvent(new Event("waiting")))
+  assert.equal(await page.locator("video-skin").getAttribute("data-initial-loading"), null)
   assert.equal(await page.locator("media-time-slider").count(), 1)
   assert.equal(await page.locator("video").evaluate(video => video.controls), false)
   await page.locator("video").hover()
@@ -151,6 +165,7 @@ try {
     window.hook.updated.call(window.context)
   }, lastSeek.position_ms)
   await page.waitForFunction(() => document.querySelector("video").readyState === 0)
+  assert.equal(await page.locator("video-skin").getAttribute("data-initial-loading"), null)
   await page.evaluate(() => {
     window.context.el.dataset.src = "/index.m3u8?session=c"
     window.hook.updated.call(window.context)
@@ -162,6 +177,19 @@ try {
   console.log("HLS: dragging commits once outside the generated fragment and preserves pause.")
   await page.locator("media-i18n").evaluate(element => { element.lang = "es" })
   await page.waitForFunction(() => document.querySelector("video-skin").shadowRoot.querySelector("media-play-button").getAttribute("aria-label") === "Reproducir")
+  // A newly selected file gets its own opening, including time spent preparing HLS.
+  await page.evaluate(() => {
+    Object.assign(window.context.el.dataset, {fileId: "2", videoId: "video-2", src: ""})
+    window.hook.updated.call(window.context)
+  })
+  assert.equal(await page.locator("video-skin").getAttribute("data-initial-loading"), "")
+  await page.evaluate(() => {
+    window.context.el.dataset.src = "/index.m3u8?file=2"
+    window.hook.updated.call(window.context)
+  })
+  await page.waitForFunction(() => document.querySelector("video").readyState >= 2)
+  assert.equal(await page.locator("video-skin").getAttribute("data-initial-loading"), null)
+  console.log("Opening logo: initial load, later buffering, session replacement and new-file preparation passed.")
   assert.deepEqual(errors, [])
   await page.evaluate(() => window.hook.destroyed.call(window.context))
   console.log(`Video.js browser checks passed in Chromium ${browser.version()}.`)
