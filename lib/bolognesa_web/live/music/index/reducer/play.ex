@@ -23,7 +23,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.Play do
       |> assign(:queue_finished?, false)
       |> assign(:player_generation, socket.assigns.player_generation + 1)
       |> assign(:player_stopped?, false)
-      |> assign(:play_requested?, false)
+      |> assign(:play_requested?, true)
       |> assign(:audio_error, nil)
     else
       _error ->

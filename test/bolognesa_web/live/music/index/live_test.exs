@@ -40,6 +40,18 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
              "audio#music-player source[src='/music/tracks/#{fixture.track.id}/media/#{fixture.file.id}']"
            )
 
+    assert has_element?(view, "#music-player-frame[data-play-requested=true]")
+
+    assert has_element?(
+             view,
+             "#play-track-#{fixture.track.id}.music-track-play[aria-label='Reproducir Sample Song']"
+           )
+
+    assert has_element?(
+             view,
+             "#tracks-#{fixture.file.id}[data-track-src='/music/tracks/#{fixture.track.id}/media/#{fixture.file.id}']"
+           )
+
     refute has_element?(view, "audio[autoplay]")
     render_hook(view, "audio-error", %{})
     assert has_element?(view, "#audio-error")

@@ -4,9 +4,11 @@ import {readFile} from "node:fs/promises"
 
 const moduleUrl = code => `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`
 const errors = moduleUrl(await readFile(new URL("../js/hooks/audio_error.js", import.meta.url), "utf8"))
+const rows = moduleUrl(await readFile(new URL("../js/hooks/audio_track_list.js", import.meta.url), "utf8"))
 const code = (await readFile(new URL("../js/hooks/audio_player.js", import.meta.url), "utf8"))
   .replace('import "../../vendor/videojs.min.mjs"', "")
   .replace('"./audio_error"', JSON.stringify(errors))
+  .replace('"./audio_track_list"', JSON.stringify(rows))
 const {default: hook} = await import(moduleUrl(code))
 
 test("audio controls preserve refresh state, load new generations once and stop on exit", () => {

@@ -163,10 +163,12 @@
         :for={{dom_id, track} <- @streams.tracks}
         id={dom_id}
         data-state={track.state}
+        data-track-src={track.track_id && "/music/tracks/#{track.track_id}/media/#{track.id}"}
         class="music-track-row"
       >
         <div class="music-track-art" aria-hidden="true">
-          <.icon name="hero-musical-note" class="size-5" />
+          <.icon name="hero-musical-note" class="music-track-note size-5" />
+          <span class="music-equalizer" aria-hidden="true"><i></i><i></i><i></i></span>
         </div>
         <div class="music-track-copy">
           <p
@@ -181,7 +183,9 @@
           <h2 class="font-semibold break-words">{track.title}</h2><p class="text-sm break-words">
             {track.artist} · {track.album}
           </p><p class="music-track-meta">
-            <span>{track.duration}</span><span class="music-track-state">{track.state_label}</span>
+            <span>{track.duration}</span>
+            <span class="music-playing-label">{gettext("Sonando")}</span>
+            <span class="music-paused-label">{gettext("En pausa")}</span><span class="music-track-state">{track.state_label}</span>
           </p>
         </div>
         <button
@@ -191,11 +195,14 @@
           phx-click="play"
           phx-value-track_id={track.track_id}
           phx-value-file_id={track.id}
-          class="min-h-11 rounded-lg bg-accent px-4 py-2 font-semibold text-canvas hover:bg-accent-hover disabled:opacity-50"
+          class="music-track-play"
           aria-label={gettext("Reproducir %{title}", title: track.title)}
-        ><.icon name="hero-play-solid" class="size-4" /><span class="music-play-label">{gettext(
-          "Reproducir"
-        )}</span></button>
+          data-play-label={gettext("Reproducir %{title}", title: track.title)}
+          data-pause-label={gettext("Pausar %{title}", title: track.title)}
+        >
+          <.icon name="hero-play-solid" class="music-play-icon size-5" />
+          <.icon name="hero-pause-solid" class="music-pause-icon size-5" />
+        </button>
         <button
           :if={track.state == :import_failed}
           type="button"

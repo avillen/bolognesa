@@ -304,7 +304,12 @@ try {
     await assertMusicSearchAligned();
     const audioFrame = page.locator("#music-player-frame");
     const audioPlay = audioFrame.locator("media-play-button");
-    await audioPlay.click();
+    await page.waitForFunction(() => document.querySelector("#music-player")?.paused === false);
+    const rowButton = page.locator(`#play-track-${ids.music_track}`);
+    await page.waitForFunction(id => document.querySelector(`#play-track-${id}`)?.closest("article")?.dataset.playback === "playing", ids.music_track);
+    await rowButton.click();
+    await page.waitForFunction(id => document.querySelector(`#play-track-${id}`)?.closest("article")?.dataset.playback === "paused", ids.music_track);
+    await rowButton.click();
     await page.waitForFunction(() => {
       const element = document.querySelector("audio#music-player");
       return element && element.readyState >= 2 && !element.paused && element.currentTime > 0;
@@ -400,6 +405,8 @@ try {
     if (!await audio.evaluate((element) => element === window.albumPlayerUnderTest && !element.paused)) {
       throw new Error("Album player did not survive music patch navigation.");
     }
+    await page.locator("#music-songs-link").click();
+    await page.waitForFunction(id => document.querySelector(`#play-track-${id}`)?.closest("article")?.dataset.playback === "playing", ids.music_second_track);
     await page.locator("#queue-previous").click();
     await page.waitForFunction((id) => document.querySelector("#music-player source")?.src.includes(`/tracks/${id}/`), ids.music_track);
     await page.locator("#queue-next").click();

@@ -1,5 +1,6 @@
 import "../../vendor/videojs.min.mjs"
 import AudioError from "./audio_error"
+import {connectTrackRows} from "./audio_track_list"
 
 // LiveView owns the frame's data; Video.js owns its children and controls.
 export default {
@@ -23,12 +24,15 @@ export default {
     }
     this.sync()
     AudioError.mounted.call(this.context)
+    this.trackRows = connectTrackRows(this.el, this.audio, (...args) => this.pushEvent(...args))
   },
   updated() {
     this.sync()
     AudioError.updated.call(this.context)
+    this.trackRows.sync()
   },
   destroyed() {
+    this.trackRows.destroy()
     AudioError.destroyed.call(this.context)
     this.audio.pause()
     this.audio.querySelector("source").removeAttribute("src")
