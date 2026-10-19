@@ -34,20 +34,13 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
   def inspect(library, file, opts) do
     with {:ok, root, source_identity} <- source(library.path),
          {:ok, path, before_identity} <- physical_file(root, file),
-         {:ok, output} <-
-           BoundedCommand.run(
-             Keyword.get(opts, :executable, System.find_executable("ffprobe") || "ffprobe"),
-             args(library.content_type) ++ [path],
-             Keyword.get(opts, :timeout_ms, @timeout_ms),
-             Keyword.get(opts, :max_bytes, @max_bytes)
-           ),
+         {:ok, media} <- probe(path, library.content_type, opts),
          {:ok, after_root, after_source_identity} <- source(library.path),
          :ok <- same?(root, after_root),
          :ok <- same?(source_identity, after_source_identity),
          {:ok, after_path, after_identity} <- physical_file(after_root, file),
          :ok <- same?(path, after_path),
-         :ok <- same?(before_identity, after_identity),
-         {:ok, media} <- FfprobeJson.parse(output, library.content_type || :movie) do
+         :ok <- same?(before_identity, after_identity) do
       {:ok, media}
     else
       {:error, :failed} ->
@@ -63,6 +56,57 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp probe(path, content_type, opts) do
+    deadline = System.monotonic_time(:millisecond) + Keyword.get(opts, :timeout_ms, @timeout_ms)
+    opts = Keyword.put(opts, :probe_deadline_ms, deadline)
+
+    with {:ok, output} <- run_probe(path, content_type, opts, []) do
+      parse_probe(output, path, content_type, opts)
+    end
+  end
+
+  defp parse_probe(output, path, content_type, opts) do
+    case FfprobeJson.parse(output, content_type || :movie) do
+      {:error, :invalid_output} = error ->
+        retry_mp3(error, output, path, content_type, opts)
+
+      result ->
+        result
+    end
+  end
+
+  defp retry_mp3(error, output, path, :music, opts) do
+    with true <- Path.extname(path) in [".mp3", ".MP3"],
+         {:ok, %{"format" => %{"format_name" => "mpeg"}}} <- Jason.decode(output) do
+      probe_mp3(path, opts)
+    else
+      _ -> error
+    end
+  end
+
+  defp retry_mp3(error, _output, _path, _content_type, _opts), do: error
+
+  defp probe_mp3(path, opts) do
+    with {:ok, output} <- run_probe(path, :music, opts, ["-f", "mp3"]) do
+      FfprobeJson.parse(output, :music)
+    end
+  end
+
+  defp run_probe(path, content_type, opts, input_args) do
+    remaining_ms = Keyword.fetch!(opts, :probe_deadline_ms) - System.monotonic_time(:millisecond)
+
+    if remaining_ms > 0 do
+      BoundedCommand.run(
+        Keyword.get(opts, :executable, System.find_executable("ffprobe") || "ffprobe"),
+        args(content_type) ++ input_args ++ [path],
+        remaining_ms,
+        Keyword.get(opts, :max_bytes, @max_bytes)
+      )
+    else
+      {:error, :timeout}
     end
   end
 

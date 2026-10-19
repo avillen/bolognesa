@@ -72,6 +72,96 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
              )
   end
 
+  test "recovers music MP3 misdetected as MPEG without accepting other invalid formats", %{
+    root: root
+  } do
+    path = Path.join(root, "misdetected.mp3")
+    File.write!(path, "audio")
+
+    invalid =
+      ~s({"format":{"format_name":"mpeg","duration":"7.600000"},"streams":[{"codec_type":"audio","codec_name":"mp3","channels":0}]})
+
+    valid =
+      ~s({"format":{"format_name":"mp3","duration":"263.765333"},"streams":[{"codec_type":"audio","codec_name":"mp3","channels":2}]})
+
+    executable =
+      fake(
+        root,
+        "case \"$*\" in *'-f mp3'*) printf '%s' '#{valid}' ;; *) printf '%s' '#{invalid}' ;; esac"
+      )
+
+    assert {:ok, %{format: "mp3", duration_ms: 263_765, tracks: [%{channels: 2}]}} =
+             FfprobeMediaProbe.inspect(library(root, :music), file(path, root),
+               executable: executable
+             )
+
+    assert {:error, :invalid_output} =
+             FfprobeMediaProbe.inspect(library(root, :movie), file(path, root),
+               executable: executable
+             )
+
+    other = Path.join(root, "other.flac")
+    File.write!(other, "audio")
+
+    assert {:error, :invalid_output} =
+             FfprobeMediaProbe.inspect(library(root, :music), file(other, root),
+               executable: executable
+             )
+
+    jpeg =
+      ~s({"format":{"format_name":"jpeg_pipe"},"streams":[{"codec_type":"video","codec_name":"mjpeg","width":100,"height":99}]})
+
+    image_probe =
+      fake(
+        root,
+        "case \"$*\" in *'-f mp3'*) printf '%s' '#{valid}' ;; *) printf '%s' '#{jpeg}' ;; esac"
+      )
+
+    assert {:error, :invalid_output} =
+             FfprobeMediaProbe.inspect(library(root, :music), file(path, root),
+               executable: image_probe
+             )
+  end
+
+  test "rejects failed MP3 recovery and files changed during recovery", %{root: root} do
+    path = Path.join(root, "changing.mp3")
+    File.write!(path, "audio")
+
+    invalid =
+      ~s({"format":{"format_name":"mpeg"},"streams":[{"codec_type":"audio","channels":0}]})
+
+    valid =
+      ~s({"format":{"format_name":"mp3"},"streams":[{"codec_type":"audio","codec_name":"mp3","channels":2}]})
+
+    failed =
+      fake(root, "case \"$*\" in *'-f mp3'*) exit 7 ;; *) printf '%s' '#{invalid}' ;; esac")
+
+    assert {:error, :unreadable} =
+             FfprobeMediaProbe.inspect(library(root, :music), file(path, root),
+               executable: failed
+             )
+
+    timeout =
+      fake(root, "case \"$*\" in *'-f mp3'*) sleep 1 ;; *) printf '%s' '#{invalid}' ;; esac")
+
+    assert {:error, :timeout} =
+             FfprobeMediaProbe.inspect(library(root, :music), file(path, root),
+               executable: timeout,
+               timeout_ms: 100
+             )
+
+    changed =
+      fake(
+        root,
+        "case \"$*\" in *'-f mp3'*) printf x >> '#{path}'; printf '%s' '#{valid}' ;; *) printf '%s' '#{invalid}' ;; esac"
+      )
+
+    assert {:error, :source_changed} =
+             FfprobeMediaProbe.inspect(library(root, :music), file(path, root),
+               executable: changed
+             )
+  end
+
   test "rejects descendant symlinks and changed observations", %{root: root} do
     target = Path.join(root, "target.mkv")
     File.write!(target, "video")
