@@ -41,6 +41,19 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
   the initial burst (including container startup). Synthetic full-video conversion from
   an eight-second offset completed with H.264/yuv420p and AAC output. These checks do not
   establish target-server capacity, real-device playback, or production stall reduction.
+  Published [application CI](https://github.com/avillen/bolognesa/actions/runs/39695957237),
+  [screenshot CI](https://github.com/avillen/bolognesa/actions/runs/39695957197), and
+  [image CI](https://github.com/avillen/bolognesa/actions/runs/39695957193) passed for
+  `ac63da2507caa37bfd9bb7ac7db8a76d5257db5f`. `make deploy-release` deployed verified
+  image `ghcr.io/avillen/bolognesa@sha256:4a7e7c6f3414cb1a4341c9961d922b9ec5fc4dfc35f1ed18509754879be27898`
+  on native ARM64. The update created and revalidated `pre-migration-20261022-015508-1965.dump`
+  with its matching previous-image reference; migrations were already current. Post-update
+  checks verified HTTP 200 health, healthy PostgreSQL, authenticated catalog reads,
+  unauthenticated media rejection, all six coordination processes, and the new FFmpeg
+  arguments and executable option support. Project, mounts, environment, database
+  configuration, accounts, libraries, and manual-correction fingerprints matched the
+  pre-update snapshot; all three media mounts remain read-only. Actual playback performance
+  on the installation still needs representative media and device testing.
 
 - Series UX: local `mix precommit` passed compilation, formatting, Credo, and 559 tests with one skipped; `node --test assets/test/*.mjs` passed 22 tests. Regressions cover contextual navigation, unavailable episodes, selected-version updates, initial preparation failure/retry, malformed return context, same-season advance, and normalized scroll keys. Independent review's three material findings were reproduced and corrected. Synthetic Chrome player checks passed the opening logo lifecycle, controls, direct/HLS playback, seeking, fullscreen session replacement, and diagnostic delivery. `make screenshots` passed the actual mobile series journey, first-viewport player visibility, playback options, menu Escape/focus and resizing, and many long library names. Published and deployed as `2818faf30df960b520866ae5b7c7470bd1884fe2`. [Application CI](https://github.com/avillen/bolognesa/actions/runs/39667788283), [container image CI](https://github.com/avillen/bolognesa/actions/runs/39667788313), and [screenshot CI](https://github.com/avillen/bolognesa/actions/runs/39667788410) passed. `make deploy-release` verified image `ghcr.io/avillen/bolognesa@sha256:6126ab06337c953146fc0ea0a1a37ee2ad9b62dda694e023fc3c05a50f7a0292`, created validated backup `pre-migration-20261021-221806-15664.dump`, found migrations current, and passed HTTP health verification. `make deploy-status` confirmed the app is running and PostgreSQL is healthy. Target iPhone/Safari interaction and real-device resets remain unverified.
 
