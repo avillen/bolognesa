@@ -27,7 +27,18 @@ export function createPlaybackDiagnostics(hook, doc = document) {
   let connected = true
   let sequence = 0
   const pending = []
-  const report = diagnostic => {
+  let stall = null
+  const sourceKey = () => `${hook.el.dataset.fileId}:${hook.el.dataset.sessionId || ""}`
+  const bufferedMs = () => {
+    const {video} = hook
+    for (let i = 0; i < (video.buffered?.length || 0); i++) {
+      if (video.buffered.start(i) <= video.currentTime && video.currentTime <= video.buffered.end(i)) {
+        return Math.max(0, Math.min(2147483647, Math.floor((video.buffered.end(i) - video.currentTime) * 1000)))
+      }
+    }
+    return 0
+  }
+  const report = (diagnostic, stallDurationMs = 0) => {
     const {video, el} = hook
     if (!el.dataset.fileId) return
     const position = (video.fileTimeline?.offset || 0) + (video.currentTime || 0)
@@ -35,6 +46,7 @@ export function createPlaybackDiagnostics(hook, doc = document) {
       diagnostic, tab_id: currentTabId(), session_id: el.dataset.sessionId || null,
       file_id: el.dataset.fileId, sequence: ++sequence, client_time_ms: Date.now(),
       position_ms: Number.isFinite(position) ? Math.max(0, Math.min(2147483647, Math.floor(position * 1000))) : 0,
+      buffered_ms: bufferedMs(), stall_duration_ms: stallDurationMs,
       paused: video.paused, visibility: doc.visibilityState === "hidden" ? "hidden" : "visible",
       media_error: [1, 2, 3, 4].includes(video.error?.code) ? video.error.code : 0,
     }
@@ -43,6 +55,24 @@ export function createPlaybackDiagnostics(hook, doc = document) {
   }
   const visibility = () => report("visibility")
   const error = () => report("error")
+  const waiting = () => {
+    if (hook.video.paused || hook.video.ended) return
+    const key = sourceKey()
+    if (stall?.key === key) return
+    stall = {key, started: performance.now()}
+    report("waiting")
+  }
+  const playing = () => {
+    if (stall?.key === sourceKey()) {
+      report("recovered", Math.max(0, Math.min(2147483647, Math.floor(performance.now() - stall.started))))
+    }
+    stall = null
+  }
+  const resetStall = () => { stall = null }
+  hook.video.addEventListener("waiting", waiting)
+  hook.video.addEventListener("playing", playing)
+  hook.video.addEventListener("emptied", resetStall)
+  hook.video.addEventListener("pause", resetStall)
   doc.addEventListener("visibilitychange", visibility)
   hook.video.addEventListener("error", error)
   report("mounted")
@@ -62,6 +92,10 @@ export function createPlaybackDiagnostics(hook, doc = document) {
     destroy() {
       doc.removeEventListener("visibilitychange", visibility)
       hook.video.removeEventListener("error", error)
+      hook.video.removeEventListener("waiting", waiting)
+      hook.video.removeEventListener("playing", playing)
+      hook.video.removeEventListener("emptied", resetStall)
+      hook.video.removeEventListener("pause", resetStall)
       pending.length = 0
     },
   }

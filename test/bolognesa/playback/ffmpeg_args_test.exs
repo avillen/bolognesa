@@ -5,11 +5,21 @@ defmodule Bolognesa.Playback.FfmpegArgsTest do
 
   test "audio profile copies video and converts audio to AAC" do
     args = FfmpegArgs.for(:audio, "/movies/original.mkv", "/tmp/session", 0)
-    assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-re", "-i"])
+    assert "-re" in args
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-c:v", "copy"])
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-c:a", "aac"])
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-ac", "2"])
     assert List.last(args) == "/tmp/session/index.m3u8"
+  end
+
+  test "both profiles build an initial cushion while retaining paced sliding output" do
+    for profile <- [:audio, :video] do
+      args = FfmpegArgs.for(profile, "/movies/input.mkv", "/tmp/session", 0)
+      pairs = Enum.chunk_every(args, 2, 1, :discard)
+      assert ["-readrate_initial_burst", "12"] in pairs
+      assert "-re" in args
+      assert ["-hls_list_size", "12"] in pairs
+    end
   end
 
   test "video profile encodes H.264 and AAC with browser pixel format" do

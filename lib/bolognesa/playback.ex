@@ -146,13 +146,27 @@ defmodule Bolognesa.Playback do
   defp playlist_status(directory), do: if(playlist_ready?(directory), do: :ready, else: :waiting)
 
   defp playlist_ready?(directory) do
-    with {:ok, manifest} <- File.read(Path.join(directory, "index.m3u8")),
-         [segment | _] <- Regex.run(~r/seg-[0-9]{6,12}\.ts/, manifest),
-         true <- File.regular?(Path.join(directory, segment)) do
-      true
-    else
+    case File.read(Path.join(directory, "index.m3u8")) do
+      {:ok, manifest} -> manifest_ready?(directory, manifest)
       _ -> false
     end
+  end
+
+  defp manifest_ready?(directory, manifest) do
+    segments = Regex.scan(~r/^seg-[0-9]{6,12}\.ts$/m, manifest) |> List.flatten()
+    enough? = buffered_seconds(manifest) >= 12 or String.contains?(manifest, "#EXT-X-ENDLIST")
+
+    enough? and segments != [] and
+      Enum.all?(segments, &File.regular?(Path.join(directory, &1)))
+  end
+
+  defp buffered_seconds(manifest) do
+    ~r/^#EXTINF:(\d+(?:\.\d+)?),/m
+    |> Regex.scan(manifest, capture: :all_but_first)
+    |> Enum.reduce(0.0, fn [duration], total ->
+      {seconds, ""} = Float.parse(duration)
+      total + seconds
+    end)
   end
 
   defp validate_profile(:direct, :auto), do: {:error, :unsupported}

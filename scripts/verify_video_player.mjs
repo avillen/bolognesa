@@ -103,7 +103,7 @@ try {
     window.hook.reconnected.call(window.context)
   })
   const connectionEvents = await page.evaluate(() => window.events
-    .filter(([name]) => name === "playback_diagnostic").map(([, data]) => data.diagnostic))
+    .filter(([name, data]) => name === "playback_diagnostic" && ["mounted", "disconnected", "reconnected"].includes(data.diagnostic)).map(([, data]) => data.diagnostic))
   assert.deepEqual(connectionEvents, ["mounted", "disconnected", "reconnected"])
   console.log("Direct: Video.js play/pause and keyboard seeking passed.")
 

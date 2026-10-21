@@ -1,10 +1,18 @@
 # Project status
 
-Last reviewed: 2026-10-21.
+Last reviewed: 2026-10-22.
 
 ## Implemented behavior
 
 Movies, Series, and Music independently own their content and recovery. Inspection and content requests now commit directly with their linked Oban jobs; the four intermediate event tables and polling dispatchers have been removed. Video identities use independent sequences; Playback selects movies and episodes with explicit typed references. Bolognesa supports movie, series, and music libraries; recoverable scanning and technical inspection; TMDb identification and manual corrections; library-scoped catalog browsing; authorized direct playback; and optional FFmpeg/HLS video playback. Original media remains read-only. Scanning and identification are separate steps; automatic lookup requires a runtime TMDb token.
+
+Compatible video playback now prepares at least 12 seconds of published HLS segments before
+starting or completing a seek, with a nonempty completed-playlist exception for short
+endings. FFmpeg permits a 12-second initial read burst before real-time pacing; the
+playlist retains 12 entries and hls.js starts at the session beginning with a three-segment
+synchronization distance. Browser diagnostics record buffer waits, recovery durations,
+and contiguous buffered media, subject to the existing observation cap. Performance on
+representative media on the target server remains unverified.
 
 Music supports local tags with filename fallbacks, track/artist/album browsing, search, pagination, import retry, and ordered album playback with previous/next and automatic advance. Listening survives URL patches within music; full navigation or reload ends the queue. Identity, grouping, limits, and recovery contracts live in [decision 0018](decisions/0018-local-music-catalog.md).
 
@@ -19,6 +27,20 @@ The account and access context is `Bolognesa.Accounts`, including its `Authentic
 Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`, or explicit error tuples. `Accounts.fetch_authenticated_admin/0` and `Release.fetch_authenticated_admin/0` replace `admin_actor/0`; the release console still binds `admin` to the actor or `nil` when setup is open. Authentication preserves its `:invalid_credentials` and `:unauthenticated` failure contracts.
 
 ## Recorded verification
+
+- Playback buffering: local `mix precommit` passed compilation, formatting, Credo, and
+  563 tests with one skipped; `node --test assets/test/*.mjs` passed 23 tests. Regressions
+  cover initial/seek preparation, missing segments, long copied-video segments, short
+  completed playlists, and bounded stall diagnostics. Scan batch tests now explicitly
+  allow one second for asynchronous PostgreSQL acknowledgements after repeated failures
+  at the implicit 100 ms deadline. The production
+  Video.js hook passed synthetic MP4/HLS checks in Chrome 155, including full-file seeks,
+  pause/resume, paused seeks, and fullscreen-preserving session replacement. A local
+  Docker FFmpeg comparison using synthetic H.264/AC-3 media generated three four-second
+  segments in approximately 12.3 seconds with the former pacing and 1.1 seconds with
+  the initial burst (including container startup). Synthetic full-video conversion from
+  an eight-second offset completed with H.264/yuv420p and AAC output. These checks do not
+  establish target-server capacity, real-device playback, or production stall reduction.
 
 - Series UX: local `mix precommit` passed compilation, formatting, Credo, and 559 tests with one skipped; `node --test assets/test/*.mjs` passed 22 tests. Regressions cover contextual navigation, unavailable episodes, selected-version updates, initial preparation failure/retry, malformed return context, same-season advance, and normalized scroll keys. Independent review's three material findings were reproduced and corrected. Synthetic Chrome player checks passed the opening logo lifecycle, controls, direct/HLS playback, seeking, fullscreen session replacement, and diagnostic delivery. `make screenshots` passed the actual mobile series journey, first-viewport player visibility, playback options, menu Escape/focus and resizing, and many long library names. Published and deployed as `2818faf30df960b520866ae5b7c7470bd1884fe2`. [Application CI](https://github.com/avillen/bolognesa/actions/runs/39667788283), [container image CI](https://github.com/avillen/bolognesa/actions/runs/39667788313), and [screenshot CI](https://github.com/avillen/bolognesa/actions/runs/39667788410) passed. `make deploy-release` verified image `ghcr.io/avillen/bolognesa@sha256:6126ab06337c953146fc0ea0a1a37ee2ad9b62dda694e023fc3c05a50f7a0292`, created validated backup `pre-migration-20261021-221806-15664.dump`, found migrations current, and passed HTTP health verification. `make deploy-status` confirmed the app is running and PostgreSQL is healthy. Target iPhone/Safari interaction and real-device resets remain unverified.
 

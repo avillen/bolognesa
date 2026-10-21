@@ -60,7 +60,7 @@ test("fatal HLS failures are diagnosed before the session is stopped", async () 
   const mock = `class Hls {
     static isSupported() { return true }
     static Events = {MANIFEST_PARSED: "ready", ERROR: "error"}
-    constructor() { this.listeners = {} }
+    constructor(config) { this.listeners = {}; this.config = config }
     on(event, listener) { this.listeners[event] = listener }
     loadSource() {} attachMedia() {} destroy() {}
   }`
@@ -71,6 +71,8 @@ test("fatal HLS failures are diagnosed before the session is stopped", async () 
   Object.assign(el, {dataset: {sessionId: "hls", offsetMs: "0", durationMs: "60000"}})
   const context = {el, pushEvent: (...args) => calls.push(args), reportPlaybackError: () => calls.push(["diagnostic"])}
   hlsHook.mounted.call(context)
+  assert.equal(context.hls.config.startPosition, 0)
+  assert.equal(context.hls.config.liveSyncDurationCount, 3)
   context.hls.listeners.error("error", {fatal: true})
   assert.deepEqual(calls, [["diagnostic"], ["compatible_error", {session_id: "hls"}]])
   hlsHook.destroyed.call(context)

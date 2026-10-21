@@ -410,7 +410,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
     File.write!(
       Path.join(session.directory, "index.m3u8"),
-      "#EXTM3U\n#EXTINF:4.0,\nseg-000000.ts\n"
+      "#EXTM3U\n#EXTINF:4.0,\nseg-000000.ts\n#EXT-X-ENDLIST\n"
     )
 
     send(view.pid, {:compatible_poll, session.id})

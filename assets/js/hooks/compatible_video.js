@@ -58,7 +58,7 @@ const CompatibleVideo = {
     this.el.addEventListener("ended", this.onEnded)
 
     if (Hls.isSupported()) {
-      this.hls = new Hls({lowLatencyMode: false, liveSyncDurationCount: 1})
+      this.hls = new Hls({lowLatencyMode: false, liveSyncDurationCount: 3, startPosition: 0})
       this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (this.el.dataset.autoplay === "true") this.el.play().catch(() => {})
       })

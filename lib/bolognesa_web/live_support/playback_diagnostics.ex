@@ -7,7 +7,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
     "disconnected" => :disconnected,
     "reconnected" => :reconnected,
     "visibility" => :visibility,
-    "error" => :error
+    "error" => :error,
+    "waiting" => :waiting,
+    "recovered" => :recovered
   }
 
   @spec record(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
@@ -34,6 +36,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
          {:ok, diagnostic} <- Map.fetch(@diagnostics, params["diagnostic"]),
          position when is_integer(position) and position >= 0 and position <= 2_147_483_647 <-
            params["position_ms"],
+         {:ok, buffered, stall_duration} <- buffer_observation(params),
          sequence when is_integer(sequence) and sequence in 1..1_000_000 <- params["sequence"],
          client_time when is_integer(client_time) and client_time in 1..10_000_000_000_000 <-
            params["client_time_ms"],
@@ -47,6 +50,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
          tab_id: tab_id,
          diagnostic: diagnostic,
          position_ms: position,
+         buffered_ms: buffered,
+         stall_duration_ms: stall_duration,
          sequence: sequence,
          client_time_ms: client_time,
          paused: paused,
@@ -55,6 +60,18 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
        }}
     else
       _ -> :error
+    end
+  end
+
+  defp buffer_observation(params) do
+    buffered = Map.get(params, "buffered_ms", 0)
+    duration = Map.get(params, "stall_duration_ms", 0)
+
+    if is_integer(buffered) and buffered in 0..2_147_483_647 and
+         is_integer(duration) and duration in 0..2_147_483_647 do
+      {:ok, buffered, duration}
+    else
+      :error
     end
   end
 end

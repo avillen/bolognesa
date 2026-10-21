@@ -24,6 +24,8 @@ defmodule Bolognesa.Infrastructure.Observability do
     :tab_id,
     :diagnostic,
     :position_ms,
+    :buffered_ms,
+    :stall_duration_ms,
     :paused,
     :visibility,
     :sequence,

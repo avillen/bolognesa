@@ -72,7 +72,7 @@ below have prefix `[:bolognesa, :playback]` and measurement `count: 1`.
 | `[:session, :exited]` | `exit_status` | `session_id`, `file_id`, `profile`, `reason` (`finished` or `failed`) |
 | `[:liveview, :terminated]` | None | `session_id`, `file_id`, normalized `termination_reason` |
 | `[:hls, :failed]` | None | Valid UUID `session_id` when supplied, `resource_type`, `failure_stage`, `reason`, HTTP `status` |
-| `[:browser, :diagnostic]` | None | `tab_id`, current `session_id`/`file_id`, `diagnostic`, `position_ms`, `paused`, `visibility`, `sequence`, `client_time_ms`, numeric `media_error` |
+| `[:browser, :diagnostic]` | None | `tab_id`, current `session_id`/`file_id`, `diagnostic`, `position_ms`, `paused`, `visibility`, `sequence`, `client_time_ms`, numeric `media_error`, `buffered_ms`, `stall_duration_ms` |
 
 Session close reasons distinguish `version_selected`, `seek`, `ended`, `client_error`,
 `preparation_timeout`, `source_invalidated`, `liveview_terminated`, `owner_terminated`,
@@ -84,7 +84,16 @@ exits use error. Process exit details are reduced to `normal`, `closed`, `shutdo
 `abnormal`; these codes do not prove why a network connection was lost.
 
 Browser observations cover mount, disconnect/reconnect, visibility changes, and media
-errors, including fatal HLS errors before session cleanup. A random tab UUID is retained in session storage when available; it is only a
+errors, including fatal HLS errors before session cleanup. `waiting` records a buffer
+wait while playback is requested; duplicate waits are coalesced until `playing` emits
+`recovered`. `buffered_ms` measures contiguous media ahead of the current position;
+`stall_duration_ms` measures the wait with the browser monotonic clock and is zero for
+other observations. Both fields accept integers from zero to 2,147,483,647; absent fields
+from older clients default to zero. Pausing, emptying/replacing the source, or destroying
+the hook abandons an unfinished wait without a recovery event. These observations also
+include startup and seek waits, not just interruptions after sustained playback.
+
+A random tab UUID is retained in session storage when available; it is only a
 correlation hint, never authorization. Positions include the HLS file offset. The client
 buffers at most eight observations during a hook disconnect and flushes them on reconnect.
 The server accepts at most 120 valid observations per LiveView lifetime and drops stale or

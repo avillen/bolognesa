@@ -118,7 +118,7 @@ For a private server deployment, use the [generic Linux Docker Compose profile](
 
 ## Run from source
 
-For native development, install Elixir 1.17 or newer in the supported 1.x series, Erlang/OTP, PostgreSQL, and `ffprobe` (and `ffmpeg` if you want to work on the compatibility playback path). Configure PostgreSQL to match `config/dev.exs`, then run:
+For native development, install Elixir 1.17 or newer in the supported 1.x series, Erlang/OTP, PostgreSQL, and `ffprobe` (and `ffmpeg` with `-readrate_initial_burst` support if you want to work on the compatibility playback path). Configure PostgreSQL to match `config/dev.exs`, then run:
 
 ```sh
 mix setup

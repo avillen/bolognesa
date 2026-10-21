@@ -41,13 +41,27 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
     assert metadata.diagnostic == :reconnected
     refute Map.has_key?(metadata, :secret)
 
+    stall =
+      Map.merge(params, %{
+        "diagnostic" => "recovered",
+        "buffered_ms" => 8000,
+        "stall_duration_ms" => 1600
+      })
+
+    assert {:noreply, _} = PlaybackEvents.handle_event("playback_diagnostic", stall, socket)
+
+    assert_receive {^event, %{count: 1},
+                    %{diagnostic: :recovered, buffered_ms: 8000, stall_duration_ms: 1600}}
+
     for invalid <- [
           Map.put(params, "session_id", Ecto.UUID.generate()),
           Map.put(params, "file_id", "4"),
           Map.put(params, "diagnostic", "injected"),
           Map.put(params, "position_ms", -1),
           Map.put(params, "tab_id", "private text"),
-          Map.put(params, "media_error", 99)
+          Map.put(params, "media_error", 99),
+          Map.put(stall, "buffered_ms", -1),
+          Map.put(stall, "stall_duration_ms", "private text")
         ] do
       assert {:noreply, ^socket} =
                PlaybackEvents.handle_event("playback_diagnostic", invalid, socket)

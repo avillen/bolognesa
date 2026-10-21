@@ -14,6 +14,15 @@ FFmpeg produces HLS MPEG-TS in a private temporary directory. A supervised `GenS
 
 Authenticate every playlist and segment request and recheck actor, catalog/file relationship, revision, and source availability. Only application-generated segment names are accepted. The browser uses hls.js with native HLS as a fallback. Pause suspends FFmpeg; seeking restarts it at the requested position.
 
+Preparation waits for at least 12 seconds of published segments, or a nonempty completed
+playlist near the end of a file. FFmpeg may read an initial 12 seconds without pacing,
+then retains real-time input pacing. The sliding playlist retains 12 entries, with a
+four-second target per segment; copied video follows source keyframes and may produce
+longer segments. hls.js starts at the beginning of each generated session and uses a
+three-segment live synchronization distance. These settings provide a playback cushion
+without continuously generating the file at unrestricted speed; they do not guarantee
+real-time conversion on every server.
+
 ## Player controls
 
 Movies and episodes use the vendored HTML build of Video.js 10.1.0 for controls, with

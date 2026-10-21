@@ -113,6 +113,47 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   def handle_telemetry(event, measurements, metadata, caller),
     do: send(caller, {event, measurements, metadata})
 
+  test "waits for three published segments, including after a seek", %{source: source} do
+    for offset <- [0, 12_000] do
+      {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :video, offset)
+      names = ["seg-000000.ts", "seg-000001.ts", "seg-000002.ts"]
+      Enum.each(names, &File.write!(Path.join(session.directory, &1), "segment"))
+
+      for count <- [1, 2, 3] do
+        manifest =
+          "#EXTM3U\n" <>
+            Enum.map_join(Enum.take(names, count), "", &("#EXTINF:4.0,\n" <> &1 <> "\n"))
+
+        File.write!(Path.join(session.directory, "index.m3u8"), manifest)
+        expected = if count == 3, do: :ready, else: :waiting
+        assert Bolognesa.Playback.video_compatible_status(session.id) == expected
+      end
+
+      File.rm!(Path.join(session.directory, List.last(names)))
+      assert Bolognesa.Playback.video_compatible_status(session.id) == :waiting
+    end
+  end
+
+  test "a long copied-video segment supplies the cushion without waiting for three GOPs", %{
+    source: source
+  } do
+    {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :audio, 0)
+    File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
+    path = Path.join(session.directory, "index.m3u8")
+    File.write!(path, "#EXTM3U\n#EXTINF:16.0,\nseg-000000.ts\n")
+    assert Bolognesa.Playback.video_compatible_status(session.id) == :ready
+  end
+
+  test "a short completed playlist can start without three segments", %{source: source} do
+    {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :video, 59_000)
+    path = Path.join(session.directory, "index.m3u8")
+    File.write!(path, "#EXTM3U\n#EXT-X-ENDLIST\n")
+    assert Bolognesa.Playback.video_compatible_status(session.id) == :waiting
+    File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
+    File.write!(path, "#EXTM3U\n#EXTINF:1.0,\nseg-000000.ts\n#EXT-X-ENDLIST\n")
+    assert Bolognesa.Playback.video_compatible_status(session.id) == :ready
+  end
+
   test "rejects malformed or untyped video references", %{source: source} do
     for ref <- [2, {:series, 2}, {:movie, 0}] do
       assert {:error, :not_found} = TranscodeManager.start(1, ref, 3, source, :video, 0)

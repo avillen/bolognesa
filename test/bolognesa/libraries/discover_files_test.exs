@@ -33,7 +33,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
     assert_receive {:discovery_request, %{content_type: :movie, path: path}}
     assert path == Repo.get!(LibrarySchema, context.scan.library_id).path
     send(task.pid, {:batch, [entry()]})
-    assert_receive {:batch_result, _, :ok}
+    assert_receive {:batch_result, _, :ok}, 1_000
     assert Repo.get!(ScanSchema, context.scan.id).state == :running
     send(task.pid, {:finish, :ok})
     assert :ok = Task.await(task)
@@ -56,7 +56,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
   test "permanent disk failure preserves batches and permits explicit retry", context do
     task = start_discovery(context)
     send(task.pid, {:batch, [entry()]})
-    assert_receive {:batch_result, _, :ok}
+    assert_receive {:batch_result, _, :ok}, 1_000
     send(task.pid, {:finish, {:error, :source_changed}})
     assert {:cancel, :source_changed} = Task.await(task)
 
@@ -71,7 +71,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
     for {attempt, expected_state} <- [{1, :retrying}, {3, :retrying}] do
       task = start_discovery(context, attempt, UnavailableScanRepository)
       send(task.pid, {:batch, [entry()]})
-      assert_receive {:batch_result, _, {:error, :unavailable}}
+      assert_receive {:batch_result, _, {:error, :unavailable}}, 1_000
       assert {:error, :storage_unavailable} = Task.await(task)
 
       assert %{state: ^expected_state, failure_reason: :storage_unavailable} =
@@ -99,7 +99,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
     task = start_discovery(context)
     {:ok, current, _} = EctoScanRepository.begin_attempt(context.scan.id, 2)
     send(task.pid, {:batch, [entry()]})
-    assert_receive {:batch_result, _, {:error, :stale_attempt}}
+    assert_receive {:batch_result, _, {:error, :stale_attempt}}, 1_000
     assert :ok = Task.await(task)
 
     assert {:ok, %{latest_scan: ^current}} =
@@ -145,7 +145,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
       ExUnit.CaptureLog.capture_log([level: :debug], fn ->
         task = start_worker(context)
         send(task.pid, {:batch, [entry]})
-        assert_receive {:batch_result, _, :ok}
+        assert_receive {:batch_result, _, :ok}, 1_000
         send(task.pid, {:finish, :ok})
         assert :ok = Task.await(task)
       end)
@@ -164,7 +164,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
         Logger.info("Scan formatter context", request_id: "scan-test-request")
         task = start_worker(context)
         send(task.pid, {:batch, [entry()]})
-        assert_receive {:batch_result, _, :ok}
+        assert_receive {:batch_result, _, :ok}, 1_000
         send(task.pid, {:finish, :ok})
         assert :ok = Task.await(task)
       end)

@@ -65,3 +65,29 @@ test("diagnostics work on HTTP LAN origins without randomUUID or session storage
     else delete globalThis.sessionStorage
   }
 })
+
+
+test("waiting reports buffer and one measured recovery without duplicate stalls", t => {
+  let clock = 1000
+  t.mock.method(performance, "now", () => clock)
+  const {events, video, diagnostics} = setup()
+  video.buffered = {length: 1, start: () => 10, end: () => 15}
+  video.dispatchEvent(new Event("waiting"))
+  video.dispatchEvent(new Event("waiting"))
+  assert.equal(events.length, 2)
+  assert.equal(events.at(-1)[1].diagnostic, "waiting")
+  assert.equal(events.at(-1)[1].buffered_ms, 3000)
+  clock = 2600
+  video.dispatchEvent(new Event("playing"))
+  assert.equal(events.at(-1)[1].diagnostic, "recovered")
+  assert.equal(events.at(-1)[1].stall_duration_ms, 1600)
+  video.dispatchEvent(new Event("playing"))
+  assert.equal(events.length, 3)
+  video.paused = true
+  video.dispatchEvent(new Event("waiting"))
+  assert.equal(events.length, 3)
+  diagnostics.destroy()
+  video.paused = false
+  video.dispatchEvent(new Event("waiting"))
+  assert.equal(events.length, 3)
+})
