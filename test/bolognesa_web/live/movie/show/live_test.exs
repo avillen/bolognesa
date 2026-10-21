@@ -255,7 +255,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     test "prepares inspected incompatible media and displays its HLS controls when ready", ctx do
       session = start_inspected_version(ctx)
       assert session.profile == :audio
-      assert has_element?(ctx.view, "#movie-playback-preparing", "Preparando reproducción")
+      assert has_element?(ctx.view, "#movie-playback-preparing", "Preparando versión compatible")
       refute has_element?(ctx.view, "#movie-video-frame[data-src]")
       make_ready(ctx.view, session)
 

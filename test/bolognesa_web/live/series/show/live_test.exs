@@ -29,4 +29,21 @@ defmodule BolognesaWeb.Series.Show.LiveTest do
     assert {:ok, view, _} = live(ctx.conn, "/series/#{ctx.series_id}?page[]=1")
     render_async(view)
   end
+
+  test "a long synopsis starts collapsed below the hero", ctx do
+    Bolognesa.Repo.get!(Bolognesa.Infrastructure.Persistence.SeriesSchema, ctx.series_id)
+    |> Ecto.Changeset.change(overview: String.duplicate("Series overview. ", 30))
+    |> Bolognesa.Repo.update!()
+
+    {:ok, view, _} = live(ctx.conn, "/series/#{ctx.series_id}")
+    render_async(view)
+
+    assert has_element?(
+             view,
+             ".series-seasons-body details#series-synopsis:not([open])",
+             "Series overview."
+           )
+
+    assert has_element?(view, ".media-hero-copy", "1 temporada en tu biblioteca")
+  end
 end

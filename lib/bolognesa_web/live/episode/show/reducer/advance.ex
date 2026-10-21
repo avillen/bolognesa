@@ -6,6 +6,7 @@ defmodule BolognesaWeb.Episode.Show.Reducer.Advance do
   import Phoenix.LiveView, only: [start_async: 3, push_navigate: 2, put_flash: 3]
   alias Bolognesa.Series
   alias BolognesaWeb.LiveSupport.PlaybackEvents
+  alias BolognesaWeb.Series.Navigation
 
   @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
   def call(socket, params) do
@@ -59,7 +60,7 @@ defmodule BolognesaWeb.Episode.Show.Reducer.Advance do
   defp stop_completed(socket, _params), do: socket
 
   defp finish(socket, {:ok, {:ok, episode}}),
-    do: push_navigate(socket, to: ~p"/episodes/#{episode.id}")
+    do: push_navigate(socket, to: ~p"/episodes/#{episode.id}?#{advance_params(socket, episode)}")
 
   defp finish(socket, {:ok, :not_found}), do: assign(socket, :advance_request, nil)
 
@@ -68,4 +69,15 @@ defmodule BolognesaWeb.Episode.Show.Reducer.Advance do
       socket
       |> assign(:advance_request, nil)
       |> put_flash(:error, gettext("No se encontró el episodio."))
+
+  defp advance_params(%{assigns: %{detail: %{season: %{id: season_id}}}} = socket, %{
+         season_id: season_id
+       }),
+       do:
+         Navigation.episode_params(
+           socket.assigns.series_params,
+           Map.get(socket.assigns.season_params, :page, 1)
+         )
+
+  defp advance_params(socket, _episode), do: Map.get(socket.assigns, :series_params, %{})
 end

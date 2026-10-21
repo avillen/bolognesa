@@ -6,16 +6,27 @@
   current_scope={@current_scope}
   active_section={:series}
 >
-  <section id="series-screen" class="series-screen mx-auto max-w-6xl space-y-8">
+  <section
+    id="series-screen"
+    phx-hook="BrowsePosition"
+    data-loading={to_string(@loading?)}
+    class="series-screen series-catalog mx-auto max-w-6xl space-y-8"
+  >
     <header class="media-catalog-heading">
       <div>
         <p class="media-eyebrow">{gettext("Tu biblioteca")}</p>
         <h1 class="mt-3 text-4xl font-semibold text-ink">{@library_name || gettext("Series")}</h1>
       </div>
-      <.link id="series-review-link" navigate={~p"/series/review"} class="media-secondary-action">
-        <.icon name="hero-adjustments-horizontal" class="size-4" />
-        {gettext("Revisar identificaciones")}
-      </.link>
+      <details id="series-library-options" class="series-library-options">
+        <summary aria-label={gettext("Opciones de biblioteca")} class="series-options-toggle">
+          <.icon name="hero-ellipsis-horizontal" class="size-5" />
+        </summary>
+        <div class="series-options-menu">
+          <.link id="series-review-link" navigate={~p"/series/review"} class="app-nav-link">
+            {gettext("Revisar identificaciones")}
+          </.link>
+        </div>
+      </details>
     </header>
     <div class="media-toolbar">
       <.form for={@form} id="series-search" phx-submit="search" class="media-search-form">
@@ -29,7 +40,14 @@
             class="media-search-input"
           />
         </div>
-        <button type="submit" class="media-primary-action">{gettext("Buscar")}</button>
+        <button
+          type="submit"
+          class="media-primary-action series-search-submit"
+          aria-label={gettext("Buscar series")}
+        >
+          <.icon name="hero-arrow-turn-down-left" class="size-5 sm:hidden" />
+          <span class="hidden sm:inline">{gettext("Buscar")}</span>
+        </button>
       </.form>
       <p :if={!@loading? && !@error} id="series-count" class="media-result-count">
         {ngettext("%{count} serie", "%{count} series", @total)}
@@ -49,9 +67,16 @@
       id="series-empty"
       class="rounded-xl border border-dashed border-border p-6 text-muted"
     >
-      {gettext(
+      <span :if={@query == ""}>{gettext(
         "No hay series para esta búsqueda. Añade una biblioteca de series y escanéala para empezar."
-      )}
+      )}</span>
+      <span :if={@query != ""}>{gettext("No hay series que coincidan con tu búsqueda.")}</span>
+      <.link
+        :if={@query != ""}
+        id="series-clear-search"
+        patch={~p"/series?#{@library_params}"}
+        class="mt-3 block min-h-11 py-3 text-accent-soft"
+      >{gettext("Limpiar búsqueda")}</.link>
     </p>
     <div id="series-list" phx-update="stream" class="media-poster-grid">
       <article
@@ -59,7 +84,7 @@
         id={id}
         class="poster-card series-catalog-card"
       >
-        <.link navigate={~p"/series/#{series.id}?#{@library_params}"} class="media-catalog-link">
+        <.link navigate={~p"/series/#{series.id}?#{@series_params}"} class="media-catalog-link">
           <div class="poster-art media-poster-art">
             <div class="media-art-fallback" aria-hidden="true">
               <.icon name="hero-tv" class="size-9" />
@@ -81,10 +106,9 @@
         </.link>
         <p class="mt-2 text-xs leading-5 text-muted">
           {ngettext(
-            "%{available} de %{count} episodio disponible",
-            "%{available} de %{count} episodios disponibles",
-            series.episode_count,
-            available: series.available_episode_count
+            "%{count} episodio disponible",
+            "%{count} episodios disponibles",
+            series.available_episode_count
           )}
         </p>
       </article>

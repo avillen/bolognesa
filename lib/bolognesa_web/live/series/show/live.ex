@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Series.Show.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
+  alias BolognesaWeb.Series.Navigation
   alias BolognesaWeb.Series.Show.Reducer
   @impl true
   def mount(_params, _session, socket), do: {:ok, Reducer.Initialize.call(socket)}
@@ -8,6 +9,7 @@ defmodule BolognesaWeb.Series.Show.Live do
   def handle_params(%{"id" => text} = params, _uri, socket) do
     id = parse(text, 0)
     page = parse(Map.get(params, "page", "1"), 1)
+    socket = Navigation.assign_context(socket, params)
     {:noreply, Reducer.Load.call(socket, id, page)}
   end
 

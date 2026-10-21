@@ -2,6 +2,7 @@ defmodule BolognesaWeb.Series.Index.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
   alias BolognesaWeb.Series.Index.Reducer
+  alias BolognesaWeb.Series.Navigation
 
   @impl true
   def mount(_params, _session, socket), do: {:ok, Reducer.Initialize.call(socket)}
@@ -10,7 +11,16 @@ defmodule BolognesaWeb.Series.Index.Live do
   def handle_params(params, _uri, socket) do
     query = Map.get(params, "query", "")
     page = parse_page(Map.get(params, "page", "1"))
-    {:noreply, Reducer.Load.call(socket, query, page)}
+
+    socket =
+      socket
+      |> Reducer.Load.call(query, page)
+      |> Navigation.assign_context(%{
+        "catalog_query" => query,
+        "catalog_page" => page
+      })
+
+    {:noreply, socket}
   end
 
   @impl true

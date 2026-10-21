@@ -75,6 +75,10 @@ The captures below show a sample movie library, a movie detail page, the player 
   | --- | --- | --- | --- | --- |
   | [<img src="docs/screenshots/series.png" alt="Series library screen" width="190">](docs/screenshots/series.png) | [<img src="docs/screenshots/series-review.png" alt="Series identification review screen" width="190">](docs/screenshots/series-review.png) | [<img src="docs/screenshots/series-detail.png" alt="Series details screen" width="190">](docs/screenshots/series-detail.png) | [<img src="docs/screenshots/season.png" alt="Season screen" width="190">](docs/screenshots/season.png) | [<img src="docs/screenshots/episode.png" alt="Episode details screen" width="190">](docs/screenshots/episode.png) |
 
+  | Mobile catalog | Mobile series | Mobile season | Mobile episode |
+  | --- | --- | --- | --- |
+  | [<img src="docs/screenshots/series-mobile.png" alt="Mobile series catalog" width="160">](docs/screenshots/series-mobile.png) | [<img src="docs/screenshots/series-detail-mobile.png" alt="Mobile series details" width="160">](docs/screenshots/series-detail-mobile.png) | [<img src="docs/screenshots/season-mobile.png" alt="Mobile episode list" width="160">](docs/screenshots/season-mobile.png) | [<img src="docs/screenshots/episode-mobile.png" alt="Mobile episode player" width="160">](docs/screenshots/episode-mobile.png) |
+
   **Music**
 
   | Music library | Music player |
@@ -88,7 +92,7 @@ The captures below show a sample movie library, a movie detail page, the player 
   | [<img src="docs/screenshots/settings.png" alt="Settings screen" width="260">](docs/screenshots/settings.png) | [<img src="docs/screenshots/about.png" alt="About screen" width="260">](docs/screenshots/about.png) |
 </details>
 
-The complete gallery of 17 captures is regenerated with `make screenshots`. The capture workflow verifies play, pause, seeking, and retained position after a list refresh using generated PCM WAV audio in Chromium; it does not establish other audio formats or device compatibility. Captures use byte-exact comparison with two observed antialiasing exceptions: the native music player permits at most 128 pixels with channel differences no greater than 64, and the music list permits at most 16 pixels differing by one channel level. Interface and application changes are checked in CI; if the rendered screens change, include the regenerated images in the same pull request.
+The complete screenshot gallery is regenerated with `make screenshots`. The capture workflow verifies play, pause, seeking, and retained position after a list refresh using generated PCM WAV audio in Chromium; it does not establish other audio formats or device compatibility. Captures use byte-exact comparison with narrowly bounded, per-image rasterization exceptions defined in the [screenshot comparator](scripts/check_readme_screenshots.py). Comparator tests reject changes beyond each pixel and channel budget. Interface and application changes are checked in CI; if the rendered screens change, include the regenerated images in the same pull request.
 
 ## Quick start with Docker
 

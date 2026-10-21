@@ -6,11 +6,27 @@
   current_scope={@current_scope}
   active_section={:series}
 >
-  <section class="series-screen mx-auto max-w-6xl space-y-6">
+  <section
+    id="season-screen"
+    phx-hook="BrowsePosition"
+    data-loading={to_string(@loading?)}
+    class="series-screen mx-auto max-w-6xl space-y-6"
+  >
     <.link
-      navigate={~p"/series?#{@library_params}"}
+      :if={@detail}
+      id="season-back"
+      navigate={~p"/series/#{@detail.series.id}?#{@series_params}"}
       class="media-back-link"
-    >{gettext("← Series")}</.link>
+    >{gettext("← %{title}", title: @detail.series.title)}</.link>
+    <nav :if={@detail} class="series-breadcrumbs" aria-label={gettext("Ruta de navegación")}>
+      <.link navigate={~p"/series?#{@catalog_params}"}>{@library_name || gettext("Series")}</.link>
+      <span aria-hidden="true">/</span>
+      <.link navigate={~p"/series/#{@detail.series.id}?#{@series_params}"}>{@detail.series.title}</.link>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{if @detail.season.number == 0,
+        do: gettext("Especiales"),
+        else: gettext("Temporada %{value0}", value0: @detail.season.number)}</span>
+    </nav>
     <p :if={@loading?} id="episodes-loading" role="status" class="text-muted">
       {gettext("Cargando episodios…")}
     </p>
@@ -19,25 +35,32 @@
     </p>
     <header :if={@detail} class="series-season-heading">
       <.link
-        navigate={~p"/series/#{@detail.series.id}?#{@library_params}"}
-        class="media-back-link"
+        navigate={~p"/series/#{@detail.series.id}?#{@series_params}"}
+        class="text-sm text-accent-soft"
       >{@detail.series.title}</.link>
       <h1 id="season-title" class="mt-3 text-3xl font-semibold text-ink">
         {if @detail.season.number == 0,
           do: gettext("Especiales"),
           else: gettext("Temporada %{value0}", value0: @detail.season.number)}
       </h1>
+      <p class="mt-3 text-xs leading-6 text-muted">
+        {gettext("Episodios identificados en tu biblioteca. La numeración puede tener saltos.")}
+      </p>
       <p :if={@total == 0} id="episodes-empty" class="mt-5 text-muted">
         {gettext("No hay episodios identificados.")}
       </p>
     </header>
     <div id="episode-list" phx-update="stream" class="series-episode-list">
-      <article :for={{id, episode} <- @streams.episodes} id={id}>
+      <article :for={{id, episode} <- @streams.episodes} id={id} class="series-episode-card">
         <.link
-          navigate={~p"/episodes/#{episode.id}?#{@library_params}"}
-          class="series-episode-card"
+          navigate={
+            ~p"/episodes/#{episode.id}?#{BolognesaWeb.Series.Navigation.episode_params(@series_params, @page)}"
+          }
+          class="series-episode-detail"
           aria-labelledby={"episode-label-#{episode.id}"}
-          aria-describedby={"episode-availability-#{episode.id}"}
+          aria-describedby={
+            episode.available_version_count == 0 && "episode-availability-#{episode.id}"
+          }
         >
           <div class="series-episode-art">
             <.icon name="hero-film" class="size-8 text-muted" />
@@ -63,28 +86,24 @@
             </h2>
             <p :if={episode.overview} class="series-episode-overview">{episode.overview}</p>
             <p
+              :if={episode.available_version_count == 0}
               id={"episode-availability-#{episode.id}"}
               class="mt-3 flex items-start gap-2 text-xs leading-5 text-muted"
             >
-              <span
-                class={[
-                  "series-availability-dot",
-                  episode.available_version_count > 0 && "is-available"
-                ]}
-                aria-hidden="true"
-              ></span>
-              {ngettext(
-                "%{available} de %{count} versión disponible",
-                "%{available} de %{count} versiones disponibles",
-                episode.version_count,
-                available: episode.available_version_count
-              )}
+              {gettext("No disponible")}
             </p>
           </div>
-          <span class="series-episode-open" aria-hidden="true"><.icon
-            name="hero-chevron-right"
-            class="size-5"
-          /></span>
+        </.link>
+        <.link
+          :if={episode.available_version_count > 0}
+          id={"episode-play-#{episode.id}"}
+          navigate={
+            ~p"/episodes/#{episode.id}?#{BolognesaWeb.Series.Navigation.episode_params(@series_params, @page)}"
+          }
+          class="series-episode-play"
+          aria-label={gettext("Reproducir %{title}", title: episode.title)}
+        >
+          <.icon name="hero-play-solid" class="size-4" /> {gettext("Reproducir")}
         </.link>
       </article>
     </div>
@@ -92,14 +111,14 @@
       <.link
         :if={@page > 1}
         patch={
-          ~p"/series/seasons/#{@content_id}?#{Map.merge(@library_params, %{page: @page - 1})}"
+          ~p"/series/seasons/#{@content_id}?#{Map.merge(@series_params, %{page: @page - 1})}"
         }
         class="min-h-11 py-3"
       >{gettext("Anterior")}</.link>
       <.link
         :if={@page * 24 < @total}
         patch={
-          ~p"/series/seasons/#{@content_id}?#{Map.merge(@library_params, %{page: @page + 1})}"
+          ~p"/series/seasons/#{@content_id}?#{Map.merge(@series_params, %{page: @page + 1})}"
         }
         class="min-h-11 py-3"
       >{gettext("Siguiente")}</.link>

@@ -75,6 +75,9 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
 
     view |> element("#episode-play-#{second.id}") |> render_click()
     assert has_element?(view, "#episode-video-frame[data-video-id='episode-video-#{second.id}']")
+    assert has_element?(view, "#episode-selected-#{second.id}")
+    refute has_element?(view, "#episode-selected-#{ctx.media_file.id}")
+    assert has_element?(view, "#episode-play-#{ctx.media_file.id}")
   end
 
   test "skips unavailable versions when loading the episode", ctx do
@@ -95,6 +98,46 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     assert has_element?(view, "#episode-title")
     refute has_element?(view, "#episode-player")
     refute has_element?(view, "#episode-playback-error")
+    assert has_element?(view, "#episode-unavailable", "No disponible")
+  end
+
+  test "playback precedes the synopsis and technical options start collapsed", ctx do
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    assert has_element?(view, "#episode-player ~ #episode-synopsis")
+    assert has_element?(view, "details#episode-playback-options:not([open]) #episode-versions")
+    refute has_element?(view, "#episode-player h2", "versión")
+    refute has_element?(view, "#episode-play-#{ctx.media_file.id}")
+    assert has_element?(view, "#episode-selected-#{ctx.media_file.id}")
+  end
+
+  test "contextual return preserves catalog search and season page", ctx do
+    {:ok, view, _} =
+      live(
+        ctx.conn,
+        "/episodes/#{ctx.episode_id}?library_id=#{ctx.library.id}&catalog_query=Serie&catalog_page=2&season_page=3"
+      )
+
+    render_async(view)
+
+    assert has_element?(
+             view,
+             "#episode-back[href='/series/seasons/#{ctx.season_id}?catalog_page=2&catalog_query=Serie&library_id=#{ctx.library.id}&page=3']"
+           )
+
+    assert has_element?(view, "a[href='/series?library_id=#{ctx.library.id}&page=2&query=Serie']")
+  end
+
+  test "malformed return context is ignored", ctx do
+    {:ok, view, _} =
+      live(
+        ctx.conn,
+        "/episodes/#{ctx.episode_id}?catalog_query[]=bad&catalog_page[]=1&season_page=invalid"
+      )
+
+    render_async(view)
+    assert has_element?(view, "#episode-back[href='/series/seasons/#{ctx.season_id}']")
+    assert has_element?(view, "a[href='/series']")
   end
 
   test "finishing direct playback advances past episodes sharing the file", ctx do
@@ -107,6 +150,26 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     render_async(view)
     render_hook(view, "playback_ended", %{file_id: to_string(ctx.media_file.id)})
     assert_redirect(view, "/episodes/#{next}")
+  end
+
+  test "same-season automatic advance preserves the season return page", ctx do
+    Bolognesa.SeriesFixtures.identify(ctx.media_file, 0, [1])
+    file = Bolognesa.SeriesFixtures.file(ctx.library.id, "next-same-season.mp4")
+    next = Bolognesa.SeriesFixtures.identify(file, 0, [2]) |> Map.fetch!(:episode_ids) |> hd()
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?season_page=3")
+    render_async(view)
+    render_hook(view, "playback_ended", %{file_id: to_string(ctx.media_file.id)})
+    assert_redirect(view, "/episodes/#{next}?season_page=3")
+  end
+
+  test "initial preparation failure keeps a visible retry without claiming no versions exist",
+       ctx do
+    File.rm!(Path.join(ctx.directory, ctx.media_file.relative_path))
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    assert has_element?(view, "#episode-playback-error")
+    refute has_element?(view, "#episode-unavailable")
+    assert has_element?(view, "#episode-retry-playback[phx-value-file_id='#{ctx.media_file.id}']")
   end
 
   test "finishing compatible playback advances and releases the session", ctx do

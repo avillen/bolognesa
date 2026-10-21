@@ -58,6 +58,16 @@ input, select, video, audio {
 .app-nav-link.is-active { background: #e16b4829; color: var(--color-ink); }
 .app-nav-link.is-active .size-5 { color: var(--color-accent-soft); }
 .app-sidebar-note { display: none; }
+.app-sidebar { display: flex; align-items: center; justify-content: space-between; min-height: 64px; padding: 10px 20px; }
+.app-menu-toggle { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0; border: 1px solid var(--color-border); border-radius: 7px; color: var(--color-ink); background: transparent; cursor: pointer; }
+.app-navigation-panel { position: fixed; inset: 0; width: min(360px, calc(100% - 24px)); max-width: none; height: 100dvh; max-height: none; margin: 0 0 0 auto; padding: 20px; border: 0; border-left: 1px solid var(--color-border); background: var(--color-canvas); color: var(--color-ink); }
+.app-navigation-panel[open] { display: flex; flex-direction: column; }
+.app-navigation-panel::backdrop { background: #0009; }
+.app-menu-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 16px; font-weight: 600; }
+.app-navigation-panel .app-navigation { flex: 1; min-height: 0; }
+.app-nav-primary { min-height: 0; overflow-y: auto; }
+.app-nav-primary, .app-nav-secondary { flex-direction: column; flex-wrap: nowrap; }
+.app-nav-secondary { flex-shrink: 0; }
 .app-content { min-width: 0; padding: 28px 20px 64px; }
 .app-content h1 { letter-spacing: -.035em; }
 .app-content h2 { letter-spacing: -.02em; }
@@ -92,7 +102,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 @media (min-width: 1024px) {
   .app-shell { display: grid; grid-template-columns: 200px minmax(0, 1fr); }
-  .app-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 30px 16px; }
+  .app-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 30px 16px; }
+  .app-menu-toggle, .app-menu-heading { display: none; }
+  .app-navigation-panel, .app-navigation-panel[open] { display: flex; position: static; flex: 1; min-height: 0; width: 100%; height: auto; padding: 0; margin: 0; border: 0; background: transparent; overflow: visible; }
   .app-brand { margin: 0 8px; }
   .app-navigation { flex: 1; min-height: 0; flex-direction: column; gap: 20px; margin-top: 36px; }
   .app-nav-primary, .app-nav-secondary { flex-direction: column; flex-wrap: nowrap; gap: 4px; }

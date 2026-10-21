@@ -2,7 +2,6 @@ defmodule BolognesaWeb.Episode.Show.Reducer.ApplyResult do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
-  import Phoenix.LiveView, only: [stream: 4]
   alias BolognesaWeb.LiveSupport.SelectVersion
 
   @spec call(Phoenix.LiveView.Socket.t(), reference(), term()) :: Phoenix.LiveView.Socket.t()
@@ -20,7 +19,6 @@ defmodule BolognesaWeb.Episode.Show.Reducer.ApplyResult do
       :multi_episode?,
       Enum.any?(detail.versions, &(length(&1.episode_numbers) > 1))
     )
-    |> stream(:versions, detail.versions, reset: true)
     |> select_first_available(detail.versions)
   end
 

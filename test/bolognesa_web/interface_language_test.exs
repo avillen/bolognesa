@@ -130,7 +130,7 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
 
     assert rendered
            |> LazyHTML.from_fragment()
-           |> LazyHTML.filter("#movie-player")
-           |> LazyHTML.text() =~ "Playing version"
+           |> LazyHTML.filter("#movie-player[aria-label='Player']")
+           |> LazyHTML.text() =~ "Your browser does not support video playback."
   end
 end

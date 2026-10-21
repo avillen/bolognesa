@@ -34,12 +34,21 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
     {:ok, detail, _} = follow_redirect(result, ctx.conn)
     render_async(detail)
     assert has_element?(detail, "#nav-library-#{ctx.library.id}[aria-current=page]")
-    assert has_element?(detail, "a[href='/series?library_id=#{ctx.library.id}']")
+    assert has_element?(detail, "a[href='/series?library_id=#{ctx.library.id}&query=Serie']")
 
     assert has_element?(
              detail,
-             "a[href='/series/seasons/#{ctx.season_id}?library_id=#{ctx.library.id}']"
+             "a[href='/series/seasons/#{ctx.season_id}?catalog_query=Serie&library_id=#{ctx.library.id}']"
            )
+  end
+
+  test "search without results offers a reset rather than setup instructions", ctx do
+    {:ok, view, _} = live(ctx.conn, "/series?query=Unknown")
+    render_async(view)
+    assert has_element?(view, "#series-clear-search")
+    refute has_element?(view, "#series-empty", "Añade una biblioteca")
+    assert has_element?(view, "#series-library-options #series-review-link")
+    assert has_element?(view, "#app-menu-toggle[aria-controls=app-navigation]")
   end
 
   test "an empty series library excludes titles from other sources", ctx do

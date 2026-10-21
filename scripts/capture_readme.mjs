@@ -475,6 +475,44 @@ try {
     };
     await capture("series-mobile.png", `/series?library_id=${ids.series_library}`, "#series-screen h1", "#series-loading");
     await assertSeriesFits();
+    const menuToggle = page.locator("#app-menu-toggle");
+    await menuToggle.click();
+    await page.locator("#app-navigation[open]").waitFor();
+    await page.locator(`#nav-library-${ids.series_library}`).waitFor({state: "visible"});
+    await page.evaluate(() => {
+      const group = document.querySelector(".app-nav-primary");
+      const original = group.querySelector("a");
+      for (let n = 0; n < 30; n++) {
+        const item = original.cloneNode(true);
+        item.removeAttribute("id");
+        item.removeAttribute("aria-current");
+        item.dataset.navigationProbe = "true";
+        item.querySelector("span").textContent = `A library with a long descriptive name ${n}`;
+        group.append(item);
+      }
+    });
+    await page.locator("[data-navigation-probe]").last().scrollIntoViewIfNeeded();
+    if (!await page.locator("#app-menu-close").evaluate(element => {
+      const rect = element.getBoundingClientRect();
+      return rect.top >= 0 && rect.bottom <= innerHeight;
+    })) throw new Error("Many libraries pushed navigation close out of view.");
+    if (await page.evaluate(() => document.querySelector("#app-navigation").scrollWidth > document.querySelector("#app-navigation").clientWidth)) {
+      throw new Error("Long library names overflow the mobile navigation.");
+    }
+    await page.evaluate(() => {
+      document.querySelectorAll("[data-navigation-probe]").forEach(element => element.remove());
+      document.querySelector(".app-nav-primary").scrollTop = 0;
+    });
+    await page.keyboard.press("Escape");
+    await page.locator("#app-navigation:not([open])").waitFor({state: "attached"});
+    if (!await menuToggle.evaluate(element => element === document.activeElement)) {
+      throw new Error("Closing mobile navigation did not return focus to its trigger.");
+    }
+    await menuToggle.click();
+    await page.setViewportSize({width: 1440, height: 1000});
+    await page.locator(`#nav-library-${ids.series_library}`).waitFor({state: "visible"});
+    await page.setViewportSize({width: 390, height: 844});
+    await page.locator("#app-navigation:not([open])").waitFor({state: "attached"});
     await page.locator("#series-list a").first().click();
     await page.locator("#series-title").waitFor();
     await waitForStablePage();
@@ -487,7 +525,23 @@ try {
     await capture("season-mobile.png", `/series/seasons/${ids.season}?library_id=${ids.series_library}`, "#season-title", "#episodes-loading");
     await page.locator("#episode-list a").first().click();
     await page.locator("#episode-title").waitFor();
+    await page.locator("#episode-loading").waitFor({state: "detached"});
     await assertSeriesFits();
+    const playerFits = await page.locator("#episode-player").evaluate(element => {
+      const rect = element.getBoundingClientRect();
+      return rect.top >= 0 && rect.bottom <= innerHeight;
+    });
+    if (!playerFits) throw new Error("Episode player is outside the first mobile viewport.");
+    await page.locator("#episode-playback-options > summary").click();
+    await page.locator("#episode-versions").waitFor({state: "visible"});
+    await page.locator("#episode-playback-options > summary").click();
+    await page.locator("#episode-back").click();
+    await page.locator("#season-title").waitFor();
+    await assertSeriesFits();
+    await page.locator("#season-back").click();
+    await page.locator("#series-title").waitFor();
+    await assertSeriesFits();
+    await capture("episode-mobile.png", `/episodes/${ids.episode}?library_id=${ids.series_library}`, "#episode-title", "#episode-loading");
     console.log("Verified mobile series layouts and catalog/series/season/episode navigation with library context.");
 
     const assertMoviesFit = async () => {

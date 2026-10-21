@@ -43,6 +43,7 @@ Put presentation-only models and changesets in `forms/`, using embedded schemas 
 - Keep loading, empty, and error states distinct. A failed refresh is not an empty collection.
 - Reducers translate backend results and async failures into visible UI state and feedback.
 - Put navigable filters, search, and sort in the URL and interpret them through `handle_params`.
+- Hierarchical return links lead to the parent screen and preserve validated library, search, and pagination context. Keep per-tab scroll restoration bounded and normalize equivalent URLs before using them as storage keys.
 - Durable work such as library scans belongs to the backend and continues when a page closes.
 
 ## Templates, components, and browser code
@@ -52,6 +53,8 @@ The screen template lives beside its LiveView. Function components receive attri
 LiveView templates start with `<Layouts.app flash={@flash} ...>`. JavaScript hooks live in `assets/js/hooks/` and are imported by `assets/js/app.js`; additional styles are imported by `assets/css/app.css`. Do not add ordinary inline scripts or external scripts to templates.
 
 The browser owns immediate player state such as position, volume, and fullscreen. Send meaningful actions and progress to the backend; do not send every visual update.
+
+Native dialogs and disclosures also own their open state. Preserve their `open` attribute across LiveView patches with `JS.ignore_attributes("open")`; responsive navigation must remain accessible when changing between mobile and desktop.
 
 Support mouse, touch, keyboard, and remote control: essential actions must not depend on hover, focus stays visible, and dynamic dialogs handle focus predictably. Validate TV navigation and playback on the real device; a browser alone does not establish compatibility.
 

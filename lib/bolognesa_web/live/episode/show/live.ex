@@ -3,9 +3,14 @@ defmodule BolognesaWeb.Episode.Show.Live do
   use BolognesaWeb, :live_view
   alias BolognesaWeb.Episode.Show.Reducer
   alias BolognesaWeb.LiveSupport.PlaybackEvents
+  alias BolognesaWeb.Series.Navigation
   @impl true
   def mount(%{"id" => id}, _session, socket),
     do: {:ok, Reducer.Initialize.call(socket, socket.assigns.current_scope.actor, parse_id(id))}
+
+  @impl true
+  def handle_params(params, _uri, socket),
+    do: {:noreply, Navigation.assign_context(socket, params)}
 
   @impl true
   def handle_async({:next_episode, request}, result, socket),

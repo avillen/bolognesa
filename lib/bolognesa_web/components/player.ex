@@ -11,6 +11,9 @@ defmodule BolognesaWeb.Player do
   attr :compatible_autoplay?, :boolean, required: true
   attr :playback_error, :string, default: nil
   attr :playback_error_reason, :string, default: nil
+  attr :class, :string, default: "mt-10 space-y-3"
+  attr :poster, :string, default: nil
+  attr :retry_file_id, :integer, default: nil
   @spec player(map()) :: Phoenix.LiveView.Rendered.t()
   def player(assigns) do
     assigns =
@@ -22,12 +25,9 @@ defmodule BolognesaWeb.Player do
     <section
       :if={@selected_file_id}
       id={"#{@prefix}-player"}
-      class="mt-10 space-y-3"
+      class={@class}
       aria-label={gettext("Reproductor")}
     >
-      <h2 class="text-xl font-semibold text-ink">
-        {gettext("Reproduciendo versión %{id}", id: @selected_file_id)}
-      </h2>
       <p
         :if={@compatible_session && !@compatible_ready? && !@playback_error}
         id={"#{@prefix}-playback-preparing"}
@@ -35,7 +35,7 @@ defmodule BolognesaWeb.Player do
         data-session-id={@compatible_session.id}
         class="text-muted"
       >
-        {gettext("Preparando reproducción…")}
+        {gettext("Preparando versión compatible…")}
       </p>
       <div
         :if={!@playback_error}
@@ -60,6 +60,7 @@ defmodule BolognesaWeb.Player do
               playsinline
               preload="metadata"
               src={!@compatible_session && @video_src}
+              poster={@poster}
               class="aspect-video w-full bg-black"
             >
               {gettext("Tu navegador no admite la reproducción de vídeo.")}
@@ -77,6 +78,14 @@ defmodule BolognesaWeb.Player do
     >
       {@playback_error}
     </p>
+    <button
+      :if={@playback_error && @retry_file_id}
+      id={"#{@prefix}-retry-playback"}
+      type="button"
+      phx-click="play"
+      phx-value-file_id={@selected_file_id || @retry_file_id}
+      class="series-episode-play mt-3"
+    >{gettext("Reintentar reproducción")}</button>
     """
   end
 
