@@ -1,5 +1,6 @@
 import {createPlayer, videoFeatures, timeFeature, bufferFeature} from "../../vendor/videojs.min.mjs"
 import {fileTimeFeature, fileBufferFeature} from "../video_timeline.mjs"
+import {createPlaybackDiagnostics} from "../playback_diagnostics.mjs"
 import VideoError from "./video_error"
 import CompatibleVideo from "./compatible_video"
 
@@ -27,6 +28,7 @@ const VideoPlayer = {
     }
     this.clearInitialLoading = () => skin.removeAttribute("data-initial-loading")
     this.video.addEventListener("loadeddata", this.clearInitialLoading)
+    this.diagnostics = createPlaybackDiagnostics(this)
     this.sync = () => {
       const data = this.el.dataset
       const source = data.src || ""
@@ -53,7 +55,10 @@ const VideoPlayer = {
       Object.assign(this.video.dataset, data)
       if (!source) return
       this.control = data.sessionId ? CompatibleVideo : VideoError
-      this.context = {el: this.video, pushEvent: (...args) => this.pushEvent(...args)}
+      this.context = {
+        el: this.video, pushEvent: (...args) => this.pushEvent(...args),
+        reportPlaybackError: () => this.diagnostics.reportError(),
+      }
       this.control.mounted.call(this.context)
       if (!data.sessionId) {
         this.video.src = source
@@ -63,7 +68,10 @@ const VideoPlayer = {
     this.sync()
   },
   updated() { this.sync() },
+  disconnected() { this.diagnostics?.disconnected() },
+  reconnected() { this.diagnostics?.reconnected() },
   destroyed() {
+    this.diagnostics?.destroy()
     this.control?.destroyed.call(this.context)
     this.video.removeEventListener("loadeddata", this.clearInitialLoading)
     this.video.pause()

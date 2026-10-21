@@ -94,7 +94,17 @@ try {
   await slider.focus()
   await page.keyboard.press("ArrowRight")
   await page.waitForFunction(() => document.querySelector("video").currentTime > 1)
-  assert.deepEqual(await page.evaluate(() => window.events), [])
+  assert.deepEqual(await page.evaluate(() => window.events.filter(([name]) => name !== "playback_diagnostic")), [])
+  const mounted = await page.evaluate(() => window.events.find(([name, data]) => name === "playback_diagnostic" && data.diagnostic === "mounted"))
+  assert.equal(mounted[1].file_id, "1")
+  assert.match(mounted[1].tab_id, /^[0-9a-f-]{36}$/)
+  await page.evaluate(() => {
+    window.hook.disconnected.call(window.context)
+    window.hook.reconnected.call(window.context)
+  })
+  const connectionEvents = await page.evaluate(() => window.events
+    .filter(([name]) => name === "playback_diagnostic").map(([, data]) => data.diagnostic))
+  assert.deepEqual(connectionEvents, ["mounted", "disconnected", "reconnected"])
   console.log("Direct: Video.js play/pause and keyboard seeking passed.")
 
   await page.evaluate(() => {
@@ -194,6 +204,17 @@ try {
   await page.waitForFunction(() => document.querySelector("video").readyState >= 2)
   assert.equal(await page.locator("video-skin").getAttribute("data-initial-loading"), null)
   console.log("Opening logo: initial load, later buffering, session replacement and new-file preparation passed.")
+  // The diagnostic must precede fallback, which changes the server's session identity.
+  const failurePage = await browser.newPage()
+  await failurePage.route("**/sample.mp4", route => route.abort("failed"))
+  await failurePage.goto(`http://127.0.0.1:${server.address().port}`, {waitUntil: "domcontentloaded"})
+  await failurePage.waitForFunction(() => window.events?.some(([name]) => name === "playback_error"))
+  const errorOrder = await failurePage.evaluate(() => window.events.map(([name, data]) =>
+    name === "playback_diagnostic" ? data.diagnostic : name))
+  assert.ok(errorOrder.indexOf("error") >= 0 && errorOrder.indexOf("error") < errorOrder.indexOf("playback_error"),
+    `Expected error diagnostic before playback fallback: ${JSON.stringify(errorOrder)}`)
+  await failurePage.close()
+  console.log("Diagnostics: direct media error is observed before session-changing fallback.")
   assert.deepEqual(errors, [])
   await page.evaluate(() => window.hook.destroyed.call(window.context))
   console.log(`Video.js browser checks passed in Chromium ${browser.version()}.`)

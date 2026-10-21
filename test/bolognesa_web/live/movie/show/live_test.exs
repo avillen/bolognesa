@@ -237,8 +237,11 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     end
 
     test "selecting a direct version releases the previous conversion", ctx do
+      watch_closures()
       session = start_inspected_version(ctx)
       render_click(element(ctx.view, "#movie-play-#{ctx.first.id}"))
+      assert_receive {:session_closed, %{session_id: closed_id, reason: :version_selected}}
+      assert closed_id == session.id
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
 
       assert has_element?(
@@ -293,6 +296,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     end
 
     test "seeking replaces the compatible session and rejects malformed positions", ctx do
+      watch_closures()
       session = start_inspected_version(ctx)
       make_ready(ctx.view, session)
       render_hook(ctx.view, "playback_seek", %{"session_id" => session.id, "position_ms" => 1000})
@@ -309,6 +313,8 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       })
 
       next = preparing_session(ctx.view)
+      assert_receive {:session_closed, %{session_id: closed_id, reason: :seek}}
+      assert closed_id == session.id
       assert next.id != session.id
       assert next.offset_ms == 10_000
       assert next.profile == :audio
@@ -446,6 +452,24 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
     file
   end
+
+  defp watch_closures do
+    handler = {__MODULE__, make_ref()}
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:bolognesa, :playback, :session, :closed],
+        &__MODULE__.handle_session_closed/4,
+        self()
+      )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+  end
+
+  @spec handle_session_closed([atom()], map(), map(), pid()) :: any()
+  def handle_session_closed(_event, _measurements, metadata, caller),
+    do: send(caller, {:session_closed, metadata})
 
   defp movie_changeset(attrs),
     do: MovieSchema.changeset(%MovieSchema{}, Map.put_new(attrs, :provider, :tmdb))

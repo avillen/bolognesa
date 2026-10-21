@@ -91,7 +91,7 @@ defmodule Bolognesa.Playback do
         {:ok, session}
 
       {:error, reason} ->
-        TranscodeManager.stop(session.id)
+        TranscodeManager.stop(session.id, :source_invalidated)
         {:error, reason}
     end
   end
@@ -108,12 +108,18 @@ defmodule Bolognesa.Playback do
     end
   end
 
-  @spec stop_video_compatible(AuthenticatedUser.t(), String.t()) :: :ok | {:error, :forbidden}
-  def stop_video_compatible(actor, session_id) do
+  @spec stop_video_compatible(AuthenticatedUser.t(), String.t(), TranscodeManager.stop_reason()) ::
+          :ok | {:error, :forbidden}
+  def stop_video_compatible(actor, session_id, reason \\ :operator_stop) do
     case TranscodeManager.lookup(session_id) do
-      {:ok, %{actor_id: actor_id}} when actor_id == actor.id -> TranscodeManager.stop(session_id)
-      {:error, :not_found} -> :ok
-      _ -> {:error, :forbidden}
+      {:ok, %{actor_id: actor_id}} when actor_id == actor.id ->
+        TranscodeManager.stop(session_id, reason)
+
+      {:error, :not_found} ->
+        :ok
+
+      _ ->
+        {:error, :forbidden}
     end
   end
 

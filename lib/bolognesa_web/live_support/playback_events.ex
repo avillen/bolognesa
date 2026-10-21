@@ -1,12 +1,17 @@
 defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   @moduledoc "Shared LiveView lifecycle for authorized direct and HLS playback."
+  alias Bolognesa.Infrastructure.Observability
   alias Bolognesa.Playback
   alias BolognesaWeb.LiveSupport.PlaybackControl
+  alias BolognesaWeb.LiveSupport.PlaybackDiagnostics
   alias BolognesaWeb.LiveSupport.PlaybackState
   alias BolognesaWeb.LiveSupport.SelectVersion
 
   @spec handle_event(binary(), map(), Phoenix.LiveView.Socket.t()) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
+  def handle_event("playback_diagnostic", params, socket),
+    do: {:noreply, PlaybackDiagnostics.record(socket, params)}
+
   def handle_event("play", %{"file_id" => file_id}, socket) do
     {:noreply, SelectVersion.call(socket, file_id)}
   end
@@ -38,7 +43,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
       {offset, ""}
       when not is_nil(session) and session.id == id and offset >= 0 and
              (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
-        PlaybackControl.stop_previous(socket)
+        PlaybackControl.stop_previous(socket, :seek)
 
         next =
           PlaybackControl.start_compatible(
@@ -82,7 +87,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   def handle_event("playback_ended", %{"session_id" => id}, socket) do
     case socket.assigns.compatible_session do
       %{id: ^id} ->
-        PlaybackControl.stop_previous(socket)
+        PlaybackControl.stop_previous(socket, :ended)
         {:noreply, PlaybackState.paused(socket, true)}
 
       _ ->
@@ -93,7 +98,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   def handle_event("compatible_error", %{"session_id" => id}, socket) do
     case socket.assigns.compatible_session do
       %{id: ^id} ->
-        PlaybackControl.stop_previous(socket)
+        PlaybackControl.stop_previous(socket, :client_error)
 
         {:noreply, PlaybackState.conversion_failed(socket, :interrupted)}
 
@@ -111,9 +116,17 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
     end
   end
 
-  @spec terminate(Phoenix.LiveView.Socket.t()) :: :ok
-  def terminate(socket) do
-    if socket.assigns[:compatible_session], do: PlaybackControl.stop_previous(socket)
+  @spec terminate(term(), Phoenix.LiveView.Socket.t()) :: :ok
+  def terminate(reason, socket) do
+    session = socket.assigns[:compatible_session]
+
+    :telemetry.execute([:bolognesa, :playback, :liveview, :terminated], %{count: 1}, %{
+      session_id: session && session.id,
+      file_id: socket.assigns[:selected_file_id],
+      termination_reason: Observability.exit_reason(reason)
+    })
+
+    if session, do: PlaybackControl.stop_previous(socket, :liveview_terminated)
     :ok
   end
 
@@ -135,7 +148,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
          )}
 
       :waiting ->
-        PlaybackControl.stop_previous(socket)
+        PlaybackControl.stop_previous(socket, :preparation_timeout)
         {:noreply, PlaybackState.conversion_failed(socket, :preparation)}
 
       _ ->

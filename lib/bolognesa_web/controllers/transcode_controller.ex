@@ -14,7 +14,7 @@ defmodule BolognesaWeb.TranscodeController do
   def segment(conn, %{"segment" => name} = params) do
     if Regex.match?(@segment, name),
       do: serve(conn, params, name, "video/mp2t"),
-      else: reject(conn, 404)
+      else: reject_with_event(conn, :segment, :request_validation, :invalid_segment, 404)
   end
 
   defp serve(conn, _params, name, mime_type) do
@@ -26,17 +26,49 @@ defmodule BolognesaWeb.TranscodeController do
              {entry_kind(conn.path_params), movie_id},
              file_id,
              conn.path_params["session_id"]
-           ),
-         {:ok, bytes} <- read(session.directory, name),
-         :ok <- touch_segment(session.id, name) do
+           )
+           |> stage(:session_validation),
+         {:ok, bytes} <- stage(read(session.directory, name), :resource_read),
+         :ok <- stage(touch_segment(session.id, name), :session_touch) do
       conn
       |> put_resp_header("cache-control", "private, no-store")
       |> put_resp_content_type(mime_type)
       |> send_resp(200, bytes)
     else
-      {:error, :unavailable} -> reject(conn, 503)
-      {:error, :source_changed} -> reject(conn, 409)
-      _ -> reject(conn, 404)
+      {:error, stage, reason} ->
+        reject_with_event(conn, resource_type(name), stage, reason, status(reason))
+
+      _ ->
+        reject_with_event(conn, resource_type(name), :request_validation, :invalid_reference, 404)
+    end
+  end
+
+  defp stage({:error, reason}, stage), do: {:error, stage, reason}
+  defp stage(result, _stage), do: result
+
+  defp status(:unavailable), do: 503
+  defp status(:source_changed), do: 409
+  defp status(_reason), do: 404
+
+  defp resource_type("index.m3u8"), do: :manifest
+  defp resource_type(_name), do: :segment
+
+  defp reject_with_event(conn, resource_type, stage, reason, status) do
+    :telemetry.execute([:bolognesa, :playback, :hls, :failed], %{count: 1}, %{
+      session_id: safe_session_id(conn.path_params["session_id"]),
+      resource_type: resource_type,
+      failure_stage: stage,
+      reason: reason,
+      status: status
+    })
+
+    reject(conn, status)
+  end
+
+  defp safe_session_id(value) do
+    case Ecto.UUID.cast(value) do
+      {:ok, id} -> id
+      _ -> nil
     end
   end
 

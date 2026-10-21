@@ -26,7 +26,7 @@ defmodule BolognesaWeb.Episode.Show.Live do
   @impl true
   def handle_info(message, socket), do: PlaybackEvents.handle_info(message, socket)
   @impl true
-  def terminate(_reason, socket), do: PlaybackEvents.terminate(socket)
+  def terminate(reason, socket), do: PlaybackEvents.terminate(reason, socket)
 
   defp handle_playback_action(event, params, socket) do
     {:noreply, updated} = PlaybackEvents.handle_event(event, params, socket)

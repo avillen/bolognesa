@@ -16,7 +16,7 @@ defmodule BolognesaWeb.Movie.Show.Live do
   @impl true
   def handle_info(message, socket), do: PlaybackEvents.handle_info(message, socket)
   @impl true
-  def terminate(_reason, socket), do: PlaybackEvents.terminate(socket)
+  def terminate(reason, socket), do: PlaybackEvents.terminate(reason, socket)
 
   defp parse_id(text) do
     case Integer.parse(text) do

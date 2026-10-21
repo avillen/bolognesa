@@ -8,6 +8,7 @@ defmodule Bolognesa.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      Bolognesa.Infrastructure.Observability,
       BolognesaWeb.Telemetry,
       Bolognesa.Repo,
       {Phoenix.PubSub, name: Bolognesa.PubSub},

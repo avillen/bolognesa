@@ -85,7 +85,20 @@ config :logger, :default_formatter,
     :failure_stage,
     :failure_reason,
     :files_discovered,
-    :duration_ms
+    :duration_ms,
+    :exit_status,
+    :offset_ms,
+    :termination_reason,
+    :resource_type,
+    :status,
+    :tab_id,
+    :diagnostic,
+    :position_ms,
+    :paused,
+    :visibility,
+    :sequence,
+    :client_time_ms,
+    :media_error
   ]
 
 # Use Jason for JSON parsing in Phoenix

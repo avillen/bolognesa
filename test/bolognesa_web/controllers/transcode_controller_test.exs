@@ -129,7 +129,26 @@ defmodule BolognesaWeb.TranscodeControllerTest do
       "#EXTM3U\n#EXTINF:4.0,\nseg-000000.ts\n"
     )
 
+    handler = {__MODULE__, make_ref()}
+    event = [:bolognesa, :playback, :hls, :failed]
+    :ok = :telemetry.attach(handler, event, &__MODULE__.handle_telemetry/4, self())
+    on_exit(fn -> :telemetry.detach(handler) end)
+
     path = "/movies/#{movie.id}/media/#{file.id}/hls/#{session.id}"
+    missing = get(init_test_session(conn, user_token: token), path <> "/seg-000999.ts")
+    assert response(missing, 404) == ""
+
+    assert_receive {^event, %{count: 1},
+                    %{
+                      session_id: session_id,
+                      failure_stage: :resource_read,
+                      reason: :not_found,
+                      resource_type: :segment,
+                      status: 404
+                    }}
+
+    assert session_id == session.id
+    assert {:ok, _} = TranscodeManager.lookup(session.id)
 
     manifest = get(init_test_session(conn, user_token: token), path <> "/index.m3u8")
     assert response(manifest, 200) =~ "seg-000000.ts"
@@ -156,6 +175,10 @@ defmodule BolognesaWeb.TranscodeControllerTest do
     assert response(denied, 404) == ""
     assert {:error, :not_found} = TranscodeManager.lookup(next_session.id)
   end
+
+  @spec handle_telemetry([atom()], map(), map(), pid()) :: any()
+  def handle_telemetry(event, measurements, metadata, caller),
+    do: send(caller, {event, measurements, metadata})
 
   defp movie_changeset(attrs),
     do: MovieSchema.changeset(%MovieSchema{}, Map.put_new(attrs, :provider, :tmdb))

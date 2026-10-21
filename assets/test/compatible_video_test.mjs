@@ -53,3 +53,25 @@ test("seeking while paused does not request autoplay", () => {
   assert.deepEqual(events, [["playback_seek", {session_id: "a", position_ms: "20000", playing: "false"}]])
   hook.destroyed.call(context)
 })
+
+
+test("fatal HLS failures are diagnosed before the session is stopped", async () => {
+  const raw = await readFile(new URL("../js/hooks/compatible_video.js", import.meta.url), "utf8")
+  const mock = `class Hls {
+    static isSupported() { return true }
+    static Events = {MANIFEST_PARSED: "ready", ERROR: "error"}
+    constructor() { this.listeners = {} }
+    on(event, listener) { this.listeners[event] = listener }
+    loadSource() {} attachMedia() {} destroy() {}
+  }`
+  const code = raw.replace('import Hls from "../../vendor/hls.min.mjs"', mock)
+  const {default: hlsHook} = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`)
+  const calls = []
+  const el = new EventTarget()
+  Object.assign(el, {dataset: {sessionId: "hls", offsetMs: "0", durationMs: "60000"}})
+  const context = {el, pushEvent: (...args) => calls.push(args), reportPlaybackError: () => calls.push(["diagnostic"])}
+  hlsHook.mounted.call(context)
+  context.hls.listeners.error("error", {fatal: true})
+  assert.deepEqual(calls, [["diagnostic"], ["compatible_error", {session_id: "hls"}]])
+  hlsHook.destroyed.call(context)
+})

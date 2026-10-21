@@ -77,6 +77,16 @@ defmodule BolognesaWeb.Telemetry do
           "The time the connection spent waiting before being checked out for the query"
       ),
 
+      # Playback: IDs belong in diagnostic logs, never metric tags.
+      sum("bolognesa.playback.session.started.count", tags: [:profile]),
+      sum("bolognesa.playback.session.closed.count", tags: [:reason, :profile]),
+      summary("bolognesa.playback.session.closed.duration_ms",
+        tags: [:reason],
+        unit: :millisecond
+      ),
+      sum("bolognesa.playback.hls.failed.count", tags: [:failure_stage, :reason, :resource_type]),
+      sum("bolognesa.playback.browser.diagnostic.count", tags: [:diagnostic]),
+
       # VM Metrics
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),

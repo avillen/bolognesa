@@ -41,9 +41,11 @@ const CompatibleVideo = {
       }
     }
 
-    this.onError = () => {
-      if (!this.serverPaused && !this.resuming)
+    this.onError = (diagnose = false) => {
+      if (!this.serverPaused && !this.resuming) {
+        if (diagnose === true) this.reportPlaybackError?.()
         this.pushEvent("compatible_error", {session_id: this.sessionId})
+      }
     }
     this.onEnded = () => {
       this.serverPaused = true
@@ -61,7 +63,7 @@ const CompatibleVideo = {
         if (this.el.dataset.autoplay === "true") this.el.play().catch(() => {})
       })
       this.hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) this.onError()
+        if (data.fatal) this.onError(true)
       })
       this.hls.loadSource(this.el.dataset.src)
       this.hls.attachMedia(this.el)
@@ -72,7 +74,7 @@ const CompatibleVideo = {
       }
       this.el.addEventListener("loadedmetadata", this.onNativeReady, {once: true})
     } else {
-      this.onError()
+      this.onError(true)
     }
   },
   updated() {

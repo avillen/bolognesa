@@ -7,7 +7,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
   def prepare(socket, file_id) do
     actor = socket.assigns.current_scope.actor
     content_ref = socket.assigns.content_ref
-    stop_previous(socket)
+    stop_previous(socket, :version_selected)
 
     case Playback.video_delivery(actor, content_ref, file_id) do
       {:ok, :direct, _source} -> prepare_direct(socket, file_id)
@@ -37,11 +37,17 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
     end
   end
 
-  @spec stop_previous(Phoenix.LiveView.Socket.t()) :: :ok | {:error, :forbidden}
-  def stop_previous(socket) do
+  @spec stop_previous(
+          Phoenix.LiveView.Socket.t(),
+          Bolognesa.Playback.Infrastructure.TranscodeManager.stop_reason()
+        ) :: :ok | {:error, :forbidden}
+  def stop_previous(socket, reason) do
     case socket.assigns.compatible_session do
-      nil -> :ok
-      session -> Playback.stop_video_compatible(socket.assigns.current_scope.actor, session.id)
+      nil ->
+        :ok
+
+      session ->
+        Playback.stop_video_compatible(socket.assigns.current_scope.actor, session.id, reason)
     end
   end
 

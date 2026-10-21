@@ -49,6 +49,70 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     %{source: source}
   end
 
+  test "session lifecycle telemetry correlates offsets and precise stop causes", %{source: source} do
+    attach_lifecycle()
+    assert {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :video, 12_000)
+    assert_receive {[:bolognesa, :playback, :session, :started], %{count: 1}, metadata}
+    assert metadata == %{session_id: session.id, file_id: 3, profile: :video, offset_ms: 12_000}
+
+    assert :ok = TranscodeManager.stop(session.id, :seek)
+    assert_receive {[:bolognesa, :playback, :session, :closed], measurements, closed}
+    assert measurements.count == 1
+    assert measurements.duration_ms >= 0
+    assert closed.reason == :seek
+    assert closed.session_id == session.id
+    refute Map.has_key?(closed, :path)
+    refute Map.has_key?(closed, :actor_id)
+  end
+
+  test "an ended event and LiveView termination retain distinct close causes", %{source: source} do
+    attach_lifecycle()
+
+    for {action, expected} <- [{:ended, :ended}, {:terminate, :liveview_terminated}] do
+      {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :video, 0)
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          current_scope: %{actor: %{id: 1}},
+          compatible_session: session,
+          compatible_paused?: false
+        }
+      }
+
+      case action do
+        :ended ->
+          PlaybackEvents.handle_event("playback_ended", %{"session_id" => session.id}, socket)
+
+        :terminate ->
+          PlaybackEvents.terminate({:shutdown, :closed}, socket)
+      end
+
+      assert_receive {[:bolognesa, :playback, :session, :closed], _, %{reason: ^expected}}
+    end
+  end
+
+  defp attach_lifecycle do
+    handler = {__MODULE__, make_ref()}
+
+    :ok =
+      :telemetry.attach_many(
+        handler,
+        [
+          [:bolognesa, :playback, :session, :started],
+          [:bolognesa, :playback, :session, :closed]
+        ],
+        &__MODULE__.handle_telemetry/4,
+        self()
+      )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+  end
+
+  @spec handle_telemetry([atom()], map(), map(), pid()) :: any()
+  def handle_telemetry(event, measurements, metadata, caller),
+    do: send(caller, {event, measurements, metadata})
+
   test "rejects malformed or untyped video references", %{source: source} do
     for ref <- [2, {:series, 2}, {:movie, 0}] do
       assert {:error, :not_found} = TranscodeManager.start(1, ref, 3, source, :video, 0)
@@ -84,6 +148,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   end
 
   test "closing the owning page releases the conversion", %{source: source} do
+    attach_lifecycle()
     caller = self()
 
     owner =
@@ -100,6 +165,13 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     ref = :erlang.monitor(:port, port)
     send(owner, :close)
     assert_receive {:DOWN, ^ref, :port, ^port, _}, 5_000
+
+    assert_receive {[:bolognesa, :playback, :session, :closed], _,
+                    %{
+                      reason: :owner_terminated,
+                      termination_reason: :normal
+                    }}
+
     assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     refute File.exists?(session.directory)
   end
