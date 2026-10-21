@@ -13,6 +13,7 @@ RASTER_LIMITS = {
     "season.png": (16, 1, 0, 0, 0),
     "about.png": (16, 1, 0, 0, 0),
     # Observed rounded-corner rasterization on the compact mobile series screens.
+    "series.png": (8, 1, 0, 0, 0),
     "series-mobile.png": (8, 1, 0, 0, 0),
     "series-detail-mobile.png": (64, 2, 0, 0, 0),
     "episode-mobile.png": (8, 1, 0, 0, 0),
