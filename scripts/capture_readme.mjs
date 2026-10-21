@@ -47,7 +47,11 @@ try {
         if (!container) throw new Error("Video.js controls did not mount.");
         image.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:0;";
         container.append(image);
-        window.screenshotVideoFrames.push({video, image, descriptors});
+        // The synthetic artwork replaces decoded pixels for captures. Hide the
+        // native video plane to avoid GPU/poster compositing changing its edges.
+        const visibility = video.style.visibility;
+        video.style.visibility = "hidden";
+        window.screenshotVideoFrames.push({video, image, descriptors, visibility});
       }
     }, '<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720"><rect width="1440" height="720" fill="#10191e"/><circle cx="1050" cy="260" r="220" fill="#e47755" opacity=".42"/><path d="m0 530 260-210 190 142 210-232 230 302 180-165 370 260v93H0Z" fill="#283239"/><path d="m0 620 350-190 220 168 260-210 260 170 190-132 160 112v182H0Z" fill="#171f24"/><text x="110" y="565" fill="#f4f1ed" font-family="Arial,sans-serif" font-size="55" font-weight="700">AFTER THE SIGNAL</text></svg>');
     try {
@@ -58,8 +62,9 @@ try {
       await capture();
     } finally {
       await page.evaluate(() => {
-        for (const {video, image, descriptors} of window.screenshotVideoFrames) {
+        for (const {video, image, descriptors, visibility} of window.screenshotVideoFrames) {
           image.remove();
+          video.style.visibility = visibility;
           for (const [key, descriptor] of Object.entries(descriptors)) {
             if (descriptor) Object.defineProperty(video, key, descriptor);
             else delete video[key];
