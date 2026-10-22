@@ -89,6 +89,30 @@ defmodule BolognesaWeb.Player do
     """
   end
 
+  attr :selected_file_id, :integer, default: nil
+  attr :transcode_session, :any, default: nil
+  attr :playback_error, :string, default: nil
+
+  @spec playback_mode(map()) :: Phoenix.LiveView.Rendered.t()
+  def playback_mode(assigns) do
+    ~H"""
+    <p
+      :if={@selected_file_id && !@playback_error}
+      id="playback-mode"
+      class="text-xs leading-6 text-muted"
+    >
+      <span class="font-medium text-ink">{gettext("Modo de reproducción:")}</span>
+      <span :if={!@transcode_session}>{gettext("Reproducción directa")}</span>
+      <span :if={@transcode_session && @transcode_session.strategy == :audio_only}>
+        {gettext("Transcodificación de audio")}
+      </span>
+      <span :if={@transcode_session && @transcode_session.strategy == :full_transcode}>
+        {gettext("Transcodificación de vídeo y audio")}
+      </span>
+    </p>
+    """
+  end
+
   defp video_id(%{transcode_session: %{id: id}, prefix: prefix}),
     do: "#{prefix}-video-#{id}"
 

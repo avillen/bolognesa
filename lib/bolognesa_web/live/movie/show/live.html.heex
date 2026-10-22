@@ -86,6 +86,14 @@
           playback_error={@playback_error}
           playback_error_reason={@playback_error_reason}
         />
+        <details id="movie-playback-options" class="playback-options">
+          <summary>{gettext("Opciones de reproducción")}</summary>
+          <BolognesaWeb.Player.playback_mode
+            selected_file_id={@selected_file_id}
+            transcode_session={@transcode_session}
+            playback_error={@playback_error}
+          />
+        </details>
         <h2 class="movie-versions-heading text-xl font-semibold text-ink">
           {gettext("Versiones en tu biblioteca")}
         </h2>

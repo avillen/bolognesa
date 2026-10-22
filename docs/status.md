@@ -21,9 +21,14 @@ and removes unused temporary-root state. Directory permission and launch failure
 new temporary directories; failed seeks retain the previous session reference for cleanup.
 The current naming uses `TranscodeStrategy`, `:audio_only` and `:full_transcode`, and calls
 temporary HLS work a transcode session. Authorization, revision checks and the one-process
-limit remain in place. `MIX_TEST_PARTITION=_playback_names_final mix precommit` passed
-compilation, formatting, Credo and 635 tests with one skipped; `node --test assets/test/*.mjs`
+limit remain in place. Movie and episode playback options show whether playback is direct,
+converts audio, or converts video and audio, based on the active session; conversion errors
+remain visible without a misleading mode label. This UI change is local and not deployed.
+The naming refactor passed `MIX_TEST_PARTITION=_playback_names_final mix precommit`
+with compilation, formatting, Credo and 635 tests with one skipped; `node --test assets/test/*.mjs`
 passed 23 tests. This naming refactor is local and not deployed.
+For the playback mode indicator, `mix precommit` passed compilation, formatting, Credo,
+and 635 tests with one skipped. This UI change is local and not deployed.
 
 Music supports local tags with filename fallbacks, track/artist/album browsing, search, pagination, import retry, and ordered album playback with previous/next and automatic advance. Listening survives URL patches within music; full navigation or reload ends the queue. Identity, grouping, limits, and recovery contracts live in [decision 0018](decisions/0018-local-music-catalog.md).
 

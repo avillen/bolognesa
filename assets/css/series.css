@@ -49,8 +49,8 @@
 .episode-player { margin-top: 0; }
 .episode-synopsis { margin-top: 16px; margin-bottom: 20px; }
 .episode-synopsis .series-synopsis { margin-bottom: 0; }
-.episode-playback-options { padding-bottom: 16px; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
-.episode-playback-options > summary { padding: 18px 0; cursor: pointer; font-size: 14px; }
+.playback-options { padding-bottom: 16px; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+.playback-options > summary { padding: 18px 0; cursor: pointer; font-size: 14px; }
 .episode-version { padding: 14px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
 .episode-selected { display: inline-block; padding: 2px 6px; border-radius: 4px; color: var(--color-accent-soft); background: #e4775519; font-size: 10px; }
 .episode-technical { margin: 12px 0; padding: 10px 12px; border-radius: 6px; background: var(--color-canvas); color: var(--color-muted); font-size: 12px; line-height: 1.8; }

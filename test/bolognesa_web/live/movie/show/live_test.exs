@@ -168,6 +168,8 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
                "#movie-video-frame[data-autoplay='true'][data-src='/movies/#{movie.id}/media/#{first.id}']"
              )
 
+      assert has_element?(view, "#playback-mode", "Reproducción directa")
+
       render_click(element(view, "#movie-play-#{second.id}"))
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
 
@@ -230,6 +232,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
       session = preparing_session(view)
       assert session.strategy == :full_transcode
+      assert has_element?(view, "#playback-mode", "Transcodificación de vídeo y audio")
       assert session.offset_ms == 12_000
       refute has_element?(view, "#movie-playback-error")
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})

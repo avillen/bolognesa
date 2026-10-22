@@ -164,13 +164,18 @@
       </section>
       <details
         id="episode-playback-options"
-        class="episode-playback-options"
+        class="playback-options"
         phx-mounted={JS.ignore_attributes("open")}
       >
         <summary>{gettext("Opciones de reproducción")}</summary>
         <p class="mb-4 text-xs leading-6 text-muted">
           {gettext("Las versiones pueden proceder de otras bibliotecas.")}
         </p>
+        <BolognesaWeb.Player.playback_mode
+          selected_file_id={@selected_file_id}
+          transcode_session={@transcode_session}
+          playback_error={@playback_error}
+        />
         <div id="episode-versions" class="space-y-4">
           <article
             :for={version <- @detail.versions}
