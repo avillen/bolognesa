@@ -57,5 +57,31 @@ for bind in ('192.0.2.20', '0.0.0.0'):
     alloy_env = data['services']['alloy']['environment']
     assert app_env['BIND_IP'] == bind
     assert alloy_env['BOLOGNESA_METRICS_TARGET'] == bind + ':4400', (bind, alloy_env['BOLOGNESA_METRICS_TARGET'])
-print('Optional monitoring configuration passed: base, bridge, host and missing credentials')
+for host in (False, True):
+    files = ['compose.yaml', 'monitoring.yaml', 'monitoring.docker.yaml']
+    if host: files += ['network.host.yaml', 'monitoring.host.yaml']
+    docker_env = dict(env, COMPOSE_PROJECT_NAME='synthetic-project')
+    result = config(files, docker_env)
+    assert result.returncode == 0, result.stderr
+    data = json.loads(result.stdout)
+    collector = data['services']['alloy-docker']
+    assert collector['privileged'] is True
+    assert not collector.get('ports')
+    assert collector['environment']['BOLOGNESA_COMPOSE_PROJECT'] == 'synthetic-project'
+    assert collector['environment']['BOLOGNESA_METRICS_INSTANCE'] == 'bolognesa'
+    assert not data['services']['alloy'].get('privileged')
+    assert not any(v['target'] == '/rootfs' for v in data['services']['app']['volumes'])
+    content = data['configs']['alloy_docker_config']['content']
+    assert 'store_container_labels = false' in content
+    assert 'action = "keepequal"' in content
+    assert 'action = "labelkeep"' in content
+    assert 'service|container|cpu|interface|device' in content
+    assert 'scrape_interval = "60s"' in content
+    assert 'synthetic-cloud-token' not in content
+    assert {v['target'] for v in collector['volumes']} >= {'/rootfs', '/sys', '/var/run/docker.sock', '/var/lib/docker'}
+    for key in keys[1:]:
+        missing = dict(docker_env); missing[key] = ''
+        failed = config(files, missing)
+        assert failed.returncode != 0 and key in failed.stderr
+print('Optional monitoring configuration passed: base, bridge, host, optional Docker and missing credentials')
 PY

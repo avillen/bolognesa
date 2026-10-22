@@ -54,16 +54,41 @@ observations through a bearer-protected `/metrics` endpoint. Collection is disab
 default; the base installation needs no monitoring settings or external account.
 Separate bridge/host Compose overrides add Grafana Alloy with 60-second scraping and
 remote write. Cloud credentials belong to Alloy; Grafana dashboards are source-controlled
-in `grafana/dashboards/`, with PromEx dashboards regenerated from the pinned dependency
-and the operational dashboard maintained in the repository. The operator imported the
-five PromEx dashboards into Grafana Cloud and confirmed they work; the new operational
-dashboard has not yet been imported there. Its source covers all 65 registered operational
-counters and 65 duration histograms across Accounts, Libraries, Movies, Series, Music, and
-Playback. The PromEx exports regenerate deterministically and all six dashboard JSON files
-parse; operational dashboard rendering remains unverified.
-See the
-[monitoring guide](../deploy/compose/monitoring.md) and
-[decision 0021](decisions/0021-optional-prometheus-metrics.md).
+in `grafana/dashboards/`, with PromEx dashboards regenerated from the pinned dependency.
+The operator imported the five framework dashboards into Grafana Cloud and confirmed they
+work. The replacement operational dashboard is now imported through the Grafana API as a project overview:
+12 rows cover all six contexts, global Phoenix/LiveView, Ecto and Oban, BEAM, and optional
+Docker resources. Each functionality groups outcomes, rolling activity and measured-duration
+sample counts with mean/p50/p95 where available. It defaults to 24 hours with collapsed
+detail rows; missing data stays distinct from zero. The reproducible generator covers all
+65 registered event counters. LiveView adapts the pinned PromEx plugin with fixed view/context
+labels and adds parameter/render spans. Ecto gets finer duration buckets and a separate
+query-error counter; bounded Playback breakdowns distinguish browser diagnostics, FFmpeg
+results and close reasons.
+
+Overview verification: `mix precommit` passed compilation, formatting, Credo, and 630 tests
+with one skipped; six focused exporter tests cover callback ownership, bounded labels,
+Playback breakdowns, Ecto error-only counting, small-query buckets and private-data exclusion.
+Structural checks cover 12 rows, 151 detail/summary panels and all 65 event counters.
+Promtool 3.5.0 validated all 431 queries on empty data and checked populated sparse histograms
+with a counter reset. Compose checks passed base, bridge, host, optional Docker and missing
+credentials; Alloy v1.21.1 validates the Docker config. Local Grafana 12.1.1 imported the
+JSON, and headless Chrome opened/closed all 11 detail rows with no browser exceptions or
+HTTP query failures against an empty local data source. This establishes layout and
+empty-state behavior, not representative deployed data. Independent review found no material
+issues. No known source-change blockers remain.
+
+A separate `monitoring.docker.yaml` opt-in adds a privileged native-Linux Alloy/cAdvisor
+collector with project/service forwarding filters, metric/label allowlists and an independent
+WAL. The app and ordinary metrics collector gain no host mounts. Docker collection has not
+been activated on the target installation. The Grafana Cloud API accepted the overview update, and read-back verified all titles,
+queries and datasource bindings. The application scrape is up and framework metrics are
+queryable; LiveView and Docker metrics are absent as expected before their activation.
+Exporter changes are not yet published or deployed. Cloud visual rendering, native-host
+resource accuracy and representative series/resource budgets remain pending. See the
+[monitoring guide](../deploy/compose/monitoring.md),
+[decision 0021](decisions/0021-optional-prometheus-metrics.md), and
+[decision 0023](decisions/0023-project-overview-monitoring.md).
 
 An optional Loki override now defines a separate Alloy log collector that discovers only
 the labelled Bolognesa application container. PostgreSQL logs, metrics Alloy logs, host
@@ -235,8 +260,10 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query
-and five imported PromEx dashboards work. The repository's operational dashboard is ready
-for import. Next step: measure series/resource usage during representative workflows.
+and five imported PromEx dashboards work. The replacement project overview is imported and verified through the Grafana Cloud API;
+new exporter code and collector configuration remain local changes. Next step: publish/deploy
+the exporter changes, explicitly activate the optional Docker collector on native Linux,
+then verify Cloud rendering, data and series/resource usage during representative workflows.
 Ordinary installations can continue without monitoring infrastructure.
 
 The cross-context Telemetry rollout is published and deployed. Observations are best

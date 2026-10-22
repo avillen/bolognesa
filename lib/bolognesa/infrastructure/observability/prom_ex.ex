@@ -3,8 +3,11 @@ defmodule Bolognesa.Infrastructure.Observability.PromEx do
 
   use PromEx, otp_app: :bolognesa
 
+  alias Bolognesa.Infrastructure.Observability.EctoMetrics
+  alias Bolognesa.Infrastructure.Observability.LiveViewMetrics
   alias Bolognesa.Infrastructure.Observability.OperationalMetrics
   alias Bolognesa.Infrastructure.Observability.PhoenixMetrics
+  alias Bolognesa.Infrastructure.Observability.PlaybackMetrics
   alias PromEx.Plugins
 
   @impl true
@@ -13,8 +16,10 @@ defmodule Bolognesa.Infrastructure.Observability.PromEx do
       Plugins.Application,
       {Plugins.Beam, poll_rate: 60_000},
       {PhoenixMetrics, router: BolognesaWeb.Router, endpoint: BolognesaWeb.Endpoint},
-      {Plugins.Ecto, repos: [Bolognesa.Repo]},
+      {EctoMetrics, repos: [Bolognesa.Repo]},
       {Plugins.Oban, poll_rate: 60_000},
+      LiveViewMetrics,
+      PlaybackMetrics,
       OperationalMetrics
     ]
   end

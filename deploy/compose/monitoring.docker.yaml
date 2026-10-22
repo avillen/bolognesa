@@ -1,0 +1,125 @@
+# Optional native-Linux Docker resource collector. Requires trusted host access.
+# Select after monitoring.yaml; the application and metrics-only Alloy need no host mounts.
+services:
+  alloy-docker:
+    image: grafana/alloy:v1.21.1
+    restart: unless-stopped
+    privileged: true
+    mem_limit: ${ALLOY_DOCKER_MEMORY_LIMIT:-256m}
+    cpus: ${ALLOY_DOCKER_CPUS:-0.5}
+    logging:
+      driver: json-file
+      options:
+        max-size: ${LOG_MAX_SIZE:-10m}
+        max-file: "${LOG_MAX_FILES:-3}"
+    environment:
+      BOLOGNESA_METRICS_INSTANCE: ${BOLOGNESA_METRICS_INSTANCE:-bolognesa}
+      BOLOGNESA_COMPOSE_PROJECT: ${COMPOSE_PROJECT_NAME:-bolognesa-server}
+      GRAFANA_CLOUD_METRICS_URL: ${GRAFANA_CLOUD_METRICS_URL:?Set GRAFANA_CLOUD_METRICS_URL for monitoring}
+      GRAFANA_CLOUD_METRICS_USERNAME: ${GRAFANA_CLOUD_METRICS_USERNAME:?Set GRAFANA_CLOUD_METRICS_USERNAME for monitoring}
+      GRAFANA_CLOUD_METRICS_TOKEN: ${GRAFANA_CLOUD_METRICS_TOKEN:?Set GRAFANA_CLOUD_METRICS_TOKEN for monitoring}
+    configs:
+      - source: alloy_docker_config
+        target: /etc/alloy/config.alloy
+    volumes:
+      - alloy_docker_data:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+      - ${BOLOGNESA_DOCKER_DATA_ROOT:-/var/lib/docker}:/var/lib/docker:ro
+    command:
+      - run
+      - --server.http.listen-addr=127.0.0.1:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+
+configs:
+  alloy_docker_config:
+    content: |
+      prometheus.exporter.cadvisor "bolognesa" {
+        docker_only = true
+        store_container_labels = false
+        allowlisted_container_labels = ["com.docker.compose.project", "com.docker.compose.service"]
+        enabled_metrics = ["cpu", "memory", "network", "disk", "diskIO"]
+        storage_duration = "2m"
+      }
+
+      discovery.relabel "docker" {
+        targets = prometheus.exporter.cadvisor.bolognesa.targets
+        rule {
+          target_label = "instance"
+          replacement = sys.env("BOLOGNESA_METRICS_INSTANCE")
+        }
+      }
+
+      prometheus.scrape "docker" {
+        targets = discovery.relabel.docker.output
+        job_name = "bolognesa-docker"
+        scrape_interval = "60s"
+        scrape_timeout = "10s"
+        sample_limit = 8000
+        forward_to = [prometheus.relabel.docker.receiver]
+      }
+
+      prometheus.relabel "docker" {
+        forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+        rule {
+          target_label = "bolognesa_project"
+          replacement = sys.env("BOLOGNESA_COMPOSE_PROJECT")
+        }
+        // Scrape health has no container labels; retain it through the same pipeline.
+        rule {
+          source_labels = ["__name__"]
+          regex = "up|scrape_samples_scraped|scrape_samples_post_metric_relabeling"
+          target_label = "container_label_com_docker_compose_project"
+          replacement = sys.env("BOLOGNESA_COMPOSE_PROJECT")
+        }
+        rule {
+          source_labels = ["container_label_com_docker_compose_project"]
+          action = "keepequal"
+          target_label = "bolognesa_project"
+        }
+        rule {
+          source_labels = ["container_label_com_docker_compose_service"]
+          regex = "app|db|alloy|alloy-logs|alloy-docker|"
+          action = "keep"
+        }
+        rule {
+          source_labels = ["__name__"]
+          regex = "up|scrape_samples_scraped|scrape_samples_post_metric_relabeling|container_(cpu_usage_seconds_total|memory_working_set_bytes|spec_memory_limit_bytes|network_receive_bytes_total|network_transmit_bytes_total|fs_reads_bytes_total|fs_writes_bytes_total|last_seen|start_time_seconds)"
+          action = "keep"
+        }
+        rule {
+          source_labels = ["container_label_com_docker_compose_service"]
+          target_label = "service"
+        }
+        rule {
+          source_labels = ["id"]
+          regex = ".*[/\\-]([a-f0-9]{64})(\\.scope)?"
+          target_label = "container"
+          replacement = "$1"
+        }
+        rule {
+          action = "labelkeep"
+          regex = "__name__|job|instance|service|container|cpu|interface|device"
+        }
+      }
+
+      prometheus.remote_write "grafana_cloud" {
+        endpoint {
+          url = sys.env("GRAFANA_CLOUD_METRICS_URL")
+          basic_auth {
+            username = sys.env("GRAFANA_CLOUD_METRICS_USERNAME")
+            password = sys.env("GRAFANA_CLOUD_METRICS_TOKEN")
+          }
+          queue_config {
+            max_shards = 2
+          }
+        }
+        wal {
+          max_keepalive_time = "8h"
+        }
+      }
+
+volumes:
+  alloy_docker_data:

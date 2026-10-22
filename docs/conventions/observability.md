@@ -234,10 +234,53 @@ PromEx starts before Ecto/Oban only when explicitly enabled at runtime. Its bear
 operational event counters and duration histograms intentionally have no metadata labels;
 the richer bounded labels used by LiveDashboard remain local. HTTP export uses route
 templates, removes request host labels and normalizes unknown methods. Client-controlled
-channel/socket/LiveView event labels are not collected. Keep existing diagnostic IDs,
+channel/socket labels and client-supplied LiveView event labels are not collected. Keep existing diagnostic IDs,
 private paths, queries and raw errors out of metric labels.
 
 Alloy belongs to an optional deployment override and owns Cloud credentials and remote
 write. The application never requires a Cloud account, uploads dashboards or sends metrics
 over the network itself. Monitoring failures must not become business-workflow failures.
 See [decision 0021](../decisions/0021-optional-prometheus-metrics.md) for the trade-offs.
+
+### Project overview metrics
+
+The operational Grafana dashboard is generated with
+`scripts/build-operational-dashboard.py` from the registered event catalog. It groups
+functionality by context and adds global Phoenix/LiveView, Ecto, Oban, BEAM and optional
+Docker rows. Keep event coverage and framework selectors aligned with the code. Default
+to a 24-hour view for low-volume use; show counts and mean/p50/p95 together. Missing
+data must remain distinct from zero. Histogram percentiles are estimates, especially
+with few samples, and cannot identify individual slow operations. Counts from `increase`
+are scrape-based estimates, not a durable workflow ledger.
+
+`LiveViewMetrics` adapts the pinned `PromEx.Plugins.PhoenixLiveView` definitions, replaces
+all tag extraction with fixed view/context ownership, and adds handle_params/render
+spans. Stop and exception durations retain native-to-millisecond conversion. Unknown
+views are `global` / `other`; client event names, params, exception terms and URLs are
+never metric labels. `EctoMetrics` preserves the bundled names and labels while refining
+duration buckets for small queries and adds a repo/source-labelled query-error counter
+only for `{:error, reason}` Ecto results; the reason itself is never exported. Operational buckets distinguish scans, other work,
+and session lifetime. Mixed bucket layouts during an upgrade distort historical
+quantiles; compare a post-upgrade window.
+
+Existing operational counters/histograms stay unlabelled. `PlaybackMetrics` additionally
+exports `bolognesa_playback_browser_observations_total` with a fixed `diagnostic` enum,
+`bolognesa_playback_ffmpeg_exits_total` with `result` (`finished`, `failed`, `other`), and
+`bolognesa_playback_session_closures_total` with the documented close `reason` vocabulary.
+Unknown values become `other`; no session, file or tab identifiers are exported. The
+existing browser validation and observation cap still apply.
+
+HTTP attribution uses route templates; media delivery belongs to Playback. LiveView
+attribution uses its screen's context. Ecto attribution uses the primary reported source,
+not the caller; Oban uses worker ownership, not shared queue names. Shared tables,
+transactions, connection-level timing, and unclassified queries remain visible globally.
+Do not label unclassified Ecto commands as database errors or configured pool size as
+connection occupancy.
+
+Optional Docker resources use a dedicated, privileged Linux Alloy service. Keep this
+permission separate from the app and ordinary metrics collector. Forward only selected
+Compose-project services and allowlisted metrics/labels, including sanitized runtime IDs
+needed to separate replicas/recreations. Drop raw cgroup paths and arbitrary container
+labels. Verify scrape health and fresh expected-container samples separately. See
+[decision 0023](../decisions/0023-project-overview-monitoring.md) and the
+[monitoring guide](../../deploy/compose/monitoring.md#optional-docker-resources-on-native-linux).

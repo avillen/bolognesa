@@ -19,8 +19,17 @@ defmodule Bolognesa.Infrastructure.Observability.OperationalMetrics do
         event_name: event,
         measurement: :duration_ms,
         tags: [],
-        reporter_options: [buckets: [10, 100, 1_000, 10_000, 60_000, 300_000]]
+        reporter_options: [buckets: duration_buckets(event)]
       )
     ]
   end
+
+  defp duration_buckets([:bolognesa, :playback, :session, _outcome]),
+    do: [1_000, 5_000, 15_000, 60_000, 300_000, 900_000, 3_600_000, 10_800_000]
+
+  defp duration_buckets([:bolognesa, :libraries, :scan, _outcome]),
+    do: [10, 100, 500, 1_000, 5_000, 15_000, 60_000, 300_000, 900_000, 3_600_000]
+
+  defp duration_buckets(_event),
+    do: [1, 5, 10, 25, 50, 100, 250, 500, 1_000, 5_000, 15_000, 60_000, 300_000]
 end

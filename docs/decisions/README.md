@@ -26,3 +26,4 @@
 | [0020](0020-direct-durable-jobs.md) | Implemented locally | Atomic request/job creation without intermediate inspection, Music or video outboxes |
 | [0021](0021-optional-prometheus-metrics.md) | Implemented and deployed | Opt-in PromEx export and Alloy remote write without a required external service |
 | [0022](0022-optional-loki-logs.md) | Implemented and activated | Opt-in application-only Loki forwarding through an isolated Alloy service |
+| [0023](0023-project-overview-monitoring.md) | Implemented locally | Context overview with sparse-traffic timings, bounded LiveView/Playback metrics and optional Docker resources |
