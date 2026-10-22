@@ -10,17 +10,24 @@ defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Response do
           episode: Episode.t(),
           season: Season.t(),
           series: Series.t(),
-          versions: [EpisodeVersionDto.t()]
+          versions: [EpisodeVersionDto.t()],
+          previous_episode_id: Episode.id() | nil,
+          next_episode_id: Episode.id() | nil
         }
 
-  defstruct [:episode, :season, :series, :versions]
+  defstruct [:episode, :season, :series, :versions, :previous_episode_id, :next_episode_id]
 
-  @spec from_domain({Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()]}) :: t()
-  def from_domain({episode, season, series, versions}),
+  @spec from_domain(
+          {Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()],
+           {Episode.id() | nil, Episode.id() | nil}}
+        ) :: t()
+  def from_domain({episode, season, series, versions, {previous_id, next_id}}),
     do: %__MODULE__{
       episode: episode,
       season: season,
       series: series,
-      versions: Enum.map(versions, &EpisodeVersionDto.from_domain/1)
+      versions: Enum.map(versions, &EpisodeVersionDto.from_domain/1),
+      previous_episode_id: previous_id,
+      next_episode_id: next_id
     }
 end

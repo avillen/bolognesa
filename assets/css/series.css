@@ -45,9 +45,10 @@
 .series-detail-panel .media-hero-poster { display: none; }
 .series-screen > .media-back-link { margin-bottom: 12px; }
 .series-screen > .media-back-link + * { margin-top: 0; }
-.episode-heading { margin-bottom: 22px; overflow-wrap: anywhere; }
+.episode-heading { margin-bottom: 12px; overflow-wrap: anywhere; }
 .episode-player { margin-top: 0; }
-.episode-synopsis { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--color-border); }
+.episode-synopsis { margin-top: 16px; margin-bottom: 20px; }
+.episode-synopsis .series-synopsis { margin-bottom: 0; }
 .episode-playback-options { padding-bottom: 16px; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
 .episode-playback-options > summary { padding: 18px 0; cursor: pointer; font-size: 14px; }
 .episode-version { padding: 14px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
@@ -73,3 +74,13 @@
   .series-breadcrumbs a { color: var(--color-accent-soft); }
   .series-breadcrumbs + * { margin-top: 0; }
 }
+
+.episode-breadcrumb { display: flex; align-items: center; gap: 8px; min-width: 0; margin-bottom: 8px; color: var(--color-muted); font-size: 12px; white-space: nowrap; }
+.episode-breadcrumb a { display: inline-flex; align-items: center; min-height: 44px; }
+.episode-breadcrumb a.episode-breadcrumb-series { min-width: 0; display: block; overflow: hidden; text-overflow: ellipsis; line-height: 44px; }
+.episode-breadcrumb #episode-back { justify-content: center; width: 44px; flex-shrink: 0; margin-left: -12px; }
+.episode-breadcrumb a:hover, .episode-navigation a:hover { color: var(--color-accent-soft); }
+.episode-navigation { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; font-size: 14px; color: var(--color-muted); }
+.episode-navigation a { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
+.episode-navigation #episode-next { margin-left: auto; color: var(--color-accent-soft); }
+.episode-navigation a:hover { text-decoration: underline; text-underline-offset: 4px; }

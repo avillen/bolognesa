@@ -7,28 +7,37 @@
   active_section={:series}
 >
   <section id="episode-detail" class="series-screen episode-screen mx-auto max-w-5xl">
-    <.link
+    <nav
       :if={@detail}
-      id="episode-back"
-      navigate={~p"/series/seasons/#{@detail.season.id}?#{@season_params}"}
-      class="media-back-link"
+      id="episode-breadcrumb"
+      class="episode-breadcrumb"
+      aria-label={gettext("Ruta de navegación")}
     >
-      {if @detail.season.number == 0,
-        do: gettext("← Especiales"),
-        else: gettext("← Temporada %{number}", number: @detail.season.number)}
-    </.link>
-    <nav :if={@detail} class="series-breadcrumbs" aria-label={gettext("Ruta de navegación")}>
-      <.link navigate={~p"/series?#{@catalog_params}"}>{@library_name || gettext("Series")}</.link>
+      <.link
+        id="episode-back"
+        navigate={~p"/series/seasons/#{@detail.season.id}?#{@season_params}"}
+        aria-label={
+          if @detail.season.number == 0,
+            do: gettext("← Especiales"),
+            else: gettext("← Temporada %{number}", number: @detail.season.number)
+        }
+      ><span aria-hidden="true">←</span></.link>
+      <.link
+        id="episode-series"
+        class="episode-breadcrumb-series"
+        title={@detail.series.title}
+        navigate={~p"/series/#{@detail.series.id}?#{@series_params}"}
+      >{@detail.series.title}</.link>
       <span aria-hidden="true">/</span>
-      <.link navigate={~p"/series/#{@detail.series.id}?#{@series_params}"}>{@detail.series.title}</.link>
-      <span aria-hidden="true">/</span>
-      <.link navigate={~p"/series/seasons/#{@detail.season.id}?#{@season_params}"}>
+      <.link
+        id="episode-season"
+        class="shrink-0"
+        navigate={~p"/series/seasons/#{@detail.season.id}?#{@season_params}"}
+      >
         {if @detail.season.number == 0,
           do: gettext("Especiales"),
           else: gettext("Temporada %{value0}", value0: @detail.season.number)}
       </.link>
-      <span aria-hidden="true">/</span>
-      <span aria-current="page">{@detail.episode.title}</span>
     </nav>
     <p :if={@loading?} id="episode-loading" role="status" class="text-muted">
       {gettext("Cargando ficha…")}
@@ -47,23 +56,18 @@
     </p>
     <div :if={@detail}>
       <header class="episode-heading">
-        <p class="text-xs text-accent-soft">
-          {@detail.series.title} · {if @detail.season.number == 0,
-            do: gettext("Especiales"),
-            else: gettext("Temporada %{value0}", value0: @detail.season.number)}
-        </p>
-        <h1 id="episode-title" class="mt-3 text-3xl font-semibold tracking-tight text-ink">
+        <h1 id="episode-title" class="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
           {@detail.episode.title}
         </h1>
-        <p class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+        <p class="mt-1 flex items-center gap-2 text-xs text-muted">
           <span>{gettext("Episodio %{number}", number: @detail.episode.number)}</span>
           <span
             :for={version <- @detail.versions}
             :if={version.id == @selected_file_id && version.duration_ms}
           >
+            <span aria-hidden="true">·</span>
             {gettext("%{minutes} min", minutes: div(version.duration_ms, 60_000))}
           </span>
-          <span :if={@detail.episode.air_date}>{@detail.episode.air_date}</span>
         </p>
       </header>
       <BolognesaWeb.Player.player
@@ -86,6 +90,41 @@
         playback_error={@playback_error}
         playback_error_reason={@playback_error_reason}
       />
+      <nav
+        :if={@detail.previous_episode_id || @detail.next_episode_id}
+        id="episode-navigation"
+        class="episode-navigation"
+        aria-label={gettext("Navegación entre episodios")}
+      >
+        <.link
+          :if={@detail.previous_episode_id}
+          id="episode-previous"
+          rel="prev"
+          navigate={
+            ~p"/episodes/#{@detail.previous_episode_id}?#{Navigation.episode_params(@series_params, Map.get(@season_params, :page, 1))}"
+          }
+          aria-label={gettext("Anterior episodio")}
+        >
+          <span aria-hidden="true">←</span>
+          <span class="sm:hidden">{gettext("Anterior")}</span><span class="hidden sm:inline">{gettext(
+            "Anterior episodio"
+          )}</span>
+        </.link>
+        <.link
+          :if={@detail.next_episode_id}
+          id="episode-next"
+          rel="next"
+          navigate={
+            ~p"/episodes/#{@detail.next_episode_id}?#{Navigation.episode_params(@series_params, Map.get(@season_params, :page, 1))}"
+          }
+          aria-label={gettext("Siguiente episodio")}
+        >
+          <span class="sm:hidden">{gettext("Siguiente")}</span><span class="hidden sm:inline">{gettext(
+            "Siguiente episodio"
+          )}</span>
+          <span aria-hidden="true">→</span>
+        </.link>
+      </nav>
       <p
         :if={!Enum.any?(@detail.versions, &(&1.availability == :available))}
         id="episode-unavailable"
@@ -108,6 +147,12 @@
         />
         <p :if={!@detail.episode.overview} class="text-sm text-muted">
           {gettext("Todavía no hay sinopsis.")}
+        </p>
+        <p :if={@detail.episode.air_date} id="episode-air-date" class="mt-3 text-xs text-muted">
+          {gettext("Emisión original:")}
+          <time datetime={Date.to_iso8601(@detail.episode.air_date)}>{air_date(
+            @detail.episode.air_date
+          )}</time>
         </p>
       </section>
       <details

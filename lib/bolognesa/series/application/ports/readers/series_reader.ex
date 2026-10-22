@@ -25,9 +25,11 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReader do
                 [{Episode.t(), EpisodeVersion.count(), EpisodeVersion.count()}], Episode.count()}}
               | {:error, :not_found | :unavailable}
 
-  @doc "At most 100 versions, ordered by file ID; larger collections return an error."
+  @doc "At most 100 versions by file ID, plus adjacent IDs in same-season number/ID order."
   @callback fetch_episode(Episode.id()) ::
-              {:ok, {Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()]}}
+              {:ok,
+               {Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()],
+                {Episode.id() | nil, Episode.id() | nil}}}
               | :not_found
               | {:error, :unavailable | :too_many_versions}
   @doc "Next available episode in season/episode order, after all episodes in the completed file."

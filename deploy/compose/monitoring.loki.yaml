@@ -1,0 +1,73 @@
+# Optional application logs pipeline. Select only when Loki credentials are configured.
+# Docker socket access is limited to this dedicated Alloy service.
+services:
+  app:
+    labels:
+      com.bolognesa.logs: "enabled"
+
+  alloy-logs:
+    image: grafana/alloy:v1.21.1
+    restart: unless-stopped
+    mem_limit: ${ALLOY_LOGS_MEMORY_LIMIT:-128m}
+    cpus: ${ALLOY_LOGS_CPUS:-0.25}
+    logging:
+      driver: json-file
+      options:
+        max-size: ${LOG_MAX_SIZE:-10m}
+        max-file: "${LOG_MAX_FILES:-3}"
+    environment:
+      GRAFANA_CLOUD_LOKI_URL: ${GRAFANA_CLOUD_LOKI_URL:?Set GRAFANA_CLOUD_LOKI_URL for Loki}
+      GRAFANA_CLOUD_LOKI_USERNAME: ${GRAFANA_CLOUD_LOKI_USERNAME:?Set GRAFANA_CLOUD_LOKI_USERNAME for Loki}
+      GRAFANA_CLOUD_LOKI_TOKEN: ${GRAFANA_CLOUD_LOKI_TOKEN:?Set GRAFANA_CLOUD_LOKI_TOKEN for Loki}
+      BOLOGNESA_LOGS_INSTANCE: ${BOLOGNESA_LOGS_INSTANCE:-bolognesa}
+    configs:
+      - source: alloy_logs_config
+        target: /etc/alloy/config.alloy
+    volumes:
+      - alloy_logs_data:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - run
+      - --server.http.listen-addr=127.0.0.1:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+
+configs:
+  alloy_logs_config:
+    content: |
+      discovery.docker "bolognesa" {
+        host = "unix:///var/run/docker.sock"
+      }
+
+      discovery.relabel "bolognesa" {
+        targets = discovery.docker.bolognesa.targets
+
+        rule {
+          source_labels = ["__meta_docker_container_label_com_bolognesa_logs"]
+          regex = "enabled"
+          action = "keep"
+        }
+      }
+
+      loki.source.docker "bolognesa" {
+        host = "unix:///var/run/docker.sock"
+        targets = discovery.relabel.bolognesa.output
+        labels = {
+          service = "bolognesa",
+          instance = sys.env("BOLOGNESA_LOGS_INSTANCE"),
+        }
+        forward_to = [loki.write.grafana_cloud.receiver]
+      }
+
+      loki.write "grafana_cloud" {
+        endpoint {
+          url = sys.env("GRAFANA_CLOUD_LOKI_URL")
+          basic_auth {
+            username = sys.env("GRAFANA_CLOUD_LOKI_USERNAME")
+            password = sys.env("GRAFANA_CLOUD_LOKI_TOKEN")
+          }
+        }
+      }
+
+volumes:
+  alloy_logs_data:

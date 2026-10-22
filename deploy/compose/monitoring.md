@@ -57,6 +57,68 @@ image version. Alloy has no published ports; its management listener binds loopb
 inside its network namespace. Its named volume retains the write-ahead log across
 container replacements. Do not use `down -v` on an existing installation.
 
+## Optional application logs with Loki
+
+Logs are a separate opt-in. Omitting `monitoring.loki.yaml` leaves the metrics-only
+setup unchanged; an ordinary installation needs neither Loki credentials nor a Docker
+socket mount. When selected, a dedicated `alloy-logs` service reads only containers
+labelled by this Compose override, currently just Bolognesa's `app` service, and sends
+them to Grafana Cloud Loki. PostgreSQL and Alloy logs are not collected. The pipeline
+uses only the fixed `service` and `instance` labels, and its Docker read positions persist
+in a separate named volume. Remote log delivery remains best effort; Loki's optional
+Alloy WAL is experimental and is not enabled here.
+
+The Docker socket gives its holder broad control of the Docker daemon even when mounted
+read-only. This permission exists only on `alloy-logs`, which is created only when this
+override is selected. Include it only on a host where that access is acceptable.
+
+1. In Grafana Cloud's Cloud Portal, open your stack, select **Loki → Details**, and copy
+   the endpoint URL and numeric **User**. Create a stack-scoped access-policy token with
+   `logs:write`; keep it separate from the metrics token. Alloy needs the full push URL:
+   append `/loki/api/v1/push` to the copied endpoint unless it already ends with that
+   path. Use the endpoint shown in your portal rather than guessing its hostname.
+2. Add the Loki variables from [monitoring.env.example](monitoring.env.example) to the
+   target server's ignored `.env`: `GRAFANA_CLOUD_LOKI_URL`,
+   `GRAFANA_CLOUD_LOKI_USERNAME`, and `GRAFANA_CLOUD_LOKI_TOKEN`. Keep `.env` private.
+   Set a stable, public-safe `BOLOGNESA_LOGS_INSTANCE` if several installations share
+   the same stack. The resource limits shown in the example are starting budgets.
+3. Append `monitoring.loki.yaml` after `compose.yaml` in `DEPLOY_COMPOSE_FILES`. For an
+   installation already using metrics, append it after the existing monitoring files.
+   Preserve all existing network, storage, and media overrides. For example:
+
+```make
+# Logs only, bridge networking:
+DEPLOY_COMPOSE_FILES=compose.yaml:monitoring.loki.yaml
+# Logs plus metrics, Linux host networking:
+DEPLOY_COMPOSE_FILES=compose.yaml:network.host.yaml:monitoring.yaml:monitoring.host.yaml:monitoring.loki.yaml
+```
+
+4. Use the shared deployment workflow to upload the selected Compose file and recreate
+   the app so Compose applies its opt-in log label. Then start the collector explicitly
+   with the complete selected file list, including all installation-specific overrides:
+
+```sh
+docker compose -f compose.yaml -f monitoring.loki.yaml up -d --no-deps alloy-logs
+```
+
+`make deploy-release` updates the application but does not start optional collectors.
+Repeat the `up` command after changing Loki credentials or the Alloy config. Do not use
+`down -v`; it would remove persistent application data and buffered log positions.
+
+In Grafana Explore, select the stack's Loki data source and query:
+
+```logql
+{service="bolognesa", instance="bolognesa"}
+```
+
+Replace the instance value if you configured another name. Run an application workflow
+to create a fresh log entry. Docker log rotation bounds local history, and this setup
+does not promise backfilling logs from before activation. Check
+`docker compose ... ps alloy-logs` and `docker compose ... logs --tail 100 alloy-logs`
+for collector health and rejected writes. To disable log forwarding, stop `alloy-logs`
+and remove `monitoring.loki.yaml` from the selected files; keep the volume if you may
+enable it again.
+
 Cloud outages or rejected writes do not block the application. Alloy retries using
 its WAL, with an eight-hour maximum retention window; this is best effort rather
 than lossless delivery. Resource limits are initial budgets, not measured requirements.

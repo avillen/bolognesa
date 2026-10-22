@@ -41,6 +41,16 @@ defmodule BolognesaWeb.Episode.Show.Live do
       else: {:noreply, assign(updated, :advance_request, nil)}
   end
 
+  defp air_date(date) do
+    months =
+      case Gettext.get_locale(BolognesaWeb.Gettext) do
+        "en" -> ~w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)
+        _ -> ~w(ene feb mar abr may jun jul ago sep oct nov dic)
+      end
+
+    "#{date.day} #{Enum.at(months, date.month - 1)} #{date.year}"
+  end
+
   defp parse_id(text) do
     case Integer.parse(text) do
       {id, ""} when id > 0 -> id

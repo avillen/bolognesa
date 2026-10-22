@@ -38,6 +38,22 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     assert :not_found = Series.fetch_next_episode(@actor, episode.id, later.id)
   end
 
+  test "detail neighbors use episode order rather than insertion order and stay in the season" do
+    library = SeriesFixtures.library()
+    later = SeriesFixtures.file(library.id, "later.mkv")
+    [later_id] = SeriesFixtures.identify(later, 1, [2]).episode_ids
+    earlier = SeriesFixtures.file(library.id, "earlier.mkv")
+    [earlier_id] = SeriesFixtures.identify(earlier, 1, [1]).episode_ids
+    other = SeriesFixtures.file(library.id, "other.mkv")
+    SeriesFixtures.identify(other, 2, [1])
+
+    assert {:ok, %{previous_episode_id: nil, next_episode_id: ^later_id}} =
+             Series.fetch_episode(@actor, earlier_id)
+
+    assert {:ok, %{previous_episode_id: ^earlier_id, next_episode_id: nil}} =
+             Series.fetch_episode(@actor, later_id)
+  end
+
   test "episode detail query count stays constant as physical versions increase" do
     library = SeriesFixtures.library()
     first = SeriesFixtures.file(library.id, "first.mkv")

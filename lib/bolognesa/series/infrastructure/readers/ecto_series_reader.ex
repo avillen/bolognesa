@@ -253,8 +253,40 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
     with {:ok, versions} <- versions(episode.id) do
       {:ok,
        {SeriesMapper.episode(episode), SeriesMapper.season(season), SeriesMapper.series(series),
-        versions}}
+        versions, adjacent_episode_ids(episode)}}
     end
+  end
+
+  defp adjacent_episode_ids(episode) do
+    base = from row in EpisodeSchema, where: row.season_id == ^episode.season_id
+
+    previous =
+      Repo.one(
+        from(row in base,
+          where:
+            row.number < ^episode.number or
+              (row.number == ^episode.number and row.id < ^episode.id),
+          order_by: [desc: row.number, desc: row.id],
+          limit: 1,
+          select: row.id
+        ),
+        log: false
+      )
+
+    next =
+      Repo.one(
+        from(row in base,
+          where:
+            row.number > ^episode.number or
+              (row.number == ^episode.number and row.id > ^episode.id),
+          order_by: [asc: row.number, asc: row.id],
+          limit: 1,
+          select: row.id
+        ),
+        log: false
+      )
+
+    {previous, next}
   end
 
   defp versions(id) do

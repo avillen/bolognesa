@@ -44,6 +44,58 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     refute has_element?(view, "#episode-playback-error")
   end
 
+  test "compact heading and localized air date below the synopsis", ctx do
+    alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
+
+    Bolognesa.Repo.get!(EpisodeSchema, ctx.episode_id)
+    |> Ecto.Changeset.change(air_date: ~D[2008-01-20])
+    |> Bolognesa.Repo.update!()
+
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    assert has_element?(view, "#episode-breadcrumb #episode-series")
+    assert has_element?(view, "#episode-breadcrumb #episode-season", "Especiales")
+
+    assert has_element?(
+             view,
+             "#episode-synopsis #episode-air-date time[datetime='2008-01-20']",
+             "20 ene 2008"
+           )
+
+    refute has_element?(view, ".episode-heading time")
+    refute has_element?(view, ".episode-heading", "Serie")
+  end
+
+  test "manual navigation follows same-season order, including unavailable episodes", ctx do
+    [first, last] = ctx.episode_ids
+    other = Bolognesa.SeriesFixtures.file(ctx.library.id, "other-season.mp4")
+    Bolognesa.SeriesFixtures.identify(other, 1, [1])
+
+    Bolognesa.Repo.get_by!(Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema,
+      episode_id: last
+    )
+    |> Bolognesa.Repo.delete!()
+
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{first}?season_page=3")
+    render_async(view)
+    refute has_element?(view, "#episode-previous")
+
+    assert has_element?(
+             view,
+             "#episode-player + #episode-navigation #episode-next[href='/episodes/#{last}?season_page=3'][data-phx-link='redirect']"
+           )
+
+    assert has_element?(view, "#episode-next", "Siguiente")
+
+    {:ok, next_view, _} =
+      view |> element("#episode-next") |> render_click() |> follow_redirect(ctx.conn)
+
+    render_async(next_view)
+    assert has_element?(next_view, "#episode-previous[href='/episodes/#{first}?season_page=3']")
+    refute has_element?(next_view, "#episode-next")
+    refute has_element?(next_view, "#episode-air-date")
+  end
+
   test "direct delivery checks each episode association and supports ranges", ctx do
     for id <- ctx.episode_ids do
       conn =
@@ -125,7 +177,10 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
              "#episode-back[href='/series/seasons/#{ctx.season_id}?catalog_page=2&catalog_query=Serie&library_id=#{ctx.library.id}&page=3']"
            )
 
-    assert has_element?(view, "a[href='/series?library_id=#{ctx.library.id}&page=2&query=Serie']")
+    assert has_element?(
+             view,
+             "#episode-series[href='/series/#{ctx.series_id}?catalog_page=2&catalog_query=Serie&library_id=#{ctx.library.id}']"
+           )
   end
 
   test "malformed return context is ignored", ctx do
@@ -137,7 +192,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
 
     render_async(view)
     assert has_element?(view, "#episode-back[href='/series/seasons/#{ctx.season_id}']")
-    assert has_element?(view, "a[href='/series']")
+    assert has_element?(view, "#episode-series[href='/series/#{ctx.series_id}']")
   end
 
   test "finishing direct playback advances past episodes sharing the file", ctx do

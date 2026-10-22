@@ -60,9 +60,11 @@ Emit them at application, infrastructure, or web boundaries; the domain remains 
   and event volume. Never emit raw event payloads, exception terms, FFmpeg output, media
   names, credentials, cookies, private paths, or complete URLs.
 - Telemetry does not retain events. Docker's rotated application logs provide the current
-  diagnostic history; LiveDashboard metrics show observations collected while connected,
-  not a durable historical store. No additional metrics backend is required. An operator
-  can explicitly opt into PromEx/Alloy and an external historical metrics store.
+  local diagnostic history; LiveDashboard metrics show observations collected while
+  connected, not a durable historical store. No external observability backend is
+  required. An operator can explicitly opt into PromEx/Alloy metrics or application-only
+  Alloy/Loki logs. Both are optional deployment features; see the
+  [monitoring guide](../../deploy/compose/monitoring.md).
 
 ### Cross-context audit and ownership
 

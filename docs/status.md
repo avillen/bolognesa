@@ -16,7 +16,9 @@ representative media on the target server remains unverified.
 
 Music supports local tags with filename fallbacks, track/artist/album browsing, search, pagination, import retry, and ordered album playback with previous/next and automatic advance. Listening survives URL patches within music; full navigation or reload ends the queue. Identity, grouping, limits, and recovery contracts live in [decision 0018](decisions/0018-local-music-catalog.md).
 
-Mobile navigation uses a compact header and an accessible menu containing named libraries and account links; desktop retains its sidebar. Series browsing has secondary library options, compact search and episode cards, expandable synopses, and contextual return links carrying catalog search, pagination, and library context. Catalog and season scroll positions are bounded per tab. Episode details place the player before the synopsis, keep technical/version options collapsed, expose version selection and playback retry, and retain unavailable episode details. Same-season automatic advance preserves the season return page; crossing seasons resets it. The existing opening logo remains visible until the first frame loads.
+Mobile navigation uses a compact header and an accessible menu containing named libraries and account links; desktop retains its sidebar. Series browsing has secondary library options, compact search and episode cards, expandable synopses, and contextual return links carrying catalog search, pagination, and library context. Catalog and season scroll positions are bounded per tab. Episode details use a compact series/season breadcrumb, episode title and selected-version duration above the player. Manual previous/next links follow numeric episode order within the season, including unavailable episodes, and preserve return context. The expandable synopsis and localized original air date follow the player; technical/version options remain collapsed, version selection and playback retry remain available, and unavailable episode details are retained. Same-season automatic advance preserves the season return page; crossing seasons resets it. The existing opening logo remains visible until the first frame loads.
+
+Episode redesign verification: `mix precommit` passed compilation, formatting, Credo, and 626 tests with one skipped; `node --test assets/test/*.mjs` passed 23 tests. `make screenshots` regenerated the desktop/mobile episode captures and passed the Chromium 140 synthetic-media/navigation checks. Added browser assertions verify 16:9 layout and long-series breadcrumbs without overflow at 320, 390, 768, and 1440 px, and that expanding the synopsis retains the player element. `make check-screenshots` passed against the updated captures; independent code review found no issues. Real-device interaction and representative-media playback remain unverified. No known redesign blockers remain. Next step: validate touch/keyboard interaction and representative episode playback on target devices.
 
 Configured libraries appear in the sidebar, including empty ones. Catalog lists and counts follow the selected library; work details and playback versions remain shared across libraries. Library progress refreshes asynchronously after best-effort hints emitted by application use cases following persistence. Lost hints can leave an open tab stale until another hint or reload/reconnect. Notification failure preserves successful persistence; connected-mount subscription failure is not directly simulated.
 
@@ -46,6 +48,17 @@ parse; operational dashboard rendering remains unverified.
 See the
 [monitoring guide](../deploy/compose/monitoring.md) and
 [decision 0021](decisions/0021-optional-prometheus-metrics.md).
+
+An optional Loki override now defines a separate Alloy log collector that discovers only
+the labelled Bolognesa application container. PostgreSQL logs, metrics Alloy logs, host
+logs, and media files are excluded. Loki credentials and Docker socket access are only
+required when this override is selected. Compose validation passed for Loki-only, bridge
+with metrics, and host-network selection; the embedded config validates with Alloy
+`v1.21.1`. `mix precommit` passes with 623 tests and one skipped. On the opted-in
+installation, Alloy reported 208 application log entries read and sent, with zero
+retries or drops. The app returned HTTP 200; both Alloy services are running and the
+database is healthy. Grafana Explore visibility remains to be confirmed by the operator.
+See [decision 0022](decisions/0022-optional-loki-logs.md).
 
 The account and access context is `Bolognesa.Accounts`, including its `AuthenticatedUser` contract for verified callers. A reversible migration renames the former `identity_*` tables, sequences, indexes, and constraints to `accounts_*` while preserving users and sessions. Apply the migration with the matching application release. Authorization is delegated to a domain policy; session entities own issue time and expiry, and persistence stores those supplied times. The trusted release console resolves its complete administrator actor, including locale, through the Accounts facade.
 

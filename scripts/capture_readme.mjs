@@ -537,6 +537,29 @@ try {
       return rect.top >= 0 && rect.bottom <= innerHeight;
     });
     if (!playerFits) throw new Error("Episode player is outside the first mobile viewport.");
+    const episodeVideo = await page.locator("#episode-video-frame video").elementHandle();
+    await page.locator("#episode-description > summary").click();
+    if (!await episodeVideo.evaluate(video => video.isConnected)) {
+      throw new Error("Expanding the synopsis recreated the episode player.");
+    }
+    await page.locator("#episode-description > summary").click();
+    for (const width of [320, 390, 768, 1440]) {
+      await page.setViewportSize({width, height: 1000});
+      const fits = await page.evaluate(() => {
+        const series = document.querySelector("#episode-series");
+        const title = series.textContent;
+        series.textContent = title.repeat(20);
+        const season = document.querySelector("#episode-season").getBoundingClientRect();
+        const frame = document.querySelector("#episode-video-frame").getBoundingClientRect();
+        const result = document.documentElement.scrollWidth <= innerWidth &&
+          season.right <= innerWidth && season.left >= 0 &&
+          Math.abs(frame.width / frame.height - 16 / 9) < 0.03;
+        series.textContent = title;
+        return result;
+      });
+      if (!fits) throw new Error(`Episode layout or long breadcrumb does not fit at ${width}px.`);
+    }
+    await page.setViewportSize({width: 390, height: 844});
     await page.locator("#episode-playback-options > summary").click();
     await page.locator("#episode-versions").waitFor({state: "visible"});
     await page.locator("#episode-playback-options > summary").click();
