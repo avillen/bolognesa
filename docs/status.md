@@ -45,6 +45,23 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Recorded verification
 
+- Optional metrics release: [application CI](https://github.com/avillen/bolognesa/actions/runs/39774002378),
+  [screenshot CI](https://github.com/avillen/bolognesa/actions/runs/39774002367), and
+  [image CI](https://github.com/avillen/bolognesa/actions/runs/39774002374) passed for
+  `611c2c5b9b5cf15e0eac2d545de23c3ddeb6e723`. The incoming two commits passed the
+  pinned Gitleaks scan. `make deploy-release` deployed verified image
+  `ghcr.io/avillen/bolognesa@sha256:f63ef2a1fa435c3bf1eeef502ce71675a08a32bff99e8d8e174f9a3ef8c9a85d`
+  on native ARM64. Migrations were already current; the normal update created and
+  revalidated `pre-migration-20261022-140106-30806.dump` with its previous-image
+  reference. HTTP health, authenticated catalog reads, six coordination processes,
+  authorized metrics and unauthenticated metrics/media rejection passed. Mounts,
+  existing environment, accounts, library configuration and manual-correction
+  fingerprints matched the pre-update values; media binds remain read-only.
+  Opted-in Alloy v1.21.1 ran without restarts and confirmed completed Grafana Cloud
+  remote writes with zero failed/retried/pending samples. The initial observation
+  contained 688 active series; this is a startup snapshot, not a representative
+  workload or monthly quota measurement. Grafana dashboard rendering remains unverified.
+
 - Optional PromEx: `MIX_TEST_PARTITION=_promex mix precommit` passed compilation,
   formatting, Credo and 623 tests with one skipped. Focused tests verify default-off
   behavior, bearer authorization and sanitized real exports, including bounded HTTP
@@ -55,8 +72,8 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
   smoke check passed using actual PromEx output and a synthetic receiver. All five
   bundled dashboards exported as valid JSON. `make check-screenshots` also passed
   with unchanged captures and synthetic playback/navigation checks. These checks do not establish Grafana
-  Cloud ingestion, dashboard rendering, deployed workload resource usage or Cloud
-  series budgets.
+  dashboard rendering, representative deployed workload resource usage or Cloud
+  series budgets. The deployment verification above separately confirms remote-write acceptance.
 
 - Cross-context Telemetry: `MIX_TEST_PARTITION=_telemetry_rollout mix precommit` passed
   compilation, formatting, Credo, and 620 tests with one skipped. Capture-handler and
@@ -67,8 +84,9 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
   source/range failures, truncated reads, and closed/unclassified send failures after
   headers without changing the sent HTTP status. Independent review's inherited-metadata
   finding was reproduced and fixed; scoped re-review found no remaining material issues.
-  `git diff --check` and local documentation link checks passed. This rollout is verified
-  locally; deployment observations and target-device verification remain pending.
+  `git diff --check` and local documentation link checks passed. This rollout is included
+  in the deployed optional-metrics release above; representative-workflow observations
+  and target-device verification remain pending.
 
 - Playback buffering: local `mix precommit` passed compilation, formatting, Credo, and
   563 tests with one skipped; `node --test assets/test/*.mjs` passed 23 tests. Regressions
@@ -156,15 +174,16 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Limits and next work
 
-Optional PromEx/Alloy is implemented locally. Next step: activate it on an opted-in
-installation, verify `up{job="bolognesa"}` in Grafana Cloud, import the dashboards,
-and measure series/resource usage during representative workflows. Ordinary
-installations can continue without monitoring infrastructure.
+Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
+including accepted Grafana Cloud remote writes. Next step: verify the Explore query
+and imported dashboards in Grafana, then measure series/resource usage during
+representative workflows. Ordinary installations can continue without monitoring
+infrastructure.
 
-The cross-context Telemetry rollout is implemented and locally verified. Observations
-are best effort and do not replace durable job state; LiveDashboard is not a historical
-metrics store. Next step: verify these diagnostics on the next deployed release during
-representative scan, identification, import, and playback workflows.
+The cross-context Telemetry rollout is published and deployed. Observations are best
+effort and do not replace durable job state; LiveDashboard is not a historical metrics
+store. Representative scan, identification, import and playback diagnostics still need
+verification during real use.
 
 The library repository query import follows the module-level convention, and the Music refresh worker defines its policy alias before the Oban macro that uses it. `MIX_TEST_PARTITION=_review_import_scope mix precommit` passed compilation, formatting, Credo, and 521 tests with one skipped. The initial default-database run failed an inspection recovery assertion that counted six completed jobs instead of two; the isolated run passed. The source of the extra jobs in the default database remains unconfirmed.
 

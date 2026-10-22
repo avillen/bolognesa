@@ -24,4 +24,4 @@
 | [0018](0018-local-music-catalog.md) | Implemented | Local music identity, durable inspection handoff, and direct audio |
 | [0019](0019-content-context-boundaries.md) | Implemented and reviewed | Content-owned Movies, Series, and Music contexts with a clean database rebuild |
 | [0020](0020-direct-durable-jobs.md) | Implemented locally | Atomic request/job creation without intermediate inspection, Music or video outboxes |
-| [0021](0021-optional-prometheus-metrics.md) | Implemented locally | Opt-in PromEx export and Alloy remote write without a required external service |
+| [0021](0021-optional-prometheus-metrics.md) | Implemented and deployed | Opt-in PromEx export and Alloy remote write without a required external service |

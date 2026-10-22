@@ -1,6 +1,6 @@
 # 0021. Optional Prometheus metrics with PromEx and Alloy
 
-Status: Implemented locally; Cloud ingestion and deployed workload budgets remain unverified.
+Status: Implemented; ARM64 deployment and Grafana Cloud remote-write acceptance verified. Representative workload budgets remain unmeasured.
 
 ## Context
 
