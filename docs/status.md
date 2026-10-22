@@ -45,6 +45,10 @@ review found no material issues. The same precommit command passed again after
 integration into `main` with 627 tests and one skipped. Published and deployed as
 `e5a6fb389dec9232c59f07d69a8d342a553b7f34`; release verification is recorded below.
 
+Episode details use a 16 px breadcrumb and show a decorative calendar icon beside
+the original air date. The browser capture checks the breadcrumb size and mobile
+overflow.
+
 Optional PromEx collection now exports framework metrics and existing application
 observations through a bearer-protected `/metrics` endpoint. Collection is disabled by
 default; the base installation needs no monitoring settings or external account.
@@ -77,6 +81,16 @@ The account and access context is `Bolognesa.Accounts`, including its `Authentic
 Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`, or explicit error tuples. `Accounts.fetch_authenticated_admin/0` and `Release.fetch_authenticated_admin/0` replace `admin_actor/0`; the release console still binds `admin` to the actor or `nil` when setup is open. Authentication preserves its `:invalid_credentials` and `:unauthenticated` failure contracts.
 
 ## Recorded verification
+
+- Episode detail polish: `mix precommit` passed compilation, formatting, Credo,
+  and 627 tests with one skipped; `make check-screenshots` passed. Container image
+  workflow run [39832608031](https://github.com/avillen/bolognesa/actions/runs/39832608031)
+  succeeded for `39741f03e68cf4cec0b2e7169a58f6ac3c920735`. `make deploy-release`
+  deployed verified image
+  `ghcr.io/avillen/bolognesa@sha256:a519d8649d96d7e0b4cbadbf13738e6449683d0b3e0e9c3d4d3993fff1d4c036`
+  on ARM64. Migrations were already current; the update created backup
+  `pre-migration-20261022-203734-20383.dump`, passed HTTP health verification,
+  and `make deploy-status` confirmed the app running with PostgreSQL healthy.
 
 - Observability refactor release: local `mix precommit` passed compilation,
   formatting, Credo, and 627 tests with one skipped; `make check-screenshots` passed.
