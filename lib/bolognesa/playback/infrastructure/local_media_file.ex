@@ -33,6 +33,16 @@ defmodule Bolognesa.Playback.Infrastructure.LocalMediaFile do
     end
   end
 
+  @spec validate(Source.t()) :: :ok | {:error, failure()}
+  def validate(source) do
+    with {:ok, %{device: device}} <- open(source) do
+      case :file.close(device) do
+        :ok -> :ok
+        {:error, _} -> {:error, :unreadable}
+      end
+    end
+  end
+
   defp check_root(path) do
     with {:ok, physical} <- LocalSourcePath.canonical_directory(path),
          true <- physical == path,

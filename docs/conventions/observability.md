@@ -45,7 +45,7 @@ Emit them at application, infrastructure, or web boundaries; the domain remains 
   not synchronous spans.
 - Document each event's owner, measurements, metadata, and delivery limits when adding it.
   Treat event names, field meanings, and bounded reason codes as observable contracts.
-- Keep diagnostic identifiers in logs. Metric tags use small, fixed sets such as profile,
+- Keep diagnostic identifiers in logs. Metric tags use small, fixed sets such as transcode strategy,
   outcome, and reason; never tag metrics by session, tab, user, file, path, or URL.
 - The supervised `Bolognesa.Infrastructure.Observability` subscriber writes one structured
   operational log per supported event. Do not also log the same observation at its emitter.
@@ -190,9 +190,9 @@ below have prefix `[:bolognesa, :playback]` and measurement `count: 1`.
 
 | Suffix | Additional measurements | Metadata |
 | --- | --- | --- |
-| `[:session, :started]` | None | `session_id`, `file_id`, `profile`, `offset_ms` |
-| `[:session, :closed]` | `duration_ms` | `session_id`, `file_id`, `profile`, `reason`; normalized `termination_reason` for owner exits |
-| `[:session, :exited]` | `exit_status` | `session_id`, `file_id`, `profile`, `reason` (`finished` or `failed`) |
+| `[:session, :started]` | None | `session_id`, `file_id`, `strategy`, `offset_ms` |
+| `[:session, :closed]` | `duration_ms` | `session_id`, `file_id`, `strategy`, `reason`; normalized `termination_reason` for owner exits |
+| `[:session, :exited]` | `exit_status` | `session_id`, `file_id`, `strategy`, `reason` (`finished` or `failed`) |
 | `[:liveview, :terminated]` | None | `session_id`, `file_id`, normalized `termination_reason` |
 | `[:hls, :failed]` | None | Valid UUID `session_id` when supplied, `resource_type`, `failure_stage`, `reason`, HTTP `status` |
 | `[:browser, :diagnostic]` | None | `tab_id`, current `session_id`/`file_id`, `diagnostic`, `position_ms`, `paused`, `visibility`, `sequence`, `client_time_ms`, numeric `media_error`, `buffered_ms`, `stall_duration_ms` |

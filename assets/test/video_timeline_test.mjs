@@ -13,7 +13,7 @@ const nativeBuffer = {
   attach({set}) { set({buffered: [[0, 15]], seekable: [[0, 20]]}) },
 }
 
-test("compatible controls expose file time and seek through the server", async () => {
+test("transcode controls expose file time and seek through the server", async () => {
   const seeks = []
   const media = {fileTimeline: {offset: 120, duration: 600, seek: time => seeks.push(time)}}
   let state

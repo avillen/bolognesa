@@ -1,7 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import {readFile} from "node:fs/promises"
-const source = (await readFile(new URL("../js/hooks/compatible_video.js", import.meta.url), "utf8"))
+const source = (await readFile(new URL("../js/hooks/transcode_video.js", import.meta.url), "utf8"))
   .replace('import Hls from "../../vendor/hls.min.mjs"', 'const Hls = {isSupported: () => false}')
 const {default: hook} = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`)
 
@@ -56,7 +56,7 @@ test("seeking while paused does not request autoplay", () => {
 
 
 test("fatal HLS failures are diagnosed before the session is stopped", async () => {
-  const raw = await readFile(new URL("../js/hooks/compatible_video.js", import.meta.url), "utf8")
+  const raw = await readFile(new URL("../js/hooks/transcode_video.js", import.meta.url), "utf8")
   const mock = `class Hls {
     static isSupported() { return true }
     static Events = {MANIFEST_PARSED: "ready", ERROR: "error"}
@@ -74,6 +74,6 @@ test("fatal HLS failures are diagnosed before the session is stopped", async () 
   assert.equal(context.hls.config.startPosition, 0)
   assert.equal(context.hls.config.liveSyncDurationCount, 3)
   context.hls.listeners.error("error", {fatal: true})
-  assert.deepEqual(calls, [["diagnostic"], ["compatible_error", {session_id: "hls"}]])
+  assert.deepEqual(calls, [["diagnostic"], ["transcode_error", {session_id: "hls"}]])
   hlsHook.destroyed.call(context)
 })

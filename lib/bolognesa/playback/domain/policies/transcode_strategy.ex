@@ -1,9 +1,9 @@
-defmodule Bolognesa.Playback.Domain.Policies.TranscodeProfile do
-  @moduledoc "Select the initial delivery profile from current technical metadata."
+defmodule Bolognesa.Playback.Domain.Policies.TranscodeStrategy do
+  @moduledoc "Select the initial transcode strategy from current technical metadata."
 
   alias Bolognesa.Playback.Domain.ReadModels.Source
 
-  @type t :: :direct | :audio | :video
+  @type t :: :direct | :audio_only | :full_transcode
 
   @spec choose(Source.t()) :: t()
   def choose(%Source{format: format, tracks: tracks}) do
@@ -13,10 +13,10 @@ defmodule Bolognesa.Playback.Domain.Policies.TranscodeProfile do
     cond do
       format in ["matroska", "matroska,webm"] and codec(video) == "h264" and
           codec(audio) in ["ac3", "eac3"] ->
-        :audio
+        :audio_only
 
       format == "avi" and codec(video) == "mpeg4" and codec(audio) in ["ac3", "eac3"] ->
-        :video
+        :full_transcode
 
       true ->
         :direct

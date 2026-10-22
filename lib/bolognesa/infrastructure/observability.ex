@@ -10,7 +10,7 @@ defmodule Bolognesa.Infrastructure.Observability do
   @metadata [
     :session_id,
     :file_id,
-    :profile,
+    :strategy,
     :offset_ms,
     :reason,
     :failure_stage,

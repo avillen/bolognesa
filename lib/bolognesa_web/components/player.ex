@@ -5,10 +5,10 @@ defmodule BolognesaWeb.Player do
   attr :kind, :atom, required: true
   attr :entry_id, :integer, required: true
   attr :selected_file_id, :integer, default: nil
-  attr :compatible_session, :any, default: nil
-  attr :compatible_ready?, :boolean, required: true
-  attr :compatible_paused?, :boolean, required: true
-  attr :compatible_autoplay?, :boolean, required: true
+  attr :transcode_session, :any, default: nil
+  attr :transcode_ready?, :boolean, required: true
+  attr :transcode_paused?, :boolean, required: true
+  attr :transcode_autoplay?, :boolean, required: true
   attr :playback_error, :string, default: nil
   attr :playback_error_reason, :string, default: nil
   attr :class, :string, default: "mt-10 space-y-3"
@@ -29,10 +29,10 @@ defmodule BolognesaWeb.Player do
       aria-label={gettext("Reproductor")}
     >
       <p
-        :if={@compatible_session && !@compatible_ready? && !@playback_error}
+        :if={@transcode_session && !@transcode_ready? && !@playback_error}
         id={"#{@prefix}-playback-preparing"}
         role="status"
-        data-session-id={@compatible_session.id}
+        data-session-id={@transcode_session.id}
         class="text-muted"
       >
         {gettext("Preparando versión compatible…")}
@@ -43,11 +43,11 @@ defmodule BolognesaWeb.Player do
         phx-hook="VideoPlayer"
         data-video-id={@video_id}
         data-file-id={@selected_file_id}
-        data-session-id={@compatible_session && @compatible_session.id}
-        data-paused-server={to_string(@compatible_paused?)}
-        data-autoplay={to_string(!@compatible_session || @compatible_autoplay?)}
-        data-offset-ms={@compatible_session && @compatible_session.offset_ms}
-        data-duration-ms={@compatible_session && @compatible_session.duration_ms}
+        data-session-id={@transcode_session && @transcode_session.id}
+        data-paused-server={to_string(@transcode_paused?)}
+        data-autoplay={to_string(!@transcode_session || @transcode_autoplay?)}
+        data-offset-ms={@transcode_session && @transcode_session.offset_ms}
+        data-duration-ms={@transcode_session && @transcode_session.duration_ms}
         data-src={@video_src}
         class="bolognesa-video-frame"
       >
@@ -55,11 +55,11 @@ defmodule BolognesaWeb.Player do
           <media-i18n lang={Gettext.get_locale(BolognesaWeb.Gettext)}>
             <video
               id={@video_id}
-              autoplay={!@compatible_session}
+              autoplay={!@transcode_session}
               controls
               playsinline
               preload="metadata"
-              src={!@compatible_session && @video_src}
+              src={!@transcode_session && @video_src}
               poster={@poster}
               class="aspect-video w-full bg-black"
             >
@@ -89,23 +89,23 @@ defmodule BolognesaWeb.Player do
     """
   end
 
-  defp video_id(%{compatible_session: %{id: id}, prefix: prefix}),
+  defp video_id(%{transcode_session: %{id: id}, prefix: prefix}),
     do: "#{prefix}-video-#{id}"
 
   defp video_id(assigns), do: "#{assigns.prefix}-video-#{assigns.selected_file_id}"
 
   defp video_src(%{selected_file_id: nil}), do: nil
 
-  defp video_src(%{compatible_session: nil} = assigns),
+  defp video_src(%{transcode_session: nil} = assigns),
     do: media_url(assigns.kind, assigns.entry_id, assigns.selected_file_id)
 
-  defp video_src(%{compatible_ready?: true} = assigns),
+  defp video_src(%{transcode_ready?: true} = assigns),
     do:
       hls_url(
         assigns.kind,
         assigns.entry_id,
         assigns.selected_file_id,
-        assigns.compatible_session.id
+        assigns.transcode_session.id
       )
 
   defp video_src(_assigns), do: nil

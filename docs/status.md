@@ -14,6 +14,17 @@ synchronization distance. Browser diagnostics record buffer waits, recovery dura
 and contiguous buffered media, subject to the existing observation cap. Performance on
 representative media on the target server remains unverified.
 
+Video startup uses one backend preparation call for source selection and direct or HLS
+preparation, avoiding a repeated source query. The transcode manager separates resource
+preparation from process launch, validates replacements before closing the current session,
+and removes unused temporary-root state. Directory permission and launch failures clean up
+new temporary directories; failed seeks retain the previous session reference for cleanup.
+The current naming uses `TranscodeStrategy`, `:audio_only` and `:full_transcode`, and calls
+temporary HLS work a transcode session. Authorization, revision checks and the one-process
+limit remain in place. `MIX_TEST_PARTITION=_playback_names_final mix precommit` passed
+compilation, formatting, Credo and 635 tests with one skipped; `node --test assets/test/*.mjs`
+passed 23 tests. This naming refactor is local and not deployed.
+
 Music supports local tags with filename fallbacks, track/artist/album browsing, search, pagination, import retry, and ordered album playback with previous/next and automatic advance. Listening survives URL patches within music; full navigation or reload ends the queue. Identity, grouping, limits, and recovery contracts live in [decision 0018](decisions/0018-local-music-catalog.md).
 
 Mobile navigation uses a compact header and an accessible menu containing named libraries and account links; desktop retains its sidebar. Series browsing has secondary library options, compact search and episode cards, expandable synopses, and contextual return links carrying catalog search, pagination, and library context. Catalog and season scroll positions are bounded per tab. Episode details use a compact series/season breadcrumb, episode title and selected-version duration above the player. Manual previous/next links follow numeric episode order within the season, including unavailable episodes, and preserve return context. The expandable synopsis and localized original air date follow the player; technical/version options remain collapsed, version selection and playback retry remain available, and unavailable episode details are retained. Automatic advance uses `Series.fetch_next_available_episode/3` to skip all episodes in the completed file and select the next available episode, including across seasons. Same-season advance preserves the season return page; crossing seasons resets it. The existing opening logo remains visible until the first frame loads.

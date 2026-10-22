@@ -12,7 +12,7 @@ defmodule Bolognesa.Playback.Domain.ReadModels.TranscodeSession do
           offset_ms: non_neg_integer(),
           duration_ms: non_neg_integer() | nil,
           directory: String.t(),
-          profile: :audio | :video,
+          strategy: :audio_only | :full_transcode,
           status: :running | :finished | :failed
         }
 
@@ -25,7 +25,7 @@ defmodule Bolognesa.Playback.Domain.ReadModels.TranscodeSession do
     :offset_ms,
     :duration_ms,
     :directory,
-    :profile,
+    :strategy,
     status: :running
   ]
 end

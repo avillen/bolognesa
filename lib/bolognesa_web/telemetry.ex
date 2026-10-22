@@ -80,8 +80,8 @@ defmodule BolognesaWeb.Telemetry do
       ),
 
       # Playback: IDs belong in diagnostic logs, never metric tags.
-      sum("bolognesa.playback.session.started.count", tags: [:profile]),
-      sum("bolognesa.playback.session.closed.count", tags: [:reason, :profile]),
+      sum("bolognesa.playback.session.started.count", tags: [:strategy]),
+      sum("bolognesa.playback.session.closed.count", tags: [:reason, :strategy]),
       summary("bolognesa.playback.session.closed.duration_ms",
         tags: [:reason],
         unit: :millisecond

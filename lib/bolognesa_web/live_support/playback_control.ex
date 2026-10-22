@@ -7,58 +7,70 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
   def prepare(socket, file_id) do
     actor = socket.assigns.current_scope.actor
     content_ref = socket.assigns.content_ref
-    stop_previous(socket, :version_selected)
 
-    case Playback.video_delivery(actor, content_ref, file_id) do
-      {:ok, :direct, _source} -> prepare_direct(socket, file_id)
-      {:ok, _profile, _source} -> start_compatible(socket, file_id, 0, :auto)
-      {:error, reason} -> PlaybackState.preparation_failed(socket, reason)
+    case Playback.prepare_video(actor, content_ref, file_id) do
+      {:ok, :direct} ->
+        stop_transcode(socket, :version_selected)
+        PlaybackState.direct(socket, file_id)
+
+      {:ok, :transcode, session} ->
+        preparing(socket, session)
+
+      {:error, reason} ->
+        PlaybackState.preparation_failed(socket, reason)
     end
   end
 
-  @spec start_compatible(
+  @spec start_transcode(
           Phoenix.LiveView.Socket.t(),
           pos_integer(),
           non_neg_integer(),
-          :auto | :video
+          :auto | :full_transcode,
+          Bolognesa.Playback.Infrastructure.TranscodeManager.stop_reason() | :session_replaced
         ) ::
           Phoenix.LiveView.Socket.t()
-  def start_compatible(socket, file_id, offset_ms, mode) do
+  def start_transcode(
+        socket,
+        file_id,
+        offset_ms,
+        strategy_override,
+        replace_reason \\ :session_replaced
+      ) do
     actor = socket.assigns.current_scope.actor
     content_ref = socket.assigns.content_ref
 
-    case Playback.start_video_compatible(actor, content_ref, file_id, offset_ms, mode) do
+    case Playback.start_video_transcode(
+           actor,
+           content_ref,
+           file_id,
+           offset_ms,
+           strategy_override,
+           replace_reason
+         ) do
       {:ok, session} ->
-        Process.send_after(self(), {:compatible_poll, session.id}, 250)
-        PlaybackState.preparing(socket, session)
+        preparing(socket, session)
 
       {:error, reason} ->
-        PlaybackState.preparation_failed(socket, reason, :compatible)
+        PlaybackState.preparation_failed(socket, reason)
     end
   end
 
-  @spec stop_previous(
+  @spec stop_transcode(
           Phoenix.LiveView.Socket.t(),
           Bolognesa.Playback.Infrastructure.TranscodeManager.stop_reason()
         ) :: :ok | {:error, :forbidden}
-  def stop_previous(socket, reason) do
-    case socket.assigns.compatible_session do
+  def stop_transcode(socket, reason) do
+    case socket.assigns.transcode_session do
       nil ->
         :ok
 
       session ->
-        Playback.stop_video_compatible(socket.assigns.current_scope.actor, session.id, reason)
+        Playback.stop_video_transcode(socket.assigns.current_scope.actor, session.id, reason)
     end
   end
 
-  defp prepare_direct(socket, file_id) do
-    case Playback.prepare_video(
-           socket.assigns.current_scope.actor,
-           socket.assigns.content_ref,
-           file_id
-         ) do
-      :ok -> PlaybackState.direct(socket, file_id)
-      {:error, reason} -> PlaybackState.preparation_failed(socket, reason)
-    end
+  defp preparing(socket, session) do
+    Process.send_after(self(), {:transcode_poll, session.id}, 250)
+    PlaybackState.preparing(socket, session)
   end
 end

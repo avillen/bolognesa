@@ -26,7 +26,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
   end
 
   defp validate(socket, params) do
-    session = socket.assigns[:compatible_session]
+    session = socket.assigns[:transcode_session]
     expected_session = session && session.id
     file_id = socket.assigns[:selected_file_id]
 

@@ -40,16 +40,31 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
           ContentRef.t(),
           pos_integer(),
           Source.t(),
-          :audio | :video,
-          integer()
-        ) ::
-          {:ok, TranscodeSession.t()} | {:error, failure()}
-  def start(actor_id, content_ref, file_id, source, profile, offset_ms) do
+          :audio_only | :full_transcode,
+          integer(),
+          stop_reason() | :session_replaced
+        ) :: {:ok, TranscodeSession.t()} | {:error, failure()}
+  def start(
+        actor_id,
+        content_ref,
+        file_id,
+        source,
+        strategy,
+        offset_ms,
+        replace_reason \\ :session_replaced
+      ) do
     if ContentRef.valid?(content_ref) do
-      GenServer.call(
-        __MODULE__,
-        {:start, actor_id, content_ref, file_id, source, profile, offset_ms}
-      )
+      request = %{
+        actor_id: actor_id,
+        content_ref: content_ref,
+        file_id: file_id,
+        source: source,
+        strategy: strategy,
+        offset_ms: offset_ms,
+        replace_reason: replace_reason
+      }
+
+      GenServer.call(__MODULE__, {:start, request})
     else
       {:error, :not_found}
     end
@@ -101,7 +116,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
            owner_ref: nil,
            last_activity: nil,
            started_at: nil,
-           root: root,
            suspended?: false
          }}
 
@@ -111,31 +125,13 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   end
 
   @impl true
-  def handle_call(
-        {:start, actor_id, content_ref, file_id, source, profile, offset_ms},
-        {owner, _tag},
-        state
-      ) do
-    state = replace_actor_session(state, actor_id)
-
-    case start_session(state, actor_id, content_ref, file_id, source, profile, offset_ms) do
-      {:ok, session, port, root} ->
-        session_event(:started, session, %{count: 1}, %{offset_ms: offset_ms})
-
-        {:reply, {:ok, session},
-         %{
-           state
-           | current: session,
-             port: port,
-             owner_ref: Process.monitor(owner),
-             root: root,
-             last_activity: now(),
-             started_at: now(),
-             suspended?: false
-         }}
-
-      {:error, reason} ->
-        {:reply, {:error, reason}, state}
+  def handle_call({:start, request}, {owner, _tag}, state) do
+    with :ok <- available_slot(state, request.actor_id),
+         {:ok, session, executable, args} <- prepare_session(request) do
+      state = replace_actor_session(state, request.actor_id, request.replace_reason)
+      launch_session(state, session, executable, args, owner)
+    else
+      {:error, reason} -> {:reply, {:error, reason}, state}
     end
   end
 
@@ -218,57 +214,98 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     end
   end
 
-  defp start_session(%{current: current}, _, _, _, _, _, _) when not is_nil(current),
-    do: {:error, :busy}
+  defp available_slot(%{current: nil}, _actor_id), do: :ok
+  defp available_slot(%{current: %{actor_id: actor_id}}, actor_id), do: :ok
+  defp available_slot(_state, _actor_id), do: {:error, :busy}
 
-  defp start_session(_state, actor_id, content_ref, file_id, source, profile, offset_ms) do
-    with :ok <- valid_offset(source, offset_ms),
+  defp prepare_session(request) do
+    source = request.source
+
+    with :ok <- valid_offset(source, request.offset_ms),
          {:ok, root} <- root(),
          {:ok, executable} <- executable(),
-         {:ok, %{device: device}} <- LocalMediaFile.open(source),
-         :ok <- :file.close(device),
+         :ok <- LocalMediaFile.validate(source),
          id = Ecto.UUID.generate(),
-         directory = Path.join(root, "session-#{id}"),
-         :ok <- File.mkdir(directory),
-         :ok <- File.chmod(directory, 0o700) do
+         {:ok, directory} <- create_directory(root, id) do
       session = %TranscodeSession{
         id: id,
-        actor_id: actor_id,
-        content_ref: content_ref,
-        file_id: file_id,
+        actor_id: request.actor_id,
+        content_ref: request.content_ref,
+        file_id: request.file_id,
         revision: source.revision,
-        offset_ms: offset_ms,
+        offset_ms: request.offset_ms,
         duration_ms: source.duration_ms,
         directory: directory,
-        profile: profile
+        strategy: request.strategy
       }
 
       args =
         FfmpegArgs.for(
-          profile,
+          session.strategy,
           Path.join(source.path, source.relative_path),
           directory,
-          offset_ms
+          session.offset_ms
         )
 
-      try do
-        port =
-          Port.open({:spawn_executable, executable}, [
-            :binary,
-            :exit_status,
-            :stderr_to_stdout,
-            args: args
-          ])
-
-        {:ok, session, port, root}
-      rescue
-        _ ->
-          File.rm_rf(directory)
-          {:error, :tool_unavailable}
-      end
-    else
-      {:error, reason} -> {:error, reason}
+      {:ok, session, executable, args}
     end
+  end
+
+  defp create_directory(root, id) do
+    directory = Path.join(root, "session-#{id}")
+
+    with :ok <- File.mkdir(directory),
+         :ok <- secure_directory(directory) do
+      {:ok, directory}
+    else
+      {:error, _} -> {:error, :storage_unavailable}
+    end
+  end
+
+  defp secure_directory(directory) do
+    case File.chmod(directory, 0o700) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        File.rm_rf(directory)
+        {:error, reason}
+    end
+  end
+
+  defp launch_session(state, session, executable, args, owner) do
+    case open_port(executable, args) do
+      {:ok, port} ->
+        session_event(:started, session, %{count: 1}, %{offset_ms: session.offset_ms})
+
+        {:reply, {:ok, session},
+         %{
+           state
+           | current: session,
+             port: port,
+             owner_ref: Process.monitor(owner),
+             last_activity: now(),
+             started_at: now(),
+             suspended?: false
+         }}
+
+      {:error, reason} ->
+        File.rm_rf(session.directory)
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  defp open_port(executable, args) do
+    {:ok,
+     Port.open({:spawn_executable, executable}, [
+       :binary,
+       :exit_status,
+       :stderr_to_stdout,
+       args: args
+     ])}
+  rescue
+    ArgumentError -> {:error, :tool_unavailable}
+    ErlangError -> {:error, :tool_unavailable}
   end
 
   defp valid_offset(%Source{duration_ms: duration}, offset)
@@ -278,10 +315,10 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   defp valid_offset(_, _), do: {:error, :invalid_offset}
 
-  defp replace_actor_session(%{current: %{actor_id: actor_id}} = state, actor_id),
-    do: clear(state, :session_replaced)
+  defp replace_actor_session(%{current: %{actor_id: actor_id}} = state, actor_id, reason),
+    do: clear(state, reason)
 
-  defp replace_actor_session(state, _actor_id), do: state
+  defp replace_actor_session(state, _actor_id, _reason), do: state
 
   defp root do
     path = configured_transcode_path()
@@ -352,11 +389,10 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   end
 
   defp executable do
-    executable =
-      Application.get_env(:bolognesa, :ffmpeg_executable) ||
-        System.find_executable("ffmpeg")
-
-    if is_binary(executable), do: {:ok, executable}, else: {:error, :tool_unavailable}
+    case System.find_executable(Application.get_env(:bolognesa, :ffmpeg_executable) || "ffmpeg") do
+      nil -> {:error, :tool_unavailable}
+      executable -> {:ok, executable}
+    end
   end
 
   defp stale?(%{current: nil}), do: false
@@ -434,7 +470,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
       [:bolognesa, :playback, :session, event],
       measurements,
       Map.merge(
-        %{session_id: session.id, file_id: session.file_id, profile: session.profile},
+        %{session_id: session.id, file_id: session.file_id, strategy: session.strategy},
         metadata
       )
     )

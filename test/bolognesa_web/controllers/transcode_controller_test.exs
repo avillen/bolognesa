@@ -104,7 +104,13 @@ defmodule BolognesaWeb.TranscodeControllerTest do
     end)
 
     assert {:ok, session} =
-             Playback.start_video_compatible(actor, {:movie, movie.id}, file.id, 0, :video)
+             Playback.start_video_transcode(
+               actor,
+               {:movie, movie.id},
+               file.id,
+               0,
+               :full_transcode
+             )
 
     for {request_actor, entry_id, file_id} <- [
           {%{actor | id: actor.id + 1}, movie.id, file.id},
@@ -112,7 +118,7 @@ defmodule BolognesaWeb.TranscodeControllerTest do
           {actor, movie.id, file.id + 1}
         ] do
       assert {:error, :not_found} =
-               Playback.video_compatible_session(
+               Playback.video_transcode_session(
                  request_actor,
                  {:movie, entry_id},
                  file_id,
@@ -159,13 +165,19 @@ defmodule BolognesaWeb.TranscodeControllerTest do
     Repo.update!(MediaFileSchema.changeset(file, %{revision: file.revision + 1}))
 
     assert {:error, :source_changed} =
-             Playback.video_compatible_session(actor, {:movie, movie.id}, file.id, session.id)
+             Playback.video_transcode_session(actor, {:movie, movie.id}, file.id, session.id)
 
     assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     Repo.update!(MediaFileSchema.changeset(file, %{revision: file.revision}))
 
     assert {:ok, next_session} =
-             Playback.start_video_compatible(actor, {:movie, movie.id}, file.id, 0, :video)
+             Playback.start_video_transcode(
+               actor,
+               {:movie, movie.id},
+               file.id,
+               0,
+               :full_transcode
+             )
 
     File.write!(Path.join(next_session.directory, "seg-000000.ts"), "synthetic segment")
     path = "/movies/#{movie.id}/media/#{file.id}/hls/#{next_session.id}"

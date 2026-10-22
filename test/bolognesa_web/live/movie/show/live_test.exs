@@ -205,7 +205,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       refute has_element?(view, "#movie-playback-error")
     end
 
-    test "automatically selected compatible delivery requests autoplay when ready", ctx do
+    test "automatically selected transcode delivery requests autoplay when ready", ctx do
       insert_incompatible_inspection(ctx.first)
       {:ok, view, _} = live(ctx.conn, ~p"/movies/#{ctx.movie.id}")
       render_async(view)
@@ -229,11 +229,40 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       })
 
       session = preparing_session(view)
-      assert session.profile == :video
+      assert session.strategy == :full_transcode
       assert session.offset_ms == 12_000
       refute has_element?(view, "#movie-playback-error")
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
       assert has_element?(view, "#movie-playback-preparing[data-session-id='#{session.id}']")
+    end
+
+    test "version preparation selects its source once for direct and transcode playback", ctx do
+      insert_incompatible_inspection(ctx.second)
+      handler = {__MODULE__, make_ref()}
+      caller = self()
+
+      :ok =
+        :telemetry.attach(
+          handler,
+          [:bolognesa, :repo, :query],
+          fn _event, _measurements, metadata, {recipient, view_pid} ->
+            if self() == view_pid and String.contains?(metadata.query, "movie_identifications") and
+                 String.contains?(metadata.query, "inspections") do
+              send(recipient, :playback_source_selected)
+            end
+          end,
+          {caller, ctx.view.pid}
+        )
+
+      on_exit(fn -> :telemetry.detach(handler) end)
+
+      for file <- [ctx.first, ctx.second] do
+        render_click(element(ctx.view, "#movie-play-#{file.id}"))
+        assert_receive :playback_source_selected
+        refute_receive :playback_source_selected
+      end
+
+      assert has_element?(ctx.view, "#movie-playback-preparing")
     end
 
     test "selecting a direct version releases the previous conversion", ctx do
@@ -254,7 +283,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
     test "prepares inspected incompatible media and displays its HLS controls when ready", ctx do
       session = start_inspected_version(ctx)
-      assert session.profile == :audio
+      assert session.strategy == :audio_only
       assert has_element?(ctx.view, "#movie-playback-preparing", "Preparando versión compatible")
       refute has_element?(ctx.view, "#movie-video-frame[data-src]")
       make_ready(ctx.view, session)
@@ -269,11 +298,11 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
                "#movie-video-frame[phx-hook='VideoPlayer'] #movie-video-ui[phx-update='ignore'] video"
              )
 
-      refute has_element?(ctx.view, "input[data-compatible-seek]")
+      refute has_element?(ctx.view, "input[data-transcode-seek]")
       refute has_element?(ctx.view, "#movie-playback-preparing")
     end
 
-    test "pauses and resumes the displayed compatible session", ctx do
+    test "pauses and resumes the displayed transcode session", ctx do
       session = start_inspected_version(ctx)
       make_ready(ctx.view, session)
       render_hook(ctx.view, "playback_pause", %{"session_id" => session.id})
@@ -295,7 +324,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
              )
     end
 
-    test "seeking replaces the compatible session and rejects malformed positions", ctx do
+    test "seeking replaces the transcode session and rejects malformed positions", ctx do
       watch_closures()
       session = start_inspected_version(ctx)
       make_ready(ctx.view, session)
@@ -317,7 +346,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       assert closed_id == session.id
       assert next.id != session.id
       assert next.offset_ms == 10_000
-      assert next.profile == :audio
+      assert next.strategy == :audio_only
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
       make_ready(ctx.view, next)
 
@@ -327,19 +356,40 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
              )
     end
 
+    test "failed seek retains the previous session for explicit cleanup", ctx do
+      session = start_inspected_version(ctx)
+      make_ready(ctx.view, session)
+
+      Application.put_env(
+        :bolognesa,
+        :ffmpeg_executable,
+        Path.join(ctx.directory, "missing-ffmpeg")
+      )
+
+      render_hook(ctx.view, "playback_seek", %{
+        "session_id" => session.id,
+        "position_ms" => "10000"
+      })
+
+      assert has_element?(ctx.view, "#movie-playback-error[data-reason='preparation_failed']")
+      assert {:ok, ^session} = TranscodeManager.lookup(session.id)
+      render_hook(ctx.view, "playback_ended", %{"session_id" => session.id})
+      assert {:error, :not_found} = TranscodeManager.lookup(session.id)
+    end
+
     test "conversion failure stays visible until an explicit retry", ctx do
       %{view: view, first: first} = ctx
       render_click(element(view, "#movie-play-#{first.id}"))
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
       session = preparing_session(view)
-      render_hook(view, "compatible_error", %{"session_id" => session.id})
+      render_hook(view, "transcode_error", %{"session_id" => session.id})
       assert has_element?(view, "#movie-playback-error[data-reason='transcode_failed']")
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
       assert has_element?(view, "#movie-playback-error[data-reason='transcode_failed']")
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
       render_hook(view, "playback_seek", %{"session_id" => session.id, "position_ms" => "1000"})
       next = preparing_session(view)
-      assert next.profile == :video
+      assert next.strategy == :full_transcode
       assert next.offset_ms == 1_000
       refute has_element?(view, "#movie-playback-error")
     end
@@ -413,7 +463,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       "#EXTM3U\n#EXTINF:4.0,\nseg-000000.ts\n#EXT-X-ENDLIST\n"
     )
 
-    send(view.pid, {:compatible_poll, session.id})
+    send(view.pid, {:transcode_poll, session.id})
   end
 
   defp insert_version(library_id, movie_id, directory, path, availability) do

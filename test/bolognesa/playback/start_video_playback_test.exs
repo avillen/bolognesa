@@ -88,7 +88,7 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
         })
       )
 
-    assert {:ok, :video, %{duration_ms: 60_000}} =
+    assert {:ok, :full_transcode, %{duration_ms: 60_000}} =
              Playback.video_delivery(actor, {:movie, movie.id}, file.id)
 
     inspection

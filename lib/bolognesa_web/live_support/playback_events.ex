@@ -19,13 +19,13 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   def handle_event("playback_error", %{"file_id" => file_id} = params, socket) do
     if socket.assigns.selected_file_id &&
          Integer.to_string(socket.assigns.selected_file_id) == file_id &&
-         is_nil(socket.assigns.compatible_session) && is_nil(socket.assigns.playback_error) do
+         is_nil(socket.assigns.transcode_session) && is_nil(socket.assigns.playback_error) do
       {:noreply,
-       PlaybackControl.start_compatible(
+       PlaybackControl.start_transcode(
          socket,
          socket.assigns.selected_file_id,
          fallback_position(params["position_ms"]),
-         :video
+         :full_transcode
        )}
     else
       {:noreply, socket}
@@ -37,24 +37,23 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
         %{"session_id" => id, "position_ms" => position} = params,
         socket
       ) do
-    session = socket.assigns.compatible_session
+    session = socket.assigns.transcode_session
 
     case parse_position(position) do
       {offset, ""}
       when not is_nil(session) and session.id == id and offset >= 0 and
              (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
-        PlaybackControl.stop_previous(socket, :seek)
-
         next =
-          PlaybackControl.start_compatible(
+          PlaybackControl.start_transcode(
             socket,
             session.file_id,
             offset,
-            if(session.profile == :video, do: :video, else: :auto)
+            if(session.strategy == :full_transcode, do: :full_transcode, else: :auto),
+            :seek
           )
 
         {:noreply,
-         Phoenix.Component.assign(next, :compatible_autoplay?, params["playing"] == "true")}
+         Phoenix.Component.assign(next, :transcode_autoplay?, params["playing"] == "true")}
 
       _ ->
         {:noreply, socket}
@@ -62,9 +61,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   end
 
   def handle_event("playback_pause", %{"session_id" => id}, socket) do
-    case socket.assigns.compatible_session do
+    case socket.assigns.transcode_session do
       %{id: ^id} ->
-        Playback.pause_video_compatible(socket.assigns.current_scope.actor, id)
+        Playback.pause_video_transcode(socket.assigns.current_scope.actor, id)
         {:noreply, PlaybackState.paused(socket, true)}
 
       _ ->
@@ -73,7 +72,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   end
 
   def handle_event("playback_resume", %{"session_id" => id, "position_ms" => position}, socket) do
-    case socket.assigns.compatible_session do
+    case socket.assigns.transcode_session do
       %{id: ^id} = session ->
         resume_session(socket, session, position)
 
@@ -85,9 +84,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   def handle_event("playback_ended", %{"file_id" => _id}, socket), do: {:noreply, socket}
 
   def handle_event("playback_ended", %{"session_id" => id}, socket) do
-    case socket.assigns.compatible_session do
+    case socket.assigns.transcode_session do
       %{id: ^id} ->
-        PlaybackControl.stop_previous(socket, :ended)
+        PlaybackControl.stop_transcode(socket, :ended)
         {:noreply, PlaybackState.paused(socket, true)}
 
       _ ->
@@ -95,30 +94,30 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
     end
   end
 
-  def handle_event("compatible_error", %{"session_id" => id}, socket) do
-    case socket.assigns.compatible_session do
+  def handle_event("transcode_error", %{"session_id" => id}, socket) do
+    case socket.assigns.transcode_session do
       %{id: ^id} ->
-        PlaybackControl.stop_previous(socket, :client_error)
+        PlaybackControl.stop_transcode(socket, :client_error)
 
-        {:noreply, PlaybackState.conversion_failed(socket, :interrupted)}
+        {:noreply, PlaybackState.transcode_failed(socket, :interrupted)}
 
       _ ->
         {:noreply, socket}
     end
   end
 
-  @spec handle_info({:compatible_poll, binary()}, Phoenix.LiveView.Socket.t()) ::
+  @spec handle_info({:transcode_poll, binary()}, Phoenix.LiveView.Socket.t()) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
-  def handle_info({:compatible_poll, id}, socket) do
-    case socket.assigns.compatible_session do
-      %{id: ^id} -> poll_compatible(socket, id)
+  def handle_info({:transcode_poll, id}, socket) do
+    case socket.assigns.transcode_session do
+      %{id: ^id} -> poll_transcode(socket, id)
       _ -> {:noreply, socket}
     end
   end
 
   @spec terminate(term(), Phoenix.LiveView.Socket.t()) :: :ok
   def terminate(reason, socket) do
-    session = socket.assigns[:compatible_session]
+    session = socket.assigns[:transcode_session]
 
     :telemetry.execute([:bolognesa, :playback, :liveview, :terminated], %{count: 1}, %{
       session_id: session && session.id,
@@ -126,38 +125,38 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
       termination_reason: Observability.exit_reason(reason)
     })
 
-    if session, do: PlaybackControl.stop_previous(socket, :liveview_terminated)
+    if session, do: PlaybackControl.stop_transcode(socket, :liveview_terminated)
     :ok
   end
 
-  defp poll_compatible(socket, id) do
-    case Playback.video_compatible_status(id) do
+  defp poll_transcode(socket, id) do
+    case Playback.video_transcode_status(id) do
       :ready ->
-        Playback.pause_video_compatible(socket.assigns.current_scope.actor, id)
+        Playback.pause_video_transcode(socket.assigns.current_scope.actor, id)
 
         {:noreply, PlaybackState.ready(socket)}
 
-      :waiting when socket.assigns.compatible_poll_attempts < 60 ->
-        Process.send_after(self(), {:compatible_poll, id}, 500)
+      :waiting when socket.assigns.transcode_poll_attempts < 60 ->
+        Process.send_after(self(), {:transcode_poll, id}, 500)
 
         {:noreply,
          Phoenix.Component.assign(
            socket,
-           :compatible_poll_attempts,
-           socket.assigns.compatible_poll_attempts + 1
+           :transcode_poll_attempts,
+           socket.assigns.transcode_poll_attempts + 1
          )}
 
       :waiting ->
-        PlaybackControl.stop_previous(socket, :preparation_timeout)
-        {:noreply, PlaybackState.conversion_failed(socket, :preparation)}
+        PlaybackControl.stop_transcode(socket, :preparation_timeout)
+        {:noreply, PlaybackState.transcode_failed(socket, :preparation)}
 
       _ ->
-        {:noreply, PlaybackState.conversion_failed(socket, :preparation)}
+        {:noreply, PlaybackState.transcode_failed(socket, :preparation)}
     end
   end
 
   defp resume_session(socket, session, position) do
-    case Playback.resume_video_compatible(socket.assigns.current_scope.actor, session.id) do
+    case Playback.resume_video_transcode(socket.assigns.current_scope.actor, session.id) do
       :ok -> {:noreply, PlaybackState.paused(socket, false)}
       _ -> resume_expired(socket, session, position)
     end
@@ -167,14 +166,15 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
     case parse_position(position) do
       {offset, ""}
       when offset >= 0 and (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
-        mode = if session.profile == :video, do: :video, else: :auto
+        strategy_override =
+          if session.strategy == :full_transcode, do: :full_transcode, else: :auto
 
         {:noreply,
-         PlaybackControl.start_compatible(
+         PlaybackControl.start_transcode(
            socket,
            session.file_id,
            offset,
-           mode
+           strategy_override
          )}
 
       _ ->

@@ -9,7 +9,7 @@ defmodule BolognesaWeb.Episode.Show.ReducersTest do
     request = make_ref()
 
     socket = %Phoenix.LiveView.Socket{
-      assigns: %{__changed__: %{}, advance_request: request, compatible_session: nil}
+      assigns: %{__changed__: %{}, advance_request: request, transcode_session: nil}
     }
 
     {:noreply, restarted} =
@@ -34,7 +34,12 @@ defmodule BolognesaWeb.Episode.Show.ReducersTest do
         advance_request: request,
         current_scope: %{actor: nil},
         content_ref: {:episode, 1},
-        compatible_session: %{id: "current", duration_ms: nil, profile: :video, file_id: 1}
+        transcode_session: %{
+          id: "current",
+          duration_ms: nil,
+          strategy: :full_transcode,
+          file_id: 1
+        }
       }
     }
 

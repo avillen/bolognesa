@@ -229,7 +229,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     assert has_element?(view, "#episode-retry-playback[phx-value-file_id='#{ctx.media_file.id}']")
   end
 
-  test "finishing compatible playback advances and releases the session", ctx do
+  test "finishing transcode playback advances and releases the session", ctx do
     executable = Path.join(ctx.directory, "fake-ffmpeg")
     File.write!(executable, "#!/bin/sh\nwhile :; do sleep 1; done\n")
     File.chmod!(executable, 0o700)
@@ -255,7 +255,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     [_, session] = Regex.run(~r/data-session-id="([^"]+)"/, html)
     render_hook(view, "playback_ended", %{session_id: session})
     assert_redirect(view, "/episodes/#{next}")
-    assert :not_found = Bolognesa.Playback.video_compatible_status(session)
+    assert :not_found = Bolognesa.Playback.video_transcode_status(session)
   end
 
   test "stale completion and the final episode do not navigate", ctx do

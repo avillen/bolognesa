@@ -1,23 +1,23 @@
-defmodule Bolognesa.Playback.TranscodeProfileTest do
+defmodule Bolognesa.Playback.TranscodeStrategyTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Playback.Domain.Policies.TranscodeProfile
+  alias Bolognesa.Playback.Domain.Policies.TranscodeStrategy
   alias Bolognesa.Playback.Domain.ReadModels.Source
 
   test "chooses direct delivery for an inspected MP4 with H.264 and AAC" do
-    assert TranscodeProfile.choose(source("mov,mp4,m4a,3gp,3g2,mj2", "h264", "aac")) == :direct
+    assert TranscodeStrategy.choose(source("mov,mp4,m4a,3gp,3g2,mj2", "h264", "aac")) == :direct
   end
 
   test "converts AC-3 audio while copying H.264 video" do
-    assert TranscodeProfile.choose(source("matroska,webm", "h264", "ac3")) == :audio
+    assert TranscodeStrategy.choose(source("matroska,webm", "h264", "ac3")) == :audio_only
   end
 
   test "converts MPEG-4 Part 2 video and AC-3 audio" do
-    assert TranscodeProfile.choose(source("avi", "mpeg4", "ac3")) == :video
+    assert TranscodeStrategy.choose(source("avi", "mpeg4", "ac3")) == :full_transcode
   end
 
   test "unknown inspection keeps direct delivery" do
-    assert TranscodeProfile.choose(%Source{}) == :direct
+    assert TranscodeStrategy.choose(%Source{}) == :direct
   end
 
   test "chooses the first audio and video tracks" do
@@ -31,7 +31,7 @@ defmodule Bolognesa.Playback.TranscodeProfileTest do
       ]
     }
 
-    assert TranscodeProfile.choose(source) == :video
+    assert TranscodeStrategy.choose(source) == :full_transcode
   end
 
   defp source(format, video, audio) do

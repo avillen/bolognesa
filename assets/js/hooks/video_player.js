@@ -2,7 +2,7 @@ import {createPlayer, videoFeatures, timeFeature, bufferFeature} from "../../ven
 import {fileTimeFeature, fileBufferFeature} from "../video_timeline.mjs"
 import {createPlaybackDiagnostics} from "../playback_diagnostics.mjs"
 import VideoError from "./video_error"
-import CompatibleVideo from "./compatible_video"
+import TranscodeVideo from "./transcode_video"
 
 const {PlayerElement} = createPlayer({features: videoFeatures.map(feature => {
   if (feature === timeFeature) return fileTimeFeature(feature)
@@ -54,7 +54,7 @@ const VideoPlayer = {
       for (const key of Object.keys(this.video.dataset)) delete this.video.dataset[key]
       Object.assign(this.video.dataset, data)
       if (!source) return
-      this.control = data.sessionId ? CompatibleVideo : VideoError
+      this.control = data.sessionId ? TranscodeVideo : VideoError
       this.context = {
         el: this.video, pushEvent: (...args) => this.pushEvent(...args),
         reportPlaybackError: () => this.diagnostics.reportError(),

@@ -1,6 +1,6 @@
 import Hls from "../../vendor/hls.min.mjs"
 
-const CompatibleVideo = {
+const TranscodeVideo = {
   mounted() {
     this.sessionId = this.el.dataset.sessionId
     this.offsetMs = Number(this.el.dataset.offsetMs)
@@ -44,7 +44,7 @@ const CompatibleVideo = {
     this.onError = (diagnose = false) => {
       if (!this.serverPaused && !this.resuming) {
         if (diagnose === true) this.reportPlaybackError?.()
-        this.pushEvent("compatible_error", {session_id: this.sessionId})
+        this.pushEvent("transcode_error", {session_id: this.sessionId})
       }
     }
     this.onEnded = () => {
@@ -98,4 +98,4 @@ const CompatibleVideo = {
   },
 }
 
-export default CompatibleVideo
+export default TranscodeVideo

@@ -1,18 +1,19 @@
 defmodule Bolognesa.Playback do
-  @moduledoc "Authorize audio and video sources for direct or compatible playback."
+  @moduledoc "Authorize audio and video sources for direct or transcode playback."
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Playback.Application.UseCases.StartTrackPlayback
   alias Bolognesa.Playback.Application.UseCases.StartVideoPlayback
-  alias Bolognesa.Playback.Domain.Policies.TranscodeProfile
+  alias Bolognesa.Playback.Domain.Policies.TranscodeStrategy
   alias Bolognesa.Playback.Domain.ReadModels.Source
+  alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
   alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   alias Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
 
   @type reason :: :forbidden | :not_found | :missing | :unavailable
-  @type compatible_reason ::
+  @type transcode_reason ::
           reason() | LocalMediaFile.failure() | TranscodeManager.failure() | :unsupported
 
   @spec start_video(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
@@ -26,54 +27,83 @@ defmodule Bolognesa.Playback do
     do: StartTrackPlayback.call(actor, track_id, file_id, EctoPlaybackRepository)
 
   @spec prepare_video(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
-          :ok
-          | {:error, :forbidden | :not_found | :missing | :unavailable | LocalMediaFile.failure()}
+          {:ok, :direct}
+          | {:ok, :transcode, TranscodeSession.t()}
+          | {:error, transcode_reason()}
   def prepare_video(actor, content_ref, file_id) do
-    with {:ok, source} <- start_video(actor, content_ref, file_id),
-         {:ok, %{device: device}} <- LocalMediaFile.open(source) do
-      close_device(device)
+    with {:ok, strategy, source} <- video_delivery(actor, content_ref, file_id) do
+      prepare_delivery(actor, content_ref, file_id, strategy, source)
     end
   end
 
-  defp close_device(device) do
-    case :file.close(device) do
-      :ok -> :ok
-      {:error, _} -> {:error, :unreadable}
+  defp prepare_delivery(_actor, _content_ref, _file_id, :direct, source) do
+    with :ok <- LocalMediaFile.validate(source), do: {:ok, :direct}
+  end
+
+  defp prepare_delivery(actor, content_ref, file_id, strategy, source) do
+    with {:ok, session} <-
+           TranscodeManager.start(
+             actor.id,
+             content_ref,
+             file_id,
+             source,
+             strategy,
+             0,
+             :version_selected
+           ) do
+      {:ok, :transcode, session}
     end
   end
 
   @spec video_delivery(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
-          {:ok, :direct | :audio | :video, Source.t()} | {:error, reason()}
+          {:ok, :direct | :audio_only | :full_transcode, Source.t()} | {:error, reason()}
   def video_delivery(actor, content_ref, file_id) do
     with {:ok, source} <- start_video(actor, content_ref, file_id) do
-      {:ok, TranscodeProfile.choose(source), source}
+      {:ok, TranscodeStrategy.choose(source), source}
     end
   end
 
-  @spec start_video_compatible(
+  @spec start_video_transcode(
           AuthenticatedUser.t(),
           ContentRef.t(),
           integer(),
           integer(),
-          :auto | :video
+          :auto | :full_transcode,
+          TranscodeManager.stop_reason() | :session_replaced
         ) ::
           {:ok, Bolognesa.Playback.Domain.ReadModels.TranscodeSession.t()}
-          | {:error, compatible_reason()}
-  def start_video_compatible(actor, content_ref, file_id, offset_ms, mode \\ :auto) do
-    with {:ok, profile, source} <- video_delivery(actor, content_ref, file_id),
-         :ok <- validate_profile(profile, mode) do
-      selected = selected_profile(profile, mode)
-      TranscodeManager.start(actor.id, content_ref, file_id, source, selected, offset_ms)
+          | {:error, transcode_reason()}
+  def start_video_transcode(
+        actor,
+        content_ref,
+        file_id,
+        offset_ms,
+        strategy_override \\ :auto,
+        replace_reason \\ :session_replaced
+      ) do
+    with {:ok, strategy, source} <- video_delivery(actor, content_ref, file_id),
+         :ok <- validate_strategy(strategy, strategy_override) do
+      selected = selected_strategy(strategy, strategy_override)
+
+      TranscodeManager.start(
+        actor.id,
+        content_ref,
+        file_id,
+        source,
+        selected,
+        offset_ms,
+        replace_reason
+      )
     end
   end
 
-  defp selected_profile(_profile, :video), do: :video
-  defp selected_profile(profile, _mode), do: profile
+  defp selected_strategy(_strategy, :full_transcode), do: :full_transcode
+  defp selected_strategy(strategy, _strategy_override), do: strategy
 
-  @spec video_compatible_session(AuthenticatedUser.t(), ContentRef.t(), integer(), String.t()) ::
+  @spec video_transcode_session(AuthenticatedUser.t(), ContentRef.t(), integer(), String.t()) ::
           {:ok, Bolognesa.Playback.Domain.ReadModels.TranscodeSession.t()}
-          | {:error, compatible_reason()}
-  def video_compatible_session(actor, content_ref, file_id, session_id) do
+          | {:error, transcode_reason()}
+  def video_transcode_session(actor, content_ref, file_id, session_id) do
     with {:ok, session} <- TranscodeManager.lookup(session_id),
          true <-
            session.actor_id == actor.id and session.content_ref == content_ref and
@@ -86,7 +116,7 @@ defmodule Bolognesa.Playback do
   end
 
   defp revalidate_session(actor, content_ref, file_id, session) do
-    case validate_compatible_source(actor, content_ref, file_id, session) do
+    case validate_transcode_source(actor, content_ref, file_id, session) do
       :ok ->
         {:ok, session}
 
@@ -96,11 +126,10 @@ defmodule Bolognesa.Playback do
     end
   end
 
-  defp validate_compatible_source(actor, content_ref, file_id, session) do
+  defp validate_transcode_source(actor, content_ref, file_id, session) do
     with {:ok, source} <- start_video(actor, content_ref, file_id),
          true <- source.revision == session.revision,
-         {:ok, %{device: device}} <- LocalMediaFile.open(source),
-         :ok <- close_device(device) do
+         :ok <- LocalMediaFile.validate(source) do
       :ok
     else
       false -> {:error, :source_changed}
@@ -108,9 +137,9 @@ defmodule Bolognesa.Playback do
     end
   end
 
-  @spec stop_video_compatible(AuthenticatedUser.t(), String.t(), TranscodeManager.stop_reason()) ::
+  @spec stop_video_transcode(AuthenticatedUser.t(), String.t(), TranscodeManager.stop_reason()) ::
           :ok | {:error, :forbidden}
-  def stop_video_compatible(actor, session_id, reason \\ :operator_stop) do
+  def stop_video_transcode(actor, session_id, reason \\ :operator_stop) do
     case TranscodeManager.lookup(session_id) do
       {:ok, %{actor_id: actor_id}} when actor_id == actor.id ->
         TranscodeManager.stop(session_id, reason)
@@ -123,19 +152,19 @@ defmodule Bolognesa.Playback do
     end
   end
 
-  @spec stop_actor_video_compatible(AuthenticatedUser.t()) :: :ok
-  def stop_actor_video_compatible(actor), do: TranscodeManager.stop_by_actor(actor.id)
+  @spec stop_actor_video_transcode(AuthenticatedUser.t()) :: :ok
+  def stop_actor_video_transcode(actor), do: TranscodeManager.stop_by_actor(actor.id)
 
-  @spec pause_video_compatible(AuthenticatedUser.t(), String.t()) :: :ok | {:error, :not_found}
-  def pause_video_compatible(actor, session_id),
-    do: signal_compatible(actor, session_id, :suspend)
+  @spec pause_video_transcode(AuthenticatedUser.t(), String.t()) :: :ok | {:error, :not_found}
+  def pause_video_transcode(actor, session_id),
+    do: signal_transcode(actor, session_id, :suspend)
 
-  @spec resume_video_compatible(AuthenticatedUser.t(), String.t()) :: :ok | {:error, :not_found}
-  def resume_video_compatible(actor, session_id),
-    do: signal_compatible(actor, session_id, :resume)
+  @spec resume_video_transcode(AuthenticatedUser.t(), String.t()) :: :ok | {:error, :not_found}
+  def resume_video_transcode(actor, session_id),
+    do: signal_transcode(actor, session_id, :resume)
 
-  @spec video_compatible_status(String.t()) :: :ready | :waiting | :failed | :not_found
-  def video_compatible_status(session_id) do
+  @spec video_transcode_status(String.t()) :: :ready | :waiting | :failed | :not_found
+  def video_transcode_status(session_id) do
     case TranscodeManager.lookup(session_id) do
       {:ok, %{status: :failed}} -> :failed
       {:ok, session} -> playlist_status(session.directory)
@@ -169,10 +198,10 @@ defmodule Bolognesa.Playback do
     end)
   end
 
-  defp validate_profile(:direct, :auto), do: {:error, :unsupported}
-  defp validate_profile(_, _), do: :ok
+  defp validate_strategy(:direct, :auto), do: {:error, :unsupported}
+  defp validate_strategy(_, _), do: :ok
 
-  defp signal_compatible(actor, session_id, action) do
+  defp signal_transcode(actor, session_id, action) do
     with {:ok, session} <- TranscodeManager.lookup(session_id),
          true <- session.actor_id == actor.id do
       session |> signal_session(action) |> signal_result(session.status)

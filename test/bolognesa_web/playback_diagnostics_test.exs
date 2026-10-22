@@ -14,7 +14,7 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
       assigns: %{
         __changed__: %{},
         selected_file_id: 3,
-        compatible_session: %{id: id},
+        transcode_session: %{id: id},
         playback_diagnostic_count: 0
       }
     }
@@ -34,7 +34,7 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
     }
 
     assert {:noreply, next} = PlaybackEvents.handle_event("playback_diagnostic", params, socket)
-    assert next.assigns.compatible_session == socket.assigns.compatible_session
+    assert next.assigns.transcode_session == socket.assigns.transcode_session
     assert_receive {^event, %{count: 1}, metadata}
     assert metadata.session_id == id
     assert metadata.tab_id == tab

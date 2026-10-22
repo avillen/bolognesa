@@ -28,11 +28,11 @@ defmodule BolognesaWeb.Episode.Show.Reducer.Advance do
   end
 
   defp current_playback?(socket, %{"session_id" => id}),
-    do: match?(%{id: ^id}, socket.assigns.compatible_session)
+    do: match?(%{id: ^id}, socket.assigns.transcode_session)
 
   defp current_playback?(socket, %{"file_id" => id}),
     do:
-      is_nil(socket.assigns.compatible_session) and
+      is_nil(socket.assigns.transcode_session) and
         not is_nil(socket.assigns.selected_file_id) and
         is_nil(socket.assigns.playback_error) and to_string(socket.assigns.selected_file_id) == id
 

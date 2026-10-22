@@ -122,9 +122,9 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
           kind: :movie,
           entry_id: 1,
           selected_file_id: 1,
-          compatible_ready?: false,
-          compatible_paused?: false,
-          compatible_autoplay?: false
+          transcode_ready?: false,
+          transcode_paused?: false,
+          transcode_autoplay?: false
         )
       end)
 

@@ -36,7 +36,13 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
     file = ctx.media_file
 
     assert {:ok, session} =
-             Playback.start_video_compatible(ctx.actor, {:episode, first}, file.id, 0, :video)
+             Playback.start_video_transcode(
+               ctx.actor,
+               {:episode, first},
+               file.id,
+               0,
+               :full_transcode
+             )
 
     for {actor, entry, file_id} <- [
           {%{ctx.actor | id: ctx.actor.id + 1}, first, file.id},
@@ -44,7 +50,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
           {ctx.actor, first, file.id + 1}
         ] do
       assert {:error, :not_found} =
-               Playback.video_compatible_session(actor, {:episode, entry}, file_id, session.id)
+               Playback.video_transcode_session(actor, {:episode, entry}, file_id, session.id)
     end
 
     write_hls(session)
@@ -68,13 +74,19 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
     assert response(get(ctx.conn, "/episodes/#{second}/media/#{file.id}"), 200) == "abcdefgh"
 
     assert {:ok, next} =
-             Playback.start_video_compatible(ctx.actor, {:episode, second}, file.id, 0, :video)
+             Playback.start_video_transcode(
+               ctx.actor,
+               {:episode, second},
+               file.id,
+               0,
+               :full_transcode
+             )
 
     write_hls(next)
     Repo.update!(MediaFileSchema.changeset(file, %{revision: file.revision + 1}))
 
     assert {:error, :source_changed} =
-             Playback.video_compatible_session(ctx.actor, {:episode, second}, file.id, next.id)
+             Playback.video_transcode_session(ctx.actor, {:episode, second}, file.id, next.id)
 
     assert {:error, :not_found} = TranscodeManager.lookup(next.id)
 
@@ -158,7 +170,13 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
           {:episode, ctx.media_file, :movie}
         ] do
       assert {:ok, session} =
-               Playback.start_video_compatible(ctx.actor, {kind, id}, source_file.id, 0, :video)
+               Playback.start_video_transcode(
+                 ctx.actor,
+                 {kind, id},
+                 source_file.id,
+                 0,
+                 :full_transcode
+               )
 
       assert session.content_ref == {kind, id}
       write_hls(session)
@@ -180,14 +198,14 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
       assert injected_statuses == [404, 404]
 
       assert {:ok, _} =
-               Playback.video_compatible_session(
+               Playback.video_transcode_session(
                  ctx.actor,
                  {kind, id},
                  source_file.id,
                  session.id
                )
 
-      Playback.stop_video_compatible(ctx.actor, session.id)
+      Playback.stop_video_transcode(ctx.actor, session.id)
     end
   end
 

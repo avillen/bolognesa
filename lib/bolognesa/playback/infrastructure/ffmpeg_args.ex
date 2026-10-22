@@ -1,8 +1,11 @@
 defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
   @moduledoc "Closed FFmpeg argument list for a short sliding HLS stream."
 
-  @spec for(:audio | :video, String.t(), String.t(), non_neg_integer()) :: [String.t()]
-  def for(profile, input, directory, offset_ms) when profile in [:audio, :video] do
+  @spec for(:audio_only | :full_transcode, String.t(), String.t(), non_neg_integer()) :: [
+          String.t()
+        ]
+  def for(strategy, input, directory, offset_ms)
+      when strategy in [:audio_only, :full_transcode] do
     seek = :erlang.float_to_binary(offset_ms / 1_000, decimals: 3)
 
     [
@@ -24,7 +27,7 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
       "-sn",
       "-dn"
     ] ++
-      video_args(profile) ++
+      video_args(strategy) ++
       [
         "-c:a",
         "aac",
@@ -50,9 +53,9 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
       ]
   end
 
-  defp video_args(:audio), do: ["-c:v", "copy", "-bsf:v", "h264_mp4toannexb"]
+  defp video_args(:audio_only), do: ["-c:v", "copy", "-bsf:v", "h264_mp4toannexb"]
 
-  defp video_args(:video),
+  defp video_args(:full_transcode),
     do: [
       "-c:v",
       "libx264",
