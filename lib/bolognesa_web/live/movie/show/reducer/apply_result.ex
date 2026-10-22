@@ -3,7 +3,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.ApplyResult do
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream: 4]
-  alias BolognesaWeb.LiveSupport.SelectVersion
+  alias BolognesaWeb.LiveSupport.PlaybackControl
 
   @spec call(Phoenix.LiveView.Socket.t(), reference(), term()) :: Phoenix.LiveView.Socket.t()
   def call(socket, request_id, result) do
@@ -33,7 +33,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.ApplyResult do
   defp select_first_available(socket, versions) do
     case Enum.find(versions, &(&1.availability == :available)) do
       nil -> socket
-      version -> SelectVersion.call(socket, Integer.to_string(version.id))
+      version -> PlaybackControl.select_version(socket, version.id)
     end
   end
 end

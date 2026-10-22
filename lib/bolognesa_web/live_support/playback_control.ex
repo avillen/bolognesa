@@ -3,8 +3,18 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
   alias Bolognesa.Playback
   alias BolognesaWeb.LiveSupport.PlaybackState
 
-  @spec prepare(Phoenix.LiveView.Socket.t(), pos_integer()) :: Phoenix.LiveView.Socket.t()
-  def prepare(socket, file_id) do
+  @spec select_version(Phoenix.LiveView.Socket.t(), pos_integer()) :: Phoenix.LiveView.Socket.t()
+  def select_version(socket, file_id) do
+    with %{versions: versions} <- socket.assigns.detail,
+         true <- file_id > 0,
+         %{availability: :available} <- Enum.find(versions, &(&1.id == file_id)) do
+      prepare(socket, file_id)
+    else
+      _ -> socket
+    end
+  end
+
+  defp prepare(socket, file_id) do
     actor = socket.assigns.current_scope.actor
     content_ref = socket.assigns.content_ref
 
