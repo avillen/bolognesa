@@ -1,7 +1,13 @@
 defmodule Bolognesa.Libraries.ObservabilityTest do
   use ExUnit.Case, async: false
 
-  alias Bolognesa.Libraries.Application.UseCases.{DiscoverFiles, InspectMediaFile, ReconcileScans}
+  alias Bolognesa.Libraries.Application.UseCases.{
+    DiscoverFiles,
+    InspectMediaFile,
+    ReconcileInspections,
+    ReconcileScans
+  }
+
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
@@ -166,24 +172,27 @@ defmodule Bolognesa.Libraries.ObservabilityTest do
     refute_receive {:event, [:bolognesa, :libraries, :scan, :completed], _, _}
   end
 
-  test "partial recovery reports committed libraries independently from failure and idle polls" do
-    Process.put(:recovery, %ReconciliationResult{
-      changed_library_ids: [17, 17, 19],
-      error: :unavailable
-    })
+  for {use_case, operation} <- [{ReconcileScans, :scan}, {ReconcileInspections, :inspection}] do
+    test "#{operation} partial recovery reports committed libraries independently from failure and idle polls" do
+      Process.put(:recovery, %ReconciliationResult{
+        changed_library_ids: [17, 17, 19],
+        error: :unavailable
+      })
 
-    assert {:error, :unavailable} =
-             ReconcileScans.call(DateTime.utc_now(), Repository, Notifications)
+      assert {:error, :unavailable} =
+               unquote(use_case).call(DateTime.utc_now(), Repository, Notifications)
 
-    assert_receive {:event, [:bolognesa, :libraries, :reconciliation, :recovered],
-                    %{changed_library_count: 2}, %{operation: :scan}}
+      assert_receive {:event, [:bolognesa, :libraries, :reconciliation, :recovered],
+                      %{changed_library_count: 2}, %{operation: unquote(operation)}}
 
-    assert_receive {:event, [:bolognesa, :libraries, :reconciliation, :retryable], _,
-                    %{reason: :storage_unavailable}}
+      assert_receive {:event, [:bolognesa, :libraries, :reconciliation, :retryable],
+                      %{changed_library_count: 2},
+                      %{operation: unquote(operation), reason: :storage_unavailable}}
 
-    Process.put(:recovery, %ReconciliationResult{})
-    assert :ok = ReconcileScans.call(DateTime.utc_now(), Repository, Notifications)
-    refute_receive {:event, _, _, _}
+      Process.put(:recovery, %ReconciliationResult{})
+      assert :ok = unquote(use_case).call(DateTime.utc_now(), Repository, Notifications)
+      refute_receive {:event, _, _, _}
+    end
   end
 
   defp inspect_file(attempt \\ 1),

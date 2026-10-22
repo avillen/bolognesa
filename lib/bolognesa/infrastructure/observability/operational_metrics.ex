@@ -4,19 +4,11 @@ defmodule Bolognesa.Infrastructure.Observability.OperationalMetrics do
   use PromEx.Plugin
 
   alias Bolognesa.Infrastructure.Observability.Events
-
-  @playback_events [
-    [:bolognesa, :playback, :session, :started],
-    [:bolognesa, :playback, :session, :closed],
-    [:bolognesa, :playback, :session, :exited],
-    [:bolognesa, :playback, :liveview, :terminated],
-    [:bolognesa, :playback, :hls, :failed],
-    [:bolognesa, :playback, :browser, :diagnostic]
-  ]
+  alias Bolognesa.Infrastructure.Observability.PlaybackEvents
 
   @impl true
   def event_metrics(_opts) do
-    metrics = Enum.flat_map(Events.events() ++ @playback_events, &metrics_for_event/1)
+    metrics = Enum.flat_map(Events.events() ++ PlaybackEvents.events(), &metrics_for_event/1)
     Event.build(:bolognesa_operational_event_metrics, metrics)
   end
 

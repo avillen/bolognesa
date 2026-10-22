@@ -33,6 +33,17 @@ bounded metrics, and committed outcomes distinguished from stale work and failed
 The [observability convention](conventions/observability.md) records the full boundary
 audit, event catalog, ownership, and delivery limits.
 
+The local observability refactor centralizes Playback event names for logging and
+PromEx, shares metadata/timing mechanics for Movies and Series identification, and
+shares Libraries recovery reporting/notification with one distinct-library calculation.
+Outcome interpretation remains context-owned; event and metric contracts are preserved.
+`MIX_TEST_PARTITION=_obs_refactor mix precommit` passed compilation, formatting,
+Credo, and 627 tests with one skipped; the focused checks passed 43 tests.
+Coverage includes Playback export, context correlation/privacy and both recovery
+operations' partial failures, idle silence and unique notifications. Independent
+review found no material issues. No known blockers remain; the next step is integration.
+This refactor has not been published or deployed.
+
 Optional PromEx collection now exports framework metrics and existing application
 observations through a bearer-protected `/metrics` endpoint. Collection is disabled by
 default; the base installation needs no monitoring settings or external account.

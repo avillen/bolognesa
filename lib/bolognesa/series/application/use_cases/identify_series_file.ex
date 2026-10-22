@@ -1,6 +1,6 @@
 defmodule Bolognesa.Series.Application.UseCases.IdentifySeriesFile do
   @moduledoc "Identifies a complete episode selection with external I/O outside transactions."
-  alias Bolognesa.Infrastructure.Observability.Events
+  alias Bolognesa.Infrastructure.Observability.Observation
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Series.Application.Ports.Repositories.IdentificationRepository
   alias Bolognesa.Series.Domain.Policies.SeriesMatch
@@ -20,7 +20,7 @@ defmodule Bolognesa.Series.Application.UseCases.IdentifySeriesFile do
           :ok
           | {:error, :unavailable | :rate_limited | :provider_unavailable | :wrong_content_type}
   def call(id, token, attempt, repository, provider, job_id \\ nil) do
-    observation = {%{file_id: id, job_id: job_id, attempt: attempt}, Events.started_at()}
+    observation = Observation.start(%{file_id: id, job_id: job_id, attempt: attempt})
 
     case repository.begin_identification(id, token, job_id) do
       {:ok, :stale} ->
@@ -28,7 +28,7 @@ defmodule Bolognesa.Series.Application.UseCases.IdentifySeriesFile do
         :ok
 
       {:ok, %{content_type: :series} = file} ->
-        observation = with_revision(observation, file.revision)
+        observation = Observation.put(observation, :revision, file.revision)
         observe(observation, :started)
         identify(observation, id, token, attempt, repository, provider, file)
 
@@ -61,7 +61,8 @@ defmodule Bolognesa.Series.Application.UseCases.IdentifySeriesFile do
       )
     else
       {:error, reason, stage} ->
-        handle_error(with_stage(observation, stage), id, token, attempt, repository, [], reason)
+        observation = Observation.put(observation, :failure_stage, stage)
+        handle_error(observation, id, token, attempt, repository, [], reason)
 
       {:error, reason} ->
         handle_error(observation, id, token, attempt, repository, [], reason)
@@ -94,7 +95,7 @@ defmodule Bolognesa.Series.Application.UseCases.IdentifySeriesFile do
     else
       {:error, reason, stage} ->
         handle_error(
-          with_stage(observation, stage),
+          Observation.put(observation, :failure_stage, stage),
           id,
           token,
           attempt,
@@ -142,17 +143,8 @@ defmodule Bolognesa.Series.Application.UseCases.IdentifySeriesFile do
     result
   end
 
-  defp observe({metadata, started}, outcome, additional \\ %{}) do
-    Events.emit(:series, :identification, outcome, Map.merge(metadata, additional), %{
-      duration_ms: Events.elapsed(started)
-    })
-  end
-
-  defp with_revision({metadata, started}, revision),
-    do: {Map.put(metadata, :revision, revision), started}
-
-  defp with_stage({metadata, started}, stage),
-    do: {Map.put(metadata, :failure_stage, stage), started}
+  defp observe(observation, outcome, additional \\ %{}),
+    do: Observation.emit(observation, :series, :identification, outcome, additional)
 
   defp matching(value, value, _stage), do: :ok
   defp matching(_, _, stage), do: {:error, :invalid_response, stage}

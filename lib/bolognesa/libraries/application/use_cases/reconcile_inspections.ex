@@ -4,6 +4,7 @@ defmodule Bolognesa.Libraries.Application.UseCases.ReconcileInspections do
   alias Bolognesa.Infrastructure.Observability.Events
   alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
   alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
+  alias Bolognesa.Libraries.Application.Reconciliation
 
   @type result :: :ok | {:error, :unavailable}
 
@@ -12,38 +13,6 @@ defmodule Bolognesa.Libraries.Application.UseCases.ReconcileInspections do
   def call(now, repository, notifications) do
     started = Events.started_at()
     result = repository.reconcile_jobs(now)
-    observe(result, started)
-    Enum.each(Enum.uniq(result.changed_library_ids), &notifications.notify/1)
-    outcome(result.error)
+    Reconciliation.complete(result, :inspection, started, notifications)
   end
-
-  defp observe(result, started) do
-    count = result.changed_library_ids |> Enum.uniq() |> length()
-    measurements = %{changed_library_count: count, duration_ms: Events.elapsed(started)}
-
-    if count > 0,
-      do:
-        Events.emit(
-          :libraries,
-          :reconciliation,
-          :recovered,
-          %{operation: :inspection},
-          measurements
-        )
-
-    if result.error,
-      do:
-        Events.emit(
-          :libraries,
-          :reconciliation,
-          :retryable,
-          %{operation: :inspection, reason: :storage_unavailable},
-          measurements
-        )
-
-    :ok
-  end
-
-  defp outcome(nil), do: :ok
-  defp outcome(:unavailable), do: {:error, :unavailable}
 end

@@ -53,6 +53,12 @@ defmodule Bolognesa.Infrastructure.PromExTest do
       %{duration_ms: 42, files_discovered: 2}
     )
 
+    :telemetry.execute(
+      [:bolognesa, :playback, :session, :closed],
+      %{count: 1, duration_ms: 42},
+      %{session_id: "private-session", reason: :ended}
+    )
+
     private_conn = conn("PRIVATE_METHOD", "/private-media-title?token=private-query-token")
     private_conn = %{private_conn | host: "private-host.invalid", status: 404}
 
@@ -72,6 +78,9 @@ defmodule Bolognesa.Infrastructure.PromExTest do
     assert response.status == 200
     assert response.resp_body =~ "bolognesa_libraries_scan_completed_count"
     assert response.resp_body =~ "bolognesa_libraries_scan_completed_duration_milliseconds_bucket"
+    assert response.resp_body =~ "bolognesa_playback_session_closed_count"
+    assert response.resp_body =~ "bolognesa_playback_session_closed_duration_milliseconds_bucket"
+    refute response.resp_body =~ "private-session"
     assert response.resp_body =~ "bolognesa_prom_ex_beam"
     refute response.resp_body =~ "987654"
     refute response.resp_body =~ "123456"

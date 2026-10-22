@@ -1,6 +1,6 @@
 defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
   @moduledoc "Identify a pending file, with provider I/O outside database transactions."
-  alias Bolognesa.Infrastructure.Observability.Events
+  alias Bolognesa.Infrastructure.Observability.Observation
   alias Bolognesa.Movies.Application.Ports.Providers.MovieProvider
   alias Bolognesa.Movies.Application.Ports.Repositories.IdentificationRepository
   alias Bolognesa.Movies.Domain.Entities.Identification
@@ -19,7 +19,7 @@ defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
           :ok
           | {:error, :unavailable | :wrong_content_type | :unusable_name | MovieProvider.reason()}
   def call(file_id, token, attempt, repository, provider, job_id \\ nil) do
-    observation = {%{file_id: file_id, job_id: job_id, attempt: attempt}, Events.started_at()}
+    observation = Observation.start(%{file_id: file_id, job_id: job_id, attempt: attempt})
 
     case repository.begin_identification(file_id, token, job_id) do
       {:ok, :stale} ->
@@ -35,7 +35,7 @@ defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
         {:error, :unavailable}
 
       {:ok, %{content_type: :movie} = file} ->
-        observation = with_revision(observation, file.revision)
+        observation = Observation.put(observation, :revision, file.revision)
         observe(observation, :started)
         identify(observation, file_id, token, attempt, repository, provider, file)
 
@@ -60,7 +60,8 @@ defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
       )
     else
       {:error, reason, stage} ->
-        handle_error(with_stage(observation, stage), file_id, token, reason, attempt, repository)
+        observation = Observation.put(observation, :failure_stage, stage)
+        handle_error(observation, file_id, token, reason, attempt, repository)
 
       {:error, reason} ->
         handle_error(observation, file_id, token, reason, attempt, repository)
@@ -111,7 +112,8 @@ defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
         )
 
       {:error, reason, stage} ->
-        handle_error(with_stage(observation, stage), file_id, token, reason, attempt, repository)
+        observation = Observation.put(observation, :failure_stage, stage)
+        handle_error(observation, file_id, token, reason, attempt, repository)
     end
   end
 
@@ -143,17 +145,8 @@ defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
     result
   end
 
-  defp observe({metadata, started}, outcome, additional \\ %{}) do
-    Events.emit(:movies, :identification, outcome, Map.merge(metadata, additional), %{
-      duration_ms: Events.elapsed(started)
-    })
-  end
-
-  defp with_revision({metadata, started}, revision),
-    do: {Map.put(metadata, :revision, revision), started}
-
-  defp with_stage({metadata, started}, stage),
-    do: {Map.put(metadata, :failure_stage, stage), started}
+  defp observe(observation, outcome, additional \\ %{}),
+    do: Observation.emit(observation, :movies, :identification, outcome, additional)
 
   defp provider_result({:error, reason}, stage), do: {:error, reason, stage}
   defp provider_result(result, _stage), do: result

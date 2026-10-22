@@ -4,15 +4,9 @@ defmodule Bolognesa.Infrastructure.Observability do
   require Logger
 
   alias Bolognesa.Infrastructure.Observability.Events
+  alias Bolognesa.Infrastructure.Observability.PlaybackEvents
 
-  @events [
-    [:bolognesa, :playback, :session, :started],
-    [:bolognesa, :playback, :session, :closed],
-    [:bolognesa, :playback, :session, :exited],
-    [:bolognesa, :playback, :liveview, :terminated],
-    [:bolognesa, :playback, :hls, :failed],
-    [:bolognesa, :playback, :browser, :diagnostic]
-  ]
+  @events PlaybackEvents.events()
   @metadata [
     :session_id,
     :file_id,
