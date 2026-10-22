@@ -108,25 +108,26 @@ Oban node names; review those values before sharing metrics publicly.
 ## Dashboards
 
 The application never uploads dashboards or needs a Grafana service-account token.
-From a development checkout, export the bundled PromEx dashboards for manual import.
-Use the exact Prometheus data source name shown in your Grafana stack:
+The repository keeps Grafana import JSON in `grafana/dashboards/`. The five framework
+dashboards are generated from the pinned PromEx dependency; the operational dashboard is
+maintained in the repository and queries Bolognesa's fixed event metrics. To regenerate
+the PromEx dashboards after a dependency update, run from a development checkout:
 
 ```sh
-mkdir -p tmp/grafana-dashboards
-mix compile
-mix help prom_ex.dashboard.export
-mix prom_ex.dashboard.export \
-  --module Bolognesa.Infrastructure.Observability.PromEx \
-  --dashboard beam.json --stdout \
-  --assign datasource_id=YOUR_PROMETHEUS_DATASOURCE_NAME \
-  > tmp/grafana-dashboards/beam.json
+python3 scripts/export-grafana-dashboards.py
 ```
 
-Repeat for `application.json`, `phoenix.json`, `ecto.json`, and `oban.json`. In Grafana,
-use **Dashboards → New → Import**, upload the JSON, and select your data source.
-The Phoenix dashboard's URL and channel/socket panels remain empty because those
-metrics are intentionally omitted. Application workflow counters/histograms can be graphed
-in separate panels using their `bolognesa_` names.
+The script writes `application.json`, `beam.json`, `phoenix.json`, `ecto.json`, and
+`oban.json` as Grafana datasource-selection templates. Review and commit regenerated
+files together with the dependency change. `operational.json` is hand-maintained; edit it
+in Grafana's JSON model or directly in the repository, then import the saved file to
+publish it to a stack. It includes a target for every registered operational counter and
+duration histogram, grouped by context. When event definitions change, update its targets
+to match `OperationalMetrics` and `Events`; histogram panels show p95 and remain empty for
+events that do not report a duration. In Grafana, use **Dashboards → New → Import**, upload
+each JSON, and select the stack's Prometheus data source when prompted. The Phoenix
+dashboard's URL and channel/socket panels remain empty because those metrics are
+intentionally omitted.
 
 ## Free-plan budget
 

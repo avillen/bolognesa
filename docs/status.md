@@ -35,7 +35,15 @@ Optional PromEx collection now exports framework metrics and existing applicatio
 observations through a bearer-protected `/metrics` endpoint. Collection is disabled by
 default; the base installation needs no monitoring settings or external account.
 Separate bridge/host Compose overrides add Grafana Alloy with 60-second scraping and
-remote write. Cloud credentials belong to Alloy; dashboard import is manual. See the
+remote write. Cloud credentials belong to Alloy; Grafana dashboards are source-controlled
+in `grafana/dashboards/`, with PromEx dashboards regenerated from the pinned dependency
+and the operational dashboard maintained in the repository. The operator imported the
+five PromEx dashboards into Grafana Cloud and confirmed they work; the new operational
+dashboard has not yet been imported there. Its source covers all 65 registered operational
+counters and 65 duration histograms across Accounts, Libraries, Movies, Series, Music, and
+Playback. The PromEx exports regenerate deterministically and all six dashboard JSON files
+parse; operational dashboard rendering remains unverified.
+See the
 [monitoring guide](../deploy/compose/monitoring.md) and
 [decision 0021](decisions/0021-optional-prometheus-metrics.md).
 
@@ -175,10 +183,10 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 ## Limits and next work
 
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
-including accepted Grafana Cloud remote writes. Next step: verify the Explore query
-and imported dashboards in Grafana, then measure series/resource usage during
-representative workflows. Ordinary installations can continue without monitoring
-infrastructure.
+including accepted Grafana Cloud remote writes. The operator confirmed the Explore query
+and five imported PromEx dashboards work. The repository's operational dashboard is ready
+for import. Next step: measure series/resource usage during representative workflows.
+Ordinary installations can continue without monitoring infrastructure.
 
 The cross-context Telemetry rollout is published and deployed. Observations are best
 effort and do not replace durable job state; LiveDashboard is not a historical metrics

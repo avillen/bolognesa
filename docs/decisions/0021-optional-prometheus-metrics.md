@@ -21,8 +21,10 @@ self-host without any monitoring infrastructure or external account.
 - Provide separate bridge/host Compose overrides for Grafana Alloy. Keep the base
   recipe unchanged. Alloy scrapes every 60 seconds and owns remote-write credentials
   and a persistent WAL; its management endpoint is not published.
-- Keep dashboard import manual. The application has no Grafana write credentials and
-  monitoring failures do not affect application startup or business work.
+- Keep dashboard publication manual. Store PromEx dashboard exports as reproducible
+  Grafana import templates in `grafana/dashboards/` and maintain the Bolognesa
+  operational dashboard there as source JSON. The application has no Grafana write
+  credentials and monitoring failures do not affect application startup or business work.
 
 ## Consequences
 
