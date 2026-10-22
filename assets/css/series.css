@@ -75,7 +75,7 @@
   .series-breadcrumbs + * { margin-top: 0; }
 }
 
-.episode-breadcrumb { display: flex; align-items: center; gap: 8px; min-width: 0; margin-bottom: 8px; color: var(--color-muted); font-size: 12px; white-space: nowrap; }
+.episode-breadcrumb { display: flex; align-items: center; gap: 8px; min-width: 0; margin-bottom: 8px; color: var(--color-muted); font-size: 16px; white-space: nowrap; }
 .episode-breadcrumb a { display: inline-flex; align-items: center; min-height: 44px; }
 .episode-breadcrumb a.episode-breadcrumb-series { min-width: 0; display: block; overflow: hidden; text-overflow: ellipsis; line-height: 44px; }
 .episode-breadcrumb #episode-back { justify-content: center; width: 44px; flex-shrink: 0; margin-left: -12px; }

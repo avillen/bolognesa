@@ -532,6 +532,10 @@ try {
     await page.locator("#episode-title").waitFor();
     await page.locator("#episode-loading").waitFor({state: "detached"});
     await assertSeriesFits();
+    const episodeBreadcrumbFontSize = await page.locator("#episode-breadcrumb").evaluate(
+      element => Number.parseFloat(getComputedStyle(element).fontSize)
+    );
+    if (episodeBreadcrumbFontSize < 16) throw new Error("Episode breadcrumb text is too small.");
     const playerFits = await page.locator("#episode-player").evaluate(element => {
       const rect = element.getBoundingClientRect();
       return rect.top >= 0 && rect.bottom <= innerHeight;

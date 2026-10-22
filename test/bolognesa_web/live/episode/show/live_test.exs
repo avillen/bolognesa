@@ -62,6 +62,8 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
              "20 ene 2008"
            )
 
+    assert has_element?(view, "#episode-air-date [aria-hidden='true'] .hero-calendar-days")
+
     refute has_element?(view, ".episode-heading time")
     refute has_element?(view, ".episode-heading", "Serie")
   end

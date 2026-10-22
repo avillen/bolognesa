@@ -42,8 +42,8 @@ Credo, and 627 tests with one skipped; the focused checks passed 43 tests.
 Coverage includes Playback export, context correlation/privacy and both recovery
 operations' partial failures, idle silence and unique notifications. Independent
 review found no material issues. The same precommit command passed again after
-integration into `main` with 627 tests and one skipped. No known blockers remain;
-the next step is publication. This refactor has not been published or deployed.
+integration into `main` with 627 tests and one skipped. Published and deployed as
+`e5a6fb389dec9232c59f07d69a8d342a553b7f34`; release verification is recorded below.
 
 Optional PromEx collection now exports framework metrics and existing application
 observations through a bearer-protected `/metrics` endpoint. Collection is disabled by
@@ -77,6 +77,18 @@ The account and access context is `Bolognesa.Accounts`, including its `Authentic
 Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`, or explicit error tuples. `Accounts.fetch_authenticated_admin/0` and `Release.fetch_authenticated_admin/0` replace `admin_actor/0`; the release console still binds `admin` to the actor or `nil` when setup is open. Authentication preserves its `:invalid_credentials` and `:unauthenticated` failure contracts.
 
 ## Recorded verification
+
+- Observability refactor release: local `mix precommit` passed compilation,
+  formatting, Credo, and 627 tests with one skipped; `make check-screenshots` passed.
+  Container image workflow run [39829089422](https://github.com/avillen/bolognesa/actions/runs/39829089422)
+  succeeded for `e5a6fb389dec9232c59f07d69a8d342a553b7f34`. `make deploy-release`
+  deployed verified image
+  `ghcr.io/avillen/bolognesa@sha256:166be707a6907891ddaed67271e6319ff0cf450c8e57a1f7cbba749fea0f6028`
+  on ARM64. Migrations were already current; the update created the database backup
+  `pre-migration-20261022-201442-19207.dump`, started the app, and passed HTTP health
+  verification. `make deploy-status` confirmed the app is running and PostgreSQL is
+  healthy. Detailed authenticated catalog, metrics, mount, and remote-write checks were
+  not repeated for this release.
 
 - Optional metrics release: [application CI](https://github.com/avillen/bolognesa/actions/runs/39774002378),
   [screenshot CI](https://github.com/avillen/bolognesa/actions/runs/39774002367), and
