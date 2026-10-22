@@ -119,6 +119,18 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Recorded verification
 
+- Playback simplification and transcode naming: `mix precommit` passed with 635 tests and
+  one skipped; `make check-screenshots` passed locally. [Application CI](https://github.com/avillen/bolognesa/actions/runs/39854169225),
+  [container image CI](https://github.com/avillen/bolognesa/actions/runs/39854169319), and
+  [README screenshot CI](https://github.com/avillen/bolognesa/actions/runs/39854169265)
+  succeeded for `8719a3371567a5c2df6c4377a539872cf36ca54e`. `make deploy-release`
+  deployed verified image
+  `ghcr.io/avillen/bolognesa@sha256:3be80b7c9d1e1d6e5ad19774a057fb3006a51821e5242db7b0346ce4b900b102`
+  on ARM64. Migrations were already current; the update created validated backup
+  `pre-migration-20261022-230623-15629.dump`, started the app, and passed HTTP health
+  verification. `make deploy-status` confirmed the new image running and PostgreSQL
+  healthy.
+
 - Project overview release: local `mix precommit` passed with 630 tests and one skipped;
   `make check-screenshots` and the pinned incoming-commit Gitleaks scan passed.
   [Application CI](https://github.com/avillen/bolognesa/actions/runs/39844634227),
