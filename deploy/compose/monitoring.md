@@ -265,11 +265,13 @@ Alloy and the application receive no additional permissions or mounts.
    collector explicitly, with the complete selected file list. For bridge networking:
 
 ```sh
-docker compose -f compose.yaml -f monitoring.yaml -f monitoring.docker.yaml up -d --no-deps alloy-docker
+docker compose -f compose.yaml -f monitoring.yaml -f monitoring.docker.yaml up -d --no-deps --force-recreate alloy-docker
 ```
 
 For a host-network installation include `network.host.yaml` and `monitoring.host.yaml`;
 the Docker collector itself retains bridge networking. It has no published management port.
+Use `--force-recreate` after config changes so an existing container cannot retain the old
+embedded config mount. Its persistent WAL survives recreation.
 `make deploy-release` does not start optional collectors.
 
 Only containers from the selected Compose project and services `app`, `db`, `alloy`,

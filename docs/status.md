@@ -80,12 +80,13 @@ issues. No known source-change blockers remain.
 
 A separate `monitoring.docker.yaml` opt-in adds a privileged native-Linux Alloy/cAdvisor
 collector with project/service forwarding filters, metric/label allowlists and an independent
-WAL. The app and ordinary metrics collector gain no host mounts. Docker collection has not
-been activated on the target installation. The Grafana Cloud API accepted the overview update, and read-back verified all titles,
-queries and datasource bindings. The application scrape is up and framework metrics are
-queryable; LiveView and Docker metrics are absent as expected before their activation.
-Exporter changes are not yet published or deployed. Cloud visual rendering, native-host
-resource accuracy and representative series/resource budgets remain pending. See the
+WAL. The app and ordinary metrics collector gain no host mounts. The exporter release is
+published and deployed on ARM64, and the Docker collector is active. The Grafana Cloud API
+accepted the overview update; read-back verified titles, queries and datasource bindings.
+Both application and Docker scrapes report `up=1`; fresh samples cover all five expected
+services. LiveView callback metrics and Docker CPU, working-set memory and network counters
+are queryable. Block-I/O series have not been observed on this host. Cloud visual rendering,
+representative resource accuracy and series budgets remain unverified. See the
 [monitoring guide](../deploy/compose/monitoring.md),
 [decision 0021](decisions/0021-optional-prometheus-metrics.md), and
 [decision 0023](decisions/0023-project-overview-monitoring.md).
@@ -106,6 +107,25 @@ The account and access context is `Bolognesa.Accounts`, including its `Authentic
 Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`, or explicit error tuples. `Accounts.fetch_authenticated_admin/0` and `Release.fetch_authenticated_admin/0` replace `admin_actor/0`; the release console still binds `admin` to the actor or `nil` when setup is open. Authentication preserves its `:invalid_credentials` and `:unauthenticated` failure contracts.
 
 ## Recorded verification
+
+- Project overview release: local `mix precommit` passed with 630 tests and one skipped;
+  `make check-screenshots` and the pinned incoming-commit Gitleaks scan passed.
+  [Application CI](https://github.com/avillen/bolognesa/actions/runs/39844634227),
+  [screenshot CI](https://github.com/avillen/bolognesa/actions/runs/39844634284), and
+  [image CI](https://github.com/avillen/bolognesa/actions/runs/39844634228) succeeded for
+  `833797dd75b1f0e3620abb09ff20b030f6f10167`. `make deploy-release` deployed verified image
+  `ghcr.io/avillen/bolognesa@sha256:2c3bc44c38b84d1d2cc158b62d831156e2bf1f7d2d08790974b19004e48969bd`
+  on ARM64. Migrations were current; the update created validated backup
+  `pre-migration-20261022-220022-14341.dump` and passed HTTP verification. Authenticated
+  Movies/Series/Music reads, all six coordination processes, authorized metrics export,
+  and unauthenticated metrics/media rejection passed. Project, mounts, environment,
+  accounts, library configuration and manual-correction fingerprints match the prior state.
+  The Docker collector configuration was validated on the server and activated separately.
+  An explicit target relabel fixes cAdvisor's inherited `integrations/cadvisor` job;
+  force recreation applies embedded config changes. The focused Compose regression passes.
+  Cloud queries confirm both scrapes up, fresh samples from all five expected services,
+  LiveView metrics, and Docker CPU/memory/network data. Block-I/O is absent from observed
+  series; this is not a representative capacity or quota measurement.
 
 - Episode detail polish: `mix precommit` passed compilation, formatting, Credo,
   and 627 tests with one skipped; `make check-screenshots` passed. Container image
@@ -261,9 +281,9 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query
 and five imported PromEx dashboards work. The replacement project overview is imported and verified through the Grafana Cloud API;
-new exporter code and collector configuration remain local changes. Next step: publish/deploy
-the exporter changes, explicitly activate the optional Docker collector on native Linux,
-then verify Cloud rendering, data and series/resource usage during representative workflows.
+its exporter release and optional Docker collector are deployed. Next step: inspect Cloud
+rendering and measure series/resource use during representative workflows; block-I/O data
+has not been observed on this host.
 Ordinary installations can continue without monitoring infrastructure.
 
 The cross-context Telemetry rollout is published and deployed. Observations are best

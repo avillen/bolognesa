@@ -1,6 +1,6 @@
 # 0023. Project overview and optional Docker resource metrics
 
-Status: Dashboard imported and verified through the Grafana Cloud API; exporter changes remain local and target-host Docker collection is pending.
+Status: Dashboard imported, exporter release deployed on ARM64, and Docker CPU/memory/network forwarding verified through the Grafana Cloud API. Representative resource accuracy and block-I/O data remain unverified.
 
 ## Context
 

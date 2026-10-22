@@ -46,6 +46,11 @@ configs:
 
       discovery.relabel "docker" {
         targets = prometheus.exporter.cadvisor.bolognesa.targets
+        // Exporter targets already carry integrations/cadvisor; set dashboard ownership explicitly.
+        rule {
+          target_label = "job"
+          replacement = "bolognesa-docker"
+        }
         rule {
           target_label = "instance"
           replacement = sys.env("BOLOGNESA_METRICS_INSTANCE")

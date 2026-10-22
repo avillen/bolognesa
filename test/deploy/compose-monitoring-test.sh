@@ -72,6 +72,8 @@ for host in (False, True):
     assert not data['services']['alloy'].get('privileged')
     assert not any(v['target'] == '/rootfs' for v in data['services']['app']['volumes'])
     content = data['configs']['alloy_docker_config']['content']
+    assert 'target_label = "job"' in content
+    assert 'replacement = "bolognesa-docker"' in content
     assert 'store_container_labels = false' in content
     assert 'action = "keepequal"' in content
     assert 'action = "labelkeep"' in content
