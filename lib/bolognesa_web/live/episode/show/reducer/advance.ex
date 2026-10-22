@@ -48,7 +48,7 @@ defmodule BolognesaWeb.Episode.Show.Reducer.Advance do
     socket
     |> assign(:advance_request, request)
     |> start_async({:next_episode, request}, fn ->
-      Series.fetch_next_episode(actor, episode_id, file_id)
+      Series.fetch_next_available_episode(actor, episode_id, file_id)
     end)
   end
 

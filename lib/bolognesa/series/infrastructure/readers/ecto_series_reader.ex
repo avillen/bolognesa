@@ -197,7 +197,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   end
 
   @impl true
-  def fetch_next_episode(episode_id, file_id) do
+  def fetch_next_available_episode(episode_id, file_id) do
     completed =
       from relation in SeriesIdentificationEpisodeSchema,
         join: decision in SeriesIdentificationSchema,

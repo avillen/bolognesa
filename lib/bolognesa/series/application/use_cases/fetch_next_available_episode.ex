@@ -1,5 +1,5 @@
-defmodule Bolognesa.Series.Application.UseCases.FetchNextEpisode do
-  @moduledoc "Authorize ordered continuation after a completed episode file."
+defmodule Bolognesa.Series.Application.UseCases.FetchNextAvailableEpisode do
+  @moduledoc "Authorize the next available episode after every episode in the completed file, across seasons."
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Ports.Readers.SeriesReader
@@ -9,7 +9,7 @@ defmodule Bolognesa.Series.Application.UseCases.FetchNextEpisode do
           {:ok, Episode.t()} | :not_found | {:error, :forbidden | :unavailable}
   def call(actor, episode_id, file_id, reader) do
     with :ok <- Accounts.authorize(actor, :admin) do
-      reader.fetch_next_episode(episode_id, file_id)
+      reader.fetch_next_available_episode(episode_id, file_id)
     end
   end
 end
