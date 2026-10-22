@@ -23,5 +23,6 @@ defmodule Bolognesa.Accounts.Application.Ports.Repositories.UserRepository do
               :ok | {:error, :unavailable}
   @callback fetch_active_session(Session.token_hash(), DateTime.t()) ::
               {:ok, User.t()} | :not_found | {:error, :unavailable}
-  @callback delete_session(Session.token_hash()) :: :ok | {:error, :unavailable}
+  @callback delete_session(Session.token_hash()) ::
+              {:ok, :deleted | :not_found} | {:error, :unavailable}
 end

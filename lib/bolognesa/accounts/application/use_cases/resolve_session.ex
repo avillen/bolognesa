@@ -4,6 +4,7 @@ defmodule Bolognesa.Accounts.Application.UseCases.ResolveSession do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Accounts.Domain.Entities.Session
   alias Bolognesa.Accounts.Domain.ValueObjects.Sessions.SessionToken
+  alias Bolognesa.Infrastructure.Observability.Events
 
   @spec call(Session.token() | nil, UserRepository.adapter()) ::
           {:ok, AuthenticatedUser.t()} | {:error, :unauthenticated | :unavailable}
@@ -16,9 +17,20 @@ defmodule Bolognesa.Accounts.Application.UseCases.ResolveSession do
 
   defp fetch_active_user(raw, repository) do
     case repository.fetch_active_session(:crypto.hash(:sha256, raw), DateTime.utc_now()) do
-      {:ok, user} -> {:ok, user}
-      :not_found -> {:error, :unauthenticated}
-      {:error, :unavailable} = error -> error
+      {:ok, user} ->
+        {:ok, user}
+
+      :not_found ->
+        {:error, :unauthenticated}
+
+      {:error, :unavailable} = error ->
+        Events.emit(:accounts, :session, :failed, %{
+          operation: :resolve,
+          reason: :storage_unavailable,
+          failure_stage: :session_lookup
+        })
+
+        error
     end
   end
 end

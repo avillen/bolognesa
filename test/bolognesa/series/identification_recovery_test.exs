@@ -5,11 +5,27 @@ defmodule Bolognesa.Series.IdentificationRecoveryTest do
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
   alias Bolognesa.Series.Application.UseCases.IdentifySeriesFile
+  alias Bolognesa.Series.Application.UseCases.ReconcileIdentificationJobs
   alias Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
 
   alias Ecto.Adapters.SQL
   alias Ecto.Adapters.SQL.Sandbox
+
+  setup do
+    owner = self()
+    handler = {__MODULE__, make_ref()}
+
+    :telemetry.attach_many(
+      handler,
+      [[:bolognesa, :series, :reconciliation, :failed]],
+      fn event, measurements, metadata, _ -> send(owner, {event, measurements, metadata}) end,
+      nil
+    )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+    :ok
+  end
 
   defmodule NoTokenProvider do
     def search(_, _), do: {:error, :not_configured}
@@ -50,7 +66,11 @@ defmodule Bolognesa.Series.IdentificationRecoveryTest do
       """)
 
       try do
-        assert {:error, :unavailable} = Repository.reconcile_jobs(now)
+        assert {:error, :unavailable} = ReconcileIdentificationJobs.call(now, Repository)
+
+        assert_receive {[:bolognesa, :series, :reconciliation, :failed], %{recovered_count: 2},
+                        %{reason: :storage_unavailable}}
+
         assert {:ok, %{state: :failed}} = Repository.get(first.id)
         assert {:ok, %{state: :pending}} = Repository.get(rejected.id)
         assert {:ok, %{state: :failed}} = Repository.get(last.id)
@@ -92,7 +112,7 @@ defmodule Bolognesa.Series.IdentificationRecoveryTest do
       link_job(file, token, "discarded", now, now)
       change_file(change, file)
       assert {:ok, previous} = Repository.get(file.id)
-      assert :ok = Repository.reconcile_jobs(now)
+      assert {:ok, 0} = Repository.reconcile_jobs_result(now)
       assert {:ok, ^previous} = Repository.get(file.id)
     end
   end

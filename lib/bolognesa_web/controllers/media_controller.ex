@@ -14,6 +14,7 @@ defmodule BolognesaWeb.MediaController do
     do: serve_entry(conn, :episode, entry_text, file_text)
 
   defp serve_entry(conn, kind, entry_text, file_text) do
+    conn = MediaDelivery.with_resource(conn, kind, file_text)
     actor = conn.assigns.current_scope.actor
 
     with {:ok, movie_id} <- positive_id(entry_text),

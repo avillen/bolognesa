@@ -10,6 +10,7 @@ defmodule BolognesaWeb.MusicMediaController do
     do: serve_entry(conn, entry_text, file_text)
 
   defp serve_entry(conn, entry_text, file_text) do
+    conn = MediaDelivery.with_resource(conn, :music, file_text)
     actor = conn.assigns.current_scope.actor
 
     with {:ok, track_id} <- positive_id(entry_text),

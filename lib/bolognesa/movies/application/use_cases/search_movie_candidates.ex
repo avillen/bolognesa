@@ -1,6 +1,7 @@
 defmodule Bolognesa.Movies.Application.UseCases.SearchMovieCandidates do
   @moduledoc "Authorize and validate a manual movie search."
   alias Bolognesa.Accounts
+  alias Bolognesa.Infrastructure.Observability.Events
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Movies.Application.Ports.Providers.MovieProvider
@@ -12,7 +13,9 @@ defmodule Bolognesa.Movies.Application.UseCases.SearchMovieCandidates do
   def call(actor, query, provider) do
     with :ok <- Accounts.authorize(actor, :admin),
          :ok <- valid_query(query) do
-      provider.search(String.trim(query), nil)
+      result = provider.search(String.trim(query), nil)
+      observe(result, actor.id)
+      result
     end
   end
 
@@ -23,4 +26,15 @@ defmodule Bolognesa.Movies.Application.UseCases.SearchMovieCandidates do
   end
 
   defp valid_query(_query), do: {:error, :invalid_query}
+
+  defp observe({:error, reason}, user_id),
+    do:
+      Events.emit(:movies, :provider, :failed, %{
+        user_id: user_id,
+        reason: reason,
+        operation: :search,
+        failure_stage: :search
+      })
+
+  defp observe(_result, _user_id), do: :ok
 end

@@ -2,6 +2,7 @@ defmodule Bolognesa.Infrastructure.ObservabilityTest do
   use ExUnit.Case, async: false
   import ExUnit.CaptureLog
   alias Bolognesa.Infrastructure.Observability
+  alias Bolognesa.Infrastructure.Observability.Events
 
   test "playback events are logged once with approved metadata only" do
     previous = Logger.level()
@@ -52,5 +53,36 @@ defmodule Bolognesa.Infrastructure.ObservabilityTest do
 
     handlers = :telemetry.list_handlers([:bolognesa, :playback, :session, :closed])
     assert Enum.count(handlers, &(&1.id == Observability)) == 1
+  end
+
+  test "startup replaces a handler left behind by an untrappable exit" do
+    Supervisor.terminate_child(Bolognesa.Supervisor, Observability)
+    on_exit(fn -> Supervisor.restart_child(Bolognesa.Supervisor, Observability) end)
+
+    temporary =
+      start_supervised!(%{
+        id: :temporary_observation_subscriber,
+        start: {GenServer, :start_link, [Observability, [], []]},
+        restart: :temporary
+      })
+
+    ref = Process.monitor(temporary)
+    Process.exit(temporary, :kill)
+    assert_receive {:DOWN, ^ref, :process, ^temporary, :killed}
+
+    event = [:bolognesa, :libraries, :scan, :failed]
+    assert Enum.any?(:telemetry.list_handlers(event), &(&1.id == Observability))
+    assert {:ok, _} = Supervisor.restart_child(Bolognesa.Supervisor, Observability)
+    assert Enum.count(:telemetry.list_handlers(event), &(&1.id == Observability)) == 1
+
+    log =
+      capture_log(fn ->
+        Events.emit(:libraries, :scan, :failed, %{
+          scan_id: 51,
+          reason: :source_inaccessible
+        })
+      end)
+
+    assert length(Regex.scan(~r/Bolognesa operational observation/, log)) == 1
   end
 end

@@ -177,18 +177,33 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
 
   @spec reconcile_jobs(DateTime.t()) :: :ok | {:error, :unavailable}
   def reconcile_jobs(now) do
+    case reconcile_jobs_result(now) do
+      {:ok, _count} -> :ok
+      {:error, :unavailable, _count} -> {:error, :unavailable}
+    end
+  end
+
+  @spec reconcile_jobs_result(DateTime.t()) ::
+          {:ok, non_neg_integer()} | {:error, :unavailable, non_neg_integer()}
+  @impl true
+  def reconcile_jobs_result(now) do
     JobRecovery.interrupted(Repo, now)
-    |> Enum.reduce(:ok, fn {file_id, token, state}, result ->
+    |> Enum.reduce({:ok, 0}, fn {file_id, token, state}, result ->
       reason = if state == "discarded", do: :attempts_exhausted, else: :unexpected_failure
       recovery_result(fail(file_id, token, reason), result)
     end)
   rescue
-    DBConnection.ConnectionError -> {:error, :unavailable}
-    Postgrex.Error -> {:error, :unavailable}
+    DBConnection.ConnectionError -> {:error, :unavailable, 0}
+    Postgrex.Error -> {:error, :unavailable, 0}
   end
 
-  defp recovery_result({:error, :unavailable}, _result), do: {:error, :unavailable}
-  defp recovery_result(_success, result), do: result
+  defp recovery_result(:ok, {:ok, count}), do: {:ok, count + 1}
+  defp recovery_result(:ok, {:error, :unavailable, count}), do: {:error, :unavailable, count + 1}
+
+  defp recovery_result({:error, :unavailable}, result),
+    do: {:error, :unavailable, elem(result, tuple_size(result) - 1)}
+
+  defp recovery_result({:ok, :stale}, result), do: result
 
   defp start_pending_identification(identification, file, job_id) do
     {:ok, started} = Identification.start(decision(identification), job_id, DateTime.utc_now())

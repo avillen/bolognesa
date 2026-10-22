@@ -191,7 +191,9 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
              BoundedCommand.run(Path.join(root, "absent"), [], 100, 100)
   end
 
-  test "logs ffprobe read failures by file id without exposing the media path", %{root: root} do
+  test "retains a bounded ffprobe failure stage while keeping the public probe quiet", %{
+    root: root
+  } do
     path = Path.join(root, "private-series-episode.mkv")
     File.write!(path, "video")
     observed = file(path, root)
@@ -204,12 +206,14 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
                  FfprobeMediaProbe.inspect(library(root), %{observed | id: 42},
                    executable: executable
                  )
+
+        assert {:error, :unreadable, :ffprobe} =
+                 FfprobeMediaProbe.inspect_with_diagnostics(library(root), %{observed | id: 42},
+                   executable: executable
+                 )
       end)
 
-    assert log =~ "Technical media inspection failed"
-    assert log =~ "file_id=42"
-    assert log =~ "failure_stage=ffprobe"
-    refute log =~ "private-series-episode.mkv"
+    assert log == ""
   end
 
   test "passes non UTF-8 path bytes unchanged when supported by the runtime", %{root: root} do

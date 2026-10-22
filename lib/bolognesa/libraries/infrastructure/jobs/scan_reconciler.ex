@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler do
   @moduledoc "Reconciles persisted results after startup and after each bounded interval."
   use GenServer
-  require Logger
+  alias Bolognesa.Infrastructure.Observability.Events
 
   alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
   alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
@@ -51,17 +51,18 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler do
   end
 
   defp run(repository, notifications) do
-    case ReconcileScans.call(DateTime.utc_now(), repository, notifications) do
-      :ok ->
-        :ok
-
-      {:error, :unavailable} ->
-        Logger.warning("Library scan reconciliation unavailable", reason: :storage_unavailable)
-    end
+    ReconcileScans.call(DateTime.utc_now(), repository, notifications)
   rescue
-    _exception -> Logger.error("Library scan reconciliation failed", reason: :unexpected_failure)
+    _exception ->
+      Events.emit(:libraries, :reconciliation, :failed, %{
+        operation: :scan,
+        reason: :unexpected_failure
+      })
   catch
     _kind, _value ->
-      Logger.error("Library scan reconciliation failed", reason: :unexpected_failure)
+      Events.emit(:libraries, :reconciliation, :failed, %{
+        operation: :scan,
+        reason: :unexpected_failure
+      })
   end
 end

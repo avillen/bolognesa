@@ -5,6 +5,9 @@ defmodule Bolognesa.Series.Application.Ports.Repositories.IdentificationReposito
   alias Bolognesa.Series.Domain.ValueObjects.EpisodeSelection
   alias Bolognesa.Series.Domain.ValueObjects.SeriesCandidate
 
+  @callback reconcile_jobs_result(DateTime.t()) ::
+              {:ok, non_neg_integer()} | {:error, :unavailable, non_neg_integer()}
+
   @type adapter :: module()
   @type review_reason :: Bolognesa.Series.Domain.Policies.IdentificationPolicy.review_reason()
   @type failure_reason ::

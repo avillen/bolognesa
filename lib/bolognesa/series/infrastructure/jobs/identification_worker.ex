@@ -1,7 +1,7 @@
 defmodule Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker do
   @moduledoc "Runs a token-protected series identification."
   use Oban.Worker, queue: :identifications, max_attempts: 3
-  require Logger
+  alias Bolognesa.Infrastructure.Observability.Events
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Series.Application.Ports.Repositories.IdentificationRepository
   alias Bolognesa.Series.Application.UseCases.IdentifySeriesFile
@@ -41,12 +41,13 @@ defmodule Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker do
   def perform(_, _, _), do: {:cancel, :invalid_job}
 
   defp unexpected_failure(id, job_id, attempt) do
-    Logger.warning("Identification job failed",
+    Events.emit(:series, :identification, :failed, %{
       file_id: id,
       job_id: job_id,
       attempt: attempt,
-      reason: :unexpected_failure
-    )
+      reason: :unexpected_failure,
+      failure_stage: :execution
+    })
 
     {:error, :unexpected_failure}
   end

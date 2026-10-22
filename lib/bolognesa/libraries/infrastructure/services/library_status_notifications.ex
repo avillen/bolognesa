@@ -2,7 +2,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
   @moduledoc "Best-effort hints for authorized clients to re-read persisted library status."
   @behaviour Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
 
-  require Logger
+  alias Bolognesa.Infrastructure.Observability.Events
 
   alias Bolognesa.Infrastructure.Services.PubSubNotifications
   alias Bolognesa.Libraries.Domain.Entities.Library
@@ -25,10 +25,10 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
   end
 
   defp unavailable(library_id) do
-    Logger.warning("Library status notification unavailable",
+    Events.emit(:libraries, :notification, :degraded, %{
       library_id: library_id,
       reason: :notification_unavailable
-    )
+    })
 
     :ok
   end

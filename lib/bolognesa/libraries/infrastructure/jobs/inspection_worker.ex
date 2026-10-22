@@ -4,7 +4,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker do
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
   use Oban.Worker, queue: :media_inspections, max_attempts: InspectionPolicy.max_attempts()
 
-  require Logger
+  alias Bolognesa.Infrastructure.Observability.Events
 
   alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
   alias Bolognesa.Libraries.Application.Ports.Services.{LibraryStatusNotifier, MediaProbe}
@@ -47,12 +47,12 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker do
   def perform(_job, _repository, _probe, _notifications), do: {:cancel, :unexpected_failure}
 
   defp unexpected_failure(id, job_id, attempt) do
-    Logger.warning("Technical inspection failed",
+    Events.emit(:libraries, :inspection, :failed, %{
       file_id: id,
       job_id: job_id,
       attempt: attempt,
       reason: :unexpected_failure
-    )
+    })
 
     {:error, :unexpected_failure}
   end

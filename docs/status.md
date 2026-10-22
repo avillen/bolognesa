@@ -22,11 +22,32 @@ Configured libraries appear in the sidebar, including empty ones. Catalog lists 
 
 LiveDashboard requires a verified administrator session for both HTTP and LiveView access in every environment. The mailbox preview is development-only.
 
+Application Telemetry now covers Accounts mutations and operational session failures;
+Libraries scanning, inspection, recovery, and degraded notifications; Movies and Series
+identification, corrections, provider failures, and recovery; Music imports, retries,
+and recovery; and failed direct audio/video delivery. Events are sanitized before
+emission and reported once by the supervised subscriber, with explicit job correlation,
+bounded metrics, and committed outcomes distinguished from stale work and failed attempts.
+The [observability convention](conventions/observability.md) records the full boundary
+audit, event catalog, ownership, and delivery limits.
+
 The account and access context is `Bolognesa.Accounts`, including its `AuthenticatedUser` contract for verified callers. A reversible migration renames the former `identity_*` tables, sequences, indexes, and constraints to `accounts_*` while preserving users and sessions. Apply the migration with the matching application release. Authorization is delegated to a domain policy; session entities own issue time and expiry, and persistence stores those supplied times. The trusted release console resolves its complete administrator actor, including locale, through the Accounts facade.
 
 Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`, or explicit error tuples. `Accounts.fetch_authenticated_admin/0` and `Release.fetch_authenticated_admin/0` replace `admin_actor/0`; the release console still binds `admin` to the actor or `nil` when setup is open. Authentication preserves its `:invalid_credentials` and `:unauthenticated` failure contracts.
 
 ## Recorded verification
+
+- Cross-context Telemetry: `MIX_TEST_PARTITION=_telemetry_rollout mix precommit` passed
+  compilation, formatting, Credo, and 620 tests with one skipped. Capture-handler and
+  PostgreSQL regressions cover correlation, privacy before emission, inherited Logger
+  metadata, one log per observation, handler restart after ordinary and untrappable
+  exits, stale suppression, transaction rollback, retries/exhaustion, partial committed
+  recovery, and quiet reads/idle polling. Direct delivery tests cover invalid references,
+  source/range failures, truncated reads, and closed/unclassified send failures after
+  headers without changing the sent HTTP status. Independent review's inherited-metadata
+  finding was reproduced and fixed; scoped re-review found no remaining material issues.
+  `git diff --check` and local documentation link checks passed. This rollout is verified
+  locally; deployment observations and target-device verification remain pending.
 
 - Playback buffering: local `mix precommit` passed compilation, formatting, Credo, and
   563 tests with one skipped; `node --test assets/test/*.mjs` passed 23 tests. Regressions
@@ -113,6 +134,11 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 - Local Compose startup, migrations, and initial setup were verified on x86_64. A compatible MP4 played in Chrome on a private deployment. Music inspection handles attached cover art without rejecting valid audio.
 
 ## Limits and next work
+
+The cross-context Telemetry rollout is implemented and locally verified. Observations
+are best effort and do not replace durable job state; LiveDashboard is not a historical
+metrics store. Next step: verify these diagnostics on the next deployed release during
+representative scan, identification, import, and playback workflows.
 
 The library repository query import follows the module-level convention, and the Music refresh worker defines its policy alias before the Oban macro that uses it. `MIX_TEST_PARTITION=_review_import_scope mix precommit` passed compilation, formatting, Credo, and 521 tests with one skipped. The initial default-database run failed an inspection recovery assertion that counted six completed jobs instead of two; the isolated run passed. The source of the extra jobs in the default database remains unconfirmed.
 

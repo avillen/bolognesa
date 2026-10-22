@@ -15,6 +15,25 @@ defmodule Bolognesa.Series.IdentifySeriesFileTest do
   alias Ecto.Adapters.SQL.Sandbox
   use Bolognesa.DataCase, async: false
 
+  setup do
+    owner = self()
+    handler = {__MODULE__, make_ref()}
+
+    events =
+      for outcome <- [:completed, :stale, :retryable],
+          do: [:bolognesa, :series, :identification, outcome]
+
+    :telemetry.attach_many(
+      handler,
+      events,
+      fn event, measurements, metadata, _ -> send(owner, {event, measurements, metadata}) end,
+      nil
+    )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+    :ok
+  end
+
   test "begin without a job id preserves the outbox link" do
     {file, token} = pending("Serie S01E01.mkv")
 
@@ -64,6 +83,11 @@ defmodule Bolognesa.Series.IdentifySeriesFileTest do
         assert {:error, :unavailable} =
                  IdentifySeriesFile.call(file.id, token, 1, Repository, Provider)
 
+        assert_receive {[:bolognesa, :series, :identification, :retryable], _,
+                        %{reason: :storage_unavailable, failure_stage: :persistence}}
+
+        refute_receive {[:bolognesa, :series, :identification, :completed], _, _}
+
         assert {:ok, %{state: :pending, token: ^token, episode_ids: []}} =
                  Repository.get(file.id)
 
@@ -86,12 +110,15 @@ defmodule Bolognesa.Series.IdentifySeriesFileTest do
   test "identifies a special double file atomically and repeats harmlessly" do
     {file, token} = pending("Serie S00E01E02.mkv")
     assert :ok = IdentifySeriesFile.call(file.id, token, 1, Repository, Provider)
+    assert_receive {[:bolognesa, :series, :identification, :completed], _, %{result: :matched}}
 
     assert {:ok, %{state: :automatic, episode_ids: ids, needs_review?: false}} =
              Repository.get(file.id)
 
     assert length(ids) == 2
     assert :ok = IdentifySeriesFile.call(file.id, token, 2, Repository, Provider)
+    assert_receive {[:bolognesa, :series, :identification, :stale], _, _}
+    refute_receive {[:bolognesa, :series, :identification, :completed], _, _}
     assert {:ok, %{episode_ids: ^ids}} = Repository.get(file.id)
     assert {:ok, request} = Repository.retry(file.id)
     assert request.episode_ids == []
@@ -108,6 +135,7 @@ defmodule Bolognesa.Series.IdentifySeriesFileTest do
         ] do
       {file, token} = pending(name)
       assert :ok = IdentifySeriesFile.call(file.id, token, 1, Repository, Provider)
+      assert_receive {[:bolognesa, :series, :identification, :completed], _, %{result: :review}}
 
       assert {:ok,
               %{

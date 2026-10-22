@@ -1,7 +1,8 @@
 defmodule Bolognesa.Movies.Infrastructure.Jobs.IdentificationReconciler do
   @moduledoc "Marks pending identifications whose jobs ended without a result."
   use GenServer
-  require Logger
+  alias Bolognesa.Infrastructure.Observability.Events
+  alias Bolognesa.Movies.Application.UseCases.ReconcileIdentificationJobs
 
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository
 
@@ -32,19 +33,17 @@ defmodule Bolognesa.Movies.Infrastructure.Jobs.IdentificationReconciler do
   def handle_info(:reconcile, state), do: {:noreply, run(state)}
 
   defp run(state) do
-    case state.repository.reconcile_jobs(DateTime.utc_now()) do
-      :ok ->
-        :ok
-
-      {:error, :unavailable} ->
-        Logger.warning("Identification reconciliation unavailable", reason: :storage_unavailable)
-    end
+    ReconcileIdentificationJobs.call(DateTime.utc_now(), state.repository)
 
     Process.send_after(self(), :reconcile, state.interval_ms)
     state
   rescue
     _ ->
-      Logger.warning("Identification reconciliation failed", reason: :unexpected_failure)
+      Events.emit(:movies, :reconciliation, :failed, %{
+        reason: :unexpected_failure,
+        failure_stage: :recovery
+      })
+
       Process.send_after(self(), :reconcile, state.interval_ms)
       state
   end

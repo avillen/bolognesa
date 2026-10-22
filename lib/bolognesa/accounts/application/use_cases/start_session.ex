@@ -5,6 +5,7 @@ defmodule Bolognesa.Accounts.Application.UseCases.StartSession do
   alias Bolognesa.Accounts.Domain.Entities.Session
   alias Bolognesa.Accounts.Domain.Entities.User
   alias Bolognesa.Accounts.Domain.ValueObjects.Sessions.SessionToken
+  alias Bolognesa.Infrastructure.Observability.Events
 
   @spec call(User.email(), User.password(), UserRepository.adapter(), PasswordHasher.adapter()) ::
           {:ok, Session.token()} | {:error, :invalid_credentials | :unavailable}
@@ -12,14 +13,16 @@ defmodule Bolognesa.Accounts.Application.UseCases.StartSession do
     normalized_email = email |> String.trim() |> String.downcase()
 
     if byte_size(password) in 1..72 and :binary.match(password, <<0>>) == :nomatch do
-      authenticate(normalized_email, password, repository, hasher)
+      result = authenticate(normalized_email, password, repository, hasher)
+      observe(result)
+      result
     else
       hasher.dummy_verify(password)
-      {:error, :invalid_credentials}
+      reject_credentials()
     end
   end
 
-  def call(_, _, _repository, _hasher), do: {:error, :invalid_credentials}
+  def call(_, _, _repository, _hasher), do: reject_credentials()
 
   defp authenticate(email, password, repository, hasher) do
     case repository.fetch_user_by_email(email) do
@@ -49,8 +52,30 @@ defmodule Bolognesa.Accounts.Application.UseCases.StartSession do
     session = Session.new(user.id, :crypto.hash(:sha256, raw), DateTime.utc_now())
 
     case repository.insert_session(session) do
-      :ok -> {:ok, token}
-      {:error, :unavailable} = error -> error
+      :ok ->
+        Events.emit(:accounts, :session, :completed, %{operation: :start, user_id: user.id})
+        {:ok, token}
+
+      {:error, :unavailable} = error ->
+        error
     end
   end
+
+  defp reject_credentials do
+    observe({:error, :invalid_credentials})
+    {:error, :invalid_credentials}
+  end
+
+  defp observe({:error, :invalid_credentials}),
+    do:
+      Events.emit(:accounts, :session, :rejected, %{
+        operation: :start,
+        reason: :invalid_credentials
+      })
+
+  defp observe({:error, :unavailable}),
+    do:
+      Events.emit(:accounts, :session, :failed, %{operation: :start, reason: :storage_unavailable})
+
+  defp observe(_), do: :ok
 end

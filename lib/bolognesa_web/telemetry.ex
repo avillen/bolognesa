@@ -2,6 +2,8 @@ defmodule BolognesaWeb.Telemetry do
   use Supervisor
   import Telemetry.Metrics
 
+  alias Bolognesa.Infrastructure.Observability.Events
+
   @spec start_link(keyword()) :: Supervisor.on_start()
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
@@ -92,7 +94,18 @@ defmodule BolognesaWeb.Telemetry do
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
       summary("vm.total_run_queue_lengths.io")
-    ]
+    ] ++ operational_metrics()
+  end
+
+  defp operational_metrics do
+    Enum.flat_map(Events.events(), fn event ->
+      [
+        sum(event ++ [:count],
+          tags: [:reason, :operation, :result, :failure_stage, :resource_type]
+        ),
+        summary(event ++ [:duration_ms], unit: :millisecond, tags: [:reason, :operation])
+      ]
+    end)
   end
 
   defp periodic_measurements do

@@ -36,7 +36,7 @@ defmodule Bolognesa.Libraries.LibraryStatusNotificationsTest do
                  LibraryStatusNotifications.notify(17, pubsub: :UnavailableLibraryStatusPubSub)
       end)
 
-    assert log =~ "Library status notification unavailable"
+    assert log =~ "resource=notification outcome=degraded"
     refute log =~ "ArgumentError"
   end
 end

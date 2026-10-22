@@ -286,7 +286,7 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
         assert_job_event(scan.job_id, :exception)
       end)
 
-    assert log =~ "Library scan execution failed"
+    assert log =~ "resource=scan outcome=retryable"
     assert log =~ "reason=storage_unavailable"
     assert log =~ "library_id=#{scan.library_id}"
     assert Repo.get!(Oban.Job, scan.job_id).state == "discarded"
@@ -426,7 +426,7 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
         assert_receive {:reconciliation, ^pid, %DateTime{}}, 1_000
       end)
 
-    assert log =~ "Library scan reconciliation unavailable"
+    assert log =~ "resource=reconciliation outcome=retryable"
     send(pid, {:reconciled, %ReconciliationResult{}})
   end
 

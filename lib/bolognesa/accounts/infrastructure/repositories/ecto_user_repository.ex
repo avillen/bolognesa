@@ -98,8 +98,10 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
 
   @impl true
   def delete_session(token_hash) do
-    Repo.delete_all(from(s in SessionSchema, where: s.token_hash == ^token_hash), log: false)
-    :ok
+    case Repo.delete_all(from(s in SessionSchema, where: s.token_hash == ^token_hash), log: false) do
+      {0, _} -> {:ok, :not_found}
+      {_count, _} -> {:ok, :deleted}
+    end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
   end

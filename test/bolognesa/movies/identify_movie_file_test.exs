@@ -29,6 +29,25 @@ defmodule Bolognesa.Movies.IdentifyMediaFileTest do
     def search(_, _), do: raise("release-only title reached provider")
   end
 
+  setup do
+    owner = self()
+    handler = {__MODULE__, make_ref()}
+
+    events =
+      for outcome <- [:completed, :stale, :retryable],
+          do: [:bolognesa, :movies, :identification, outcome]
+
+    :telemetry.attach_many(
+      handler,
+      events,
+      fn event, measurements, metadata, _ -> send(owner, {event, measurements, metadata}) end,
+      nil
+    )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+    :ok
+  end
+
   test "selects first result and marks a mismatch for review" do
     library =
       Repo.insert!(LibrarySchema.changeset(%LibrarySchema{}, %{name: "Movies", path: "/movies"}))
@@ -61,6 +80,7 @@ defmodule Bolognesa.Movies.IdentifyMediaFileTest do
     assert beginning_file.__struct__ == FileToIdentify
 
     assert :ok = IdentifyMovieFile.call(file.id, token, 1, Repository, Provider)
+    assert_receive {[:bolognesa, :movies, :identification, :completed], _, %{result: :review}}
 
     assert {:ok,
             %{state: :automatic, needs_review?: true, movie_id: movie_id} =
@@ -96,6 +116,7 @@ defmodule Bolognesa.Movies.IdentifyMediaFileTest do
   test "matching title without years completes without review" do
     {file, token} = pending_file("Film.mkv")
     assert :ok = IdentifyMovieFile.call(file.id, token, 1, Repository, ExactProvider)
+    assert_receive {[:bolognesa, :movies, :identification, :completed], _, %{result: :matched}}
 
     assert {:ok, %Identification{state: :automatic, needs_review?: false}} =
              Repository.get(file.id)

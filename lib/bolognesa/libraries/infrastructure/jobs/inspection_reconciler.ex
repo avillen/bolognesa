@@ -1,7 +1,7 @@
 defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionReconciler do
   @moduledoc "Resolves technical inspections left unfinished by terminal or lost jobs."
   use GenServer
-  require Logger
+  alias Bolognesa.Infrastructure.Observability.Events
 
   alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
   alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
@@ -51,20 +51,18 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionReconciler do
   end
 
   defp run(repository, notifications) do
-    case ReconcileInspections.call(DateTime.utc_now(), repository, notifications) do
-      :ok ->
-        :ok
-
-      {:error, :unavailable} ->
-        Logger.warning("Technical inspection reconciliation unavailable",
-          reason: :storage_unavailable
-        )
-    end
+    ReconcileInspections.call(DateTime.utc_now(), repository, notifications)
   rescue
     _exception ->
-      Logger.error("Technical inspection reconciliation failed", reason: :unexpected_failure)
+      Events.emit(:libraries, :reconciliation, :failed, %{
+        operation: :inspection,
+        reason: :unexpected_failure
+      })
   catch
     _kind, _value ->
-      Logger.error("Technical inspection reconciliation failed", reason: :unexpected_failure)
+      Events.emit(:libraries, :reconciliation, :failed, %{
+        operation: :inspection,
+        reason: :unexpected_failure
+      })
   end
 end

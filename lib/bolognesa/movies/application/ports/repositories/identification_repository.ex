@@ -11,6 +11,9 @@ defmodule Bolognesa.Movies.Application.Ports.Repositories.IdentificationReposito
           :not_found | :unavailable | :wrong_content_type | :source_changed | :manual_locked
   @type failure_reason ::
           IdentificationPolicy.failure_reason() | :attempts_exhausted | :unexpected_failure
+  @callback reconcile_jobs_result(DateTime.t()) ::
+              {:ok, non_neg_integer()} | {:error, :unavailable, non_neg_integer()}
+
   @type adapter :: atom()
   @callback find_file(file_id :: pos_integer()) ::
               {:ok, FileToIdentify.t()} | {:error, :not_found | :unavailable}

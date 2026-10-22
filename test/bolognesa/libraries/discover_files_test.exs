@@ -170,7 +170,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
       end)
 
     assert log =~ "request_id=scan-test-request"
-    assert log =~ "Library scan completed"
+    assert log =~ "resource=scan outcome=completed"
     assert log =~ "library_id=#{context.scan.library_id}"
     assert log =~ "scan_id=#{context.scan.id}"
     assert log =~ "job_id=#{context.scan.job_id}"

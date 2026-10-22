@@ -23,7 +23,7 @@ defmodule Bolognesa.Accounts.PersistencePrivacyTest do
         session = Session.new(user.id, token_hash, DateTime.utc_now())
         assert :ok = Repository.insert_session(session)
         assert {:ok, _} = Repository.fetch_active_session(token_hash, session.issued_at)
-        assert :ok = Repository.delete_session(token_hash)
+        assert {:ok, :deleted} = Repository.delete_session(token_hash)
       end)
 
     refute log =~ password_hash

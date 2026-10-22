@@ -1,7 +1,8 @@
 defmodule Bolognesa.Music.Infrastructure.Jobs.ImportReconciler do
   @moduledoc "Restores visible music import state after job interruption."
   use GenServer
-  require Logger
+  alias Bolognesa.Infrastructure.Observability.Events
+  alias Bolognesa.Music.Application.UseCases.ReconcileImports
   alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
@@ -24,12 +25,24 @@ defmodule Bolognesa.Music.Infrastructure.Jobs.ImportReconciler do
   def handle_info(:reconcile, state), do: {:noreply, run(state)}
 
   defp run(state) do
-    case EctoImportRepository.reconcile_jobs(DateTime.utc_now()) do
-      :ok -> :ok
-      _error -> Logger.warning("Music import recovery unavailable", reason: :storage_unavailable)
-    end
+    reconcile()
 
     Process.send_after(self(), :reconcile, state.interval)
     state
   end
+
+  defp reconcile do
+    ReconcileImports.call(DateTime.utc_now(), EctoImportRepository)
+  rescue
+    _error -> unexpected()
+  catch
+    _kind, _value -> unexpected()
+  end
+
+  defp unexpected,
+    do:
+      Events.emit(:music, :reconciliation, :failed, %{
+        reason: :unexpected_failure,
+        failure_stage: :recovery
+      })
 end

@@ -1,13 +1,13 @@
 # Observability conventions
 
-Bolognesa currently uses structured `Logger` messages with stable text and metadata fields. It does not add a separate metrics or tracing platform at this stage; Phoenix's existing instrumentation may remain.
+Bolognesa uses application Telemetry events with a supervised structured `Logger`
+subscriber. Phoenix, Ecto, and Oban retain their existing instrumentation. There is no
+separate metrics or tracing platform.
 
 ```elixir
-Logger.info("Library scan completed",
-  library_id: library_id,
-  scan_id: scan_id,
-  files_discovered: count,
-  duration_ms: duration_ms
+Events.emit(:libraries, :scan, :completed,
+  %{library_id: library_id, scan_id: scan_id, job_id: job_id, attempt: attempt},
+  %{files_discovered: count, duration_ms: duration_ms}
 )
 ```
 
@@ -27,7 +27,9 @@ Movie searches use the `query` parameter, filtered by Phoenix along with passwor
 ## Telemetry
 
 Use Telemetry for new operational instrumentation that needs diagnostic logs or metrics.
-Existing direct Logger calls can remain until their behavior is revised. Telemetry events
+The context rollout uses `Bolognesa.Infrastructure.Observability.Events` to validate
+fixed events and sanitize measurements and metadata before calling Telemetry. Existing
+Playback emitters preserve their separately validated contracts below. Telemetry events
 are observations, not domain events, durable delivery, or a way to trigger business work.
 Emit them at application, infrastructure, or web boundaries; the domain remains independent.
 
@@ -58,6 +60,122 @@ Emit them at application, infrastructure, or web boundaries; the domain remains 
 - Telemetry does not retain events. Docker's rotated application logs provide the current
   diagnostic history; LiveDashboard metrics show observations collected while connected,
   not a durable historical store. No additional metrics backend is required.
+
+### Cross-context audit and ownership
+
+The audit includes application use cases, workers, recovery, provider/probe adapters,
+notification transports, delivery controllers, and UI callers. No direct operational
+Logger calls remain outside the shared subscriber. Its two logging paths intentionally
+preserve established Playback messages and report new observations with the stable message
+`Bolognesa operational observation` and explicit `context`, `resource`, and `outcome`.
+
+| Area | Observation owner and coverage | Deliberately quiet boundaries |
+| --- | --- | --- |
+| Accounts | `InstallAdmin`, `StartSession`, `EndSession`, and `UpdateLocale` observe committed mutations and persistence failures. `ResolveSession` observes persistence failure only. Logout distinguishes an actual deleted row from an absent session internally. | Input validation, authorization, setup already closed, missing/revoked sessions, no-op logout, and successful session/admin reads. Invalid credentials have a separate debug observation. |
+| Libraries scans | `StartScan` observes accepted durable requests; `DiscoverFiles` observes admitted attempts and committed outcomes before return normalization. `ScanWorker` owns unexpected escaped execution failures. | Inventory batches, terminal replay except debug stale observation, source-registration validation, and ordinary library/status reads. |
+| Libraries inspection | `InspectMediaFile` observes admission, probe results, persisted completion/terminal failure, retryable execution, and stale suppression. Its optional typed probe diagnostic callback preserves the safe `file_access`/`ffprobe` stage without a second adapter log. `InspectionWorker` owns escaped exceptions. | Probe internals and duplicate/stale work beyond its debug observation. Private FFprobe output is never included. |
+| Libraries recovery/notifications | Reconciliation use cases observe committed changed-library counts, including changes preceding partial failure. Reconcilers own only escaped failures. `LibraryStatusNotifications` owns degraded PubSub delivery. | Idle recovery, individual status hints on successful delivery, and neutral PubSub transport. Changed-library counts are not recovered-item counts. |
+| Movies | `IdentifyMovieFile` observes admitted attempts, committed matched/review/no-match results, stale work, provider-stage failures, and retries before normalization. Correction/retry use cases observe confirmed writes and operational failures. `ReconcileIdentificationJobs` observes committed recovery counts; worker/reconciler catches own escaped failures. | Catalog/detail reads, expected authorization/input refusals, and provider transport. |
+| Series | Equivalent Series-owned use cases and job boundaries, with Series matching/review reasons and ordered-selection semantics. | Same read/transport exclusions as Movies; Series does not share business instrumentation with Movies. |
+| Music | `RefreshWorker` observes attempt admission and confirmed exhaustion writes; `RefreshTrack` observes actual imports, stale observations, and operational failures with explicit job correlation. `RetryImport` observes a newly committed retry. `ReconcileImports` observes committed recovery counts and partial failures; reconciler catches escaped failures. | Unchanged retries, forbidden/absent retry targets, ordinary browsing, and transaction-aware import handoff before its enclosing transaction commits. |
+| Playback | Existing session/browser/HLS owners remain unchanged. Direct controllers attach validated resource references; shared `MediaDelivery` owns selection, source/range/read/send failures for audio and video. | Successful byte ranges/chunks and per-request authentication refusals already covered by framework instrumentation. |
+| Shared/web | Standalone Movies/Series candidate search owns its own provider-failure observation. Identification/correction instead includes the provider stage in its outcome. UI retains user feedback. Phoenix/Ecto/Oban instrumentation remains in place. | Neutral TMDb HTTP transport, generic PubSub transport, and repeated UI logging of a backend outcome. No event is emitted for every function or catalog read. |
+
+### Operational event catalog
+
+All names have prefix `[:bolognesa, context]`; combine each resource with one of the
+listed outcomes to obtain the exact registered four-atom event. Names and field meanings
+are fixed contracts, not derived from input. Every observation has measurement `count: 1`.
+All listed fields are optional when unavailable at that boundary.
+
+| Context | Resource | Outcomes | Metadata emitted by the owner | Additional measurements |
+| --- | --- | --- | --- | --- |
+| `accounts` | `setup` | `completed`, `failed` | Successful `user_id`; failure `reason` | None |
+| `accounts` | `session` | `completed`, `failed`, `rejected` | `operation` (`start`, `revoke`, `resolve`), `user_id` on creation; `result: deleted` on actual revocation; failure `reason`, `failure_stage: session_lookup` on failed resolution | None |
+| `accounts` | `preference` | `completed`, `failed` | `user_id`, `operation: locale`, failure `reason` | None |
+| `libraries` | `scan` | `requested`, `started`, `completed`, `failed`, `retryable`, `stale`, `rejected` | `library_id`, `scan_id`, `job_id`, `attempt`; bounded `reason`; `operation: request` for failed enqueue | Attempt `duration_ms`; `files_discovered` only for committed completion |
+| `libraries` | `inspection` | `started`, `completed`, `failed`, `retryable`, `stale` | `file_id`, `job_id`, `attempt`; `library_id`/`revision` after admission; `reason`, safe `failure_stage` | `duration_ms` on outcomes |
+| `libraries` | `reconciliation` | `recovered`, `retryable`, `failed` | `operation` (`scan` or `inspection`), `reason` on failure | `changed_library_count`, `duration_ms` except escaped process failures |
+| `libraries` | `notification` | `degraded` | `library_id`, `reason: notification_unavailable` | None |
+| `movies`, `series` | `identification` | `requested`, `started`, `completed`, `retryable`, `failed`, `stale`, `rejected` | `file_id`, `job_id`, `attempt`, `revision` when admitted; `user_id`/`operation: retry` for explicit retry; `result`, `reason`, `failure_stage` as applicable | `duration_ms` for use-case execution |
+| `movies`, `series` | `correction` | `completed`, `failed`, `stale` | `user_id`, `file_id`, successful `revision`, failure `reason`/`failure_stage` | `duration_ms` |
+| `movies`, `series` | `provider` | `failed` | `user_id`, `operation: search`, `failure_stage: search`, safe provider `reason`; standalone candidate search only | None |
+| `movies`, `series` | `reconciliation` | `recovered`, `failed` | Failure `reason`/`failure_stage` when available | `recovered_count` (also retained on partial failure), `duration_ms` except escaped failures |
+| `music` | `import` | `requested`, `started`, `completed`, `stale`, `retryable`, `failed` | `file_id`, `revision`, `job_id`, `attempt`; successful `library_id`/`result: imported`; retry `user_id`/`operation: retry`; `reason`, `failure_stage` | `duration_ms` for use-case execution |
+| `music` | `reconciliation` | `recovered`, `retryable`, `failed` | `reason`, `failure_stage: recovery` on failure | `recovered_count`, `changed_library_count`, `duration_ms` except escaped failures |
+| `playback` | `delivery` | `failed` | Valid `file_id`, `resource_type` (`movie`, `episode`, `music`), `failure_stage`, `reason`, actual HTTP `status` | None |
+
+`Events` validates a fixed per-resource field allowlist. Diagnostic IDs and attempts are
+positive integers bounded by 9,223,372,036,854,775,807; measurements are nonnegative integers
+with the same upper bound. HTTP statuses range from 100 to 599. Unknown names, metadata
+keys, enum values, and invalid measurements are dropped; `count` is always set to one.
+The subscriber validates again defensively. Its operational log path overrides inherited
+formatter fields, so request/process metadata cannot bypass event validation. Authentication
+tokens and inspection/request tokens are never correlation identifiers.
+
+The bounded reason vocabulary covers existing scan/inspection, identification policy,
+provider, account, and delivery outcomes:
+
+- Storage/execution: `unavailable`, `storage_unavailable`, `unexpected_failure`,
+  `attempts_exhausted`, `timeout`, `tool_unavailable`, `invalid_job`.
+- Source/probe: `source_inaccessible`, `source_outside_roots`, `source_changed`,
+  `entry_unreadable`, `unsafe_entry`, `unreadable`, `unsupported`, `invalid_output`, `missing`.
+- Identification/provider: `unusable_name`, `not_configured`, `rate_limited`,
+  `provider_unavailable`, `unauthorized`, `invalid_response`, `not_found`,
+  `wrong_content_type`, `ambiguous_name`, `invalid_episode_numbers`, `too_many_episodes`,
+  `incomplete_episodes`, `ambiguous_series`, `no_match`, `invalid_choice`, `manual_locked`.
+- Account/refusal/replay: `invalid_credentials`, `unauthenticated`, `forbidden`,
+  `setup_closed`, `invalid_locale`, `scan_in_progress`, `invalid_input`, `terminal`,
+  `stale_observation`, `stale_attempt`.
+- Delivery/notification: `notification_unavailable`, `invalid_range`, `unsatisfiable`,
+  `read_failed`, `client_closed`, `send_failed`, `invalid_reference`, `empty_read`.
+
+Stages emitted by this rollout are `admission`, `persistence`, `search`, `details`, `season`,
+`execution`, `recovery`, `file_access`, `ffprobe`, `import`, `exhaustion`, `retry`,
+`session_lookup`, `selection`, `source_validation`, `range`, `read`, and `chunk`.
+Identification completion results are `matched`, `review`, or `no_match`. A correction
+refused because the source changed is a stale outcome, not a confirmed correction.
+
+Normal milestones use info; `stale`/`rejected` use debug; `retryable`/`degraded` and failed
+standalone provider/direct-delivery observations use warning; other `failed` observations
+use error. Execution failure does not assert a persisted terminal state. A `retryable`
+observation reports the failed attempt, not confirmation that Oban has scheduled a retry.
+Music may additionally report `failed` at `exhaustion` after the separate terminal-state
+transaction succeeds; this describes a different confirmed boundary. If that write fails
+or becomes stale, its observation says so instead.
+
+### Correlation, commit truth, metrics, and delivery limits
+
+Workers explicitly pass persisted `job_id`, file/scan IDs, and `attempt` into the owning
+use case. Attempts within one job share its ID; replacement jobs have new IDs. These
+identifiers appear only in diagnostic logs, never metric tags. No reliance is placed on
+inherited process metadata. Ordinary request/session lookups do not emit success events.
+
+Observe committed writes only after the owning transaction returns successfully. Inner
+inventory/import request handoffs emit no commit success; the enclosing transaction can
+still roll back. Stale checks remain visible before public results normalize to `:ok`.
+Recovery counts actual committed transitions and retains partial progress; stale candidates
+do not count as recovered. Libraries counts distinct changed libraries because its existing
+contract does not supply recovered-item counts. Idle reconciliation emits nothing.
+
+Existing Playback metrics retain their names and meanings. New supported operational
+events expose `.count` sums and `.duration_ms` summaries through `BolognesaWeb.Telemetry`.
+Summaries receive samples only when the emitter measures a duration; lifecycle starts and
+outcomes are independent observations, not synthetic synchronous spans. Duration units
+are milliseconds from a monotonic clock. Counter tags are bounded `reason`, `operation`,
+`result`, `failure_stage`, and `resource_type`; duration tags are `reason` and `operation`.
+
+Events are synchronous, best effort, and not replayed. One supported observation produces
+one subscriber log; repeated attempts can produce repeated observations. Handlers perform
+no database/network/filesystem calls or business effects. Stable registration replaces a
+leftover handler on ordinary restart or after an untrappable exit. Abrupt death, detached
+handlers, and log rotation can lose evidence. Workflow activity and bounded recovery
+batches bound emission; successful delivery chunks and idle polls do not create log traffic.
+Direct streaming failures after headers retain the original HTTP status and record the
+failure stage instead of claiming a new response status. They do not establish why a
+connection was lost. A known closed connection is `client_closed`, a known timeout is
+`timeout`, and an otherwise unclassified send failure is `send_failed`; raw transport
+errors are discarded. Existing browser limits remain as documented below.
 
 ### Playback events
 

@@ -4,7 +4,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker do
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy
   use Oban.Worker, queue: :library_scans, max_attempts: ScanPolicy.max_attempts()
 
-  require Logger
+  alias Bolognesa.Infrastructure.Observability.Events
   alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
   alias Bolognesa.Libraries.Application.Ports.Services.{FileDiscovery, LibraryStatusNotifier}
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
@@ -51,7 +51,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker do
   def perform(_job, _repository, _discovery, _notifications), do: {:cancel, :unexpected_failure}
 
   defp execute(id, attempt, repository, discovery, notifications, metadata, started) do
-    DiscoverFiles.call(id, attempt, repository, discovery, notifications)
+    DiscoverFiles.call(id, attempt, repository, discovery, notifications, metadata[:job_id])
   rescue
     _exception -> unexpected_failure(metadata, started)
   catch
@@ -59,8 +59,10 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker do
   end
 
   defp unexpected_failure(metadata, started) do
-    metadata = metadata ++ [duration_ms: max(System.monotonic_time(:millisecond) - started, 0)]
-    Logger.warning("Library scan execution failed", [reason: :unexpected_failure] ++ metadata)
+    Events.emit(:libraries, :scan, :failed, Map.new([reason: :unexpected_failure] ++ metadata), %{
+      duration_ms: Events.elapsed(started)
+    })
+
     {:error, :unexpected_failure}
   end
 end

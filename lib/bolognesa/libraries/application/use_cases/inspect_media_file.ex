@@ -1,6 +1,7 @@
 defmodule Bolognesa.Libraries.Application.UseCases.InspectMediaFile do
   @moduledoc "Runs one token protected inspection outside a database transaction."
 
+  alias Bolognesa.Infrastructure.Observability.Events
   alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
   alias Bolognesa.Libraries.Application.Ports.Services.{LibraryStatusNotifier, MediaProbe}
   alias Bolognesa.Libraries.Domain.Entities.{Inspection, MediaFile}
@@ -25,66 +26,184 @@ defmodule Bolognesa.Libraries.Application.UseCases.InspectMediaFile do
           MediaProbe.adapter(),
           LibraryStatusNotifier.adapter(),
           integer() | nil
-        ) ::
-          result()
+        ) :: result()
   def call(file_id, token, attempt, repository, probe, notifications, job_id \\ nil) do
+    metadata = %{file_id: file_id, job_id: job_id, attempt: attempt}
+    started = Events.started_at()
+
     case repository.begin_inspection(file_id, token, job_id) do
       {:ok, :stale} ->
+        observe(:stale, metadata, started, :stale_attempt)
         :ok
 
       {:ok, file, library} ->
+        metadata = Map.merge(metadata, %{library_id: library.id, revision: file.revision})
+        Events.emit(:libraries, :inspection, :started, metadata)
         notifications.notify(library.id)
-        inspect_current(file, library, token, attempt, repository, probe, notifications)
+
+        inspect_current(
+          file,
+          token,
+          attempt,
+          repository,
+          notifications,
+          {metadata, started},
+          probe_result(probe, library, file)
+        )
 
       {:error, :unavailable} ->
+        observe(:retryable, metadata, started, :storage_unavailable)
         {:error, :storage_unavailable}
     end
   end
 
-  defp inspect_current(file, library, token, attempt, repository, probe, notifications) do
-    case probe.inspect(library, file) do
-      {:ok, technical_media} ->
-        complete(file, token, technical_media, repository, notifications)
+  defp probe_result(probe, library, file) do
+    Code.ensure_loaded(probe)
 
-      {:error, reason} when reason in @permanent ->
-        record_failure(file, token, reason, attempt, repository, notifications, :cancel)
+    if function_exported?(probe, :inspect_with_diagnostics, 2),
+      do: probe.inspect_with_diagnostics(library, file),
+      else: probe.inspect(library, file)
+  end
 
-      {:error, reason} when reason in @transient ->
-        retry_or_fail(file, token, reason, attempt, repository, notifications)
+  defp inspect_current(
+         file,
+         token,
+         attempt,
+         repository,
+         notifications,
+         context,
+         {:error, reason, stage}
+       ) do
+    {metadata, started} = context
 
-      _ ->
-        {:error, :unexpected_failure}
+    inspect_current(
+      file,
+      token,
+      attempt,
+      repository,
+      notifications,
+      {Map.put(metadata, :failure_stage, stage), started},
+      {:error, reason}
+    )
+  end
+
+  defp inspect_current(
+         file,
+         token,
+         _attempt,
+         repository,
+         notifications,
+         context,
+         {:ok, technical_media}
+       ) do
+    finish(
+      repository.complete_inspection(file.id, token, technical_media),
+      file,
+      notifications,
+      context,
+      :completed,
+      nil,
+      :ok
+    )
+  end
+
+  defp inspect_current(file, token, attempt, repository, notifications, context, {:error, reason})
+       when reason in @permanent do
+    record_failure(file, token, reason, attempt, repository, notifications, context, :ok)
+  end
+
+  defp inspect_current(file, token, attempt, repository, notifications, context, {:error, reason})
+       when reason in @transient do
+    retry_or_fail(file, token, reason, attempt, repository, notifications, context)
+  end
+
+  defp inspect_current(
+         _file,
+         _token,
+         _attempt,
+         _repository,
+         _notifications,
+         {metadata, started},
+         _
+       ) do
+    observe(:retryable, metadata, started, :unexpected_failure)
+    {:error, :unexpected_failure}
+  end
+
+  defp retry_or_fail(file, token, reason, attempt, repository, notifications, context) do
+    if attempt >= Inspection.max_attempts() do
+      record_failure(
+        file,
+        token,
+        reason,
+        attempt,
+        repository,
+        notifications,
+        context,
+        {:error, reason}
+      )
+    else
+      {metadata, started} = context
+      observe(:retryable, metadata, started, reason)
+      {:error, reason}
     end
   end
 
-  defp complete(file, token, technical_media, repository, notifications) do
-    case repository.complete_inspection(file.id, token, technical_media) do
-      :ok -> notifications.notify(file.library_id)
-      {:ok, :stale} -> :ok
-      {:error, :unavailable} -> {:error, :storage_unavailable}
-    end
+  defp record_failure(file, token, reason, attempt, repository, notifications, context, result) do
+    finish(
+      repository.fail_inspection(file.id, token, reason, attempt),
+      file,
+      notifications,
+      context,
+      :failed,
+      reason,
+      result
+    )
   end
 
-  defp retry_or_fail(file, token, reason, attempt, repository, notifications) do
-    if attempt >= Inspection.max_attempts(),
-      do: record_failure(file, token, reason, attempt, repository, notifications, :error),
-      else: {:error, reason}
+  defp finish(:ok, file, notifications, {metadata, started}, outcome, reason, result) do
+    observe(outcome, metadata, started, reason)
+    notifications.notify(file.library_id)
+    result
   end
 
-  defp record_failure(file, token, reason, attempt, repository, notifications, disposition) do
-    case repository.fail_inspection(file.id, token, reason, attempt) do
-      :ok ->
-        notifications.notify(file.library_id)
-        failure_result(disposition, reason)
-
-      {:ok, :stale} ->
-        :ok
-
-      {:error, :unavailable} ->
-        {:error, :storage_unavailable}
-    end
+  defp finish(
+         {:ok, :stale},
+         _file,
+         _notifications,
+         {metadata, started},
+         _outcome,
+         _reason,
+         _result
+       ) do
+    observe(:stale, metadata, started, :stale_attempt)
+    :ok
   end
 
-  defp failure_result(:cancel, _reason), do: :ok
-  defp failure_result(:error, reason), do: {:error, reason}
+  defp finish(
+         {:error, :unavailable},
+         _file,
+         _notifications,
+         {metadata, started},
+         _outcome,
+         _reason,
+         _result
+       ) do
+    observe(
+      :retryable,
+      Map.put(metadata, :failure_stage, :persistence),
+      started,
+      :storage_unavailable
+    )
+
+    {:error, :storage_unavailable}
+  end
+
+  defp observe(outcome, metadata, started, reason) do
+    metadata = if reason, do: Map.put(metadata, :reason, reason), else: metadata
+
+    Events.emit(:libraries, :inspection, outcome, metadata, %{
+      duration_ms: Events.elapsed(started)
+    })
+  end
 end

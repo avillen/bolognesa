@@ -2,8 +2,6 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
   @moduledoc "Probes a validated physical file and rechecks it after the command."
   @behaviour Bolognesa.Libraries.Application.Ports.Services.MediaProbe
 
-  require Logger
-
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Libraries.Infrastructure.Services.BoundedCommand
   alias Bolognesa.Libraries.Infrastructure.Services.FfprobeJson
@@ -32,6 +30,25 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
           {:ok, Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia.t()}
           | {:error, Bolognesa.Libraries.Application.Ports.Services.MediaProbe.reason()}
   def inspect(library, file, opts) do
+    case inspect_with_diagnostics(library, file, opts) do
+      {:error, reason, _stage} -> {:error, reason}
+      result -> result
+    end
+  end
+
+  @impl true
+  def inspect_with_diagnostics(library, file), do: inspect_with_diagnostics(library, file, [])
+
+  @doc "Internal diagnostic result retaining a bounded failure stage without logging."
+  @spec inspect_with_diagnostics(
+          Bolognesa.Libraries.Domain.Entities.Library.t(),
+          Bolognesa.Libraries.Domain.Entities.MediaFile.t(),
+          keyword()
+        ) ::
+          {:ok, Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia.t()}
+          | {:error, Bolognesa.Libraries.Application.Ports.Services.MediaProbe.reason()}
+          | {:error, :unreadable, :ffprobe | :file_access}
+  def inspect_with_diagnostics(library, file, opts) do
     with {:ok, root, source_identity} <- source(library.path),
          {:ok, path, before_identity} <- physical_file(root, file),
          {:ok, media} <- probe(path, library.content_type, opts),
@@ -44,12 +61,10 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
       {:ok, media}
     else
       {:error, :failed} ->
-        log_read_failure(file, :ffprobe)
-        {:error, :unreadable}
+        {:error, :unreadable, :ffprobe}
 
-      {:error, :unreadable} = error ->
-        log_read_failure(file, :file_access)
-        error
+      {:error, :unreadable} ->
+        {:error, :unreadable, :file_access}
 
       {:error, :too_large} ->
         {:error, :invalid_output}
@@ -108,14 +123,6 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
     else
       {:error, :timeout}
     end
-  end
-
-  defp log_read_failure(file, stage) do
-    Logger.warning("Technical media inspection failed",
-      file_id: file.id,
-      failure_stage: stage,
-      failure_reason: :unreadable
-    )
   end
 
   defp args(:music) do

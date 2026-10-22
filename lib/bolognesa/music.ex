@@ -25,9 +25,18 @@ defmodule Bolognesa.Music do
   def request_import_in_transaction!(repo, request),
     do: EctoImportRepository.request_in_transaction!(repo, request)
 
-  @spec refresh_track(pos_integer(), pos_integer(), String.t() | nil) :: RefreshTrack.result()
-  def refresh_track(file_id, revision, token \\ nil),
-    do: RefreshTrack.call(file_id, revision, EctoObservationsReader, EctoMusicRepository, token)
+  @spec refresh_track(pos_integer(), pos_integer(), String.t() | nil, RefreshTrack.correlation()) ::
+          RefreshTrack.result()
+  def refresh_track(file_id, revision, token \\ nil, correlation \\ %{}),
+    do:
+      RefreshTrack.call(
+        file_id,
+        revision,
+        EctoObservationsReader,
+        EctoMusicRepository,
+        token,
+        correlation
+      )
 
   @spec retry_import(AuthenticatedUser.t() | nil, pos_integer()) :: RetryImport.result()
   def retry_import(actor, file_id), do: RetryImport.call(actor, file_id, EctoImportRepository)

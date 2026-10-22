@@ -66,6 +66,14 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
 
   @impl true
   def request_retry(file_id) do
+    case request_retry_with_result(file_id) do
+      {:ok, _result} -> :ok
+      error -> error
+    end
+  end
+
+  @impl true
+  def request_retry_with_result(file_id) do
     transaction(fn ->
       case locked(file_id) do
         {:ok, file, inspection, state} -> retry(file, inspection, state)
@@ -138,11 +146,11 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   defp retry(file, inspection, state) do
     if state && state.inspection_token == inspection.token &&
          state.state in [:pending, :running, :succeeded] do
-      :ok
+      {:ok, :unchanged}
     else
       write_request(Repo, file, inspection, state)
 
-      :ok
+      {:ok, :requested}
     end
   end
 
@@ -201,15 +209,25 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
 
   @impl true
   def reconcile_jobs(now) do
+    case reconcile_jobs_with_summary(now) do
+      {:ok, _summary} -> :ok
+      {:error, :unavailable, _summary} -> {:error, :unavailable}
+    end
+  end
+
+  @impl true
+  def reconcile_jobs_with_summary(now) do
     cutoff = DateTime.add(now, -60, :second)
 
     ids = reconciliation_ids(cutoff)
 
-    Enum.reduce_while(ids, :ok, &reconcile_id(&1, cutoff, &2))
+    Enum.reduce_while(ids, {:ok, empty_summary()}, &reconcile_id(&1, cutoff, &2))
   rescue
-    DBConnection.ConnectionError -> {:error, :unavailable}
-    Postgrex.Error -> {:error, :unavailable}
+    DBConnection.ConnectionError -> {:error, :unavailable, empty_summary()}
+    Postgrex.Error -> {:error, :unavailable, empty_summary()}
   end
+
+  defp empty_summary, do: %{recovered_count: 0, library_ids: []}
 
   defp job(nil), do: nil
   defp job(id), do: Repo.get(Oban.Job, id)
@@ -245,43 +263,60 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
     )
   end
 
-  defp reconcile_id(id, cutoff, :ok) do
+  defp reconcile_id(id, cutoff, {:ok, summary}) do
     case transaction(fn -> reconcile(id, cutoff) end) do
-      :ok -> {:cont, :ok}
-      error -> {:halt, error}
+      {:changed, library_id} ->
+        updated = %{
+          recovered_count: summary.recovered_count + 1,
+          library_ids: Enum.uniq([library_id | summary.library_ids])
+        }
+
+        {:cont, {:ok, updated}}
+
+      :ok ->
+        {:cont, {:ok, summary}}
+
+      {:error, :unavailable} ->
+        {:halt, {:error, :unavailable, summary}}
     end
   end
 
   defp reconcile(id, cutoff) do
     case locked(id) do
-      {:ok, _file, inspection, state} when not is_nil(state) ->
-        reconcile_state(state, inspection, cutoff)
+      {:ok, file, inspection, state} when not is_nil(state) ->
+        reconcile_state(state, inspection, cutoff, file.library_id)
 
       _ ->
         :ok
     end
   end
 
-  defp reconcile_state(state, inspection, cutoff) do
+  defp reconcile_state(state, inspection, cutoff, library_id) do
     if state.state in [:pending, :running] && state.inspection_token == inspection.token do
-      update_recovery(state, job(state.job_id), cutoff)
+      recover_current(state, job(state.job_id), cutoff, library_id)
+    else
+      :ok
     end
-
-    :ok
   end
 
-  defp update_recovery(state, %{state: status}, _cutoff)
+  defp recover_current(state, %{state: status}, _cutoff, library_id)
        when status in ["available", "retryable", "scheduled"] do
-    save(state, %{state: :pending, started_at: nil})
+    if state.state == :running do
+      save(state, %{state: :pending, started_at: nil})
+      {:changed, library_id}
+    else
+      :ok
+    end
   end
 
-  defp update_recovery(state, job, cutoff) do
+  defp recover_current(state, job, cutoff, library_id) do
     case recovery_reason(job, cutoff) do
       nil ->
         :ok
 
       reason ->
         save(state, %{state: :failed, failure_reason: reason, finished_at: DateTime.utc_now()})
+        {:changed, library_id}
     end
   end
 

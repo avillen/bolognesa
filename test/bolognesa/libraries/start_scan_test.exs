@@ -26,6 +26,21 @@ defmodule Bolognesa.Libraries.StartScanTest do
   @member %AuthenticatedUser{id: 2, name: "Joe", email: "joe@example.com", role: :member}
 
   setup do
+    owner = self()
+    handler = {__MODULE__, make_ref()}
+    events = for outcome <- [:requested, :retryable], do: [:bolognesa, :libraries, :scan, outcome]
+
+    :ok =
+      :telemetry.attach_many(
+        handler,
+        events,
+        fn event, measurements, metadata, _ ->
+          send(owner, {:event, event, measurements, metadata})
+        end,
+        nil
+      )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
     root = Application.fetch_env!(:bolognesa, :library_roots) |> hd()
     path = Path.join(root, "scan-source-#{System.unique_integer([:positive])}")
     File.mkdir_p!(path)
@@ -47,6 +62,12 @@ defmodule Bolognesa.Libraries.StartScanTest do
     assert scan.attempt == 0
     assert scan.files_discovered == 0
 
+    assert_receive {:event, [:bolognesa, :libraries, :scan, :requested], %{count: 1},
+                    %{scan_id: scan_id, library_id: ^library_id, job_id: emitted_job_id}}
+
+    assert scan_id == scan.id
+    assert emitted_job_id == scan.job_id
+
     assert [%Oban.Job{args: %{"scan_id" => id}, id: job_id} = job] =
              all_enqueued(queue: "library_scans")
 
@@ -59,6 +80,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
     assert status.latest_scan == scan
     assert status.last_completed_at == nil
     refute_receive {:library_status_changed, _}
+    refute_receive {:event, _, _, _}
   end
 
   test "unavailable notifications do not change a committed scan request", %{library: library} do
@@ -81,7 +103,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
         )
       end)
 
-    assert log =~ "Library status notification unavailable"
+    assert log =~ "resource=notification outcome=degraded"
   end
 
   test "persists an authorized forced inspection request", %{library: library} do
@@ -181,6 +203,11 @@ defmodule Bolognesa.Libraries.StartScanTest do
 
       try do
         assert {:error, :unavailable} = Libraries.start_scan(@admin, library.id)
+
+        assert_receive {:event, [:bolognesa, :libraries, :scan, :retryable], _,
+                        %{reason: :storage_unavailable}}
+
+        refute_receive {:event, [:bolognesa, :libraries, :scan, :requested], _, _}
 
         assert Repo.aggregate(
                  from(scan in ScanSchema, where: scan.library_id == ^library.id),
