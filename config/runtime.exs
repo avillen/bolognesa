@@ -1,5 +1,16 @@
 import Config
 
+if config_env() != :test and System.get_env("BOLOGNESA_METRICS_ENABLED") == "true" do
+  metrics_token = System.get_env("BOLOGNESA_METRICS_TOKEN", "")
+
+  if byte_size(metrics_token) < 32 do
+    raise "BOLOGNESA_METRICS_TOKEN must contain at least 32 bytes when metrics are enabled"
+  end
+
+  config :bolognesa, Bolognesa.Infrastructure.Observability.PromEx, disabled: false
+  config :bolognesa, :metrics_token, metrics_token
+end
+
 config :bolognesa, :tmdb_read_token, System.get_env("TMDB_READ_TOKEN")
 
 default_library_roots =

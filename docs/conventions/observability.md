@@ -2,7 +2,9 @@
 
 Bolognesa uses application Telemetry events with a supervised structured `Logger`
 subscriber. Phoenix, Ecto, and Oban retain their existing instrumentation. There is no
-separate metrics or tracing platform.
+required external metrics or tracing platform. Optional PromEx collection and an Alloy
+Compose override can forward metrics to Grafana Cloud; both are disabled in the
+normal installation. See the [monitoring guide](../../deploy/compose/monitoring.md).
 
 ```elixir
 Events.emit(:libraries, :scan, :completed,
@@ -59,7 +61,8 @@ Emit them at application, infrastructure, or web boundaries; the domain remains 
   names, credentials, cookies, private paths, or complete URLs.
 - Telemetry does not retain events. Docker's rotated application logs provide the current
   diagnostic history; LiveDashboard metrics show observations collected while connected,
-  not a durable historical store. No additional metrics backend is required.
+  not a durable historical store. No additional metrics backend is required. An operator
+  can explicitly opt into PromEx/Alloy and an external historical metrics store.
 
 ### Cross-context audit and ownership
 
@@ -221,3 +224,18 @@ a full reload, hook destruction, or prolonged suspension can lose pending observ
 Neither LiveView termination callbacks nor final browser signals are guaranteed on abrupt
 process/device termination. Diagnose with both server and browser evidence; missing signals
 are not proof that an event did not happen.
+
+## Optional Prometheus export
+
+PromEx starts before Ecto/Oban only when explicitly enabled at runtime. Its bearer-protected
+`/metrics` endpoint is disabled by default and does not use browser sessions. Exported
+operational event counters and duration histograms intentionally have no metadata labels;
+the richer bounded labels used by LiveDashboard remain local. HTTP export uses route
+templates, removes request host labels and normalizes unknown methods. Client-controlled
+channel/socket/LiveView event labels are not collected. Keep existing diagnostic IDs,
+private paths, queries and raw errors out of metric labels.
+
+Alloy belongs to an optional deployment override and owns Cloud credentials and remote
+write. The application never requires a Cloud account, uploads dashboards or sends metrics
+over the network itself. Monitoring failures must not become business-workflow failures.
+See [decision 0021](../decisions/0021-optional-prometheus-metrics.md) for the trade-offs.

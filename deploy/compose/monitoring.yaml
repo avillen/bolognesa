@@ -1,0 +1,75 @@
+# Optional metrics pipeline. Omit this file for an installation without monitoring.
+services:
+  app:
+    environment:
+      BOLOGNESA_METRICS_ENABLED: "true"
+      BOLOGNESA_METRICS_TOKEN: ${BOLOGNESA_METRICS_TOKEN:?Set BOLOGNESA_METRICS_TOKEN for monitoring}
+
+  alloy:
+    image: grafana/alloy:v1.21.1
+    restart: unless-stopped
+    mem_limit: ${ALLOY_MEMORY_LIMIT:-256m}
+    cpus: ${ALLOY_CPUS:-0.5}
+    logging:
+      driver: json-file
+      options:
+        max-size: ${LOG_MAX_SIZE:-10m}
+        max-file: "${LOG_MAX_FILES:-3}"
+    depends_on:
+      app:
+        condition: service_started
+    environment:
+      BOLOGNESA_METRICS_TARGET: app:4000
+      BOLOGNESA_METRICS_INSTANCE: ${BOLOGNESA_METRICS_INSTANCE:-bolognesa}
+      BOLOGNESA_METRICS_TOKEN: ${BOLOGNESA_METRICS_TOKEN:?Set BOLOGNESA_METRICS_TOKEN for monitoring}
+      GRAFANA_CLOUD_METRICS_URL: ${GRAFANA_CLOUD_METRICS_URL:?Set GRAFANA_CLOUD_METRICS_URL for monitoring}
+      GRAFANA_CLOUD_METRICS_USERNAME: ${GRAFANA_CLOUD_METRICS_USERNAME:?Set GRAFANA_CLOUD_METRICS_USERNAME for monitoring}
+      GRAFANA_CLOUD_METRICS_TOKEN: ${GRAFANA_CLOUD_METRICS_TOKEN:?Set GRAFANA_CLOUD_METRICS_TOKEN for monitoring}
+    configs:
+      - source: alloy_config
+        target: /etc/alloy/config.alloy
+    volumes:
+      - alloy_data:/var/lib/alloy/data
+    command:
+      - run
+      - --server.http.listen-addr=127.0.0.1:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+
+configs:
+  alloy_config:
+    content: |
+      prometheus.scrape "bolognesa" {
+        targets = [{
+          "__address__" = string.replace(sys.env("BOLOGNESA_METRICS_TARGET"), "0.0.0.0:", "127.0.0.1:"),
+          "instance" = sys.env("BOLOGNESA_METRICS_INSTANCE"),
+        }]
+        job_name = "bolognesa"
+        scrape_interval = "60s"
+        scrape_timeout = "10s"
+        sample_limit = 8000
+        authorization {
+          type = "Bearer"
+          credentials = sys.env("BOLOGNESA_METRICS_TOKEN")
+        }
+        forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+      }
+
+      prometheus.remote_write "grafana_cloud" {
+        endpoint {
+          url = sys.env("GRAFANA_CLOUD_METRICS_URL")
+          basic_auth {
+            username = sys.env("GRAFANA_CLOUD_METRICS_USERNAME")
+            password = sys.env("GRAFANA_CLOUD_METRICS_TOKEN")
+          }
+          queue_config {
+            max_shards = 2
+          }
+        }
+        wal {
+          max_keepalive_time = "8h"
+        }
+      }
+
+volumes:
+  alloy_data:

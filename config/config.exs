@@ -9,6 +9,9 @@ import Config
 
 config :bolognesa, :music_import_reconciler, true
 
+config :bolognesa, Bolognesa.Infrastructure.Observability.PromEx, disabled: true
+config :bolognesa, :metrics_token, nil
+
 config :bolognesa,
   ecto_repos: [Bolognesa.Repo],
   generators: [timestamp_type: :utc_datetime]

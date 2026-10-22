@@ -10,6 +10,7 @@ defmodule Bolognesa.Application do
     children = [
       Bolognesa.Infrastructure.Observability,
       BolognesaWeb.Telemetry,
+      Bolognesa.Infrastructure.Observability.PromEx,
       Bolognesa.Repo,
       {Phoenix.PubSub, name: Bolognesa.PubSub},
       {Oban, Application.fetch_env!(:bolognesa, Oban)},

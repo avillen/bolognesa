@@ -1,0 +1,6 @@
+# Add after network.host.yaml and monitoring.yaml for Linux host networking.
+services:
+  alloy:
+    network_mode: host
+    environment:
+      BOLOGNESA_METRICS_TARGET: ${BOLOGNESA_BIND_IP:-127.0.0.1}:${BOLOGNESA_PORT:-4000}

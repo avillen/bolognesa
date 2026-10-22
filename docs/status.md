@@ -31,11 +31,32 @@ bounded metrics, and committed outcomes distinguished from stale work and failed
 The [observability convention](conventions/observability.md) records the full boundary
 audit, event catalog, ownership, and delivery limits.
 
+Optional PromEx collection now exports framework metrics and existing application
+observations through a bearer-protected `/metrics` endpoint. Collection is disabled by
+default; the base installation needs no monitoring settings or external account.
+Separate bridge/host Compose overrides add Grafana Alloy with 60-second scraping and
+remote write. Cloud credentials belong to Alloy; dashboard import is manual. See the
+[monitoring guide](../deploy/compose/monitoring.md) and
+[decision 0021](decisions/0021-optional-prometheus-metrics.md).
+
 The account and access context is `Bolognesa.Accounts`, including its `AuthenticatedUser` contract for verified callers. A reversible migration renames the former `identity_*` tables, sequences, indexes, and constraints to `accounts_*` while preserving users and sessions. Apply the migration with the matching application release. Authorization is delegated to a domain policy; session entities own issue time and expiry, and persistence stores those supplied times. The trusted release console resolves its complete administrator actor, including locale, through the Accounts facade.
 
 Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`, or explicit error tuples. `Accounts.fetch_authenticated_admin/0` and `Release.fetch_authenticated_admin/0` replace `admin_actor/0`; the release console still binds `admin` to the actor or `nil` when setup is open. Authentication preserves its `:invalid_credentials` and `:unauthenticated` failure contracts.
 
 ## Recorded verification
+
+- Optional PromEx: `MIX_TEST_PARTITION=_promex mix precommit` passed compilation,
+  formatting, Credo and 623 tests with one skipped. Focused tests verify default-off
+  behavior, bearer authorization and sanitized real exports, including bounded HTTP
+  labels. Runtime opt-in and missing-token checks passed. Base and optional Compose
+  configuration tests cover bridge/host networking and missing monitoring credentials;
+  existing deployment configuration, transport and update regressions passed. Alloy
+  v1.21.1 configuration validation and a real local authenticated scrape/remote-write
+  smoke check passed using actual PromEx output and a synthetic receiver. All five
+  bundled dashboards exported as valid JSON. `make check-screenshots` also passed
+  with unchanged captures and synthetic playback/navigation checks. These checks do not establish Grafana
+  Cloud ingestion, dashboard rendering, deployed workload resource usage or Cloud
+  series budgets.
 
 - Cross-context Telemetry: `MIX_TEST_PARTITION=_telemetry_rollout mix precommit` passed
   compilation, formatting, Credo, and 620 tests with one skipped. Capture-handler and
@@ -134,6 +155,11 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 - Local Compose startup, migrations, and initial setup were verified on x86_64. A compatible MP4 played in Chrome on a private deployment. Music inspection handles attached cover art without rejecting valid audio.
 
 ## Limits and next work
+
+Optional PromEx/Alloy is implemented locally. Next step: activate it on an opted-in
+installation, verify `up{job="bolognesa"}` in Grafana Cloud, import the dashboards,
+and measure series/resource usage during representative workflows. Ordinary
+installations can continue without monitoring infrastructure.
 
 The cross-context Telemetry rollout is implemented and locally verified. Observations
 are best effort and do not replace durable job state; LiveDashboard is not a historical
