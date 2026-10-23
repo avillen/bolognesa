@@ -1,3 +1,33 @@
+// Return only bounded dimensions, flags and an engine major version, never raw UA or text.
+export function measurePlayerControls(hook, win = globalThis.window) {
+  const root = hook.el.querySelector?.("video-skin")?.shadowRoot
+  const group = root?.querySelector(".video-time-slider-group")
+  const slider = root?.querySelector("media-time-slider")
+  const dimension = (element, axis = "width") => {
+    const value = element?.getBoundingClientRect()[axis]
+    return Number.isFinite(value) ? Math.max(0, Math.min(100000, Math.round(value))) : 0
+  }
+  const supported = check => { try { return !!check() } catch { return false } }
+  let hidden = false
+  for (let element = group; element; element = element.parentElement) {
+    const style = win?.getComputedStyle?.(element)
+    if (style && (style.display === "none" || style.visibility === "hidden" || style.opacity === "0")) hidden = true
+  }
+  const track = slider?.querySelector("media-slider-track")
+  return {
+    controls_group_width: dimension(group), controls_slider_width: dimension(slider),
+    controls_track_width: dimension(track),
+    controls_slider_height: dimension(slider, "height"), controls_track_height: dimension(track, "height"),
+    controls_labels: Math.min(2, [...(root?.querySelectorAll("media-time") || [])].filter(x => x.textContent.trim()).length),
+    controls_hidden: hidden,
+    css_container: supported(() => win.CSS.supports("container-type", "inline-size")),
+    css_layer: typeof win?.CSSLayerBlockRule === "function",
+    intl_units: supported(() => new Intl.NumberFormat("en", {style: "unit", unit: "second"}).format(1)),
+    unicode_properties: supported(() => new RegExp("\\p{Nd}", "u").test("1")),
+    browser_major: Math.min(999, Number(/(?:Chrome|Chromium)\/(\d+)/.exec(win?.navigator?.userAgent || "")?.[1] || 0)),
+  }
+}
+
 let tabId
 let pageId
 let pageSequence = 0
@@ -45,6 +75,8 @@ export function createPlaybackDiagnostics(hook, doc = document, win = globalThis
   const pending = []
   let stall = null
   let destroyed = false
+  let controlsTimer
+  let controlsScheduled = false
   pageId ||= correlationId()
   const storageKey = "bolognesa.playback.diagnostics"
   const scope = hook.el.dataset.recoveryScope
@@ -93,6 +125,7 @@ export function createPlaybackDiagnostics(hook, doc = document, win = globalThis
         ? win.performance.getEntriesByType("navigation")[0].type : "unknown",
       ws_code: Number.isInteger(extra.ws_code) && extra.ws_code >= 1000 && extra.ws_code <= 4999 ? extra.ws_code : 0,
       ws_clean: extra.ws_clean === true,
+      ...(diagnostic === "controls" ? extra : {}),
     }
     unacknowledged.push(payload)
     unacknowledged = unacknowledged.slice(-8)
@@ -110,6 +143,14 @@ export function createPlaybackDiagnostics(hook, doc = document, win = globalThis
     report("waiting")
   }
   const playing = () => {
+    if (!controlsScheduled) {
+      controlsScheduled = true
+      controlsTimer = setTimeout(() => {
+        try { report("controls", 0, measurePlayerControls(hook, win)) } catch {} // A failed probe must not affect playback.
+      }, 350)
+      controlsTimer.unref?.()
+    }
+
     if (stall?.key === sourceKey()) {
       report("recovered", Math.max(0, Math.min(2147483647, Math.floor(performance.now() - stall.started))))
     }
@@ -153,6 +194,7 @@ export function createPlaybackDiagnostics(hook, doc = document, win = globalThis
       report("destroyed")
       destroyed = true
       clearInterval(timer)
+      clearTimeout(controlsTimer)
       for (const [name, handler] of Object.entries(pageListeners)) win?.removeEventListener(name, handler)
       win?.removeEventListener("bolognesa:transport", transport)
       doc.removeEventListener("visibilitychange", visibility)

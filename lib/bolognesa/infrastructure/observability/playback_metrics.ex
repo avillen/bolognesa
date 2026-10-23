@@ -5,6 +5,7 @@ defmodule Bolognesa.Infrastructure.Observability.PlaybackMetrics do
 
   @diagnostics [
     :mounted,
+    :controls,
     :disconnected,
     :reconnected,
     :visibility,

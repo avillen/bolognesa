@@ -364,7 +364,8 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 The reported Hisense built-in browser still shows play/pause, volume, settings and
 fullscreen but no timeline or time labels after the deployed Intl unit-format fallback.
-The device failure remains unresolved. The browser's engine/version and API support have
+The device failure remains unresolved; the operator confirmed the timeline is still absent
+after the additional Unicode formatter patch was deployed. The browser's engine/version and API support have
 not been measured; the previous formatter simulation did not establish TV compatibility.
 
 A further formatter dependency on Unicode property escapes was reproduced locally:
@@ -389,9 +390,19 @@ The normal update created and validated `pre-migration-20261023-211030-29525.dum
 and its previous-image reference; no migrations were pending. Post-update verification
 confirmed the selected image running, healthy PostgreSQL, successful HTTP health,
 unchanged application/database mounts and all three media mounts remaining read-only.
-The backup was revalidated after activation. Target-TV playback remains unverified.
-Next step: measure the target browser's capabilities and rendered time controls to
-identify why the whole timeline is absent, then verify on the TV before claiming a fix.
+The backup was revalidated after activation. The operator subsequently confirmed that
+the timeline remains absent on the TV.
+An automatic `controls` observation is implemented locally to measure the actual packaged
+skin once after playback starts: group/slider/track dimensions, label count, hidden
+ancestor styles and bounded browser capabilities. Raw user-agent text and time labels
+are not transmitted. The observations use existing file/session authorization and
+budgets. This instrumentation does not change or claim to fix the timeline.
+Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one
+skipped; Node checks passed 39 tests. The production-hook Chrome 155 checks passed
+with the measured dimensions, labels and simulated unsupported APIs. Focused server
+and logging checks passed seven tests; independent review found no blocking issues.
+Next step: deploy the observation, reproduce playback on the TV and inspect its
+`controls` event before choosing another correction.
 
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query

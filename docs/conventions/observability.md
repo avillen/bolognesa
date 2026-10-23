@@ -231,6 +231,20 @@ Neither LiveView termination callbacks nor final browser signals are guaranteed 
 process/device termination. Diagnose with both server and browser evidence; missing signals
 are not proof that an event did not happen.
 
+The `controls` observation samples the packaged video skin once per hook, 350 ms after
+its first `playing` event. The timer is cancelled on teardown and probe failures must
+not affect playback. It uses the existing current-file/session validation and ordinary
+observation budget. `controls_group_width`, `controls_slider_width`, `controls_track_width`,
+`controls_slider_height` and `controls_track_height` are rounded CSS pixels, clamped to
+0..100,000. `controls_labels` counts up to two nonempty time labels without sending text.
+`controls_hidden` checks display, visibility and opacity on the time group and its shadow
+ancestors; dimensions and flags are evidence of layout, not proof of visible pixels.
+`css_container`, `css_layer`, `intl_units` and `unicode_properties` are capability probes;
+`browser_major` is a parsed Chrome/Chromium major version capped at 999, or zero when
+unrecognized. No raw user-agent string is transmitted. Missing elements, failed probes
+and unavailable APIs can produce zero/false values, so these do not establish a specific
+engine or root cause. These fields are log metadata only, never metric labels.
+
 Additional browser diagnostic names are `pagehide`, `pageshow`, `online`, `offline`,
 `socket_open`, `socket_closed`, `socket_error`, `destroyed`, `progress`, `restored`,
 `restore_failed` and `autoplay_blocked`. Page IDs are random per document; tab IDs

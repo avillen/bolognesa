@@ -4,6 +4,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
 
   @diagnostics %{
     "mounted" => :mounted,
+    "controls" => :controls,
     "disconnected" => :disconnected,
     "reconnected" => :reconnected,
     "visibility" => :visibility,
@@ -107,6 +108,18 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
 
   defp extra_fields(params) do
     defaults = %{
+      controls_group_width: 0,
+      controls_slider_width: 0,
+      controls_track_width: 0,
+      controls_slider_height: 0,
+      controls_track_height: 0,
+      controls_labels: 0,
+      controls_hidden: false,
+      css_container: false,
+      css_layer: false,
+      intl_units: false,
+      unicode_properties: false,
+      browser_major: 0,
       page_id: nil,
       replayed: false,
       ws_code: 0,
@@ -126,6 +139,29 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
       do: {:ok, fields},
       else: :error
   end
+
+  defp valid_extra?(key, value)
+       when key in [
+              :controls_group_width,
+              :controls_slider_width,
+              :controls_track_width,
+              :controls_slider_height,
+              :controls_track_height
+            ],
+       do: is_integer(value) and value in 0..100_000
+
+  defp valid_extra?(:controls_labels, value), do: is_integer(value) and value in 0..2
+  defp valid_extra?(:browser_major, value), do: is_integer(value) and value in 0..999
+
+  defp valid_extra?(key, value)
+       when key in [
+              :controls_hidden,
+              :css_container,
+              :css_layer,
+              :intl_units,
+              :unicode_properties
+            ],
+       do: is_boolean(value)
 
   defp valid_extra?(:page_id, nil), do: true
   defp valid_extra?(:page_id, value), do: match?({:ok, _}, Ecto.UUID.cast(value))
