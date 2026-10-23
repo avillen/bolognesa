@@ -20,9 +20,10 @@ recovery and one HLS global-offset recovery request. Focused LiveView/diagnostic
 passed 20 tests, including paused HLS recovery through the real backend operation.
 The independent review's delayed-acknowledgement finding was reproduced and fixed;
 rejected recovery and batched historical progress also have regression coverage.
-These changes are local and not deployed. Target iPhone playback and the cause of
-the reported page recreations remain unverified; next step is deployment followed by
-representative playback/reload checks on the target browser.
+These changes are published and deployed as `22853b4eb770fb89e3e01a24c85cceb033c7355a`;
+release verification is recorded below. Target iPhone playback and the cause of the
+reported page recreations remain unverified. Next step: representative playback/reload
+checks on the target browser.
 
 Movie detail now follows the episode playback layout: a compact title/year heading,
 a prominent player, a shared expandable synopsis, and versions inside playback options.
@@ -31,7 +32,7 @@ The movie catalog is unchanged. Local `mix precommit` passed compilation, format
 Credo and 635 tests with one skipped; `node --test assets/test/*.mjs` passed 23 tests.
 `make screenshots` passed desktop/mobile browser checks, including movie playback and
 manual-correction navigation; the movie detail/player captures were updated and visually
-reviewed. These changes are local and not deployed; real-device verification is pending.
+reviewed. Included in the deployed recovery release; real-device verification is pending.
 
 Movies, Series, and Music independently own their content and recovery. Inspection and content requests now commit directly with their linked Oban jobs; the four intermediate event tables and polling dispatchers have been removed. Video identities use independent sequences; Playback selects movies and episodes with explicit typed references. Bolognesa supports movie, series, and music libraries; recoverable scanning and technical inspection; TMDb identification and manual corrections; library-scoped catalog browsing; authorized direct playback; and optional FFmpeg/HLS video playback. Original media remains read-only. Scanning and identification are separate steps; automatic lookup requires a runtime TMDb token.
 
@@ -52,12 +53,12 @@ The current naming uses `TranscodeStrategy`, `:audio_only` and `:full_transcode`
 temporary HLS work a transcode session. Authorization, revision checks and the one-process
 limit remain in place. Movie and episode playback options show whether playback is direct,
 converts audio, or converts video and audio, based on the active session; conversion errors
-remain visible without a misleading mode label. This UI change is local and not deployed.
+remain visible without a misleading mode label. Included in the deployed recovery release.
 The naming refactor passed `MIX_TEST_PARTITION=_playback_names_final mix precommit`
 with compilation, formatting, Credo and 635 tests with one skipped; `node --test assets/test/*.mjs`
-passed 23 tests. This naming refactor is local and not deployed.
+passed 23 tests. Included in the deployed recovery release.
 For the playback mode indicator, `mix precommit` passed compilation, formatting, Credo,
-and 635 tests with one skipped. This UI change is local and not deployed.
+and 635 tests with one skipped. Included in the deployed recovery release.
 
 Music supports local tags with filename fallbacks, track/artist/album browsing, search, pagination, import retry, and ordered album playback with previous/next and automatic advance. Listening survives URL patches within music; full navigation or reload ends the queue. Identity, grouping, limits, and recovery contracts live in [decision 0018](decisions/0018-local-music-catalog.md).
 
@@ -152,6 +153,23 @@ The account and access context is `Bolognesa.Accounts`, including its `Authentic
 Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`, or explicit error tuples. `Accounts.fetch_authenticated_admin/0` and `Release.fetch_authenticated_admin/0` replace `admin_actor/0`; the release console still binds `admin` to the actor or `nil` when setup is open. Authentication preserves its `:invalid_credentials` and `:unauthenticated` failure contracts.
 
 ## Recorded verification
+
+- Same-tab recovery release: `mix precommit` passed 638 tests with one skipped;
+  all 37 Node tests, synthetic MP4/HLS browser checks and local `make check-screenshots`
+  passed. The four incoming commits passed the pinned Gitleaks scan.
+  [Application CI](https://github.com/avillen/bolognesa/actions/runs/40005733432) and
+  [image CI](https://github.com/avillen/bolognesa/actions/runs/40005733566) succeeded for
+  `22853b4eb770fb89e3e01a24c85cceb033c7355a`.
+  [Screenshot CI](https://github.com/avillen/bolognesa/actions/runs/40005733481) remained
+  in video-tool installation at deployment; the equivalent local checks passed.
+  `make deploy-release` deployed verified ARM64 image
+  `ghcr.io/avillen/bolognesa@sha256:8d45afc6944b096d73376669f07fe9e18c1a685230e9e1f1fd0e0683107bb41d`.
+  Backup `pre-migration-20261023-205217-750.dump` was revalidated with `pg_restore`
+  and its previous-image reference; migrations were current. HTTP health, served recovery
+  JavaScript, authenticated catalogs, playback coordination and unauthenticated media
+  rejection passed. Application/database mounts and database environment matched the
+  pre-update fingerprints; all three media sources remain read-only. PostgreSQL is
+  healthy and the application has zero restarts/OOM. Target-device playback is pending.
 
 - GitHub Actions Node.js migration: container publishing uses `download-artifact@v7`;
   CI and screenshot checks use `checkout@v5`, `cache@v5` and `setup-node@v5`
@@ -352,8 +370,8 @@ on supported browsers. `mix precommit` passed compilation, formatting, Credo and
 with one skipped; `node --test assets/test/*.mjs` passed 26 tests. The production-hook
 browser checks passed in Chrome 155 with synthetic MP4/HLS, including a simulated older
 Intl implementation, visible timeline, English/Spanish labels and keyboard seeking.
-This change is local and not deployed. The Hisense browser's exact API support has not
-been measured; next step: deploy the fix and verify the timeline on the reported TV.
+Included in the deployed recovery release. The Hisense browser's exact API support has
+not been measured; next step: verify the timeline on the reported TV.
 
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query

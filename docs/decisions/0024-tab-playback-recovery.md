@@ -1,6 +1,6 @@
 # 0024. Same-tab video playback recovery
 
-Status: Implemented locally; target-device verification pending.
+Status: Implemented and deployed; target-device verification pending.
 
 ## Context
 
