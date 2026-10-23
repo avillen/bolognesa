@@ -1,8 +1,17 @@
 # Project status
 
-Last reviewed: 2026-10-22.
+Last reviewed: 2026-10-23.
 
 ## Implemented behavior
+
+Movie detail now follows the episode playback layout: a compact title/year heading,
+a prominent player, a shared expandable synopsis, and versions inside playback options.
+The selected version is indicated and playback errors offer the existing retry action.
+The movie catalog is unchanged. Local `mix precommit` passed compilation, formatting,
+Credo and 635 tests with one skipped; `node --test assets/test/*.mjs` passed 23 tests.
+`make screenshots` passed desktop/mobile browser checks, including movie playback and
+manual-correction navigation; the movie detail/player captures were updated and visually
+reviewed. These changes are local and not deployed; real-device verification is pending.
 
 Movies, Series, and Music independently own their content and recovery. Inspection and content requests now commit directly with their linked Oban jobs; the four intermediate event tables and polling dispatchers have been removed. Video identities use independent sequences; Playback selects movies and episodes with explicit typed references. Bolognesa supports movie, series, and music libraries; recoverable scanning and technical inspection; TMDb identification and manual corrections; library-scoped catalog browsing; authorized direct playback; and optional FFmpeg/HLS video playback. Original media remains read-only. Scanning and identification are separate steps; automatic lookup requires a runtime TMDb token.
 

@@ -1,6 +1,5 @@
 /* Movie versions complement the shared media header and catalog. */
-.movie-detail-body { padding: 24px; }
-.movie-versions-heading { margin-top: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border); }
+.movie-versions-heading { margin-top: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--color-border); }
 .movie-version-card { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-canvas); }
 .movie-version-summary { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 160px; overflow-wrap: anywhere; }
 .movie-version-icon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 44px; height: 52px; border-radius: 6px; background: var(--color-raised); color: var(--color-muted); }
@@ -9,7 +8,12 @@
 .movie-version-actions { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
 .movie-version-actions > * { flex: 1; }
 @media (min-width: 640px) {
-  .movie-detail-body { padding: 24px 32px 32px; }
   .movie-version-actions { width: auto; }
   .movie-version-actions > * { flex: none; }
 }
+
+.movie-heading { margin-bottom: 12px; overflow-wrap: anywhere; }
+.movie-player { margin-top: 0; }
+.movie-synopsis { margin: 16px 0 20px; }
+.movie-synopsis .media-expandable-synopsis { margin-bottom: 0; }
+.movie-selected { display: inline-block; margin-top: 4px; padding: 2px 6px; border-radius: 4px; color: var(--color-accent-soft); background: #e4775519; font-size: 10px; }

@@ -6,10 +6,10 @@
   current_scope={@current_scope}
   active_section={:movies}
 >
-  <section id="movie-detail" class="mx-auto max-w-6xl space-y-6">
+  <section id="movie-detail" class="movie-screen mx-auto max-w-5xl">
     <.link
       navigate={~p"/movies?#{@library_params}"}
-      class="media-back-link"
+      class="media-back-link mb-3"
     >{gettext("← Todas las películas")}</.link>
     <p :if={@loading?} id="movie-loading" role="status" class="text-muted">
       {gettext("Cargando ficha…")}
@@ -22,85 +22,62 @@
     >
       {@error}
     </p>
-    <div :if={@detail} class="media-detail-panel">
-      <div class="media-hero">
-        <div
-          :if={@detail.movie.backdrop_path}
-          class="media-backdrop"
-        >
-          <img
-            id={"movie-backdrop-#{@detail.movie.id}"}
-            phx-hook="ImageFallback"
-            phx-update="ignore"
-            src={"https://image.tmdb.org/t/p/w780#{@detail.movie.backdrop_path}"}
-            alt={gettext("Imagen de %{value0}", value0: @detail.movie.title)}
-            class="size-full object-cover"
-          />
-        </div>
-        <div class="media-hero-content">
-          <div class="media-hero-poster">
-            <div class="media-art-fallback" aria-hidden="true">
-              <.icon name="hero-film" class="size-10" />
-            </div>
-            <img
-              :if={@detail.movie.poster_path}
-              id={"movie-detail-poster-#{@detail.movie.id}"}
-              phx-hook="ImageFallback"
-              phx-update="ignore"
-              src={"https://image.tmdb.org/t/p/w342#{@detail.movie.poster_path}"}
-              alt={gettext("Cartel de %{value0}", value0: @detail.movie.title)}
-              class="absolute inset-0 size-full object-cover"
-            />
-          </div>
-          <div class="media-hero-copy">
-            <p class="media-eyebrow">
-              {gettext("Ficha de película")}
-            </p>
-            <h1 id="movie-title" class="text-4xl font-semibold text-ink">
-              {@detail.movie.title}
-            </h1>
-            <p class="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted">
-              <span>{@detail.movie.year || gettext("Año desconocido")}</span>
-              <span aria-hidden="true" class="text-accent">/</span>
-              <span>{ngettext("%{count} versión", "%{count} versiones", length(@detail.versions))}</span>
-            </p>
-            <p :if={@detail.movie.overview} class="media-synopsis">
-              {@detail.movie.overview}
-            </p>
-            <p :if={!@detail.movie.overview} class="media-synopsis">
-              {gettext("Todavía no hay sinopsis.")}
-            </p>
-          </div>
-        </div>
-      </div>
-      <div class="movie-detail-body">
-        <BolognesaWeb.Player.player
-          prefix="movie"
-          kind={:movie}
-          entry_id={elem(@content_ref, 1)}
+    <div :if={@detail}>
+      <header class="movie-heading">
+        <h1 id="movie-title" class="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+          {@detail.movie.title}
+        </h1>
+        <p class="mt-1 text-xs text-muted">{@detail.movie.year || gettext("Año desconocido")}</p>
+      </header>
+      <BolognesaWeb.Player.player
+        prefix="movie"
+        kind={:movie}
+        class="movie-player space-y-3"
+        poster={
+          @detail.movie.backdrop_path &&
+            "https://image.tmdb.org/t/p/w780#{@detail.movie.backdrop_path}"
+        }
+        retry_file_id={
+          Enum.find_value(@detail.versions, &(&1.availability == :available && &1.id))
+        }
+        entry_id={elem(@content_ref, 1)}
+        selected_file_id={@selected_file_id}
+        transcode_session={@transcode_session}
+        transcode_ready?={@transcode_ready?}
+        transcode_paused?={@transcode_paused?}
+        transcode_autoplay?={@transcode_autoplay?}
+        playback_error={@playback_error}
+        playback_error_reason={@playback_error_reason}
+      />
+      <section id="movie-synopsis" class="movie-synopsis">
+        <h2 class="mb-3 text-base font-semibold text-ink">{gettext("Sinopsis")}</h2>
+        <BolognesaWeb.MediaComponents.synopsis
+          :if={@detail.movie.overview}
+          id="movie-description"
+          text={@detail.movie.overview}
+        />
+        <p :if={!@detail.movie.overview} class="text-sm text-muted">
+          {gettext("Todavía no hay sinopsis.")}
+        </p>
+      </section>
+      <details
+        id="movie-playback-options"
+        class="playback-options"
+        phx-mounted={JS.ignore_attributes("open")}
+      >
+        <summary>{gettext("Opciones de reproducción")}</summary>
+        <BolognesaWeb.Player.playback_mode
           selected_file_id={@selected_file_id}
           transcode_session={@transcode_session}
-          transcode_ready?={@transcode_ready?}
-          transcode_paused?={@transcode_paused?}
-          transcode_autoplay?={@transcode_autoplay?}
           playback_error={@playback_error}
-          playback_error_reason={@playback_error_reason}
         />
-        <details id="movie-playback-options" class="playback-options">
-          <summary>{gettext("Opciones de reproducción")}</summary>
-          <BolognesaWeb.Player.playback_mode
-            selected_file_id={@selected_file_id}
-            transcode_session={@transcode_session}
-            playback_error={@playback_error}
-          />
-        </details>
         <h2 class="movie-versions-heading text-xl font-semibold text-ink">
           {gettext("Versiones en tu biblioteca")}
         </h2>
-        <div id="movie-versions" phx-update="stream" class="mt-4 space-y-3">
+        <div id="movie-versions" class="mt-4 space-y-3">
           <div
-            :for={{dom_id, version} <- @streams.versions}
-            id={dom_id}
+            :for={version <- @detail.versions}
+            id={"movie-version-#{version.id}"}
             class="movie-version-card"
           >
             <div class="movie-version-summary">
@@ -110,6 +87,11 @@
               /></span>
               <div class="min-w-0">
                 <p class="font-semibold text-ink">{gettext("Versión")} {version.id}</p>
+                <span
+                  :if={version.id == @selected_file_id}
+                  id={"movie-selected-#{version.id}"}
+                  class="movie-selected"
+                >{gettext("Seleccionada")}</span>
                 <p class="mt-1 text-xs text-muted">
                   {if version.origin == :manual,
                     do: gettext("Identificación manual"),
@@ -148,7 +130,7 @@
         <p :if={@detail.versions == []} id="movie-no-versions" class="mt-4 text-sm text-muted">
           {gettext("No hay versiones vinculadas.")}
         </p>
-      </div>
+      </details>
     </div>
   </section>
 </Layouts.app>

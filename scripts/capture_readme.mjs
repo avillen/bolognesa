@@ -254,6 +254,7 @@ try {
     await capture("library.png", `/movies?library_id=${ids.movie_library}`, "main h1", "#movies-loading");
     await capture("movie-review.png", "/movies/review");
     await capture("movie.png", `/movies/${ids.movie}?library_id=${ids.movie_library}`);
+    await page.locator("#movie-playback-options > summary").click();
     await page.locator('[id^="movie-play-"]').first().click();
     const video = page.locator("video[id^='movie-video-']");
     try {
@@ -592,6 +593,7 @@ try {
     await assertMoviesFit();
     await capture("movie-mobile.png", `/movies/${ids.movie}?library_id=${ids.movie_library}`, "#movie-title", "#movie-loading");
     await assertMoviesFit();
+    await page.locator("#movie-playback-options > summary").click();
     await page.locator('[id^="movie-play-"]').first().click();
     await page.locator("#movie-player video").waitFor({state: "attached"});
     await assertMoviesFit();

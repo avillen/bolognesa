@@ -26,13 +26,21 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         movie_changeset(%{
           provider: :tmdb,
           provider_id: 999,
-          title: "Mi pelicula"
+          title: "Mi pelicula",
+          overview: "Una historia para descubrir."
         })
       )
 
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies/#{movie.id}")
     render_async(view)
-    assert has_element?(view, "#movie-versions")
+    assert has_element?(view, "#movie-playback-options:not([open]) #movie-versions")
+
+    assert has_element?(
+             view,
+             "#movie-description:not([open]) summary",
+             "Una historia para descubrir."
+           )
+
     assert has_element?(view, "#movie-title", "Mi pelicula")
     refute has_element?(view, "#movie-player")
     refute has_element?(view, "#movie-playback-error")
@@ -170,7 +178,10 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
       assert has_element?(view, "#playback-mode", "Reproducción directa")
 
+      assert has_element?(view, "#movie-selected-#{first.id}", "Seleccionada")
       render_click(element(view, "#movie-play-#{second.id}"))
+      assert has_element?(view, "#movie-selected-#{second.id}", "Seleccionada")
+      refute has_element?(view, "#movie-selected-#{first.id}")
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
 
       assert has_element?(
@@ -403,6 +414,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       File.rm!(Path.join(ctx.directory, "first.mp4"))
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
       assert has_element?(view, "#movie-playback-error[data-reason='file_unavailable']")
+      assert has_element?(view, "#movie-retry-playback")
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
       assert has_element?(view, "#movie-playback-error[data-reason='file_unavailable']")
       refute has_element?(view, "#movie-playback-preparing")

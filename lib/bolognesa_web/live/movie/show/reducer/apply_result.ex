@@ -2,7 +2,6 @@ defmodule BolognesaWeb.Movie.Show.Reducer.ApplyResult do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
-  import Phoenix.LiveView, only: [stream: 4]
   alias BolognesaWeb.LiveSupport.PlaybackControl
 
   @spec call(Phoenix.LiveView.Socket.t(), reference(), term()) :: Phoenix.LiveView.Socket.t()
@@ -16,7 +15,6 @@ defmodule BolognesaWeb.Movie.Show.Reducer.ApplyResult do
     socket
     |> assign(:loading?, false)
     |> assign(:detail, detail)
-    |> stream(:versions, detail.versions, reset: true)
     |> select_first_available(detail.versions)
   end
 

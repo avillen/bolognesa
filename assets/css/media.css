@@ -49,3 +49,12 @@
 @media (min-width: 1440px) {
   .media-poster-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
+
+.media-expandable-synopsis { margin-bottom: 24px; color: var(--color-muted); font-size: 13px; line-height: 1.75; }
+.media-expandable-synopsis summary { list-style: none; cursor: pointer; }
+.media-expandable-synopsis summary::-webkit-details-marker { display: none; }
+.media-expandable-synopsis-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.media-expandable-synopsis[open] .media-expandable-synopsis-text { display: block; }
+.media-read-more, .media-read-less { display: block; margin-top: 6px; color: var(--color-accent-soft); font-size: 12px; }
+.media-read-less, .media-expandable-synopsis[open] .media-read-more { display: none; }
+.media-expandable-synopsis[open] .media-read-less { display: block; }

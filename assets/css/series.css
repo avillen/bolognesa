@@ -31,14 +31,6 @@
 .series-search-submit { background: transparent; color: var(--color-muted); padding-inline: 12px; }
 .series-search-submit:hover { background: var(--color-raised); }
 .series-catalog .media-toolbar { border: 0; padding: 0; gap: 12px; }
-.series-synopsis { margin-bottom: 24px; color: var(--color-muted); font-size: 13px; line-height: 1.75; }
-.series-synopsis summary { list-style: none; cursor: pointer; }
-.series-synopsis summary::-webkit-details-marker { display: none; }
-.series-synopsis-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
-.series-synopsis[open] .series-synopsis-text { display: block; }
-.series-read-more, .series-read-less { display: block; margin-top: 6px; color: var(--color-accent-soft); font-size: 12px; }
-.series-read-less, .series-synopsis[open] .series-read-more { display: none; }
-.series-synopsis[open] .series-read-less { display: block; }
 .series-detail-panel .media-hero-content { min-height: 180px; padding: 60px 20px 24px; }
 .series-detail-panel .media-hero-copy h1 { font-size: 34px; }
 .series-detail-panel .media-hero-copy > p { margin-top: 12px; }
@@ -48,7 +40,7 @@
 .episode-heading { margin-bottom: 12px; overflow-wrap: anywhere; }
 .episode-player { margin-top: 0; }
 .episode-synopsis { margin-top: 16px; margin-bottom: 20px; }
-.episode-synopsis .series-synopsis { margin-bottom: 0; }
+.episode-synopsis .media-expandable-synopsis { margin-bottom: 0; }
 .playback-options { padding-bottom: 16px; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
 .playback-options > summary { padding: 18px 0; cursor: pointer; font-size: 14px; }
 .episode-version { padding: 14px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
