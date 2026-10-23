@@ -11,3 +11,14 @@ export function createTimeNumberFormat(locale, options, NumberFormat = Intl.Numb
     return {format: value => `${number.format(value)} ${suffix}`}
   }
 }
+
+// Some embedded browsers expose ListFormat but reject type: "unit".
+export function createTimeListFormat(locale, options, ListFormat = Intl.ListFormat) {
+  try {
+    return new ListFormat(locale, options)
+  } catch (error) {
+    if (!(error instanceof RangeError) || options?.type !== "unit" ||
+        !["long", "short", "narrow"].includes(options.style ?? "long")) throw error
+    return {format: parts => [...parts].join(options.style === "narrow" ? " " : ", ")}
+  }
+}

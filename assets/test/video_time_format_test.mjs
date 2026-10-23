@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createTimeNumberFormat} from "../js/video_time_format.mjs"
+import {createTimeNumberFormat, createTimeListFormat} from "../js/video_time_format.mjs"
 
 class LegacyNumberFormat extends Intl.NumberFormat {
   constructor(locale, options) {
@@ -31,4 +31,25 @@ test("unrelated formatting errors are preserved", () => {
   assert.throws(() => createTimeNumberFormat("en", {style: "unit", unit: "invalid"}, LegacyNumberFormat), RangeError)
   class BrokenNumberFormat { constructor() { throw new TypeError("Broken formatter") } }
   assert.throws(() => createTimeNumberFormat("en", {style: "unit", unit: "second"}, BrokenNumberFormat), TypeError)
+})
+
+
+test("time phrases survive a ListFormat implementation that rejects unit lists", () => {
+  class LegacyListFormat extends Intl.ListFormat {
+    constructor(locale, options) {
+      if (options?.type === "unit") throw new RangeError("Unsupported list type")
+      super(locale, options)
+    }
+  }
+  for (const locale of ["en", "es"]) {
+    for (const style of ["long", "short", "narrow"]) {
+      const expected = style === "narrow" ? "1 h 2 min" : "1 h, 2 min"
+      assert.equal(createTimeListFormat(locale, {type: "unit", style}, LegacyListFormat).format(["1 h", "2 min"]), expected)
+    }
+    const options = {type: "unit", style: "long"}
+    assert.equal(createTimeListFormat(locale, options).format(["1 h", "2 min"]), new Intl.ListFormat(locale, options).format(["1 h", "2 min"]))
+  }
+  class BrokenListFormat { constructor() { throw new TypeError("Broken formatter") } }
+  assert.throws(() => createTimeListFormat("en", {type: "unit"}, BrokenListFormat), TypeError)
+  assert.throws(() => createTimeListFormat("en", {type: "invalid"}), RangeError)
 })

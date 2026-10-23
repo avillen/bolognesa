@@ -23,6 +23,7 @@ export function measurePlayerControls(hook, win = globalThis.window) {
     css_container: supported(() => win.CSS.supports("container-type", "inline-size")),
     css_layer: typeof win?.CSSLayerBlockRule === "function",
     intl_units: supported(() => new Intl.NumberFormat("en", {style: "unit", unit: "second"}).format(1)),
+    intl_lists: supported(() => new Intl.ListFormat("en", {type: "unit", style: "long"}).format(["1 h", "2 min"])),
     unicode_properties: supported(() => new RegExp("\\p{Nd}", "u").test("1")),
     browser_major: Math.min(999, Number(/(?:Chrome|Chromium)\/(\d+)/.exec(win?.navigator?.userAgent || "")?.[1] || 0)),
   }

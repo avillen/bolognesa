@@ -384,7 +384,7 @@ The additional formatter changes are published and deployed as
 [Application CI](https://github.com/avillen/bolognesa/actions/runs/40008842220) and
 [image CI](https://github.com/avillen/bolognesa/actions/runs/40008842125) passed.
 Local `make check-screenshots` passed with unchanged captures;
-[screenshot CI](https://github.com/avillen/bolognesa/actions/runs/40008842076) is still running.
+[screenshot CI](https://github.com/avillen/bolognesa/actions/runs/40008842076) also passed.
 The incoming commit passed the pinned Gitleaks scan.
 The normal update created and validated `pre-migration-20261023-211030-29525.dump`
 and its previous-image reference; no migrations were pending. Post-update verification
@@ -392,7 +392,7 @@ confirmed the selected image running, healthy PostgreSQL, successful HTTP health
 unchanged application/database mounts and all three media mounts remaining read-only.
 The backup was revalidated after activation. The operator subsequently confirmed that
 the timeline remains absent on the TV.
-An automatic `controls` observation is implemented locally to measure the actual packaged
+An automatic `controls` observation is implemented to measure the actual packaged
 skin once after playback starts: group/slider/track dimensions, label count, hidden
 ancestor styles and bounded browser capabilities. Raw user-agent text and time labels
 are not transmitted. The observations use existing file/session authorization and
@@ -401,8 +401,33 @@ Local `mix precommit` passed compilation, formatting, Credo and 638 tests with o
 skipped; Node checks passed 39 tests. The production-hook Chrome 155 checks passed
 with the measured dimensions, labels and simulated unsupported APIs. Focused server
 and logging checks passed seven tests; independent review found no blocking issues.
-Next step: deploy the observation, reproduce playback on the TV and inspect its
-`controls` event before choosing another correction.
+The observation is published and deployed as `93b32fc40b26a23d2759dfac510740f5ba8e93d2`,
+using image `ghcr.io/avillen/bolognesa@sha256:a3357d2467d3fc0970f042dd6d772f471e0c7af7826d58d446fe752b3f45150d`.
+[Application CI](https://github.com/avillen/bolognesa/actions/runs/40010978786),
+[screenshot CI](https://github.com/avillen/bolognesa/actions/runs/40010978723) and
+[image CI](https://github.com/avillen/bolognesa/actions/runs/40010978867) passed.
+Local `make check-screenshots` passed with unchanged captures, and the incoming commit
+passed the pinned Gitleaks scan. The update created and validated
+`pre-migration-20261023-212653-22060.dump` and its previous-image reference;
+no migrations were pending. Post-update verification confirmed HTTP 200, healthy
+PostgreSQL, unchanged application/database mounts and three read-only media mounts;
+the backup and matching previous-image reference were revalidated.
+A target-TV observation now reports a wide time group and slider (812/768 CSS pixels),
+zero rendered track dimensions, zero nonempty labels, available container/layer/Unicode
+support, unavailable Intl unit formatting and a reported Chrome major version of 111.
+This distinguishes missing child rendering from a collapsed time group.
+
+Simulating an existing `Intl.ListFormat` that rejects `type: "unit"` reproduces the
+complete observed rendering failure: both labels empty, no track elements, and three
+RangeErrors. The vendored formatter now falls back to the library's existing plain-list
+join when that supported unit-list request is rejected, preserving native formatting on
+supported implementations and unrelated errors. An additional bounded `intl_lists` probe
+will check that API on the TV. Local Node checks pass 40 tests and the production-hook
+Chrome 155 check passes with unit number/list formatting and Unicode properties disabled.
+Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one skipped.
+Independent review found no blocking findings. This correction is still local; target-TV
+unit-list support and corrected rendering remain to be verified. Next step: deploy,
+then reproduce playback on the TV.
 
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query

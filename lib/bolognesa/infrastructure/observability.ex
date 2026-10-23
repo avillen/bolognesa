@@ -30,6 +30,7 @@ defmodule Bolognesa.Infrastructure.Observability do
     :css_container,
     :css_layer,
     :intl_units,
+    :intl_lists,
     :unicode_properties,
     :browser_major,
     :ws_code,

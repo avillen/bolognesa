@@ -239,7 +239,7 @@ observation budget. `controls_group_width`, `controls_slider_width`, `controls_t
 0..100,000. `controls_labels` counts up to two nonempty time labels without sending text.
 `controls_hidden` checks display, visibility and opacity on the time group and its shadow
 ancestors; dimensions and flags are evidence of layout, not proof of visible pixels.
-`css_container`, `css_layer`, `intl_units` and `unicode_properties` are capability probes;
+`css_container`, `css_layer`, `intl_units`, `intl_lists` and `unicode_properties` are capability probes;
 `browser_major` is a parsed Chrome/Chromium major version capped at 999, or zero when
 unrecognized. No raw user-agent string is transmitted. Missing elements, failed probes
 and unavailable APIs can produce zero/false values, so these do not establish a specific

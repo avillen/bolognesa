@@ -118,6 +118,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
       css_container: false,
       css_layer: false,
       intl_units: false,
+      intl_lists: false,
       unicode_properties: false,
       browser_major: 0,
       page_id: nil,
@@ -159,6 +160,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
               :css_container,
               :css_layer,
               :intl_units,
+              :intl_lists,
               :unicode_properties
             ],
        do: is_boolean(value)
