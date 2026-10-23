@@ -40,6 +40,13 @@ The pinned dependency is rebuilt with `npm ci` and `npm run vendor-videojs`. Its
 module and license notices are checked in under `assets/vendor/`, so release builds and
 browsers do not require npm or a CDN. English and Spanish controls are bundled locally.
 
+The vendoring script applies a scoped time-formatting compatibility adapter. Browsers
+that reject `Intl.NumberFormat` unit style use numeric `h`, `min`, and `s` abbreviations
+for time phrases; supported native formatting is preserved. Without this fallback,
+Video.js can throw while updating both time labels and the slider, leaving the timeline
+empty while other controls work. The browser regression simulates the unsupported API;
+it does not establish compatibility with a specific TV browser.
+
 ## Consequences
 
 The path adds temporary storage and a JavaScript dependency. FFmpeg reopens the original by path after validation, leaving a race that the process API cannot make atomic; read-only mounts prevent writes by Bolognesa, not external changes. Synthetic tests validate output codecs, not server capacity or device playback. See [FFmpeg's HLS muxer](https://ffmpeg.org/ffmpeg-formats.html) and [hls.js](https://github.com/video-dev/hls.js).

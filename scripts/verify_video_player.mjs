@@ -51,6 +51,47 @@ const browser = process.env.BOLOGNESA_SCREENSHOT_BROWSER_WS
   ? await chromium.connect(process.env.BOLOGNESA_SCREENSHOT_BROWSER_WS, {exposeNetwork: "<loopback>"})
   : await chromium.launch({headless: true, channel: process.env.BOLOGNESA_TEST_BROWSER_CHANNEL})
 try {
+  const legacyPage = await browser.newPage({viewport: {width: 1000, height: 800}})
+  legacyPage.setDefaultTimeout(15000)
+  const legacyErrors = []
+  legacyPage.on("pageerror", error => legacyErrors.push(error.message))
+  await legacyPage.addInitScript(() => {
+    const NativeNumberFormat = Intl.NumberFormat
+    Intl.NumberFormat = class extends NativeNumberFormat {
+      constructor(locale, options) {
+        if (options?.style === "unit") throw new RangeError("Unit formatting is unsupported")
+        super(locale, options)
+      }
+    }
+  })
+  await legacyPage.goto(`http://127.0.0.1:${server.address().port}`)
+  await legacyPage.waitForFunction(() => document.querySelector("video").currentTime > 0.1)
+  assert.deepEqual(legacyErrors, [], "Timeline must work without Intl unit formatting")
+  await legacyPage.locator("video").hover()
+  await legacyPage.locator("media-play-button").click()
+  await legacyPage.waitForFunction(() => document.querySelector("video").paused)
+  const legacySlider = legacyPage.locator("media-time-slider")
+  const legacyTrack = await legacySlider.locator("media-slider-track").boundingBox()
+  assert.ok(legacyTrack && legacyTrack.width > 100 && legacyTrack.height > 0)
+  const times = await legacyPage.locator("media-time").allTextContents()
+  assert.ok(times.length === 2 && times.every(time => /\d+:\d{2}/.test(time)))
+  await legacySlider.focus()
+  await legacyPage.keyboard.press("ArrowRight")
+  await legacyPage.waitForFunction(() => document.querySelector("video").currentTime > 1)
+  await legacyPage.locator("media-i18n").evaluate(element => { element.lang = "es" })
+  await legacyPage.waitForFunction(() => document.querySelector("video-skin").shadowRoot.querySelector("media-time").getAttribute("aria-label")?.includes("Tiempo reproducido"))
+  await legacyPage.evaluate(() => {
+    Object.assign(window.context.el.dataset, {videoId: "legacy-hls", sessionId: "legacy", src: "/index.m3u8", offsetMs: "120000", durationMs: "600000"})
+    window.hook.updated.call(window.context)
+  })
+  await legacyPage.waitForFunction(() => document.querySelector("bolognesa-video-player").store.state.duration === 600)
+  await legacySlider.focus()
+  await legacyPage.keyboard.press("ArrowRight")
+  await legacyPage.waitForFunction(() => window.events.some(([name, data]) => name === "playback_seek" && data.session_id === "legacy"))
+  assert.deepEqual(legacyErrors, [])
+  await legacyPage.evaluate(() => window.hook.destroyed.call(window.context))
+  await legacyPage.close()
+  console.log("Compatibility: timeline, English/Spanish time labels and seeking without Intl unit formatting passed.")
   const page = await browser.newPage({viewport: {width: 1000, height: 800}})
   const errors = []
   page.on("pageerror", error => { errors.push(error.message); console.error(error.stack) })

@@ -315,6 +315,17 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Limits and next work
 
+Video.js time formatting now falls back to numeric `h`, `min`, and `s` phrases when
+`Intl.NumberFormat` rejects unit style. Simulating that API limitation reproduced the
+reported empty timeline and missing time labels while the other buttons remained usable.
+The adapter is scoped to the vendored time formatter and preserves native formatting
+on supported browsers. `mix precommit` passed compilation, formatting, Credo and 635 tests
+with one skipped; `node --test assets/test/*.mjs` passed 26 tests. The production-hook
+browser checks passed in Chrome 155 with synthetic MP4/HLS, including a simulated older
+Intl implementation, visible timeline, English/Spanish labels and keyboard seeking.
+This change is local and not deployed. The Hisense browser's exact API support has not
+been measured; next step: deploy the fix and verify the timeline on the reported TV.
+
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query
 and five imported PromEx dashboards work. The replacement project overview is imported and verified through the Grafana Cloud API;
