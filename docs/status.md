@@ -362,16 +362,25 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Limits and next work
 
-Video.js time formatting now falls back to numeric `h`, `min`, and `s` phrases when
-`Intl.NumberFormat` rejects unit style. Simulating that API limitation reproduced the
-reported empty timeline and missing time labels while the other buttons remained usable.
-The adapter is scoped to the vendored time formatter and preserves native formatting
-on supported browsers. `mix precommit` passed compilation, formatting, Credo and 635 tests
-with one skipped; `node --test assets/test/*.mjs` passed 26 tests. The production-hook
-browser checks passed in Chrome 155 with synthetic MP4/HLS, including a simulated older
-Intl implementation, visible timeline, English/Spanish labels and keyboard seeking.
-Included in the deployed recovery release. The Hisense browser's exact API support has
-not been measured; next step: verify the timeline on the reported TV.
+The reported Hisense built-in browser still shows play/pause, volume, settings and
+fullscreen but no timeline or time labels after the deployed Intl unit-format fallback.
+The device failure remains unresolved. The browser's engine/version and API support have
+not been measured; the previous formatter simulation did not establish TV compatibility.
+
+A further formatter dependency on Unicode property escapes was reproduced locally:
+simulating their absence raises three browser errors and leaves time labels empty, but
+still renders a slider, so this does not reproduce the entire TV symptom. The vendoring
+adapter now removes the localized padded minute zero with string operations instead.
+The expanded production-hook Chrome 155 check passes with both Intl unit formatting and
+Unicode property escapes disabled, including English/Spanish labels and direct/HLS seeks.
+Disabling CSS container queries alone did not reproduce the missing timeline.
+`mix precommit` passed compilation, formatting, Credo and 638 tests with one skipped;
+`node --test assets/test/*.mjs` passed 37 tests. Independent review found no blocking
+issues in the additional formatter patch.
+These additional changes are local, in `scripts/vendor_videojs.mjs`,
+`scripts/verify_video_player.mjs` and `assets/vendor/videojs.min.mjs`.
+Next step: measure the target browser's capabilities and rendered time controls to
+identify why the whole timeline is absent, then verify on the TV before claiming a fix.
 
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query

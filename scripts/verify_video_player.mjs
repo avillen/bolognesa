@@ -71,6 +71,12 @@ try {
   const legacyErrors = []
   legacyPage.on("pageerror", error => legacyErrors.push(error.message))
   await legacyPage.addInitScript(() => {
+    const NativeRegExp = RegExp
+    window.RegExp = function(pattern, flags) {
+      if (String(pattern).includes("\\p{")) throw new SyntaxError("Unicode property escapes are unsupported")
+      return new NativeRegExp(pattern, flags)
+    }
+    window.RegExp.prototype = NativeRegExp.prototype
     const NativeNumberFormat = Intl.NumberFormat
     Intl.NumberFormat = class extends NativeNumberFormat {
       constructor(locale, options) {
@@ -81,7 +87,7 @@ try {
   })
   await legacyPage.goto(`http://127.0.0.1:${server.address().port}`)
   await legacyPage.waitForFunction(() => document.querySelector("video").currentTime > 0.1)
-  assert.deepEqual(legacyErrors, [], "Timeline must work without Intl unit formatting")
+  assert.deepEqual(legacyErrors, [], "Timeline must work without Intl units or Unicode property escapes")
   await legacyPage.locator("video").hover()
   await legacyPage.locator("media-play-button").click()
   await legacyPage.waitForFunction(() => document.querySelector("video").paused)
@@ -106,7 +112,7 @@ try {
   assert.deepEqual(legacyErrors, [])
   await legacyPage.evaluate(() => window.hook.destroyed.call(window.context))
   await legacyPage.close()
-  console.log("Compatibility: timeline, English/Spanish time labels and seeking without Intl unit formatting passed.")
+  console.log("Compatibility: timeline, English/Spanish time labels and seeking without Intl units or Unicode property escapes passed.")
   const page = await browser.newPage({viewport: {width: 1000, height: 800}})
   const errors = []
   page.on("pageerror", error => { errors.push(error.message); console.error(error.stack) })
