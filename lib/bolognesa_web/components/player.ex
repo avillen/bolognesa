@@ -4,6 +4,7 @@ defmodule BolognesaWeb.Player do
   attr :prefix, :string, required: true
   attr :kind, :atom, required: true
   attr :entry_id, :integer, required: true
+  attr :viewer_id, :integer, required: true
   attr :selected_file_id, :integer, default: nil
   attr :transcode_session, :any, default: nil
   attr :transcode_ready?, :boolean, required: true
@@ -43,6 +44,7 @@ defmodule BolognesaWeb.Player do
         phx-hook="VideoPlayer"
         data-video-id={@video_id}
         data-file-id={@selected_file_id}
+        data-recovery-scope={"#{@viewer_id}:#{@kind}:#{@entry_id}"}
         data-session-id={@transcode_session && @transcode_session.id}
         data-paused-server={to_string(@transcode_paused?)}
         data-autoplay={to_string(!@transcode_session || @transcode_autoplay?)}

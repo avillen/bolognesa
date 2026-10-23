@@ -88,6 +88,82 @@ test("waiting reports buffer and one measured recovery without duplicate stalls"
   assert.equal(events.length, 3)
   diagnostics.destroy()
   video.paused = false
+  const afterDestroy = events.length
   video.dispatchEvent(new Event("waiting"))
-  assert.equal(events.length, 3)
+  assert.equal(events.length, afterDestroy)
+})
+
+test("page lifecycle and socket closure retain bounded evidence for the next page", () => {
+  const stored = new Map()
+  const storage = {getItem: k => stored.get(k), setItem: (k, v) => stored.set(k, v), removeItem: k => stored.delete(k)}
+  const win = new EventTarget()
+  win.navigator = {onLine: true}
+  win.performance = {getEntriesByType: () => [{type: "reload"}]}
+  const events = []
+  const video = new EventTarget()
+  Object.assign(video, {currentTime: 812, paused: false, readyState: 4, networkState: 2})
+  const el = {dataset: {fileId: "3", recoveryScope: "1:movie:2"}}
+  const doc = new EventTarget()
+  doc.visibilityState = "visible"
+  const hook = {el, video, recovery: {save() {}}, pushEvent: (name, payload) => events.push(payload)}
+  const first = createPlaybackDiagnostics(hook, doc, win, storage)
+  const close = new Event("bolognesa:transport")
+  close.detail = {diagnostic: "socket_closed", ws_code: 1006, ws_clean: false, reason: "private text"}
+  win.dispatchEvent(close)
+  win.dispatchEvent(new Event("pagehide"))
+  assert.equal(events.at(-1).diagnostic, "pagehide")
+  assert.equal(events.at(-1).navigation_type, "reload")
+  const socket = events.find(x => x.diagnostic === "socket_closed")
+  assert.equal(socket.ws_code, 1006)
+  assert.equal(socket.ws_clean, false)
+  assert.equal(JSON.stringify(events).includes("private text"), false)
+  first.destroy()
+  events.length = 0
+  const second = createPlaybackDiagnostics(hook, doc, win, storage)
+  assert.ok(events.some(x => x.replayed && x.diagnostic === "socket_closed" && x.position_ms === 812000))
+  assert.match(events.at(-1).page_id, /^[0-9a-f-]{36}$/)
+  second.destroy()
+})
+
+test("progress samples retain position without producing events on every time update", () => {
+  const {events, video, diagnostics} = setup()
+  for (let i = 0; i < 100; i++) video.dispatchEvent(new Event("timeupdate"))
+  assert.equal(events.length, 1)
+  diagnostics.report("progress")
+  assert.equal(events.at(-1)[1].diagnostic, "progress")
+  assert.equal(events.at(-1)[1].ready_state, 0)
+  diagnostics.destroy()
+})
+
+test("acknowledgements from a destroyed hook cannot overwrite the replacement history", () => {
+  const stored = new Map()
+  const storage = {getItem: k => stored.get(k), setItem: (k, v) => stored.set(k, v)}
+  const doc = new EventTarget()
+  doc.visibilityState = "visible"
+  const video = new EventTarget()
+  Object.assign(video, {currentTime: 12, paused: false})
+  const el = {dataset: {fileId: "3", recoveryScope: "1:movie:2"}}
+  const acks = []
+  const hook = {el, video, pushEvent: (_name, _payload, ack) => acks.push(ack)}
+  const first = createPlaybackDiagnostics(hook, doc, undefined, storage)
+  first.destroy()
+  const second = createPlaybackDiagnostics(hook, doc, undefined, storage)
+  second.report("socket_closed")
+  const before = stored.get("bolognesa.playback.diagnostics")
+  acks[0]()
+  assert.equal(stored.get("bolognesa.playback.diagnostics"), before)
+  acks.at(-1)()
+  assert.equal(JSON.parse(stored.get("bolognesa.playback.diagnostics")).events.some(x => x.diagnostic === "socket_closed"), false)
+  second.destroy()
+})
+
+test("the periodic progress timer stops when the hook is destroyed", t => {
+  t.mock.timers.enable({apis: ["setInterval"]})
+  const {events, diagnostics} = setup()
+  t.mock.timers.tick(30000)
+  assert.equal(events.at(-1)[1].diagnostic, "progress")
+  diagnostics.destroy()
+  const count = events.length
+  t.mock.timers.tick(60000)
+  assert.equal(events.length, count)
 })

@@ -121,6 +121,7 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
           prefix: "movie",
           kind: :movie,
           entry_id: 1,
+          viewer_id: 1,
           selected_file_id: 1,
           transcode_ready?: false,
           transcode_paused?: false,

@@ -4,6 +4,26 @@ Last reviewed: 2026-10-23.
 
 ## Implemented behavior
 
+Video playback now keeps one same-tab `sessionStorage` checkpoint, scoped to viewer,
+content and physical file, for up to 12 hours. Position updates every three seconds
+and on significant media/page transitions; reload recovery preserves pause, clears
+completed playback and works with direct video and authorized HLS offset replacement.
+Diagnostics add document IDs, navigation type, page/network/socket lifecycle,
+media readiness, 30-second progress samples and up to eight replayed unacknowledged
+observations. Historical samples have a separate bounded budget; late acknowledgements
+from destroyed hooks cannot overwrite current evidence. See
+[decision 0024](decisions/0024-tab-playback-recovery.md).
+Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one skipped;
+Node checks passed 37 tests. The production-player browser harness passed in
+Chromium 155 with synthetic MP4/HLS, including actual direct reloads, playing/paused
+recovery and one HLS global-offset recovery request. Focused LiveView/diagnostic checks
+passed 20 tests, including paused HLS recovery through the real backend operation.
+The independent review's delayed-acknowledgement finding was reproduced and fixed;
+rejected recovery and batched historical progress also have regression coverage.
+These changes are local and not deployed. Target iPhone playback and the cause of
+the reported page recreations remain unverified; next step is deployment followed by
+representative playback/reload checks on the target browser.
+
 Movie detail now follows the episode playback layout: a compact title/year heading,
 a prominent player, a shared expandable synopsis, and versions inside playback options.
 The selected version is indicated and playback errors offer the existing retry action.

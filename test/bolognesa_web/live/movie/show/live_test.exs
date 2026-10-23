@@ -370,6 +370,26 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
              )
     end
 
+    test "tab recovery uses an authorized whole-file offset and preserves pause", ctx do
+      session = start_inspected_version(ctx)
+
+      render_hook(ctx.view, "playback_restore", %{
+        "session_id" => session.id,
+        "position_ms" => "10000",
+        "playing" => "false"
+      })
+
+      next = preparing_session(ctx.view)
+      assert next.id != session.id
+      assert next.offset_ms == 10_000
+      make_ready(ctx.view, next)
+
+      assert has_element?(
+               ctx.view,
+               "#movie-video-frame[data-video-id='movie-video-#{next.id}'][data-autoplay='false']"
+             )
+    end
+
     test "failed seek retains the previous session for explicit cleanup", ctx do
       session = start_inspected_version(ctx)
       make_ready(ctx.view, session)

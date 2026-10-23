@@ -32,6 +32,7 @@
       <BolognesaWeb.Player.player
         prefix="movie"
         kind={:movie}
+        viewer_id={@current_scope.actor.id}
         class="movie-player space-y-3"
         poster={
           @detail.movie.backdrop_path &&

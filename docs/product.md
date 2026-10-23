@@ -22,4 +22,8 @@ Growth should follow evidence from use: first make setup, scanning, identificati
 - Treat user corrections and future persisted progress as durable data.
 - Record what has been verified separately from expected behavior.
 
+Video playback keeps a best-effort position and pause checkpoint in the same browser
+tab for recovery after page recreation. Durable account progress and continuing on
+another device remain future work.
+
 The [roadmap](roadmap.md) describes current milestones. Architecture rules live in [conventions](conventions/), and accepted trade-offs are in [decisions](decisions/).

@@ -14,7 +14,17 @@ const temporary = await mkdtemp(join(tmpdir(), "bolognesa-player-"))
 const bundle = join(temporary, "player.js")
 await build({stdin: {contents: `import hook from './assets/js/hooks/video_player.js';
 window.events = [];
-window.context = {el: document.querySelector('#frame'), pushEvent: (...event) => window.events.push(event)};
+window.context = {el: document.querySelector('#frame'), pushEvent: (...event) => {
+  window.events.push(event);
+  if (new URLSearchParams(location.search).get('recovery') === 'hls' && event[0] === 'playback_restore') {
+    const data = event[1];
+    setTimeout(() => {
+      Object.assign(window.context.el.dataset, {sessionId: 'restored', videoId: 'restored',
+        offsetMs: data.position_ms, src: '/index.m3u8?restored', autoplay: data.playing});
+      hook.updated.call(window.context);
+    }, 0);
+  }
+}};
 window.hook = hook;
 hook.mounted.call(window.context);`, resolveDir: process.cwd()}, bundle: true, format: "esm", outfile: bundle})
 const playerStyles = (await readFile("assets/css/app.css", "utf8")).split("/* Video.js owns")[1]
@@ -32,7 +42,12 @@ const server = createServer(async (request, response) => {
       return
     }
     const types = {svg: "image/svg+xml", js: "text/javascript", mp4: "video/mp4", m3u8: "application/vnd.apple.mpegurl", ts: "video/mp2t"}
-    const content = name ? await readFile(path) : Buffer.from(html)
+    let document = html
+    const recovery = new URL(request.url, "http://localhost").searchParams.get("recovery")
+    if (recovery) document = document.replace('data-file-id="1"', 'data-file-id="1" data-recovery-scope="1:movie:1"')
+    if (recovery === "hls") document = document.replace('data-src="/sample.mp4"',
+      'data-src="/index.m3u8" data-session-id="initial" data-offset-ms="0" data-duration-ms="600000"')
+    const content = name ? await readFile(path) : Buffer.from(document)
     const headers = {"Content-Type": types[name.split(".").pop()] ?? "text/html", "Accept-Ranges": "bytes"}
     const range = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range || "")
     if (range) {
@@ -256,6 +271,42 @@ try {
     `Expected error diagnostic before playback fallback: ${JSON.stringify(errorOrder)}`)
   await failurePage.close()
   console.log("Diagnostics: direct media error is observed before session-changing fallback.")
+  const recoveryPage = await browser.newPage()
+  recoveryPage.on("pageerror", error => errors.push(error.message))
+  const recoveryUrl = `http://127.0.0.1:${server.address().port}/?recovery=direct`
+  await recoveryPage.goto(recoveryUrl)
+  await recoveryPage.waitForFunction(() => document.querySelector("video").currentTime > 0.1)
+  await recoveryPage.evaluate(() => {
+    const video = document.querySelector("video")
+    video.pause()
+    video.currentTime = 8
+  })
+  await recoveryPage.waitForFunction(() => JSON.parse(sessionStorage.getItem("bolognesa.playback.checkpoint"))?.positionMs === 8000)
+  await recoveryPage.reload()
+  await recoveryPage.waitForFunction(() => document.querySelector("video").readyState >= 2 && document.querySelector("video").currentTime >= 8)
+  assert.equal(await recoveryPage.locator("video").evaluate(video => video.paused), true)
+  await recoveryPage.locator("video").evaluate(video => video.play())
+  await recoveryPage.waitForFunction(() => document.querySelector("video").currentTime > 8.2)
+  await recoveryPage.reload()
+  await recoveryPage.waitForFunction(() => document.querySelector("video").currentTime > 8.2 && !document.querySelector("video").paused)
+  await recoveryPage.addInitScript(() => {
+    if (new URLSearchParams(location.search).get("recovery") === "hls") {
+      sessionStorage.setItem("bolognesa.playback.checkpoint", JSON.stringify({scope: "1:movie:1", fileId: "1",
+        positionMs: 360000, paused: true, savedAt: Date.now()}))
+    }
+  })
+  await recoveryPage.goto(recoveryUrl.replace("direct", "hls"))
+  await recoveryPage.waitForFunction(() => document.querySelector("video").readyState >= 2 && window.context.el.dataset.sessionId === "restored")
+  assert.equal(await recoveryPage.locator("video").evaluate(video => video.paused), true)
+  const restored = await recoveryPage.evaluate(() => ({
+    time: document.querySelector("bolognesa-video-player").store.state.currentTime,
+    seeks: window.events.filter(([name]) => name === "playback_restore"),
+  }))
+  assert.ok(Math.abs(restored.time - 360) < 1)
+  assert.equal(restored.seeks.length, 1)
+  assert.equal(restored.seeks[0][1].playing, "false")
+  await recoveryPage.close()
+  console.log("Recovery: actual page reload restores direct position/play/pause; HLS restores file offset with one authorized seek.")
   assert.deepEqual(errors, [])
   await page.evaluate(() => window.hook.destroyed.call(window.context))
   console.log(`Video.js browser checks passed in Chromium ${browser.version()}.`)

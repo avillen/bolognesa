@@ -60,7 +60,8 @@ const TranscodeVideo = {
     if (Hls.isSupported()) {
       this.hls = new Hls({lowLatencyMode: false, liveSyncDurationCount: 3, startPosition: 0})
       this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (this.el.dataset.autoplay === "true") this.el.play().catch(() => {})
+        if (this.onReady) this.onReady()
+        else if (this.el.dataset.autoplay === "true") this.el.play().catch(() => {})
       })
       this.hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) this.onError(true)
@@ -70,7 +71,8 @@ const TranscodeVideo = {
     } else if (this.el.canPlayType("application/vnd.apple.mpegurl")) {
       this.el.src = this.el.dataset.src
       this.onNativeReady = () => {
-        if (this.el.dataset.autoplay === "true") this.el.play().catch(() => {})
+        if (this.onReady) this.onReady()
+        else if (this.el.dataset.autoplay === "true") this.el.play().catch(() => {})
       }
       this.el.addEventListener("loadedmetadata", this.onNativeReady, {once: true})
     } else {

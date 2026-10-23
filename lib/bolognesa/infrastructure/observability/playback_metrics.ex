@@ -3,7 +3,27 @@ defmodule Bolognesa.Infrastructure.Observability.PlaybackMetrics do
 
   use PromEx.Plugin
 
-  @diagnostics [:mounted, :disconnected, :reconnected, :visibility, :error, :waiting, :recovered]
+  @diagnostics [
+    :mounted,
+    :disconnected,
+    :reconnected,
+    :visibility,
+    :error,
+    :waiting,
+    :recovered,
+    :pagehide,
+    :pageshow,
+    :online,
+    :offline,
+    :socket_open,
+    :socket_closed,
+    :socket_error,
+    :destroyed,
+    :progress,
+    :restored,
+    :restore_failed,
+    :autoplay_blocked
+  ]
   @close_reasons [
     :version_selected,
     :seek,

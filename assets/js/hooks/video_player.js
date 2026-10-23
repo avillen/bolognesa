@@ -1,6 +1,7 @@
 import {createPlayer, videoFeatures, timeFeature, bufferFeature} from "../../vendor/videojs.min.mjs"
 import {fileTimeFeature, fileBufferFeature} from "../video_timeline.mjs"
 import {createPlaybackDiagnostics} from "../playback_diagnostics.mjs"
+import {createPlaybackRecovery} from "../playback_recovery.mjs"
 import VideoError from "./video_error"
 import TranscodeVideo from "./transcode_video"
 
@@ -28,6 +29,7 @@ const VideoPlayer = {
     }
     this.clearInitialLoading = () => skin.removeAttribute("data-initial-loading")
     this.video.addEventListener("loadeddata", this.clearInitialLoading)
+    this.recovery = createPlaybackRecovery(this)
     this.diagnostics = createPlaybackDiagnostics(this)
     this.sync = () => {
       const data = this.el.dataset
@@ -44,6 +46,8 @@ const VideoPlayer = {
         return
       }
       this.signature = signature
+      this.recovery.beforeSourceChange()
+      if (this.onDirectReady) this.video.removeEventListener("loadedmetadata", this.onDirectReady)
       this.control?.destroyed.call(this.context)
       this.control = null
       this.video.pause()
@@ -53,27 +57,32 @@ const VideoPlayer = {
       this.video.id = data.videoId
       for (const key of Object.keys(this.video.dataset)) delete this.video.dataset[key]
       Object.assign(this.video.dataset, data)
-      if (!source) return
+      if (!this.recovery.source()) return
       this.control = data.sessionId ? TranscodeVideo : VideoError
       this.context = {
         el: this.video, pushEvent: (...args) => this.pushEvent(...args),
         reportPlaybackError: () => this.diagnostics.reportError(),
+        onReady: () => this.recovery.ready(),
       }
       this.control.mounted.call(this.context)
       if (!data.sessionId) {
+        this.onDirectReady = () => this.recovery.ready()
+        this.video.addEventListener("loadedmetadata", this.onDirectReady, {once: true})
         this.video.src = source
-        this.video.play().catch(() => {})
       }
     }
+    this.retrySource = () => { this.signature = null; this.sync() }
     this.sync()
   },
   updated() { this.sync() },
   disconnected() { this.diagnostics?.disconnected() },
   reconnected() { this.diagnostics?.reconnected() },
   destroyed() {
+    this.recovery?.destroy()
     this.diagnostics?.destroy()
     this.control?.destroyed.call(this.context)
     this.video.removeEventListener("loadeddata", this.clearInitialLoading)
+    if (this.onDirectReady) this.video.removeEventListener("loadedmetadata", this.onDirectReady)
     this.video.pause()
     this.video.removeAttribute("src")
     this.video.load()

@@ -73,6 +73,7 @@
       <BolognesaWeb.Player.player
         prefix="episode"
         kind={:episode}
+        viewer_id={@current_scope.actor.id}
         retry_file_id={
           Enum.find_value(@detail.versions, &(&1.availability == :available && &1.id))
         }

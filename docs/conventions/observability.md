@@ -195,7 +195,7 @@ below have prefix `[:bolognesa, :playback]` and measurement `count: 1`.
 | `[:session, :exited]` | `exit_status` | `session_id`, `file_id`, `strategy`, `reason` (`finished` or `failed`) |
 | `[:liveview, :terminated]` | None | `session_id`, `file_id`, normalized `termination_reason` |
 | `[:hls, :failed]` | None | Valid UUID `session_id` when supplied, `resource_type`, `failure_stage`, `reason`, HTTP `status` |
-| `[:browser, :diagnostic]` | None | `tab_id`, current `session_id`/`file_id`, `diagnostic`, `position_ms`, `paused`, `visibility`, `sequence`, `client_time_ms`, numeric `media_error`, `buffered_ms`, `stall_duration_ms` |
+| `[:browser, :diagnostic]` | None | `tab_id`, `page_id`, `session_id`/`file_id`, `diagnostic`, `position_ms`, `paused`, `visibility`, `sequence`, `client_time_ms`, numeric `media_error`, `buffered_ms`, `stall_duration_ms`, `replayed`, `ready_state`, `network_state`, `online`, `navigation_type`, `ws_code`, `ws_clean` |
 
 Session close reasons distinguish `version_selected`, `seek`, `ended`, `client_error`,
 `preparation_timeout`, `source_invalidated`, `liveview_terminated`, `owner_terminated`,
@@ -219,13 +219,29 @@ include startup and seek waits, not just interruptions after sustained playback.
 A random tab UUID is retained in session storage when available; it is only a
 correlation hint, never authorization. Positions include the HLS file offset. The client
 buffers at most eight observations during a hook disconnect and flushes them on reconnect.
-The server accepts at most 120 valid observations per LiveView lifetime and drops stale or
-invalid file/session observations. Client times are untrusted wall-clock hints; sequence
-numbers order observations within one hook instance, not across reloads. Browser termination,
-a full reload, hook destruction, or prolonged suspension can lose pending observations.
+The server accepts at most 120 ordinary observations, 1,440 progress samples spaced at
+least 25 seconds apart, and eight replayed observations per LiveView lifetime. Historical
+progress uses the separate replay budget, so a recovered batch retains all its samples.
+Ordinary observations require the current file/session; explicitly replayed observations
+may reference an earlier valid session UUID for the current file. Client times are
+untrusted wall-clock hints; sequence numbers order observations within one document,
+not across reloads. Browser termination, a full reload, hook destruction, or prolonged
+suspension can lose pending observations.
 Neither LiveView termination callbacks nor final browser signals are guaranteed on abrupt
 process/device termination. Diagnose with both server and browser evidence; missing signals
 are not proof that an event did not happen.
+
+Additional browser diagnostic names are `pagehide`, `pageshow`, `online`, `offline`,
+`socket_open`, `socket_closed`, `socket_error`, `destroyed`, `progress`, `restored`,
+`restore_failed` and `autoplay_blocked`. Page IDs are random per document; tab IDs
+survive reloads where storage is available. `navigation_type` is `navigate`, `reload`,
+`back_forward` or `unknown`; media ready/network states use native bounded numeric enums.
+WebSocket codes are zero when unavailable, otherwise integers from 1000 to 4999;
+`ws_clean` records the browser's cleanliness flag. These observations do not include
+raw reasons, URLs or exception text. A 30-second timer samples requested playback.
+Up to eight unacknowledged observations survive in session storage for the same
+viewer/content/file and can be replayed after a reload, with possible duplicates.
+See [decision 0024](../decisions/0024-tab-playback-recovery.md) for recovery semantics.
 
 ## Optional Prometheus export
 

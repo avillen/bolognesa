@@ -37,6 +37,15 @@ const liveSocket = new LiveSocket("/live", Socket, {
   hooks: {AudioPlayer, ...colocatedHooks, ImageFallback, VideoPlayer, NavigationMenu, BrowsePosition},
 })
 
+// Pass bounded transport facts to active playback hooks; never forward raw errors/reasons.
+const transportEvent = (diagnostic, extra = {}) => window.dispatchEvent(
+  new CustomEvent("bolognesa:transport", {detail: {diagnostic, ...extra}}))
+liveSocket.getSocket().onOpen(() => transportEvent("socket_open"))
+liveSocket.getSocket().onError(() => transportEvent("socket_error"))
+liveSocket.getSocket().onClose(event => transportEvent("socket_closed", {
+  ws_code: event?.code, ws_clean: event?.wasClean,
+}))
+
 // Show progress bar on live navigation and form submits
 topbar.config({barColors: {0: "#c26e54"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))

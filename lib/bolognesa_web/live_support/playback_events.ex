@@ -23,6 +23,21 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
 
   def handle_event("play", _params, socket), do: {:noreply, socket}
 
+  def handle_event("playback_restore", %{"session_id" => id, "position_ms" => _} = params, socket) do
+    {:noreply, next} = handle_event("playback_seek", params, socket)
+    previous = socket.assigns[:transcode_session]
+    session = next.assigns[:transcode_session]
+
+    accepted =
+      not is_nil(previous) and previous.id == id and not is_nil(session) and
+        session.id != previous.id and is_nil(next.assigns[:playback_error])
+
+    {:reply, %{accepted: accepted}, next}
+  end
+
+  def handle_event("playback_restore", _params, socket),
+    do: {:reply, %{accepted: false}, socket}
+
   def handle_event("playback_error", %{"file_id" => file_id} = params, socket) do
     if socket.assigns.selected_file_id &&
          Integer.to_string(socket.assigns.selected_file_id) == file_id &&

@@ -153,7 +153,8 @@ defmodule Bolognesa.Infrastructure.PromExTest do
         :telemetry.execute([:bolognesa, :playback, :browser, :diagnostic], %{count: 1}, %{
           diagnostic: diagnostic,
           file_id: 123_456,
-          tab_id: "private-tab"
+          tab_id: "private-tab",
+          page_id: "private-page"
         })
       end
 
@@ -169,6 +170,7 @@ defmodule Bolognesa.Infrastructure.PromExTest do
     assert export =~ ~s(bolognesa_playback_ffmpeg_exits_total{result="failed"} 1)
     refute export =~ "private-diagnostic"
     refute export =~ "private-tab"
+    refute export =~ "private-page"
     refute export =~ "private-session"
   end
 
