@@ -377,8 +377,19 @@ Disabling CSS container queries alone did not reproduce the missing timeline.
 `mix precommit` passed compilation, formatting, Credo and 638 tests with one skipped;
 `node --test assets/test/*.mjs` passed 37 tests. Independent review found no blocking
 issues in the additional formatter patch.
-These additional changes are local, in `scripts/vendor_videojs.mjs`,
-`scripts/verify_video_player.mjs` and `assets/vendor/videojs.min.mjs`.
+The additional formatter changes are published and deployed as
+`b464f27bbb10326b060ad4ad89ee9f55d8dbd090` with image
+`ghcr.io/avillen/bolognesa@sha256:4762198f4c8c34d5eecca85cb1caf47a93c160b8fd11a03b68219a9a615009f7`.
+[Application CI](https://github.com/avillen/bolognesa/actions/runs/40008842220) and
+[image CI](https://github.com/avillen/bolognesa/actions/runs/40008842125) passed.
+Local `make check-screenshots` passed with unchanged captures;
+[screenshot CI](https://github.com/avillen/bolognesa/actions/runs/40008842076) is still running.
+The incoming commit passed the pinned Gitleaks scan.
+The normal update created and validated `pre-migration-20261023-211030-29525.dump`
+and its previous-image reference; no migrations were pending. Post-update verification
+confirmed the selected image running, healthy PostgreSQL, successful HTTP health,
+unchanged application/database mounts and all three media mounts remaining read-only.
+The backup was revalidated after activation. Target-TV playback remains unverified.
 Next step: measure the target browser's capabilities and rendered time controls to
 identify why the whole timeline is absent, then verify on the TV before claiming a fix.
 
