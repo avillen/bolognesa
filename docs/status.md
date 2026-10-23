@@ -153,6 +153,15 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Recorded verification
 
+- GitHub Actions Node.js migration: container publishing uses `download-artifact@v7`;
+  CI and screenshot checks use `checkout@v5`, `cache@v5` and `setup-node@v5`
+  where applicable. Screenshot scripts now run on Node.js 24. All nine distinct
+  referenced actions declare the Node.js 24 runtime. Actionlint 1.7.7 passed all
+  three workflows; all 37 JavaScript tests passed on Node.js 24.22.1.
+  `mix precommit` passed compilation, formatting, Credo and 638 tests with one
+  skipped on a full rerun after an initial test failure passed in isolation.
+  The next GitHub Actions run must confirm artifact publication and screenshot checks.
+
 - Playback simplification and transcode naming: `mix precommit` passed with 635 tests and
   one skipped; `make check-screenshots` passed locally. [Application CI](https://github.com/avillen/bolognesa/actions/runs/39854169225),
   [container image CI](https://github.com/avillen/bolognesa/actions/runs/39854169319), and
