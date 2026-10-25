@@ -425,8 +425,15 @@ regression to match the TV probe. Unrelated formatting errors continue to surfac
 Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one
 skipped. Node checks passed 41 tests, the production-hook check passed in Chromium 155,
 and `make check-screenshots` passed with unchanged captures. The additional TypeError
-fallback is implemented locally; the TV's exact exception type and corrected rendering
-still need confirmation after deployment.
+fallback is published and deployed as `c9458fac84b7714eb9aedf60b015baacd85b949f` with
+image `ghcr.io/avillen/bolognesa@sha256:fab4c64ed73aa597bb33177936cf5750a211a6330373f0b75afad81b5d5107d2`.
+[Application CI](https://github.com/avillen/bolognesa/actions/runs/40222308350) and
+[image CI](https://github.com/avillen/bolognesa/actions/runs/40222308361) passed. Local
+screenshots passed unchanged and Gitleaks found no leaks in the incoming commit. The
+update created and validated `pre-migration-20261025-194256-21604.dump` with the previous
+image reference. Post-update checks confirmed HTTP 200, healthy PostgreSQL, unchanged
+application/database mounts and three read-only media mounts; the backup was revalidated.
+The TV's exact Intl exception type and corrected rendering still need confirmation.
 
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query
