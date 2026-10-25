@@ -19,6 +19,19 @@ test("time units fall back to readable abbreviations on older browsers", () => {
   }
 })
 
+test("unit number formatting falls back when an older implementation throws TypeError", () => {
+  class LegacyTypeErrorNumberFormat extends Intl.NumberFormat {
+    constructor(locale, options) {
+      if (options?.style === "unit") throw new TypeError("Unsupported unit style")
+      super(locale, options)
+    }
+  }
+  for (const locale of ["en", "es"]) {
+    const formatter = createTimeNumberFormat(locale, {style: "unit", unit: "second", unitDisplay: "long"}, LegacyTypeErrorNumberFormat)
+    assert.equal(formatter.format(2), `2 s`)
+  }
+})
+
 test("supported formatting retains native localized output", () => {
   for (const locale of ["en", "es"]) {
     const options = {style: "unit", unit: "minute", unitDisplay: "long"}

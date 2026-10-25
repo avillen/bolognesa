@@ -412,22 +412,21 @@ passed the pinned Gitleaks scan. The update created and validated
 no migrations were pending. Post-update verification confirmed HTTP 200, healthy
 PostgreSQL, unchanged application/database mounts and three read-only media mounts;
 the backup and matching previous-image reference were revalidated.
-A target-TV observation now reports a wide time group and slider (812/768 CSS pixels),
-zero rendered track dimensions, zero nonempty labels, available container/layer/Unicode
-support, unavailable Intl unit formatting and a reported Chrome major version of 111.
-This distinguishes missing child rendering from a collapsed time group.
+The target-TV observation reports that the time group and slider have width but their
+track and labels are absent. CSS container/layer checks and Unicode properties succeed,
+`intl_units` is false, `intl_lists` is true, and the browser reports Chrome major 111.
 
-Simulating an existing `Intl.ListFormat` that rejects `type: "unit"` reproduces the
-complete observed rendering failure: both labels empty, no track elements, and three
-RangeErrors. The vendored formatter now falls back to the library's existing plain-list
-join when that supported unit-list request is rejected, preserving native formatting on
-supported implementations and unrelated errors. An additional bounded `intl_lists` probe
-will check that API on the TV. Local Node checks pass 40 tests and the production-hook
-Chrome 155 check passes with unit number/list formatting and Unicode properties disabled.
-Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one skipped.
-Independent review found no blocking findings. This correction is still local; target-TV
-unit-list support and corrected rendering remain to be verified. Next step: deploy,
-then reproduce playback on the TV.
+The number-format fallback previously handled only `RangeError`. A simulated
+`TypeError` from `Intl.NumberFormat` with unit style reproduces the empty labels and
+missing track; accepting that error only for unit formatting restores the controls in
+the production-hook browser check. Native unit-list formatting is retained in the
+regression to match the TV probe. Unrelated formatting errors continue to surface.
+
+Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one
+skipped. Node checks passed 41 tests, the production-hook check passed in Chromium 155,
+and `make check-screenshots` passed with unchanged captures. The additional TypeError
+fallback is implemented locally; the TV's exact exception type and corrected rendering
+still need confirmation after deployment.
 
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query

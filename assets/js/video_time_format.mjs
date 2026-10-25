@@ -4,7 +4,7 @@ export function createTimeNumberFormat(locale, options, NumberFormat = Intl.Numb
   try {
     return new NumberFormat(locale, options)
   } catch (error) {
-    if (!(error instanceof RangeError) || options?.style !== "unit") throw error
+    if (!(error instanceof RangeError || error instanceof TypeError) || options?.style !== "unit") throw error
     const suffix = {hour: "h", minute: "min", second: "s"}[options.unit]
     if (!suffix) throw error
     const number = new NumberFormat(locale, {useGrouping: false})
