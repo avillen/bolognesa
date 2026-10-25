@@ -372,8 +372,21 @@ Local `mix precommit` passed compilation, formatting, Credo and 638 tests with o
 skipped; Node checks passed 42 tests. The production-hook harness now uses the
 application target and passed direct/HLS controls and recovery in Chrome 155.
 The default Playwright Chromium run timed out waiting for synthetic MP4 playback;
-the documented H.264-capable Chrome run passed. Next: publish/deploy and verify catalog connection
-and representative playback on the target iPad; device compatibility remains unverified.
+the documented H.264-capable Chrome run passed. Local `make check-screenshots` passed
+with unchanged captures. The correction is published and deployed as
+`4c9ba04c337c04db6604d1841e3d8fa0918f589e`, using image
+`ghcr.io/avillen/bolognesa@sha256:b436d827020b8f73b3a25fe97ab06d305398c52c82503ad62fef1ef94b2177c4`.
+[Application CI](https://github.com/avillen/bolognesa/actions/runs/40223237030) and
+[image CI](https://github.com/avillen/bolognesa/actions/runs/40223236863) passed;
+[screenshot CI](https://github.com/avillen/bolognesa/actions/runs/40223236784) is pending.
+The incoming commit passed the pinned Gitleaks scan. The normal update created and
+validated `pre-migration-20261025-195454-10052.dump` and its matching previous-image
+reference; no migrations were pending. Post-update checks confirmed the selected
+ARM64 image, healthy PostgreSQL, HTTP 200, authenticated catalog reads, unchanged
+application/database mounts and configuration, three read-only media mounts, and
+HTTP 401 for unauthenticated media delivery. The served JavaScript contains no class
+static blocks. Next: verify catalog connection and representative playback on the
+target iPad; device compatibility remains unverified.
 
 The reported Hisense built-in browser still shows play/pause, volume, settings and
 fullscreen but no timeline or time labels after the deployed Intl unit-format fallback.
