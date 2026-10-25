@@ -50,12 +50,13 @@ config :phoenix_live_view,
 # at the `config/runtime.exs`.
 config :bolognesa, Bolognesa.Mailer, adapter: Swoosh.Adapters.Local
 
+# Keep eagerly imported player dependencies parseable on iPadOS 16.2 so LiveView can start.
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.25.4",
   bolognesa: [
     args:
-      ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
+      ~w(js/app.js --bundle --target=es2022,safari16.2 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]

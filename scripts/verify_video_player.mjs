@@ -12,6 +12,8 @@ const mediaDirectory = process.argv[2]
 if (!mediaDirectory) throw new Error("Pass a directory with synthetic sample.mp4 and HLS index.m3u8 fixtures.")
 const temporary = await mkdtemp(join(tmpdir(), "bolognesa-player-"))
 const bundle = join(temporary, "player.js")
+const buildConfig = await readFile("config/config.exs", "utf8")
+const target = buildConfig.match(/--target=([^\s]+)/)[1].split(",")
 await build({stdin: {contents: `import hook from './assets/js/hooks/video_player.js';
 window.events = [];
 window.context = {el: document.querySelector('#frame'), pushEvent: (...event) => {
@@ -26,7 +28,7 @@ window.context = {el: document.querySelector('#frame'), pushEvent: (...event) =>
   }
 }};
 window.hook = hook;
-hook.mounted.call(window.context);`, resolveDir: process.cwd()}, bundle: true, format: "esm", outfile: bundle})
+hook.mounted.call(window.context);`, resolveDir: process.cwd()}, bundle: true, target, format: "esm", outfile: bundle})
 const playerStyles = (await readFile("assets/css/app.css", "utf8")).split("/* Video.js owns")[1]
 const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><style>/* Video.js owns${playerStyles}</style></head><body>
 <div id="frame" data-video-id="video-1" data-file-id="1" data-src="/sample.mp4" data-autoplay="true" data-paused-server="false" class="bolognesa-video-frame" style="width:800px">

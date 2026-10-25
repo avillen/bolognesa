@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-23.
+Last reviewed: 2026-10-25.
 
 ## Implemented behavior
 
@@ -361,6 +361,19 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 - Local Compose startup, migrations, and initial setup were verified on x86_64. A compatible MP4 played in Chrome on a private deployment. Music inspection handles attached cover art without rejecting valid audio.
 
 ## Limits and next work
+
+iPadOS 16.2 reportedly leaves all catalogs loading in both Safari and Chrome.
+The eagerly imported Video.js bundle contains class static initialization blocks,
+unsupported by Safari before 16.4; a parse failure prevents LiveView from starting.
+The application build now targets Safari 16.2 alongside ES2022, lowering these blocks.
+A regression fails with the previous target and passes with the corrected target;
+the actual `mix assets.build` output also contains no class static blocks.
+Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one
+skipped; Node checks passed 42 tests. The production-hook harness now uses the
+application target and passed direct/HLS controls and recovery in Chrome 155.
+The default Playwright Chromium run timed out waiting for synthetic MP4 playback;
+the documented H.264-capable Chrome run passed. Next: publish/deploy and verify catalog connection
+and representative playback on the target iPad; device compatibility remains unverified.
 
 The reported Hisense built-in browser still shows play/pause, volume, settings and
 fullscreen but no timeline or time labels after the deployed Intl unit-format fallback.
