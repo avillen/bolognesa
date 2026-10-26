@@ -53,62 +53,6 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
     assert_receive {^event, %{count: 1},
                     %{diagnostic: :recovered, buffered_ms: 8000, stall_duration_ms: 1600}}
 
-    controls =
-      Map.merge(params, %{
-        "diagnostic" => "controls",
-        "controls_group_width" => 500,
-        "controls_slider_width" => 400,
-        "controls_track_width" => 380,
-        "controls_labels" => 2,
-        "controls_hidden" => false,
-        "css_container" => true,
-        "css_layer" => true,
-        "intl_units" => false,
-        "unicode_properties" => false,
-        "browser_major" => 63,
-        "intl_unit_constructor" => "ok",
-        "intl_unit_format" => "range",
-        "time_format_step" => "hour_long",
-        "time_format_error" => "range",
-        "time_format_locale" => "es"
-      })
-
-    assert {:noreply, _} = PlaybackEvents.handle_event("playback_diagnostic", controls, socket)
-
-    assert_receive {^event, %{count: 1},
-                    %{
-                      diagnostic: :controls,
-                      controls_slider_width: 400,
-                      controls_labels: 2,
-                      browser_major: 63,
-                      time_format_step: "hour_long",
-                      time_format_error: "range",
-                      intl_units: false
-                    }}
-
-    for {key, value} <- [
-          {"controls_group_width", -1},
-          {"controls_slider_width", 100_001},
-          {"controls_track_width", "private"},
-          {"controls_labels", 3},
-          {"css_container", "private"},
-          {"browser_major", 1000},
-          {"controls_hidden", nil},
-          {"intl_unit_format", "private"},
-          {"time_format_step", "private"},
-          {"time_format_error", "private"},
-          {"time_format_locale", "private"}
-        ] do
-      assert {:noreply, ^socket} =
-               PlaybackEvents.handle_event(
-                 "playback_diagnostic",
-                 Map.put(controls, key, value),
-                 socket
-               )
-    end
-
-    refute_receive {^event, _, _}
-
     page = Ecto.UUID.generate()
 
     lifecycle =

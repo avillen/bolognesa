@@ -4,7 +4,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
 
   @diagnostics %{
     "mounted" => :mounted,
-    "controls" => :controls,
     "disconnected" => :disconnected,
     "reconnected" => :reconnected,
     "visibility" => :visibility,
@@ -108,24 +107,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
 
   defp extra_fields(params) do
     defaults = %{
-      controls_group_width: 0,
-      controls_slider_width: 0,
-      controls_track_width: 0,
-      controls_slider_height: 0,
-      controls_track_height: 0,
-      controls_labels: 0,
-      controls_hidden: false,
-      css_container: false,
-      css_layer: false,
-      intl_unit_constructor: "not_run",
-      intl_unit_format: "not_run",
-      time_format_step: "not_run",
-      time_format_error: "none",
-      time_format_locale: "unknown",
-      intl_units: false,
-      intl_lists: false,
-      unicode_properties: false,
-      browser_major: 0,
       page_id: nil,
       replayed: false,
       ws_code: 0,
@@ -145,58 +126,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
       do: {:ok, fields},
       else: :error
   end
-
-  defp valid_extra?(key, value)
-       when key in [
-              :controls_group_width,
-              :controls_slider_width,
-              :controls_track_width,
-              :controls_slider_height,
-              :controls_track_height
-            ],
-       do: is_integer(value) and value in 0..100_000
-
-  defp valid_extra?(:controls_labels, value), do: is_integer(value) and value in 0..2
-  defp valid_extra?(:browser_major, value), do: is_integer(value) and value in 0..999
-
-  defp valid_extra?(key, value)
-       when key in [
-              :controls_hidden,
-              :css_container,
-              :css_layer,
-              :intl_units,
-              :intl_lists,
-              :unicode_properties
-            ],
-       do: is_boolean(value)
-
-  defp valid_extra?(key, value) when key in [:intl_unit_constructor, :intl_unit_format],
-    do: value in ["not_run", "ok", "range", "type", "reference", "other"]
-
-  defp valid_extra?(:time_format_error, value),
-    do: value in ["none", "range", "type", "reference", "other"]
-
-  defp valid_extra?(:time_format_locale, value), do: value in ["unknown", "en", "es"]
-
-  defp valid_extra?(:time_format_step, value),
-    do:
-      value in [
-        "not_run",
-        "ok",
-        "numeric",
-        "hour_long",
-        "hour_short",
-        "hour_narrow",
-        "minute_long",
-        "minute_short",
-        "minute_narrow",
-        "second_long",
-        "second_short",
-        "second_narrow",
-        "list_long",
-        "list_short",
-        "list_narrow"
-      ]
 
   defp valid_extra?(:page_id, nil), do: true
   defp valid_extra?(:page_id, value), do: match?({:ok, _}, Ecto.UUID.cast(value))

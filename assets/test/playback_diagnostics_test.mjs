@@ -3,7 +3,7 @@ import assert from "node:assert/strict"
 import {readFile} from "node:fs/promises"
 
 const source = await readFile(new URL("../js/playback_diagnostics.mjs", import.meta.url), "utf8")
-const {createPlaybackDiagnostics, measurePlayerControls} = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`)
+const {createPlaybackDiagnostics} = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`)
 
 function setup(createDiagnostics = createPlaybackDiagnostics) {
   const events = []
@@ -166,49 +166,4 @@ test("the periodic progress timer stops when the hook is destroyed", t => {
   const count = events.length
   t.mock.timers.tick(60000)
   assert.equal(events.length, count)
-})
-
-
-test("control probes distinguish missing slider layout from empty labels without collecting browser text", () => {
-  const sized = width => ({getBoundingClientRect: () => ({width})})
-  const group = sized(500)
-  const slider = sized(0)
-  slider.querySelector = () => null
-  const root = {
-    querySelector: selector => selector === ".video-time-slider-group" ? group : slider,
-    querySelectorAll: () => [{textContent: ""}, {textContent: ""}],
-  }
-  const hook = {el: {querySelector: () => ({shadowRoot: root})}}
-  const win = {CSS: {supports: () => false}, navigator: {userAgent: "private Chrome/63.0 TV"},
-    getComputedStyle: () => ({display: "flex", visibility: "visible", opacity: "1"})}
-  const result = measurePlayerControls(hook, win)
-  assert.equal(result.controls_group_width, 500)
-  assert.equal(result.controls_slider_width, 0)
-  assert.equal(result.controls_track_width, 0)
-  assert.equal(result.controls_labels, 0)
-  assert.equal(result.browser_major, 63)
-  assert.equal(result.css_container, false)
-  assert.equal(JSON.stringify(result).includes("private"), false)
-  group.parentElement = {}
-  win.getComputedStyle = element => ({display: "flex", visibility: "visible", opacity: element === group ? "1" : "0"})
-  assert.equal(measurePlayerControls(hook, win).controls_hidden, true)
-  group.getBoundingClientRect = () => ({width: Infinity})
-  assert.equal(measurePlayerControls(hook, win).controls_group_width, 0)
-  assert.doesNotThrow(() => measurePlayerControls({el: {}}, {}))
-})
-
-
-test("controls are sampled once after playing and a destroyed player cancels the sample", t => {
-  t.mock.timers.enable({apis: ["setTimeout"]})
-  const {video, events, diagnostics} = setup()
-  video.dispatchEvent(new Event("playing"))
-  video.dispatchEvent(new Event("playing"))
-  t.mock.timers.tick(350)
-  assert.equal(events.filter(([, x]) => x.diagnostic === "controls").length, 1)
-  diagnostics.destroy()
-  const next = setup()
-  next.video.dispatchEvent(new Event("playing"))
-  next.diagnostics.destroy()
-  t.mock.timers.tick(350)
-  assert.equal(next.events.filter(([, x]) => x.diagnostic === "controls").length, 0)
 })

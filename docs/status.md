@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-25.
+Last reviewed: 2026-10-26.
 
 ## Implemented behavior
 
@@ -388,111 +388,34 @@ HTTP 401 for unauthenticated media delivery. The served JavaScript contains no c
 static blocks. Next: verify catalog connection and representative playback on the
 target iPad; device compatibility remains unverified.
 
-The reported Hisense built-in browser still shows play/pause, volume, settings and
-fullscreen but no timeline or time labels after the deployed Intl unit-format fallback.
-The device failure remains unresolved; the operator confirmed the timeline is still absent
-after the additional Unicode formatter patch was deployed. The browser's engine/version and API support have
-not been measured; the previous formatter simulation did not establish TV compatibility.
+The reported Hisense built-in browser now renders the video timeline and time labels.
+Its `Intl.NumberFormat` accepts unit options at construction but throws `TypeError`
+when accessing or calling `format()`. The adapter now exercises unit formatting inside
+its fallback boundary and uses numeric `h`, `min` and `s` phrases on failure. Supported
+browsers retain native formatting. The operator confirmed both the bar and times appear;
+the same TV observation reports a 678-by-4-pixel track, two labels and a successful
+adapter while the native unit formatting still fails. This verifies rendering on the
+reported TV.
 
-A further formatter dependency on Unicode property escapes was reproduced locally:
-simulating their absence raises three browser errors and leaves time labels empty, but
-still renders a slider, so this does not reproduce the entire TV symptom. The vendoring
-adapter now removes the localized padded minute zero with string operations instead.
-The expanded production-hook Chrome 155 check passes with both Intl unit formatting and
-Unicode property escapes disabled, including English/Spanish labels and direct/HLS seeks.
-Disabling CSS container queries alone did not reproduce the missing timeline.
-`mix precommit` passed compilation, formatting, Credo and 638 tests with one skipped;
-`node --test assets/test/*.mjs` passed 37 tests. Independent review found no blocking
-issues in the additional formatter patch.
-The additional formatter changes are published and deployed as
-`b464f27bbb10326b060ad4ad89ee9f55d8dbd090` with image
-`ghcr.io/avillen/bolognesa@sha256:4762198f4c8c34d5eecca85cb1caf47a93c160b8fd11a03b68219a9a615009f7`.
-[Application CI](https://github.com/avillen/bolognesa/actions/runs/40008842220) and
-[image CI](https://github.com/avillen/bolognesa/actions/runs/40008842125) passed.
-Local `make check-screenshots` passed with unchanged captures;
-[screenshot CI](https://github.com/avillen/bolognesa/actions/runs/40008842076) also passed.
-The incoming commit passed the pinned Gitleaks scan.
-The normal update created and validated `pre-migration-20261023-211030-29525.dump`
-and its previous-image reference; no migrations were pending. Post-update verification
-confirmed the selected image running, healthy PostgreSQL, successful HTTP health,
-unchanged application/database mounts and all three media mounts remaining read-only.
-The backup was revalidated after activation. The operator subsequently confirmed that
-the timeline remains absent on the TV.
-An automatic `controls` observation is implemented to measure the actual packaged
-skin once after playback starts: group/slider/track dimensions, label count, hidden
-ancestor styles and bounded browser capabilities. Raw user-agent text and time labels
-are not transmitted. The observations use existing file/session authorization and
-budgets. This instrumentation does not change or claim to fix the timeline.
-Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one
-skipped; Node checks passed 39 tests. The production-hook Chrome 155 checks passed
-with the measured dimensions, labels and simulated unsupported APIs. Focused server
-and logging checks passed seven tests; independent review found no blocking issues.
-The observation is published and deployed as `93b32fc40b26a23d2759dfac510740f5ba8e93d2`,
-using image `ghcr.io/avillen/bolognesa@sha256:a3357d2467d3fc0970f042dd6d772f471e0c7af7826d58d446fe752b3f45150d`.
-[Application CI](https://github.com/avillen/bolognesa/actions/runs/40010978786),
-[screenshot CI](https://github.com/avillen/bolognesa/actions/runs/40010978723) and
-[image CI](https://github.com/avillen/bolognesa/actions/runs/40010978867) passed.
-Local `make check-screenshots` passed with unchanged captures, and the incoming commit
-passed the pinned Gitleaks scan. The update created and validated
-`pre-migration-20261023-212653-22060.dump` and its previous-image reference;
-no migrations were pending. Post-update verification confirmed HTTP 200, healthy
-PostgreSQL, unchanged application/database mounts and three read-only media mounts;
-the backup and matching previous-image reference were revalidated.
-The target-TV observation reports that the time group and slider have width but their
-track and labels are absent. CSS container/layer checks and Unicode properties succeed,
-`intl_units` is false, `intl_lists` is true, and the browser reports Chrome major 111.
+The correction is deployed as `ffa7777e4c7c2282a80bbb8c3e5a9d2c88959b1d` with image
+`ghcr.io/avillen/bolognesa@sha256:83fcfbf79a74a0e48669cb4ded0b570dc61a7cf8ddafc02fa159e476710d18c9`.
+[Application CI](https://github.com/avillen/bolognesa/actions/runs/40388632597),
+[screenshot CI](https://github.com/avillen/bolognesa/actions/runs/40388632545) and
+[image CI](https://github.com/avillen/bolognesa/actions/runs/40388632585) passed.
+The normal update validated `pre-migration-20261026-204210-30523.dump` and its matching
+previous-image reference. Post-update checks confirmed HTTP 200, healthy PostgreSQL,
+unchanged application/database mounts and three read-only media mounts.
 
-The number-format fallback previously handled only `RangeError`. A simulated
-`TypeError` from `Intl.NumberFormat` with unit style reproduces the empty labels and
-missing track; accepting that error only for unit formatting restores the controls in
-the production-hook browser check. Native unit-list formatting is retained in the
-regression to match the TV probe. Unrelated formatting errors continue to surface.
-
-Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one
-skipped. Node checks passed 41 tests, the production-hook check passed in Chromium 155,
-and `make check-screenshots` passed with unchanged captures. The additional TypeError
-fallback is published and deployed as `c9458fac84b7714eb9aedf60b015baacd85b949f` with
-image `ghcr.io/avillen/bolognesa@sha256:fab4c64ed73aa597bb33177936cf5750a211a6330373f0b75afad81b5d5107d2`.
-[Application CI](https://github.com/avillen/bolognesa/actions/runs/40222308350) and
-[image CI](https://github.com/avillen/bolognesa/actions/runs/40222308361) passed. Local
-screenshots passed unchanged and Gitleaks found no leaks in the incoming commit. The
-update created and validated `pre-migration-20261025-194256-21604.dump` with the previous
-image reference. Post-update checks confirmed HTTP 200, healthy PostgreSQL, unchanged
-application/database mounts and three read-only media mounts; the backup was revalidated.
-The operator confirmed that this patch still leaves the timeline absent on the TV.
-The current observation again has a wide slider, zero track dimensions and zero labels;
-the constructor-only simulations did not establish the device's failure mode.
-
-A bounded formatter probe is implemented to distinguish native constructor
-failure from failure in `format()`, and to exercise the current number/list adapters
-with both numeric and unit styles in the page locale. Only fixed step/error codes are
-logged; raw error messages and formatted content are excluded. The probe has a regression
-for delayed formatting failure and for a constructor rejection that the adapter recovers.
-Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one skipped.
-Node checks passed 43 tests; the production-hook Chrome 155 check and seven focused server/
-logging checks passed. Independent review found no blocking issues.
-The diagnostic is published and deployed as `995b572735d0a8e56c9d0524f361267ed1a971c1`
-with image `ghcr.io/avillen/bolognesa@sha256:42eacd299305dbf575d9d195a272bb881e0ab94ca6a6870c274baf5e35de41d7`.
-[Application CI](https://github.com/avillen/bolognesa/actions/runs/40387247286),
-[screenshot CI](https://github.com/avillen/bolognesa/actions/runs/40387247734) and
-[image CI](https://github.com/avillen/bolognesa/actions/runs/40387247558) passed.
-Local screenshots passed unchanged and the incoming commit passed Gitleaks.
-The normal update validated `pre-migration-20261026-203342-16428.dump` and its previous-image
-reference; no migrations were pending. Post-update checks confirmed HTTP 200, healthy
-PostgreSQL, unchanged application/database mounts and three read-only media mounts;
-the backup and previous-image reference were revalidated.
-The new target-TV observation confirms `intl_unit_constructor=ok`,
-`intl_unit_format=type`, `time_format_step=hour_long`, `time_format_error=type` and
-Spanish locale. This locates the failure after construction, at the format accessor or
-function call. The adapter now exercises `format(0)` inside its existing unit-only
-fallback before returning the native formatter, so delayed RangeError/TypeError failures
-use the numeric-unit alternative. Supported native formatters are returned unchanged.
-A red regression reproduced the failed format accessor and the production browser's
-three errors and absent controls. After the correction, Node checks passed 44 tests,
-the production-hook Chrome 155 check passed with restored track/labels, and local
-`mix precommit` passed compilation, formatting, Credo and 638 tests with one skipped.
-Independent review found no blocking issues. The correction is local; next step: deploy
-and verify the adapter and visible controls on the TV.
+Local cleanup removes the temporary control/formatter probes, their log fields and
+validation, and the speculative ListFormat and Unicode-regex adapters. The confirmed
+unit-format correction, its delayed-access/call regression coverage and the normal
+playback lifecycle/recovery diagnostics remain. The TV reported native ListFormat and
+Unicode support, and browser checks exercise the remaining fallback with those native
+APIs. Node checks passed 40 tests and the production-hook Chrome 155 check passed,
+including rendered times, timeline seeking, direct/HLS playback and recovery.
+Independent review found no blocking issues. `mix precommit` passed compilation,
+formatting, Credo and 638 tests with one skipped; `make check-screenshots` passed with
+unchanged captures. This cleanup has not been deployed.
 
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query

@@ -25,17 +25,11 @@ import "@videojs/html/i18n/locales/es/register";`,
     setup(build) {
       build.onLoad({filter: /@videojs\/utils\/dist\/time\/format\.js$/}, async ({path}) => {
         const source = await readFile(path, "utf8")
-        if (!source.includes("new Intl.NumberFormat(") || !source.includes("new Intl.ListFormat(")) throw new Error("Review Video.js time formatting compatibility patch")
-        const leadingZero = source.split("\n").find(line => line.includes("body = body.replace(new RegExp("))
-        if (!leadingZero) throw new Error("Review Video.js leading time zero compatibility patch")
+        if (!source.includes("new Intl.NumberFormat(")) throw new Error("Review Video.js time formatting compatibility patch")
         const shim = fileURLToPath(new URL("../assets/js/video_time_format.mjs", import.meta.url))
         return {
-          contents: `import {createTimeNumberFormat, createTimeListFormat} from ${JSON.stringify(shim)};\n` +
-            source.replaceAll("new Intl.NumberFormat(", "createTimeNumberFormat(")
-              .replaceAll("new Intl.ListFormat(", "createTimeListFormat(")
-              // This branch always has two-digit minutes below ten. Remove only the
-              // locale's padded zero without requiring Unicode property escapes.
-              .replace(leadingZero, "\t\tbody = body.startsWith(zero) ? body.slice(zero.length) : body;"),
+          contents: `import {createTimeNumberFormat} from ${JSON.stringify(shim)};\n` +
+            source.replaceAll("new Intl.NumberFormat(", "createTimeNumberFormat("),
           resolveDir: dirname(path),
           loader: "js",
         }
