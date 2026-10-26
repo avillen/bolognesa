@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Episode.Show.Reducer.ApplyResult do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
-  alias BolognesaWeb.LiveSupport.PlaybackControl
+  alias BolognesaWeb.Episode.Show.Reducer.SelectPart
 
   @spec call(Phoenix.LiveView.Socket.t(), reference(), term()) :: Phoenix.LiveView.Socket.t()
   def call(socket, request_id, result) do
@@ -19,7 +19,7 @@ defmodule BolognesaWeb.Episode.Show.Reducer.ApplyResult do
       :multi_episode?,
       Enum.any?(detail.versions, &(length(&1.episode_numbers) > 1))
     )
-    |> select_first_available(detail.versions)
+    |> SelectPart.call(socket.assigns.requested_part)
   end
 
   defp apply_result(socket, {:ok, {:error, :too_many_versions}}),
@@ -31,11 +31,4 @@ defmodule BolognesaWeb.Episode.Show.Reducer.ApplyResult do
   defp apply_result(socket, _),
     do:
       socket |> assign(:loading?, false) |> assign(:error, gettext("No se encontró el episodio."))
-
-  defp select_first_available(socket, versions) do
-    case Enum.find(versions, &(&1.availability == :available)) do
-      nil -> socket
-      version -> PlaybackControl.select_version(socket, version.id)
-    end
-  end
 end

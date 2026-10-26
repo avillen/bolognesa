@@ -5,6 +5,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.IdentificationMapper do
 
   @type attributes :: %{
           media_file_id: pos_integer(),
+          part_number: pos_integer() | nil,
           state: Identification.state(),
           origin: Identification.origin(),
           observed_revision: pos_integer(),
@@ -22,6 +23,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.IdentificationMapper do
     %Identification{
       media_file_id: row.media_file_id,
       episode_ids: entry_ids,
+      part_number: row.part_number,
       state: row.state,
       origin: row.origin,
       observed_revision: row.observed_revision,
@@ -39,6 +41,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.IdentificationMapper do
   def to_attributes(decision) do
     %{
       media_file_id: decision.media_file_id,
+      part_number: decision.part_number,
       state: decision.state,
       origin: decision.origin,
       observed_revision: decision.observed_revision,

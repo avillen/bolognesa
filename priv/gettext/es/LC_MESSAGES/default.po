@@ -1820,3 +1820,27 @@ msgstr "Transcodificación de audio"
 #, elixir-autogen, elixir-format
 msgid "Transcodificación de vídeo y audio"
 msgstr "Transcodificación de vídeo y audio"
+
+#, elixir-autogen, elixir-format
+msgid "%{title} (Parte %{number})"
+msgstr "%{title} (Parte %{number})"
+
+#, elixir-autogen, elixir-format
+msgid "Episodio completo"
+msgstr "Episodio completo"
+
+#, elixir-autogen, elixir-format
+msgid "La siguiente parte no está disponible."
+msgstr "La siguiente parte no está disponible."
+
+#, elixir-autogen, elixir-format
+msgid "No se encontró la parte del episodio."
+msgstr "No se encontró la parte del episodio."
+
+#, elixir-autogen, elixir-format
+msgid "Parte %{number}"
+msgstr "Parte %{number}"
+
+#, elixir-autogen, elixir-format
+msgid "Partes del episodio"
+msgstr "Partes del episodio"

@@ -7,6 +7,85 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
   alias Bolognesa.SeriesFixtures
   @actor %AuthenticatedUser{id: 1, role: :admin}
 
+  test "parts produce separate ordered entries while retaining distinct episode counts" do
+    library = SeriesFixtures.library()
+    whole = SeriesFixtures.file(library.id, "Example S01E01.mp4")
+    first = SeriesFixtures.file(library.id, "Example S01E01-part1.mp4")
+    second = SeriesFixtures.file(library.id, "Example S01E01-part2.mp4")
+    alternative = SeriesFixtures.file(library.id, "Example S01E01-part2.720p.mp4")
+    next = SeriesFixtures.file(library.id, "Example S01E02.mp4")
+    for file <- [whole, first, second, alternative], do: SeriesFixtures.identify(file, 1, [1])
+    next_decision = SeriesFixtures.identify(next, 1, [2])
+    assert {:ok, detail} = Series.fetch_episode(@actor, hd(next_decision.episode_ids))
+    assert {:ok, page} = Series.list_episodes(@actor, detail.season.id, 1)
+    assert page.total == 3
+
+    assert Enum.map(page.items, &{&1.number, &1.part_number, &1.version_count}) ==
+             [{1, 1, 1}, {1, 2, 2}, {2, nil, 1}]
+
+    assert Enum.uniq_by(page.items, & &1.key) == page.items
+    assert {:ok, catalog} = Series.search_series(@actor, "", 1)
+    assert hd(catalog.items).episode_count == 2
+  end
+
+  test "continuation follows parts and stops at a missing part" do
+    library = SeriesFixtures.library()
+    first = SeriesFixtures.file(library.id, "Example S01E01-part1.mp4")
+    second = SeriesFixtures.file(library.id, "Example S01E01-part2.mp4")
+    whole = SeriesFixtures.file(library.id, "Example S01E01.mp4")
+    next = SeriesFixtures.file(library.id, "Example S01E02-part1.mp4")
+    [episode_id] = SeriesFixtures.identify(first, 1, [1]).episode_ids
+    SeriesFixtures.identify(second, 1, [1])
+    SeriesFixtures.identify(whole, 1, [1])
+    [next_id] = SeriesFixtures.identify(next, 1, [2]).episode_ids
+
+    assert {:ok, %{id: ^episode_id, part_number: 2}} =
+             Series.fetch_next_playable_episode(@actor, episode_id, first.id)
+
+    assert {:ok, %{id: ^next_id, part_number: 1}} =
+             Series.fetch_next_playable_episode(@actor, episode_id, second.id)
+
+    assert {:ok, %{id: ^next_id, part_number: 1}} =
+             Series.fetch_next_playable_episode(@actor, episode_id, whole.id)
+
+    second |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+
+    assert {:error, :part_unavailable} =
+             Series.fetch_next_playable_episode(@actor, episode_id, first.id)
+
+    assert :not_found = Series.fetch_next_playable_episode(@actor, episode_id, next.id)
+    assert {:error, :forbidden} = Series.fetch_next_playable_episode(nil, episode_id, first.id)
+  end
+
+  test "continuation does not enter an episode whose first part is absent" do
+    library = SeriesFixtures.library()
+    earlier = SeriesFixtures.file(library.id, "Example S01E01.mp4")
+    later = SeriesFixtures.file(library.id, "Example S01E02-part2.mp4")
+    [earlier_id] = SeriesFixtures.identify(earlier, 1, [1]).episode_ids
+    SeriesFixtures.identify(later, 1, [2])
+
+    assert {:error, :part_unavailable} =
+             Series.fetch_next_playable_episode(@actor, earlier_id, earlier.id)
+  end
+
+  test "display pagination counts parts rather than metadata episodes" do
+    library = SeriesFixtures.library()
+    file = SeriesFixtures.file(library.id, "Example S01E01.mp4")
+    [id] = SeriesFixtures.identify(file, 1, [1]).episode_ids
+
+    for part <- 1..25 do
+      part_file = SeriesFixtures.file(library.id, "Example S01E01-part#{part}.mp4")
+      SeriesFixtures.identify(part_file, 1, [1])
+    end
+
+    {:ok, detail} = Series.fetch_episode(@actor, id)
+    assert {:ok, %{total: 25, items: items}} = Series.list_episodes(@actor, detail.season.id, 1)
+    assert Enum.map(items, & &1.part_number) == Enum.to_list(1..24)
+
+    assert {:ok, %{total: 25, items: [%{part_number: 25}]}} =
+             Series.list_episodes(@actor, detail.season.id, 2)
+  end
+
   test "next episode skips the completed file and missing versions across seasons" do
     library = SeriesFixtures.library()
     first = SeriesFixtures.file(library.id, "double.mkv")

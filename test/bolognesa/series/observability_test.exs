@@ -10,7 +10,9 @@ defmodule Bolognesa.Series.ObservabilityTest do
   alias Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker, as: Worker
 
   defmodule Repository do
-    def find_file(_), do: {:ok, %{content_type: :series, revision: 3}}
+    def find_file(_),
+      do: {:ok, %{content_type: :series, revision: 3, relative_path: "Example S01E01.mp4"}}
+
     def correct(_, _, _), do: Process.get(:correction_result, {:ok, %{observed_revision: 3}})
 
     def correct_series(_, _, _),

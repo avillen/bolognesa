@@ -4,6 +4,23 @@ Last reviewed: 2026-10-26.
 
 ## Implemented behavior
 
+Consecutive episode parts are implemented locally. `S01E01-part1` and `S01E01-part2`
+share one TMDb episode but appear as separate season entries with the same episode
+number and localized part labels. Each opens its own file; manual navigation and
+automatic direct/HLS continuation follow part order before advancing to another episode.
+Known missing parts and numbering gaps stop automatic continuation. Whole-episode
+alternatives, multi-episode files, authorization, and manual correction protection remain.
+See [decision 0025](decisions/0025-consecutive-episode-parts.md) for activation and limits.
+`MIX_TEST_PARTITION=_episode_parts mix precommit` passed compilation, formatting, Credo,
+and 653 tests with one skipped; Node checks passed 40 tests. The production-hook browser
+harness passed in Chrome 155 with synthetic direct/HLS consecutive files; LiveView tests
+verify part links, continuation, unavailable parts, and HLS session cleanup. The migration
+rejected rollback with numbered-part data and passed an empty down/up round trip.
+`make check-screenshots` passed with unchanged captures. Independent review found no
+blocking issues; its two type-contract omissions were corrected. This feature has not
+been deployed. Next step: rename a representative split release outside Bolognesa,
+scan/identify it, and verify playback on the target device.
+
 Video playback now keeps one same-tab `sessionStorage` checkpoint, scoped to viewer,
 content and physical file, for up to 12 hours. Position updates every three seconds
 and on significant media/page transitions; reload recovery preserves pause, clears
@@ -362,7 +379,7 @@ Accounts resource lookups use `fetch_*` names with `{:ok, value}`, `:not_found`,
 
 ## Limits and next work
 
-iPadOS 16.2 reportedly leaves all catalogs loading in both Safari and Chrome.
+iPadOS 16.2 previously left all catalogs loading in both Safari and Chrome.
 The eagerly imported Video.js bundle contains class static initialization blocks,
 unsupported by Safari before 16.4; a parse failure prevents LiveView from starting.
 The application build now targets Safari 16.2 alongside ES2022, lowering these blocks.
@@ -385,8 +402,9 @@ reference; no migrations were pending. Post-update checks confirmed the selected
 ARM64 image, healthy PostgreSQL, HTTP 200, authenticated catalog reads, unchanged
 application/database mounts and configuration, three read-only media mounts, and
 HTTP 401 for unauthenticated media delivery. The served JavaScript contains no class
-static blocks. Next: verify catalog connection and representative playback on the
-target iPad; device compatibility remains unverified.
+static blocks. After deployment, the operator confirmed that Bolognesa works on
+the target iPad running iPadOS 16.2. The browser and media combinations exercised
+were not recorded; broader device compatibility remains unverified.
 
 The reported Hisense built-in browser now renders the video timeline and time labels.
 Its `Intl.NumberFormat` accepts unit options at construction but throws `TypeError`

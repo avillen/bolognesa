@@ -6,14 +6,18 @@ defmodule Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification do
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Series.Application.Ports.Repositories.IdentificationRepository
   alias Bolognesa.Series.Domain.Entities.Identification
+  alias Bolognesa.Series.Domain.ValueObjects.EpisodePart
   alias Bolognesa.Series.Domain.ValueObjects.EpisodeSelection
+
   @type choice :: :unidentified | {:tmdb, pos_integer(), non_neg_integer(), [pos_integer()]}
+
   @type reason ::
           :forbidden
           | :not_found
           | :unavailable
           | :invalid_choice
           | :invalid_selection
+          | :ambiguous_name
           | :wrong_content_type
           | :source_changed
           | EpisodeSelection.error()
@@ -33,7 +37,7 @@ defmodule Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification do
       with :ok <- Accounts.authorize(actor, :admin),
            {:ok, file} <- repository.find_file(id),
            :ok <- series_file(file),
-           {:ok, selection} <- selection(choice, provider) do
+           {:ok, selection} <- selection(choice, provider, file.relative_path) do
         repository.correct_series(id, file.revision, selection)
       end
 
@@ -43,23 +47,24 @@ defmodule Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification do
 
   defp series_file(%{content_type: :series}), do: :ok
   defp series_file(_), do: {:error, :wrong_content_type}
-  defp selection(:unidentified, _), do: {:ok, :unidentified}
+  defp selection(:unidentified, _, _), do: {:ok, :unidentified}
 
-  defp selection({:tmdb, id, number, numbers}, provider)
+  defp selection({:tmdb, id, number, numbers}, provider, path)
        when is_integer(id) and id > 0 and is_integer(number) and number >= 0 and is_list(numbers) do
     with :ok <- valid_numbers(numbers),
+         {:ok, part} <- EpisodePart.from_path(path),
          {:ok, series} <- provider_result(provider.details(id), :details),
          :ok <- matching(series.provider_id, id, :details),
          {:ok, season} <- provider_result(provider.season(id, number), :season),
          :ok <- matching(season.number, number, :season) do
-      EpisodeSelection.new(series, season, numbers)
+      EpisodeSelection.new(series, season, numbers, part)
     else
       {:provider_error, _, _, _} = error -> error
       {:error, reason} -> {:error, reason}
     end
   end
 
-  defp selection(_, _), do: {:error, :invalid_choice}
+  defp selection(_, _, _), do: {:error, :invalid_choice}
 
   defp provider_result({:error, reason}, stage), do: {:provider_error, reason, reason, stage}
   defp provider_result(result, _stage), do: result

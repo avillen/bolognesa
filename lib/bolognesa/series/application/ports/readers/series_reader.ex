@@ -22,16 +22,25 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReader do
   @callback list_episodes(Season.id(), page :: page_number()) ::
               {:ok,
                {Season.t(), Series.t(),
-                [{Episode.t(), EpisodeVersion.count(), EpisodeVersion.count()}], Episode.count()}}
+                [
+                  {Episode.t(), pos_integer() | nil, EpisodeVersion.count(),
+                   EpisodeVersion.count()}
+                ], Episode.count()}}
               | {:error, :not_found | :unavailable}
 
-  @doc "At most 100 versions by file ID, plus adjacent IDs in same-season number/ID order."
+  @doc "At most 100 versions by file ID, plus adjacent targets in same-season episode/part order."
   @callback fetch_episode(Episode.id()) ::
               {:ok,
                {Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()],
-                {Episode.id() | nil, Episode.id() | nil}}}
+                {Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil,
+                 Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil}}}
               | :not_found
               | {:error, :unavailable | :too_many_versions}
+  @callback fetch_next_playable_episode(Episode.id(), pos_integer()) ::
+              {:ok, Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t()}
+              | :not_found
+              | {:error, :unavailable | :part_unavailable}
+
   @doc "Next available episode in season/episode order, after all episodes in the completed file."
   @callback fetch_next_available_episode(Episode.id(), file_id :: pos_integer()) ::
               {:ok, Episode.t()} | :not_found | {:error, :unavailable}

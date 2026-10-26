@@ -4,6 +4,7 @@ defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Version do
 
   @type t :: %__MODULE__{
           id: DomainEpisodeVersion.id(),
+          part_number: pos_integer() | nil,
           availability: :available | :missing,
           size_bytes: non_neg_integer(),
           origin: :automatic | :manual,
@@ -16,6 +17,7 @@ defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Version do
 
   defstruct [
     :id,
+    :part_number,
     :availability,
     :size_bytes,
     :origin,
@@ -30,6 +32,7 @@ defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Version do
   def from_domain(row),
     do: %__MODULE__{
       id: row.id,
+      part_number: row.part_number,
       availability: row.availability,
       size_bytes: row.size_bytes,
       origin: row.origin,

@@ -16,6 +16,31 @@ defmodule BolognesaWeb.Series.Season.LiveTest do
     assert has_element?(view, "#episode-list a[href='/episodes/#{ctx.episode_id}']")
   end
 
+  test "each part has its own card with the same episode number", ctx do
+    for part <- [1, 2] do
+      file = Bolognesa.SeriesFixtures.file(ctx.library.id, "Example S00E01-part#{part}.mp4")
+      Bolognesa.SeriesFixtures.identify(file, 0, [1])
+    end
+
+    {:ok, view, _} = live(ctx.conn, "/series/seasons/#{ctx.season_id}")
+    render_async(view)
+
+    for part <- [1, 2] do
+      assert has_element?(
+               view,
+               "#episode-label-#{ctx.episode_id}-part-#{part}",
+               "1. Uno (Parte #{part})"
+             )
+
+      assert has_element?(
+               view,
+               "#episode-play-#{ctx.episode_id}-part-#{part}[href='/episodes/#{ctx.episode_id}?part=#{part}']"
+             )
+    end
+
+    refute has_element?(view, "#episode-label-#{ctx.episode_id}")
+  end
+
   test "rejects anonymous visitors", %{conn: _conn} do
     assert {:error, {:redirect, %{to: "/login"}}} = live(Phoenix.ConnTest.build_conn(), "/series")
   end

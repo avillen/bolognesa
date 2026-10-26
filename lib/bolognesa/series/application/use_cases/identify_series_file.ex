@@ -85,7 +85,8 @@ defmodule Bolognesa.Series.Application.UseCases.IdentifySeriesFile do
          {:ok, season} <-
            provider_result(provider.season(candidate.provider_id, hint.season_number), :season),
          :ok <- matching(season.number, hint.season_number, :season),
-         {:ok, selection} <- EpisodeSelection.new(series, season, hint.episode_numbers) do
+         {:ok, selection} <-
+           EpisodeSelection.new(series, season, hint.episode_numbers, hint.part_number) do
       normalize(
         repository.complete_series(id, token, candidates, selection, nil),
         observation,

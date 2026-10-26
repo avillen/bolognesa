@@ -52,12 +52,23 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
     if file_projection(file).content_type == :series do
       ids = selected_ids(selection)
 
-      complete_decision!(identification, ids, candidates, ids == [], reason)
+      complete_decision!(
+        identification,
+        ids,
+        candidates,
+        ids == [],
+        reason,
+        part_number(selection)
+      )
+
       :ok
     else
       {:ok, :stale}
     end
   end
+
+  defp part_number(%{part_number: part}), do: part
+  defp part_number(_), do: nil
 
   defp selected_ids(nil), do: []
   defp selected_ids(selection), do: IdentifiedSeriesWriter.upsert!(selection)
@@ -76,7 +87,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   defp save_series_correction(file, choice) do
     existing = DecisionStore.lock(Repo, file.id)
     ids = if choice == :unidentified, do: [], else: IdentifiedSeriesWriter.upsert!(choice)
-    save_correction(existing, file, ids)
+    save_correction(existing, file, ids, part_number(choice))
   end
 
   defp file_projection(file) do
@@ -246,8 +257,9 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
     IdentificationMapper.to_domain(row, EntryStore.ids(Repo, row.id))
   end
 
-  defp complete_decision!(row, ids, candidates, needs_review, reason) do
+  defp complete_decision!(row, ids, candidates, needs_review, reason, part) do
     result = %{
+      part_number: part,
       candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
       needs_review?: needs_review,
       failure_reason: if(reason, do: Atom.to_string(reason), else: nil)
@@ -258,11 +270,14 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
     EntryStore.replace!(Repo, saved.id, completed.episode_ids)
   end
 
-  defp save_correction(existing, file, ids) do
+  defp save_correction(existing, file, ids, part) do
     token = Ecto.UUID.generate()
     base = correction_base(existing, file, token)
     removed_ids = base.episode_ids -- ids
-    {:ok, corrected} = Identification.correct(base, file.revision, token, ids, DateTime.utc_now())
+
+    {:ok, corrected} =
+      Identification.correct(base, file.revision, token, ids, DateTime.utc_now(), part)
+
     saved = DecisionStore.save!(Repo, existing, corrected)
     EntryStore.replace!(Repo, saved.id, corrected.episode_ids)
     IdentifiedSeriesWriter.delete_orphaned!(removed_ids)

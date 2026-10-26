@@ -4,6 +4,43 @@ defmodule BolognesaWeb.Episode.Show.ReducersTest do
   alias BolognesaWeb.Episode.Show.Live
   alias BolognesaWeb.Episode.Show.Reducer.Advance
   alias BolognesaWeb.Episode.Show.Reducer.ApplyResult
+  alias BolognesaWeb.Episode.Show.Reducer.SelectPart
+
+  test "selecting another part discards an outstanding continuation" do
+    request = make_ref()
+
+    socket = %Phoenix.LiveView.Socket{
+      assigns: %{
+        __changed__: %{},
+        advance_request: request,
+        transcode_session: nil,
+        detail: %{
+          versions: [%{id: 2, part_number: 2, availability: :missing}],
+          episode: %{id: 1},
+          season: %{id: 1},
+          previous_entry: nil,
+          next_entry: nil
+        }
+      }
+    }
+
+    selected = SelectPart.call(socket, 2)
+    assert selected.assigns.advance_request == nil
+    assert Advance.apply_result(selected, request, {:ok, {:ok, %Episode{id: 123}}}) == selected
+  end
+
+  test "duplicate HLS completion cannot start another continuation" do
+    socket = %Phoenix.LiveView.Socket{
+      assigns: %{
+        __changed__: %{},
+        advance_request: make_ref(),
+        transcode_session: %{id: "active"}
+      }
+    }
+
+    assert Advance.call(socket, %{"session_id" => "active"}) == socket
+    assert Advance.call(socket, %{"session_id" => "expired"}) == socket
+  end
 
   test "stale playback actions preserve a pending continuation" do
     request = make_ref()

@@ -45,6 +45,15 @@ defmodule Bolognesa.Series.IdentifySeriesFileTest do
     assert {:ok, %{job_id: 7, started_at: %DateTime{}}} = Repository.get(file.id)
   end
 
+  test "automatic identification saves the part with its episode association" do
+    {file, token} = pending("Serie S01E01-part1.mp4")
+    assert :ok = IdentifySeriesFile.call(file.id, token, 1, Repository, Provider)
+    assert {:ok, decision} = Repository.get(file.id)
+    assert decision.state == :automatic
+    assert Map.fetch!(decision, :part_number) == 1
+    assert length(decision.episode_ids) == 1
+  end
+
   test "an old token cannot create catalog identities after a retry" do
     {file, token} = pending("Serie S01E01.mkv")
     assert {:ok, fresh} = Repository.retry(file.id)

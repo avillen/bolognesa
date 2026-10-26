@@ -82,7 +82,8 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.IdentifiedSeriesWriter do
       EpisodeSelection.new(
         selection.series,
         selection.season,
-        Enum.map(selection.episodes, & &1.number)
+        Enum.map(selection.episodes, & &1.number),
+        selection.part_number
       )
 
     series_id = persist!(repo, SeriesSchema, Map.from_struct(validated.series))

@@ -7,6 +7,7 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Series.Application.UseCases.FetchEpisode
   alias Bolognesa.Series.Application.UseCases.FetchEpisode.Response, as: EpisodeDetail
   alias Bolognesa.Series.Application.UseCases.FetchNextAvailableEpisode
+  alias Bolognesa.Series.Application.UseCases.FetchNextPlayableEpisode
   alias Bolognesa.Series.Application.UseCases.FetchSeries
   alias Bolognesa.Series.Application.UseCases.FetchSeries.Response, as: SeriesDetail
   alias Bolognesa.Series.Application.UseCases.FetchSeriesReviewItem
@@ -44,6 +45,7 @@ defmodule Bolognesa.Series do
           | :too_many_seasons
           | :too_many_versions
           | :unusable_name
+          | :ambiguous_name
           | SeriesProvider.reason()
   @type transaction_repository :: atom()
   @type request_entry :: %{
@@ -68,6 +70,19 @@ defmodule Bolognesa.Series do
   @spec fetch_episode(AuthenticatedUser.t(), pos_integer()) ::
           {:ok, EpisodeDetail.t()} | :not_found | {:error, reason()}
   def fetch_episode(actor, id), do: FetchEpisode.call(actor, id, EctoSeriesReader)
+
+  @spec fetch_next_playable_episode(AuthenticatedUser.t(), pos_integer(), pos_integer()) ::
+          {:ok, Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t()}
+          | :not_found
+          | {:error, :forbidden | :unavailable | :part_unavailable}
+  def fetch_next_playable_episode(actor, episode_id, file_id),
+    do:
+      FetchNextPlayableEpisode.call(
+        actor,
+        episode_id,
+        file_id,
+        EctoSeriesReader
+      )
 
   @spec fetch_next_available_episode(AuthenticatedUser.t(), pos_integer(), pos_integer()) ::
           {:ok, Bolognesa.Series.Domain.ReadModels.Episode.t()} | :not_found | {:error, reason()}

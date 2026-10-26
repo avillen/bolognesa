@@ -12,14 +12,26 @@ defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Response do
           series: Series.t(),
           versions: [EpisodeVersionDto.t()],
           previous_episode_id: Episode.id() | nil,
-          next_episode_id: Episode.id() | nil
+          next_episode_id: Episode.id() | nil,
+          previous_entry: Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil,
+          next_entry: Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil
         }
 
-  defstruct [:episode, :season, :series, :versions, :previous_episode_id, :next_episode_id]
+  defstruct [
+    :episode,
+    :season,
+    :series,
+    :versions,
+    :previous_episode_id,
+    :next_episode_id,
+    :previous_entry,
+    :next_entry
+  ]
 
   @spec from_domain(
           {Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()],
-           {Episode.id() | nil, Episode.id() | nil}}
+           {Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil,
+            Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil}}
         ) :: t()
   def from_domain({episode, season, series, versions, {previous_id, next_id}}),
     do: %__MODULE__{
@@ -27,7 +39,9 @@ defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Response do
       season: season,
       series: series,
       versions: Enum.map(versions, &EpisodeVersionDto.from_domain/1),
-      previous_episode_id: previous_id,
-      next_episode_id: next_id
+      previous_episode_id: previous_id && previous_id.id,
+      next_episode_id: next_id && next_id.id,
+      previous_entry: previous_id,
+      next_entry: next_id
     }
 end

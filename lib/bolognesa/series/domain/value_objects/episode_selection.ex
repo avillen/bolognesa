@@ -7,23 +7,32 @@ defmodule Bolognesa.Series.Domain.ValueObjects.EpisodeSelection do
   @type t :: %__MODULE__{
           series: SeriesDetails.t(),
           season: SeasonDetails.t(),
-          episodes: [EpisodeDetails.t()]
+          episodes: [EpisodeDetails.t()],
+          part_number: pos_integer() | nil
         }
   @type error :: :invalid_selection | :invalid_response | :incomplete_episodes
 
-  defstruct [:series, :season, :episodes]
+  defstruct [:series, :season, :episodes, :part_number]
 
-  @spec new(SeriesDetails.t(), SeasonDetails.t(), [pos_integer()]) ::
+  @spec new(SeriesDetails.t(), SeasonDetails.t(), [pos_integer()], pos_integer() | nil) ::
           {:ok, t()} | {:error, error()}
-  def new(%SeriesDetails{} = series, %SeasonDetails{} = season, numbers) do
+  def new(series, season, numbers, part_number \\ nil)
+
+  def new(%SeriesDetails{} = series, %SeasonDetails{} = season, numbers, part_number) do
     with :ok <- validate_numbers(numbers),
+         :ok <- validate_part(part_number, numbers),
          :ok <- validate_response(series, season),
          {:ok, episodes} <- select_episodes(season.episodes, numbers) do
-      {:ok, %__MODULE__{series: series, season: season, episodes: episodes}}
+      {:ok,
+       %__MODULE__{series: series, season: season, episodes: episodes, part_number: part_number}}
     end
   end
 
-  def new(_, _, _), do: {:error, :invalid_response}
+  def new(_, _, _, _), do: {:error, :invalid_response}
+
+  defp validate_part(nil, _), do: :ok
+  defp validate_part(part, [_]) when is_integer(part) and part in 1..100, do: :ok
+  defp validate_part(_, _), do: {:error, :invalid_selection}
 
   defp validate_numbers(numbers) when is_list(numbers) do
     if length(numbers) in 1..100 and Enum.all?(numbers, &(is_integer(&1) and &1 > 0)) and

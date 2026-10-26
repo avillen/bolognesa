@@ -44,6 +44,87 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     refute has_element?(view, "#episode-playback-error")
   end
 
+  test "a part link opens its own file and navigation follows parts", ctx do
+    first = add_part(ctx, 1)
+    second = add_part(ctx, 2)
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=1&season_page=3")
+    render_async(view)
+    assert has_element?(view, "#episode-title", "Uno (Parte 1)")
+    assert has_element?(view, "#episode-video-frame[data-video-id='episode-video-#{first.id}']")
+
+    assert has_element?(
+             view,
+             "#episode-next[href='/episodes/#{ctx.episode_id}?part=2&season_page=3']"
+           )
+
+    refute has_element?(view, "#episode-play-#{second.id}")
+    render_hook(view, "playback_ended", %{file_id: to_string(first.id)})
+    assert_redirect(view, "/episodes/#{ctx.episode_id}?part=2&season_page=3")
+
+    {:ok, second_view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=2")
+    render_async(second_view)
+    assert has_element?(second_view, "#episode-title", "Uno (Parte 2)")
+
+    assert has_element?(
+             second_view,
+             "#episode-video-frame[data-video-id='episode-video-#{second.id}']"
+           )
+
+    assert has_element?(
+             second_view,
+             "#episode-previous[href='/episodes/#{ctx.episode_id}?part=1']"
+           )
+  end
+
+  test "missing and invalid parts do not substitute another file", ctx do
+    first = add_part(ctx, 1)
+    second = add_part(ctx, 2)
+    mark_unavailable(second)
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=1")
+    render_async(view)
+    render_hook(view, "playback_ended", %{file_id: to_string(first.id)})
+    render_async(view)
+    assert has_element?(view, "[role='alert']", "parte")
+
+    {:ok, missing, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=2")
+    render_async(missing)
+    refute has_element?(missing, "#episode-video-frame[data-src]")
+    assert has_element?(missing, "#episode-unavailable")
+
+    for query <- ["part=99", "part=bad", "part[]=1"] do
+      {:ok, invalid, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?#{query}")
+      render_async(invalid)
+      assert has_element?(invalid, "#episode-error")
+      refute has_element?(invalid, "#episode-video-frame[data-src]")
+    end
+  end
+
+  test "a transcoded part releases its session before opening the next part", ctx do
+    first = add_part(ctx, 1)
+    add_part(ctx, 2)
+    executable = Path.join(ctx.directory, "part-ffmpeg")
+    File.write!(executable, "#!/bin/sh\nwhile :; do sleep 1; done\n")
+    File.chmod!(executable, 0o700)
+    old = Application.get_env(:bolognesa, :ffmpeg_executable)
+    Application.put_env(:bolognesa, :ffmpeg_executable, executable)
+
+    on_exit(fn ->
+      TranscodeManager.stop_all()
+
+      if old,
+        do: Application.put_env(:bolognesa, :ffmpeg_executable, old),
+        else: Application.delete_env(:bolognesa, :ffmpeg_executable)
+    end)
+
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=1")
+    render_async(view)
+    html = render_hook(view, "playback_error", %{file_id: to_string(first.id)})
+    [_, session] = Regex.run(~r/data-session-id="([^"]+)"/, html)
+    render_hook(view, "playback_ended", %{session_id: session})
+    assert_redirect(view, "/episodes/#{ctx.episode_id}?part=2")
+    assert :not_found = Bolognesa.Playback.video_transcode_status(session)
+  end
+
   test "compact heading and localized air date below the synopsis", ctx do
     alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
 
@@ -288,6 +369,24 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
       |> Bolognesa.Repo.insert!()
 
     Bolognesa.SeriesFixtures.identify(file, 0, [1, 2])
+    file
+  end
+
+  defp add_part(ctx, part) do
+    name = "Example S00E01-part#{part}.mp4"
+    path = Path.join(ctx.directory, name)
+    File.cp!(Path.join(ctx.directory, ctx.media_file.relative_path), path)
+    stat = File.stat!(path, time: :posix)
+    file = Bolognesa.SeriesFixtures.file(ctx.library.id, name)
+
+    file =
+      file
+      |> Ecto.Changeset.change(
+        modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond)
+      )
+      |> Bolognesa.Repo.update!()
+
+    Bolognesa.SeriesFixtures.identify(file, 0, [1])
     file
   end
 

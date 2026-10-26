@@ -5,6 +5,7 @@ defmodule Bolognesa.Series.Domain.ReadModels.EpisodeVersion do
   @type count :: non_neg_integer()
   @type t :: %__MODULE__{
           id: id(),
+          part_number: pos_integer() | nil,
           availability: :available | :missing,
           size_bytes: non_neg_integer(),
           origin: :automatic | :manual,
@@ -17,6 +18,7 @@ defmodule Bolognesa.Series.Domain.ReadModels.EpisodeVersion do
 
   defstruct [
     :id,
+    :part_number,
     :availability,
     :size_bytes,
     :origin,

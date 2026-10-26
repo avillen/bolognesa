@@ -26,6 +26,16 @@ defmodule BolognesaWeb.Series.Navigation do
   @spec episode_params(map(), pos_integer()) :: map()
   def episode_params(series_params, page), do: put_page(series_params, :season_page, page)
 
+  @spec episode_target_params(map(), pos_integer(), map()) :: map()
+  def episode_target_params(series_params, page, target) do
+    params = episode_params(series_params, page)
+
+    case Map.get(target, :part_number) do
+      nil -> params
+      part -> Map.put(params, :part, part)
+    end
+  end
+
   defp put_query(params, query) when is_binary(query) and query != "",
     do: Map.put(params, :catalog_query, query)
 

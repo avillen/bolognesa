@@ -1,6 +1,27 @@
 defmodule Bolognesa.Series.EpisodeHintTest do
   use ExUnit.Case, async: true
   alias Bolognesa.Series.Domain.ValueObjects.EpisodeHint
+  alias Bolognesa.Series.Domain.ValueObjects.EpisodePart
+
+  test "manual part parsing preserves opaque filename bytes" do
+    assert {:ok, 2} = EpisodePart.from_path(<<255>> <> " S01E01-part2.mp4")
+  end
+
+  test "recognizes consecutive parts without changing episode identity" do
+    for {suffix, part} <- [{"-part1", 1}, {"-PART2.1080p", 2}, {"", nil}] do
+      assert {:ok, hint} = EpisodeHint.from_path("Example (2024)/Season 1/S01E01#{suffix}.mp4")
+      assert hint.episode_numbers == [1]
+      assert Map.fetch!(hint, :part_number) == part
+    end
+  end
+
+  test "rejects malformed and multi episode parts" do
+    for suffix <- ["-part0", "-part101", "-part", "-part1-part2", "-part1x"] do
+      assert {:error, :ambiguous_name} = EpisodeHint.from_path("Example S01E01#{suffix}.mp4")
+    end
+
+    assert {:error, :ambiguous_name} = EpisodeHint.from_path("Example S01E01E02-part1.mp4")
+  end
 
   test "recognizes both conventions specials repetitions and inclusive ranges" do
     for {name, season, numbers} <- [

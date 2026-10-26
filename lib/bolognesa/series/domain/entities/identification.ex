@@ -6,6 +6,7 @@ defmodule Bolognesa.Series.Domain.Entities.Identification do
   @type token :: String.t()
   @type candidate_data :: %{items: [map()]} | %{String.t() => [map()]}
   @type result :: %{
+          optional(:part_number) => pos_integer() | nil,
           candidate_data: candidate_data(),
           needs_review?: boolean(),
           failure_reason: binary() | nil
@@ -13,6 +14,7 @@ defmodule Bolognesa.Series.Domain.Entities.Identification do
   @type t :: %__MODULE__{
           media_file_id: pos_integer(),
           episode_ids: [pos_integer()],
+          part_number: pos_integer() | nil,
           state: state(),
           origin: origin(),
           observed_revision: pos_integer(),
@@ -27,6 +29,7 @@ defmodule Bolognesa.Series.Domain.Entities.Identification do
 
   defstruct [
     :media_file_id,
+    :part_number,
     :state,
     :origin,
     :observed_revision,
@@ -70,6 +73,7 @@ defmodule Bolognesa.Series.Domain.Entities.Identification do
        base
        | state: :pending,
          episode_ids: [],
+         part_number: nil,
          observed_revision: revision,
          token: token,
          needs_review?: false,
@@ -95,13 +99,17 @@ defmodule Bolognesa.Series.Domain.Entities.Identification do
           {:ok, t()} | {:error, :invalid_transition | :invalid_result}
   def complete(%__MODULE__{state: :pending, origin: origin} = decision, ids, result, now)
       when origin != :manual do
-    if valid_ids?(ids) and valid_result?(result) and is_struct(now, DateTime) do
+    part = Map.get(result, :part_number)
+
+    if valid_ids?(ids) and valid_part?(part, ids) and valid_result?(result) and
+         is_struct(now, DateTime) do
       {:ok,
        %{
          decision
          | state: automatic_state(ids),
            origin: :automatic,
            episode_ids: ids,
+           part_number: part,
            candidate_data: result.candidate_data,
            needs_review?: result.needs_review?,
            failure_reason: result.failure_reason,
@@ -123,11 +131,13 @@ defmodule Bolognesa.Series.Domain.Entities.Identification do
 
   def fail(_decision, _reason, _now), do: {:error, :invalid_transition}
 
-  @spec correct(t(), pos_integer(), token(), [pos_integer()], DateTime.t()) ::
+  @spec correct(t(), pos_integer(), token(), [pos_integer()], DateTime.t(), pos_integer() | nil) ::
           {:ok, t()} | {:error, :invalid_correction}
-  def correct(%__MODULE__{} = decision, revision, token, ids, %DateTime{} = now)
+  def correct(decision, revision, token, ids, now, part \\ nil)
+
+  def correct(%__MODULE__{} = decision, revision, token, ids, %DateTime{} = now, part)
       when is_integer(revision) and revision > 0 and is_binary(token) and byte_size(token) > 0 do
-    if valid_ids?(ids) do
+    if valid_ids?(ids) and valid_part?(part, ids) do
       {:ok,
        %{
          decision
@@ -136,6 +146,7 @@ defmodule Bolognesa.Series.Domain.Entities.Identification do
            observed_revision: revision,
            token: token,
            episode_ids: ids,
+           part_number: part,
            needs_review?: false,
            failure_reason: nil,
            candidate_data: %{"items" => []},
@@ -148,7 +159,11 @@ defmodule Bolognesa.Series.Domain.Entities.Identification do
     end
   end
 
-  def correct(_decision, _revision, _token, _ids, _now), do: {:error, :invalid_correction}
+  def correct(_decision, _revision, _token, _ids, _now, _part), do: {:error, :invalid_correction}
+
+  defp valid_part?(nil, _), do: true
+  defp valid_part?(part, [_]) when is_integer(part) and part in 1..100, do: true
+  defp valid_part?(_, _), do: false
 
   defp automatic_state([]), do: :unmatched
   defp automatic_state(_ids), do: :automatic

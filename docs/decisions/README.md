@@ -28,3 +28,4 @@
 | [0022](0022-optional-loki-logs.md) | Implemented and activated | Opt-in application-only Loki forwarding through an isolated Alloy service |
 | [0023](0023-project-overview-monitoring.md) | Implemented locally | Context overview with sparse-traffic timings, bounded LiveView/Playback metrics and optional Docker resources |
 | [0024](0024-tab-playback-recovery.md) | Implemented locally | Same-tab video checkpoints and bounded page/transport diagnostics |
+| [0025](0025-consecutive-episode-parts.md) | Implemented locally | Ordered physical parts sharing one provider episode, part entries and continuation |

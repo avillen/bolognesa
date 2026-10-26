@@ -54,15 +54,21 @@
         class="block min-h-11 py-3 text-accent-soft"
       >{gettext("← Todas las series")}</.link>
     </p>
-    <div :if={@detail}>
+    <div :if={@detail && !@error}>
       <header class="episode-heading">
         <h1 id="episode-title" class="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-          {@detail.episode.title}
+          {if @active_part,
+            do:
+              gettext("%{title} (Parte %{number})",
+                title: @detail.episode.title,
+                number: @active_part
+              ),
+            else: @detail.episode.title}
         </h1>
         <p class="mt-1 flex items-center gap-2 text-xs text-muted">
           <span>{gettext("Episodio %{number}", number: @detail.episode.number)}</span>
           <span
-            :for={version <- @detail.versions}
+            :for={version <- @playback_versions}
             :if={version.id == @selected_file_id && version.duration_ms}
           >
             <span aria-hidden="true">·</span>
@@ -70,13 +76,28 @@
           </span>
         </p>
       </header>
+      <nav
+        :if={@parts != []}
+        id="episode-parts"
+        aria-label={gettext("Partes del episodio")}
+        class="my-3 flex flex-wrap gap-3"
+      >
+        <.link
+          :for={part <- @parts}
+          navigate={
+            ~p"/episodes/#{@detail.episode.id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), %{part_number: part})}"
+          }
+          aria-current={if part == @active_part, do: "page"}
+          class="min-h-11 py-3 text-accent-soft"
+        >
+          {gettext("Parte %{number}", number: part)}
+        </.link>
+      </nav>
       <BolognesaWeb.Player.player
         prefix="episode"
         kind={:episode}
         viewer_id={@current_scope.actor.id}
-        retry_file_id={
-          Enum.find_value(@detail.versions, &(&1.availability == :available && &1.id))
-        }
+        retry_file_id={Enum.find_value(@part_versions, &(&1.availability == :available && &1.id))}
         class="episode-player space-y-3"
         poster={
           @detail.episode.still_path &&
@@ -92,17 +113,17 @@
         playback_error_reason={@playback_error_reason}
       />
       <nav
-        :if={@detail.previous_episode_id || @detail.next_episode_id}
+        :if={@previous_target || @next_target}
         id="episode-navigation"
         class="episode-navigation"
         aria-label={gettext("Navegación entre episodios")}
       >
         <.link
-          :if={@detail.previous_episode_id}
+          :if={@previous_target}
           id="episode-previous"
           rel="prev"
           navigate={
-            ~p"/episodes/#{@detail.previous_episode_id}?#{Navigation.episode_params(@series_params, Map.get(@season_params, :page, 1))}"
+            ~p"/episodes/#{@previous_target.id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), @previous_target)}"
           }
           aria-label={gettext("Anterior episodio")}
         >
@@ -112,11 +133,11 @@
           )}</span>
         </.link>
         <.link
-          :if={@detail.next_episode_id}
+          :if={@next_target}
           id="episode-next"
           rel="next"
           navigate={
-            ~p"/episodes/#{@detail.next_episode_id}?#{Navigation.episode_params(@series_params, Map.get(@season_params, :page, 1))}"
+            ~p"/episodes/#{@next_target.id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), @next_target)}"
           }
           aria-label={gettext("Siguiente episodio")}
         >
@@ -127,7 +148,7 @@
         </.link>
       </nav>
       <p
-        :if={!Enum.any?(@detail.versions, &(&1.availability == :available))}
+        :if={!Enum.any?(@part_versions, &(&1.availability == :available))}
         id="episode-unavailable"
         class="episode-unavailable"
         role="status"
@@ -179,13 +200,14 @@
         />
         <div id="episode-versions" class="space-y-4">
           <article
-            :for={version <- @detail.versions}
+            :for={version <- @playback_versions}
             id={"episode-version-#{version.id}"}
             class="episode-version"
           >
             <div class="flex flex-wrap items-center gap-2">
               <h3 class="text-sm font-semibold text-ink">
-                {version.format || gettext("Archivo de vídeo")} · {Float.round(
+                <span :if={is_nil(version.part_number) && @parts != []}>{gettext("Episodio completo")} · </span>{version.format ||
+                  gettext("Archivo de vídeo")} · {Float.round(
                   version.size_bytes / 1_048_576,
                   1
                 )} MB

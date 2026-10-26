@@ -1,5 +1,7 @@
 defmodule Bolognesa.Series.Domain.ValueObjects.EpisodeHint do
   @moduledoc "Derives series and a bounded episode selection from a relative filename."
+
+  alias Bolognesa.Series.Domain.ValueObjects.EpisodePart
   alias Bolognesa.Series.Domain.ValueObjects.TitleHint
 
   @marker ~r/(?<![a-z0-9])(?:s\d+e\d+|\d+x\d+)/iu
@@ -10,11 +12,12 @@ defmodule Bolognesa.Series.Domain.ValueObjects.EpisodeHint do
           title: binary(),
           year: integer() | nil,
           season_number: non_neg_integer(),
-          episode_numbers: [pos_integer()]
+          episode_numbers: [pos_integer()],
+          part_number: pos_integer() | nil
         }
   @type error :: :unusable_name | :ambiguous_name | :invalid_episode_numbers | :too_many_episodes
 
-  defstruct [:title, :year, :season_number, :episode_numbers]
+  defstruct [:title, :year, :season_number, :episode_numbers, :part_number]
 
   @spec from_path(binary()) :: {:ok, t()} | {:error, error()}
   def from_path(path) when is_binary(path) do
@@ -32,6 +35,8 @@ defmodule Bolognesa.Series.Domain.ValueObjects.EpisodeHint do
          prefix = binary_part(stem, 0, offset),
          suffix = binary_part(stem, offset, byte_size(stem) - offset),
          {:ok, season, numbers} <- parse_parts(suffix),
+         {:ok, part} <- EpisodePart.from_path(path),
+         :ok <- valid_part_selection(part, numbers),
          :ok <- check_folder(path, season),
          {:ok, title} <- title_hint(prefix, path) do
       {:ok,
@@ -39,10 +44,15 @@ defmodule Bolognesa.Series.Domain.ValueObjects.EpisodeHint do
          title: title.title,
          year: title.year,
          season_number: season,
-         episode_numbers: numbers
+         episode_numbers: numbers,
+         part_number: part
        }}
     end
   end
+
+  defp valid_part_selection(nil, _), do: :ok
+  defp valid_part_selection(_, [_]), do: :ok
+  defp valid_part_selection(_, _), do: {:error, :ambiguous_name}
 
   defp marker(stem) do
     case Regex.scan(@marker, stem, return: :index) do

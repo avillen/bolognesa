@@ -2,6 +2,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   @moduledoc false
   @behaviour Bolognesa.Series.Application.Ports.Readers.SeriesReader
   import Ecto.Query
+
   alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -10,8 +11,10 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesSchema
   alias Bolognesa.Repo
+  alias Bolognesa.Series.Domain.ReadModels.EpisodeTarget
   alias Bolognesa.Series.Domain.ReadModels.EpisodeVersion
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader.SeriesMapper
+  alias Bolognesa.Series.Infrastructure.Readers.EpisodeEntries
 
   @page_size 24
   @max_seasons 100
@@ -136,26 +139,18 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   end
 
   defp list_season_episodes(season, page) do
-    base = from episode in EpisodeSchema, where: episode.season_id == ^season.id
-    total = Repo.aggregate(base, :count)
+    entries = from entry in subquery(EpisodeEntries.query()), where: entry.season_id == ^season.id
+    total = Repo.aggregate(entries, :count)
 
     rows =
       Repo.all(
-        from(episode in base,
-          left_join: relation in SeriesIdentificationEpisodeSchema,
-          on: relation.episode_id == episode.id,
-          left_join: decision in SeriesIdentificationSchema,
-          on:
-            decision.id == relation.identification_id and decision.state in [:automatic, :manual],
-          left_join: file in MediaFileSchema,
-          on: file.id == decision.media_file_id,
-          group_by: episode.id,
-          order_by: [asc: episode.number, asc: episode.id],
+        from(entry in entries,
+          join: episode in EpisodeSchema,
+          on: episode.id == entry.id,
+          order_by: [asc: entry.number, asc: entry.part_number, asc: entry.id],
           limit: @page_size,
           offset: ^((page - 1) * @page_size),
-          select:
-            {episode, count(file.id, :distinct),
-             filter(count(file.id, :distinct), file.availability == :available)}
+          select: {episode, entry.part_number, entry.version_count, entry.available_version_count}
         ),
         log: false
       )
@@ -164,8 +159,8 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
 
     {:ok,
      {SeriesMapper.season(season), SeriesMapper.series(series),
-      Enum.map(rows, fn {episode, count, available} ->
-        {SeriesMapper.episode(episode), count, available}
+      Enum.map(rows, fn {episode, part, count, available} ->
+        {SeriesMapper.episode(episode), part, count, available}
       end), total}}
   end
 
@@ -258,17 +253,20 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   end
 
   defp adjacent_episode_ids(episode) do
-    base = from row in EpisodeSchema, where: row.season_id == ^episode.season_id
+    base =
+      from row in subquery(EpisodeEntries.query()), where: row.season_id == ^episode.season_id
 
     previous =
       Repo.one(
         from(row in base,
-          where:
-            row.number < ^episode.number or
-              (row.number == ^episode.number and row.id < ^episode.id),
-          order_by: [desc: row.number, desc: row.id],
+          where: row.number < ^episode.number,
+          order_by: [desc: row.number, desc: row.part_number],
           limit: 1,
-          select: row.id
+          select: %EpisodeTarget{
+            id: row.id,
+            season_id: row.season_id,
+            part_number: row.part_number
+          }
         ),
         log: false
       )
@@ -276,18 +274,92 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
     next =
       Repo.one(
         from(row in base,
-          where:
-            row.number > ^episode.number or
-              (row.number == ^episode.number and row.id > ^episode.id),
-          order_by: [asc: row.number, asc: row.id],
+          where: row.number > ^episode.number,
+          order_by: [asc: row.number, asc: row.part_number],
           limit: 1,
-          select: row.id
+          select: %EpisodeTarget{
+            id: row.id,
+            season_id: row.season_id,
+            part_number: row.part_number
+          }
         ),
         log: false
       )
 
     {previous, next}
   end
+
+  @impl true
+  def fetch_next_playable_episode(episode_id, file_id) do
+    current =
+      Repo.one(
+        from relation in SeriesIdentificationEpisodeSchema,
+          join: decision in SeriesIdentificationSchema,
+          on: decision.id == relation.identification_id,
+          join: file in MediaFileSchema,
+          on: file.id == decision.media_file_id,
+          where:
+            relation.episode_id == ^episode_id and file.id == ^file_id and
+              decision.state in [:automatic, :manual] and file.availability == :available,
+          select: %{part_number: decision.part_number},
+          limit: 1
+      )
+
+    case current do
+      nil -> :not_found
+      %{part_number: nil} -> next_episode_target(episode_id, file_id)
+      %{part_number: part} -> next_part_target(episode_id, file_id, part)
+    end
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp next_part_target(episode_id, file_id, part) do
+    entry =
+      Repo.one(
+        from row in subquery(EpisodeEntries.query()),
+          where: row.id == ^episode_id and row.part_number > ^part,
+          order_by: row.part_number,
+          limit: 1
+      )
+
+    case entry do
+      nil ->
+        next_episode_target(episode_id, file_id)
+
+      %{part_number: next, available_version_count: available}
+      when next == part + 1 and available > 0 ->
+        {:ok, target(entry)}
+
+      _ ->
+        {:error, :part_unavailable}
+    end
+  end
+
+  defp next_episode_target(episode_id, file_id) do
+    with {:ok, episode} <- fetch_next_available_episode(episode_id, file_id) do
+      entry =
+        Repo.one(
+          from row in subquery(EpisodeEntries.query()),
+            where: row.id == ^episode.id,
+            order_by: row.part_number,
+            limit: 1
+        )
+
+      first_target(entry)
+    end
+  end
+
+  defp first_target(nil), do: :not_found
+
+  defp first_target(%{available_version_count: available, part_number: part} = entry)
+       when available > 0 and part in [nil, 1], do: {:ok, target(entry)}
+
+  defp first_target(_), do: {:error, :part_unavailable}
+
+  defp target(entry),
+    do: %EpisodeTarget{id: entry.id, season_id: entry.season_id, part_number: entry.part_number}
 
   defp versions(id) do
     rows =
@@ -321,6 +393,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
       Enum.map(rows, fn {decision, file, inspection} ->
         %EpisodeVersion{
           id: file.id,
+          part_number: decision.part_number,
           availability: file.availability,
           size_bytes: file.size_bytes,
           origin: decision.origin,

@@ -6,6 +6,8 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Item do
 
   @type t :: %__MODULE__{
           id: Episode.id(),
+          key: String.t(),
+          part_number: pos_integer() | nil,
           season_id: Season.id(),
           number: pos_integer(),
           title: String.t(),
@@ -18,6 +20,8 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Item do
 
   defstruct [
     :id,
+    :key,
+    :part_number,
     :season_id,
     :number,
     :title,
@@ -28,10 +32,14 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Item do
     :available_version_count
   ]
 
-  @spec from_domain({Episode.t(), EpisodeVersion.count(), EpisodeVersion.count()}) :: t()
-  def from_domain({row, version_count, available_version_count}),
+  @spec from_domain(
+          {Episode.t(), pos_integer() | nil, EpisodeVersion.count(), EpisodeVersion.count()}
+        ) :: t()
+  def from_domain({row, part, version_count, available_version_count}),
     do: %__MODULE__{
       id: row.id,
+      key: if(part, do: "#{row.id}-part-#{part}", else: to_string(row.id)),
+      part_number: part,
       season_id: row.season_id,
       number: row.number,
       title: row.title,

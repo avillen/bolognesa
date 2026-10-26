@@ -4,6 +4,8 @@ Status: Accepted and implemented locally. Deployment and real-device verificatio
 
 [0019](0019-content-context-boundaries.md) supersedes shared catalog identities and central Identification ownership with independent Series tables and ordered episode associations. Hierarchy, specials, complete bounded selections, matching, and whole-file playback rules remain valid.
 
+[0025](0025-consecutive-episode-parts.md) extends playback and season entries for explicitly numbered physical parts of one episode.
+
 ## Context
 
 The catalog needs series, seasons, episodes, specials, and support for a physical file containing several episodes. A single file-to-work reference cannot represent this without confusing the work with its physical source.

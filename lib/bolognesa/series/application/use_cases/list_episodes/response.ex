@@ -10,7 +10,7 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Response do
           season: Season.t(),
           series: Series.t(),
           items: [EpisodeListItem.t()],
-          total: Episode.count()
+          total: non_neg_integer()
         }
 
   defstruct [:season, :series, :items, :total]

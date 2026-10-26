@@ -49,6 +49,10 @@ const server = createServer(async (request, response) => {
     if (recovery) document = document.replace('data-file-id="1"', 'data-file-id="1" data-recovery-scope="1:movie:1"')
     if (recovery === "hls") document = document.replace('data-src="/sample.mp4"',
       'data-src="/index.m3u8" data-session-id="initial" data-offset-ms="0" data-duration-ms="600000"')
+    const parts = new URL(request.url, "http://localhost").searchParams.get("parts")
+    if (parts) document = document.replace('data-file-id="1"', 'data-file-id="1" data-recovery-scope="1:episode:123"')
+    if (parts === "hls") document = document.replace('data-src="/sample.mp4"',
+      'data-src="/index.m3u8" data-session-id="part-1" data-offset-ms="0"')
     const content = name ? await readFile(path) : Buffer.from(document)
     const headers = {"Content-Type": types[name.split(".").pop()] ?? "text/html", "Accept-Ranges": "bytes"}
     const range = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range || "")
@@ -313,6 +317,38 @@ try {
   assert.equal(restored.seeks[0][1].playing, "false")
   await recoveryPage.close()
   console.log("Recovery: actual page reload restores direct position/play/pause; HLS restores file offset with one authorized seek.")
+  for (const delivery of ["direct", "hls"]) {
+    const partsPage = await browser.newPage()
+    partsPage.on("pageerror", error => errors.push(error.message))
+    await partsPage.goto(`http://127.0.0.1:${server.address().port}/?parts=${delivery}`)
+    for (const file of [1, 2, 3]) {
+      if (file > 1) {
+        await partsPage.evaluate(({file, delivery}) => {
+          Object.assign(window.context.el.dataset, {
+            fileId: String(file), videoId: `part-${file}`, autoplay: "true",
+            src: delivery === "hls" ? `/index.m3u8?part=${file}` : `/sample.mp4?part=${file}`,
+            ...(delivery === "hls" ? {sessionId: `part-${file}`, offsetMs: "0"} : {})
+          })
+          window.hook.updated.call(window.context)
+        }, {file, delivery})
+      }
+      await partsPage.waitForFunction(() => document.querySelector("video").currentTime > 0.1 &&
+        document.querySelector("video").readyState >= 2)
+      assert.ok(await partsPage.locator("video").evaluate(video => video.currentTime < 5),
+        "A new part must start at its own beginning")
+      await partsPage.locator("video").evaluate(async video => {
+        video.currentTime = video.duration - 0.25
+        await video.play()
+      })
+      await partsPage.waitForFunction(count => window.events.filter(([name]) => name === "playback_ended").length === count, file)
+      const events = await partsPage.evaluate(() => window.events.filter(([name]) => name === "playback_ended"))
+      assert.equal(events.length, file)
+      assert.equal(events.at(-1)[1][delivery === "hls" ? "session_id" : "file_id"],
+        delivery === "hls" ? `part-${file}` : String(file))
+    }
+    await partsPage.close()
+  }
+  console.log("Consecutive files: direct/HLS parts start at zero and emit one completion with the current file/session identity.")
   assert.deepEqual(errors, [])
   await page.evaluate(() => window.hook.destroyed.call(window.context))
   console.log(`Video.js browser checks passed in Chromium ${browser.version()}.`)
