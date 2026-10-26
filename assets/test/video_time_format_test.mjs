@@ -32,6 +32,25 @@ test("unit number formatting falls back when an older implementation throws Type
   }
 })
 
+test("unit formatting recovers when construction succeeds but accessing or using format fails", () => {
+  class DelayedUnitNumberFormat {
+    constructor(locale, options) {
+      this.unit = options?.style === "unit"
+      this.number = new Intl.NumberFormat(locale, this.unit ? {} : options)
+    }
+    get format() {
+      if (this.unit) throw new TypeError("Unit format accessor is unavailable")
+      return this.number.format
+    }
+  }
+  for (const locale of ["en", "es"]) {
+    for (const [unit, suffix] of [["hour", "h"], ["minute", "min"], ["second", "s"]]) {
+      const formatter = createTimeNumberFormat(locale, {style: "unit", unit, unitDisplay: "long"}, DelayedUnitNumberFormat)
+      assert.equal(formatter.format(2), `2 ${suffix}`)
+    }
+  }
+})
+
 test("supported formatting retains native localized output", () => {
   for (const locale of ["en", "es"]) {
     const options = {style: "unit", unit: "minute", unitDisplay: "long"}
@@ -87,7 +106,7 @@ test("formatter probes distinguish constructor failures from delayed format fail
   const delayed = probeTimeFormatting("es", {NumberFormat: DelayedNumberFormat, ListFormat: Intl.ListFormat})
   assert.equal(delayed.intl_unit_constructor, "ok")
   assert.equal(delayed.intl_unit_format, "range")
-  assert.equal(delayed.time_format_step, "hour_long")
-  assert.equal(delayed.time_format_error, "range")
+  assert.equal(delayed.time_format_step, "ok")
+  assert.equal(delayed.time_format_error, "none")
   assert.equal(JSON.stringify(delayed).includes("private"), false)
 })

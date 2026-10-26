@@ -463,7 +463,7 @@ The operator confirmed that this patch still leaves the timeline absent on the T
 The current observation again has a wide slider, zero track dimensions and zero labels;
 the constructor-only simulations did not establish the device's failure mode.
 
-A bounded formatter probe is implemented locally to distinguish native constructor
+A bounded formatter probe is implemented to distinguish native constructor
 failure from failure in `format()`, and to exercise the current number/list adapters
 with both numeric and unit styles in the page locale. Only fixed step/error codes are
 logged; raw error messages and formatted content are excluded. The probe has a regression
@@ -471,8 +471,28 @@ for delayed formatting failure and for a constructor rejection that the adapter 
 Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one skipped.
 Node checks passed 43 tests; the production-hook Chrome 155 check and seven focused server/
 logging checks passed. Independent review found no blocking issues.
-Next step: deploy this diagnostic, collect its target-TV observation and choose the
-correction from that failing operation. The timeline issue remains unresolved.
+The diagnostic is published and deployed as `995b572735d0a8e56c9d0524f361267ed1a971c1`
+with image `ghcr.io/avillen/bolognesa@sha256:42eacd299305dbf575d9d195a272bb881e0ab94ca6a6870c274baf5e35de41d7`.
+[Application CI](https://github.com/avillen/bolognesa/actions/runs/40387247286),
+[screenshot CI](https://github.com/avillen/bolognesa/actions/runs/40387247734) and
+[image CI](https://github.com/avillen/bolognesa/actions/runs/40387247558) passed.
+Local screenshots passed unchanged and the incoming commit passed Gitleaks.
+The normal update validated `pre-migration-20261026-203342-16428.dump` and its previous-image
+reference; no migrations were pending. Post-update checks confirmed HTTP 200, healthy
+PostgreSQL, unchanged application/database mounts and three read-only media mounts;
+the backup and previous-image reference were revalidated.
+The new target-TV observation confirms `intl_unit_constructor=ok`,
+`intl_unit_format=type`, `time_format_step=hour_long`, `time_format_error=type` and
+Spanish locale. This locates the failure after construction, at the format accessor or
+function call. The adapter now exercises `format(0)` inside its existing unit-only
+fallback before returning the native formatter, so delayed RangeError/TypeError failures
+use the numeric-unit alternative. Supported native formatters are returned unchanged.
+A red regression reproduced the failed format accessor and the production browser's
+three errors and absent controls. After the correction, Node checks passed 44 tests,
+the production-hook Chrome 155 check passed with restored track/labels, and local
+`mix precommit` passed compilation, formatting, Credo and 638 tests with one skipped.
+Independent review found no blocking issues. The correction is local; next step: deploy
+and verify the adapter and visible controls on the TV.
 
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query

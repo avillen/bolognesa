@@ -82,21 +82,25 @@ try {
     const NativeNumberFormat = Intl.NumberFormat
     Intl.NumberFormat = class extends NativeNumberFormat {
       constructor(locale, options) {
-        if (options?.style === "unit") throw new TypeError("Unit formatting is unsupported")
-        super(locale, options)
+        super(locale, options?.style === "unit" ? {} : options)
+        this.unsupportedUnit = options?.style === "unit"
+      }
+      get format() {
+        if (this.unsupportedUnit) throw new TypeError("Unit format accessor is unavailable")
+        return super.format
       }
     }
   })
   await legacyPage.goto(`http://127.0.0.1:${server.address().port}`)
   await legacyPage.waitForFunction(() => document.querySelector("video").currentTime > 0.1)
-  assert.deepEqual(legacyErrors, [], "Timeline must work with unit NumberFormat TypeErrors, native unit ListFormat and no Unicode property escapes")
+  assert.deepEqual(legacyErrors, [], "Timeline must work with delayed unit NumberFormat TypeErrors, native unit ListFormat and no Unicode property escapes")
   await legacyPage.waitForFunction(() => window.events.some(([name, data]) => name === "playback_diagnostic" && data.diagnostic === "controls"))
   const probe = await legacyPage.evaluate(() => window.events.find(([name, data]) => name === "playback_diagnostic" && data.diagnostic === "controls")[1])
   assert.ok(probe.controls_slider_width > 100 && probe.controls_track_width > 100)
   assert.ok(probe.controls_slider_height > 0 && probe.controls_track_height > 0)
   assert.equal(probe.controls_labels, 2)
-  assert.equal(probe.intl_unit_constructor, "type")
-  assert.equal(probe.intl_unit_format, "not_run")
+  assert.equal(probe.intl_unit_constructor, "ok")
+  assert.equal(probe.intl_unit_format, "type")
   assert.equal(probe.time_format_step, "ok")
   assert.equal(probe.time_format_error, "none")
   assert.equal(probe.intl_units, false)
@@ -127,7 +131,7 @@ try {
   assert.deepEqual(legacyErrors, [])
   await legacyPage.evaluate(() => window.hook.destroyed.call(window.context))
   await legacyPage.close()
-  console.log("Compatibility: timeline, English/Spanish time labels and seeking with unit NumberFormat TypeErrors, native unit ListFormat and no Unicode property escapes passed.")
+  console.log("Compatibility: timeline, English/Spanish time labels and seeking with delayed unit NumberFormat TypeErrors, native unit ListFormat and no Unicode property escapes passed.")
   const page = await browser.newPage({viewport: {width: 1000, height: 800}})
   const errors = []
   page.on("pageerror", error => { errors.push(error.message); console.error(error.stack) })
