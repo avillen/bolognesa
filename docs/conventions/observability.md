@@ -245,6 +245,17 @@ unrecognized. No raw user-agent string is transmitted. Missing elements, failed 
 and unavailable APIs can produce zero/false values, so these do not establish a specific
 engine or root cause. These fields are log metadata only, never metric labels.
 
+The time formatter probe separates `intl_unit_constructor` and `intl_unit_format`:
+`not_run`, `ok`, `range`, `type`, `reference` or `other`. `time_format_step` records the
+first failed adapter operation (`numeric`, an hour/minute/second unit plus long/short/narrow
+style, or `list_long`/`list_short`/`list_narrow`), `ok` if all succeed, and `not_run` for
+older clients. `time_format_error` is `none`, `range`, `type`, `reference` or `other`.
+`time_format_locale` is restricted to `en`/`es`, or `unknown` for older clients. It exercises
+both construction and formatting, including native unit formatting followed by the same
+number/list adapters used by the vendored controls. Only fixed codes are sent; exception
+messages, stacks and formatted content are discarded. These remain log metadata, not
+metric labels. Probe failures must not prevent playback.
+
 Additional browser diagnostic names are `pagehide`, `pageshow`, `online`, `offline`,
 `socket_open`, `socket_closed`, `socket_error`, `destroyed`, `progress`, `restored`,
 `restore_failed` and `autoplay_blocked`. Page IDs are random per document; tab IDs

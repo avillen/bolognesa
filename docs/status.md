@@ -459,7 +459,20 @@ screenshots passed unchanged and Gitleaks found no leaks in the incoming commit.
 update created and validated `pre-migration-20261025-194256-21604.dump` with the previous
 image reference. Post-update checks confirmed HTTP 200, healthy PostgreSQL, unchanged
 application/database mounts and three read-only media mounts; the backup was revalidated.
-The TV's exact Intl exception type and corrected rendering still need confirmation.
+The operator confirmed that this patch still leaves the timeline absent on the TV.
+The current observation again has a wide slider, zero track dimensions and zero labels;
+the constructor-only simulations did not establish the device's failure mode.
+
+A bounded formatter probe is implemented locally to distinguish native constructor
+failure from failure in `format()`, and to exercise the current number/list adapters
+with both numeric and unit styles in the page locale. Only fixed step/error codes are
+logged; raw error messages and formatted content are excluded. The probe has a regression
+for delayed formatting failure and for a constructor rejection that the adapter recovers.
+Local `mix precommit` passed compilation, formatting, Credo and 638 tests with one skipped.
+Node checks passed 43 tests; the production-hook Chrome 155 check and seven focused server/
+logging checks passed. Independent review found no blocking issues.
+Next step: deploy this diagnostic, collect its target-TV observation and choose the
+correction from that failing operation. The timeline issue remains unresolved.
 
 Optional PromEx/Alloy is published and verified on an opted-in ARM64 installation,
 including accepted Grafana Cloud remote writes. The operator confirmed the Explore query

@@ -117,6 +117,11 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
       controls_hidden: false,
       css_container: false,
       css_layer: false,
+      intl_unit_constructor: "not_run",
+      intl_unit_format: "not_run",
+      time_format_step: "not_run",
+      time_format_error: "none",
+      time_format_locale: "unknown",
       intl_units: false,
       intl_lists: false,
       unicode_properties: false,
@@ -164,6 +169,34 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
               :unicode_properties
             ],
        do: is_boolean(value)
+
+  defp valid_extra?(key, value) when key in [:intl_unit_constructor, :intl_unit_format],
+    do: value in ["not_run", "ok", "range", "type", "reference", "other"]
+
+  defp valid_extra?(:time_format_error, value),
+    do: value in ["none", "range", "type", "reference", "other"]
+
+  defp valid_extra?(:time_format_locale, value), do: value in ["unknown", "en", "es"]
+
+  defp valid_extra?(:time_format_step, value),
+    do:
+      value in [
+        "not_run",
+        "ok",
+        "numeric",
+        "hour_long",
+        "hour_short",
+        "hour_narrow",
+        "minute_long",
+        "minute_short",
+        "minute_narrow",
+        "second_long",
+        "second_short",
+        "second_narrow",
+        "list_long",
+        "list_short",
+        "list_narrow"
+      ]
 
   defp valid_extra?(:page_id, nil), do: true
   defp valid_extra?(:page_id, value), do: match?({:ok, _}, Ecto.UUID.cast(value))

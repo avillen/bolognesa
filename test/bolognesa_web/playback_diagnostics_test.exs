@@ -65,7 +65,12 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
         "css_layer" => true,
         "intl_units" => false,
         "unicode_properties" => false,
-        "browser_major" => 63
+        "browser_major" => 63,
+        "intl_unit_constructor" => "ok",
+        "intl_unit_format" => "range",
+        "time_format_step" => "hour_long",
+        "time_format_error" => "range",
+        "time_format_locale" => "es"
       })
 
     assert {:noreply, _} = PlaybackEvents.handle_event("playback_diagnostic", controls, socket)
@@ -76,6 +81,8 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
                       controls_slider_width: 400,
                       controls_labels: 2,
                       browser_major: 63,
+                      time_format_step: "hour_long",
+                      time_format_error: "range",
                       intl_units: false
                     }}
 
@@ -86,7 +93,11 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
           {"controls_labels", 3},
           {"css_container", "private"},
           {"browser_major", 1000},
-          {"controls_hidden", nil}
+          {"controls_hidden", nil},
+          {"intl_unit_format", "private"},
+          {"time_format_step", "private"},
+          {"time_format_error", "private"},
+          {"time_format_locale", "private"}
         ] do
       assert {:noreply, ^socket} =
                PlaybackEvents.handle_event(

@@ -15,6 +15,7 @@ export function measurePlayerControls(hook, win = globalThis.window) {
   }
   const track = slider?.querySelector("media-slider-track")
   return {
+    ...(hook.timeFormatProbe?.() || {}),
     controls_group_width: dimension(group), controls_slider_width: dimension(slider),
     controls_track_width: dimension(track),
     controls_slider_height: dimension(slider, "height"), controls_track_height: dimension(track, "height"),

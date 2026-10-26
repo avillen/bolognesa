@@ -1,4 +1,5 @@
 import {createPlayer, videoFeatures, timeFeature, bufferFeature} from "../../vendor/videojs.min.mjs"
+import {probeTimeFormatting} from "../video_time_format.mjs"
 import {fileTimeFeature, fileBufferFeature} from "../video_timeline.mjs"
 import {createPlaybackDiagnostics} from "../playback_diagnostics.mjs"
 import {createPlaybackRecovery} from "../playback_recovery.mjs"
@@ -30,6 +31,7 @@ const VideoPlayer = {
     this.clearInitialLoading = () => skin.removeAttribute("data-initial-loading")
     this.video.addEventListener("loadeddata", this.clearInitialLoading)
     this.recovery = createPlaybackRecovery(this)
+    this.timeFormatProbe = () => probeTimeFormatting(document.documentElement.lang)
     this.diagnostics = createPlaybackDiagnostics(this)
     this.sync = () => {
       const data = this.el.dataset

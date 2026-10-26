@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createTimeNumberFormat, createTimeListFormat} from "../js/video_time_format.mjs"
+import {createTimeNumberFormat, createTimeListFormat, probeTimeFormatting} from "../js/video_time_format.mjs"
 
 class LegacyNumberFormat extends Intl.NumberFormat {
   constructor(locale, options) {
@@ -65,4 +65,29 @@ test("time phrases survive a ListFormat implementation that rejects unit lists",
   class BrokenListFormat { constructor() { throw new TypeError("Broken formatter") } }
   assert.throws(() => createTimeListFormat("en", {type: "unit"}, BrokenListFormat), TypeError)
   assert.throws(() => createTimeListFormat("en", {type: "invalid"}), RangeError)
+})
+
+
+test("formatter probes distinguish constructor failures from delayed format failures without error text", () => {
+  const recovered = probeTimeFormatting("es", {NumberFormat: LegacyNumberFormat, ListFormat: Intl.ListFormat})
+  assert.equal(recovered.intl_unit_constructor, "range")
+  assert.equal(recovered.intl_unit_format, "not_run")
+  assert.equal(recovered.time_format_step, "ok")
+  assert.equal(recovered.time_format_error, "none")
+  class DelayedNumberFormat {
+    constructor(locale, options) {
+      this.native = new Intl.NumberFormat(locale, options?.style === "unit" ? {} : options)
+      this.unit = options?.style === "unit"
+    }
+    format(value) {
+      if (this.unit) throw new RangeError("private error text")
+      return this.native.format(value)
+    }
+  }
+  const delayed = probeTimeFormatting("es", {NumberFormat: DelayedNumberFormat, ListFormat: Intl.ListFormat})
+  assert.equal(delayed.intl_unit_constructor, "ok")
+  assert.equal(delayed.intl_unit_format, "range")
+  assert.equal(delayed.time_format_step, "hour_long")
+  assert.equal(delayed.time_format_error, "range")
+  assert.equal(JSON.stringify(delayed).includes("private"), false)
 })
