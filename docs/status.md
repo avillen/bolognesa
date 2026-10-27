@@ -1,6 +1,15 @@
 # Project status
 
-Last reviewed: 2026-10-26.
+Last reviewed: 2026-10-27.
+
+## Pending playback work
+
+The [HLS playback optimization plan](design/hls-playback-optimization-plan.md) covers
+pause/expiry correctness, segment delivery, session cleanup, monitoring and measured
+optimizations. This is planning only; no streaming behavior has changed. Remux,
+buffered seeks, source-validation changes and browser-buffer tuning have evidence
+gates. Next step: establish the repeatable request baseline and implement the pause
+regressions; target-server measurements and native-HLS device checks remain pending.
 
 ## Implemented behavior
 
