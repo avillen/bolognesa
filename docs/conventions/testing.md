@@ -47,6 +47,13 @@ at the browser boundary. It checks controls, global seeks, pause/resume, fullscr
 replacement, drag commit behavior, paused seeks, and Spanish labels. This does not replace
 an end-to-end check with FFmpeg sessions and representative media on target devices.
 
+`npm run measure-hls -- tmp/videojs-fixtures` measures the production hook against
+a controlled synthetic HTTP producer, with two-minute phases and bootstrap reported
+separately. Accounting and playlist-generation tests run with the Node suite. See the
+[monitoring procedure](../../deploy/compose/monitoring.md#measure-hls-request-behavior)
+for report interpretation, a short smoke check, and the separate target-server baseline.
+This tool observes paused polling; it does not require that polling to remain present.
+
 Generate disposable fixtures with FFmpeg, then use an installed Chrome with H.264 support:
 
 ```sh

@@ -15,6 +15,108 @@ Alloy scrapes every 60 seconds and sends Prometheus remote write over HTTPS. Gra
 credentials live in Alloy, not in the application. No logs, traces, host metrics,
 Docker socket, or media mounts are collected by the metrics-only Alloy service.
 
+## Measure HLS request behavior
+
+The project overview's Playback request panel evaluates
+`sum by (path, status)(increase(bolognesa_prom_ex_phoenix_http_requests_total{...}[$window]))`.
+The default activity window is one hour, independently of the dashboard's visible
+24-hour range. Each point is a rolling estimate; the legend uses `lastNotNull`,
+not the sum of the plotted values. Route labels combine different files and sessions.
+Do not interpret a displayed count as one hour of continuous playback by one viewer.
+The separate Phoenix `Path Requests` panel uses `irate`, a rate per second.
+
+For a production baseline, save the Query Inspector expression and evaluation time,
+effective window, visible range, legend reduction, job/instance and deployed commit.
+Inspect counts alongside endpoint latency and its sample count. With a 60-second
+scrape interval, use a several-minute rate window rather than a one-minute window;
+`60 * sum by (path, status)(rate(bolognesa_prom_ex_phoenix_http_requests_total{...}[5m]))`
+expresses requests per minute. Counter extrapolation and absent samples limit precision.
+Do not add session IDs as Prometheus labels to recover per-session detail.
+
+### Local synthetic baseline
+
+Generate the disposable H.264 MPEG-TS fixtures described in the
+[browser testing convention](../../docs/conventions/testing.md#browser-player-verification),
+then run from the repository root:
+
+```sh
+BOLOGNESA_TEST_BROWSER_CHANNEL=chrome npm run measure-hls -- tmp/videojs-fixtures
+```
+
+This loads the production Video.js hook and vendored hls.js in headless Chrome.
+It serves a completed playlist and a controlled progressive, 12-entry playlist.
+The synthetic producer starts with up to 12 seconds of complete segments, advances
+on resume and freezes on pause. It repeats the short fixture with explicit timestamp
+discontinuities; it neither encodes new media nor models FFmpeg throughput or file deletion.
+The fixture must be a completed plain MPEG-TS media playlist with local segment names;
+encrypted, variant, byte-range and already-discontinuous inputs are rejected.
+
+Three scenarios run concurrently, in separate pages:
+
+| Scenario | Measured phases after bootstrap |
+| --- | --- |
+| Completed | Completed playback, destroyed hook |
+| Progressive | Playing, paused, resumed, destroyed hook |
+| Initially paused | Paused before first play, forced HTTP 404 expiry, destroyed hook |
+
+Each phase defaults to 120 seconds, so the run takes about eight minutes plus startup.
+Bootstrap is reported separately. Forced expiry is explicit; this server does not
+simulate the backend's five-minute idle timer. The report also captures hls.js errors
+and browser event counts so retries and fatal errors remain distinguishable from 200s.
+
+The script verifies its HTTP accounting against a known 200/200/404 response sequence
+before starting the players. It fails on browser exceptions, failed scenarios,
+recurring completed-playlist reloads, non-advancing progressive playback or new requests
+after teardown. Paused polling is recorded rather than asserted as required behavior,
+allowing the same tool to measure a future pause fix.
+
+The JSON report defaults to ignored `tmp/hls-baseline/latest.json`. Use `--output`
+to retain before/after reports. It contains the release commit, dirty-worktree flag,
+hook bundle hash, browser/hls.js versions, validation status, actual fixture durations, phase lengths,
+position advanced, resource/status counts, request intervals, unchanged-manifest
+fraction, response-body bytes and local HTTP mean/p95. Requests belong to the phase
+in which they arrived; response time includes server handling, not browser decoding.
+Body bytes are not network-interface traffic. Raw media names, cookies and paths are
+not written to the report.
+Check `validation_passed` before comparing results; failed runs retain a partial report
+but never mark it as a valid cadence baseline. The destroyed phase begins after hook
+teardown has completed, excluding the browser command's own transition time.
+
+A short wiring check is available; its report is marked `cadence_baseline: false`:
+
+```sh
+BOLOGNESA_TEST_BROWSER_CHANNEL=chrome npm run measure-hls -- tmp/videojs-fixtures \
+  --phase-seconds 3 --output tmp/hls-baseline/smoke.json
+```
+
+An existing Playwright endpoint can be selected with `BOLOGNESA_SCREENSHOT_BROWSER_WS`,
+as with the regression harness. This is a synthetic browser/HTTP measurement, **not**
+a Phoenix authorization, database, FFmpeg CPU or NAS performance benchmark.
+
+### Target installation baseline
+
+Measure representative direct, audio-conversion and full-conversion files separately.
+Use anonymous case labels rather than media titles. Capture five minutes playing,
+two minutes paused, resume, one seek and navigation away; separately pause longer
+than five minutes and verify recovery. Keep browser, file class, release, resource
+limits and scrape settings the same for before/after comparisons.
+
+Record manifest/segment requests per minute and status, unchanged manifests,
+`TARGETDURATION`, `EXTINF`, sequence changes and final `ENDLIST`, HTTP mean/p95 with
+sample count, startup/seek time, buffering, scratch usage, BEAM memory, container
+CPU/memory (including FFmpeg), active producer count and log lines per minute.
+Missing measurements remain unknown. A downloaded segment is not necessarily a new
+encoding operation, and session lifetime is not FFmpeg CPU time.
+
+Keep HARs, Query Inspector exports and detailed operator evidence private and outside
+tracked files: they can contain cookies, tokens, addresses and media names. Commit
+only sanitized findings. A compact comparison can use this table:
+
+| Origin / case / phase | Wall time / position advanced | Manifest count / unchanged fraction | Segment count / bytes | Latency / CPU / memory / logs |
+| --- | --- | --- | --- | --- |
+| Local synthetic | Report values | Report values | Report values | Local HTTP only; NAS resources unavailable |
+| Target installation | Pending measurement | Pending measurement | Pending measurement | Pending measurement |
+
 ## Enable on an installation
 
 1. Obtain the Prometheus remote-write URL, numeric username, and a stack-scoped

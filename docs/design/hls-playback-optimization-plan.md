@@ -51,9 +51,9 @@ Use one reviewable commit per task or coherent subtask. Inspect Git before each 
 
 **Contract:** count requests at the HTTP boundary by manifest/segment, phase and status, with monotonic timestamps. Support evolving and frozen synthetic playlists, the existing completed fixture, and an explicit destruction phase. Output JSON containing phase duration, request counts, intervals, segment bytes and browser errors. Never present simulated output as real Phoenix/FFmpeg performance.
 
-- [ ] Add controlled scenarios: completed playlist, progressive playlist, frozen paused playlist, expired resource and destroyed hook. Verify the counter against a known server request sequence before using it to assess the hook.
+- [x] Add controlled scenarios: completed playlist, progressive playlist, frozen paused playlist, expired resource and destroyed hook. Verify the counter against a known server request sequence before using it to assess the hook.
 - [ ] Run each phase for at least two minutes when measuring cadence; count the bootstrap separately. Record actual `TARGETDURATION`, `EXTINF`, media sequence and `ENDLIST` instead of assuming four-second segments.
-- [ ] Document Grafana Query Inspector capture: effective `$window`, dashboard time range, legend reduction, query evaluation time, job/instance and release commit. The overview query is rolling `increase(...[$window])` by route/status, with `lastNotNull` in its legend; do not sum overlapping rolling points.
+- [x] Document Grafana Query Inspector capture: effective `$window`, dashboard time range, legend reduction, query evaluation time, job/instance and release commit. The overview query is rolling `increase(...[$window])` by route/status, with `lastNotNull` in its legend; do not sum overlapping rolling points.
 - [ ] Collect a target baseline when access is available: five minutes playing, two minutes paused, resume, one seek and navigation away; separately test a pause longer than five minutes. Include direct, audio-conversion and full-conversion sources with anonymous fixture labels.
 - [ ] Record request/minute, unchanged-manifest fraction, HTTP mean/p95 and sample count, startup/seek time, FFmpeg/container CPU, container/BEAM memory, scratch usage and log lines/minute. Distinguish wall-clock observation time from playback position advanced.
 

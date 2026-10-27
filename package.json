@@ -3,7 +3,8 @@
     "screenshots": "make screenshots",
     "capture-screenshots": "node scripts/capture_readme.mjs",
     "vendor-videojs": "node scripts/vendor_videojs.mjs",
-    "test-video-player": "node scripts/verify_video_player.mjs"
+    "test-video-player": "node scripts/verify_video_player.mjs",
+    "measure-hls": "node scripts/measure_hls_playback.mjs"
   },
   "devDependencies": {
     "@videojs/html": "10.1.0",
