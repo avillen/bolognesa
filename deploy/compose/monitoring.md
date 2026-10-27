@@ -114,8 +114,28 @@ only sanitized findings. A compact comparison can use this table:
 
 | Origin / case / phase | Wall time / position advanced | Manifest count / unchanged fraction | Segment count / bytes | Latency / CPU / memory / logs |
 | --- | --- | --- | --- | --- |
-| Local synthetic | Report values | Report values | Report values | Local HTTP only; NAS resources unavailable |
+| Local synthetic | See verified example below | See verified example below | See verified example below | Local HTTP only; NAS resources unavailable |
 | Target installation | Pending measurement | Pending measurement | Pending measurement | Pending measurement |
+
+Verified local example from clean commit `d5aee51`, Chrome 156.0.8078.49 and
+hls.js 1.7.0, with a two-second target and two-second fixture segments:
+
+| Scenario / phase (bootstrap excluded) | Wall time / position advanced | Manifest requests | Segment requests |
+| --- | --- | --- | --- |
+| Completed playlist | 120 s / 19.8 s to EOF | 0 | 0 |
+| Progressive / playing | 120 s / 120 s | 61 | 60 |
+| Progressive / paused | 120 s / 0 s | 119, all unchanged | 0 |
+| Progressive / resumed | 120 s / 120 s | 61 | 60 |
+| Initially paused | 120 s / 0 s | 120, all unchanged | 0 |
+| Initially paused / forced expiry | 120 s / 0 s | 3 HTTP 404 responses | 0 |
+| Destroyed (each of three scenarios) | 120 s / 0 s | 0 | 0 |
+
+Bootstrap fetched one manifest per scenario and 10/6/6 segments respectively.
+Forced expiry produced two nonfatal hls.js errors, one fatal error and one
+`transcode_error` event. No browser exceptions occurred. The report passed its
+assertions; raw JSON is kept in ignored `tmp/hls-baseline/baseline.json` locally.
+These numbers establish a pre-fix synthetic baseline; they do not quantify production
+CPU, memory, throughput or device compatibility.
 
 ## Enable on an installation
 

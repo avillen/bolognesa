@@ -9,14 +9,19 @@ pause/expiry correctness, segment delivery, session cleanup, monitoring and meas
 optimizations. Task 1 adds `npm run measure-hls -- tmp/videojs-fixtures`, a synthetic
 HTTP baseline using the production hook, with accounting tests and a documented
 [target measurement procedure](../deploy/compose/monitoring.md#measure-hls-request-behavior).
-The short smoke check passed in Chrome 156; the two-minute phase baseline is pending.
-Node checks passed 43 tests; `mix precommit` passed 653 tests with one skipped after
-an initial run hit two existing series-review 100 ms async timeouts. The unchanged
+The validated two-minute phase baseline passed in Chrome 156 with hls.js 1.7.0 and
+two-second synthetic segments: playing/resumed each requested 61 manifests and 60
+segments; paused requested 119 unchanged manifests and no segments. The completed
+playlist had no recurring requests, and all three post-destruction windows had zero
+requests. Forced expiry while initially paused produced three 404s and a terminal
+`transcode_error`; this preserves the reproduction for Task 2. The report was generated
+from clean commit `d5aee51`; detailed JSON remains under ignored `tmp/hls-baseline/`.
+Node checks passed 43 tests; `mix precommit` passed 653 tests with one skipped. The unchanged
 full player harness currently fails at a control click in Chrome 156 and at MP4
 startup in pinned Playwright Chromium; these limits remain unresolved. No production
 streaming behavior has changed. Remux, buffered seeks, source-validation changes and
-browser-buffer tuning retain evidence gates. Next step: finish the local cadence
-baseline and implement pause regressions. Target-server measurements and native-HLS
+browser-buffer tuning retain evidence gates. Next step: implement Task 2's pause
+regressions. Task 1's target-server measurements and native-HLS
 device checks remain pending.
 
 ## Implemented behavior
