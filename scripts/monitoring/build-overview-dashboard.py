@@ -6,7 +6,7 @@ import subprocess
 from collections import defaultdict
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / 'grafana/dashboards/operational.json'
 DS = {'type': 'prometheus', 'uid': '${DS_PROMETHEUS}'}
 SCOPE = 'job="$job", instance="$instance"'

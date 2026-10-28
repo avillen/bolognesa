@@ -261,7 +261,7 @@ See [decision 0021](../decisions/0021-optional-prometheus-metrics.md) for the tr
 ### Project overview metrics
 
 The operational Grafana dashboard is generated with
-`scripts/build-operational-dashboard.py` from the registered event catalog. It groups
+`scripts/monitoring/build-overview-dashboard.py` from the registered event catalog. It groups
 functionality by context and adds global Phoenix/LiveView, Ecto, Oban, BEAM and optional
 Docker rows. Keep event coverage and framework selectors aligned with the code. Default
 to a 24-hour view for low-volume use; show counts and mean/p50/p95 together. Missing

@@ -30,10 +30,10 @@ local-logs:
 	@docker compose logs --tail 100 --follow app db
 
 screenshots:
-	@bash scripts/capture_readme.sh
+	@bash scripts/screenshots/run-readme-screenshots.sh
 
 check-screenshots:
-	@bash scripts/capture_readme.sh --check
+	@bash scripts/screenshots/run-readme-screenshots.sh --check
 
 DEPLOY_CONFIG ?= .env.deploy
 -include $(DEPLOY_CONFIG)

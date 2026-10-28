@@ -5,7 +5,7 @@ import unittest
 import zlib
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location('checker', Path('scripts/check_readme_screenshots.py'))
+spec = importlib.util.spec_from_file_location('checker', Path('scripts/screenshots/compare-readme-screenshots.py'))
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
 

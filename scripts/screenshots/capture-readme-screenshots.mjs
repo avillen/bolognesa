@@ -5,7 +5,7 @@ import { chromium } from "playwright";
 const baseUrl = process.env.BOLOGNESA_URL ?? "http://127.0.0.1:4001";
 const phase = process.env.BOLOGNESA_CAPTURE_PHASE ?? "all";
 const outputDirectory = process.env.BOLOGNESA_SCREENSHOT_OUTPUT_DIR
-  ?? fileURLToPath(new URL("../docs/screenshots/", import.meta.url));
+  ?? fileURLToPath(new URL("../../docs/screenshots/", import.meta.url));
 await mkdir(outputDirectory, { recursive: true });
 const screenshotPath = (name) => `${outputDirectory}/${name}`;
 

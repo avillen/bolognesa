@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
 mode="${1:-generate}"
@@ -73,7 +73,7 @@ mkdir -p "$library_root"
 video_path="$work_dir/after-the-signal.webm"
 ids_path="$work_dir/ids.json"
 
-node scripts/generate_readme_video.mjs "$video_path"
+node scripts/screenshots/generate-demo-video.mjs "$video_path"
 
 docker run --detach --rm \
   --name "$container_name" \
@@ -139,14 +139,14 @@ kill "$server_pid"
 wait "$server_pid" 2>/dev/null || true
 server_pid=""
 
-PORT=0 mix run scripts/seed_readme_demo.exs
+PORT=0 mix run scripts/screenshots/seed_readme_screenshots.exs
 
 start_server
 run_capture app
 
 if [[ "$mode" == "--check" ]]; then
   python3 -B -m unittest discover -s test/scripts -p 'test_readme_screenshot_check.py'
-  if ! python3 scripts/check_readme_screenshots.py "$repo_root/docs/screenshots" "$output_dir"; then
+  if ! python3 scripts/screenshots/compare-readme-screenshots.py "$repo_root/docs/screenshots" "$output_dir"; then
     echo "README screenshots are out of date. Run 'make screenshots' and commit the updated images." >&2
     exit 1
   fi

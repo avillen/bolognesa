@@ -8,12 +8,12 @@ import {dirname, resolve} from "node:path"
 import {performance} from "node:perf_hooks"
 import {build} from "esbuild"
 import {chromium} from "playwright"
-import {parseFixture, publishedSegments, renderPlaylist, summarizePhase} from "./hls_measurement.mjs"
+import {parseFixture, publishedSegments, renderPlaylist, summarizePhase} from "./hls-measurement-helpers.mjs"
 
 const args = process.argv.slice(2)
 const directory = args.shift()
 let seconds = 120, output = "tmp/hls-baseline/latest.json"
-if (!directory || args.length % 2) throw new Error("Usage: node scripts/measure_hls_playback.mjs FIXTURES [--phase-seconds 120] [--output tmp/hls-baseline/latest.json]")
+if (!directory || args.length % 2) throw new Error("Usage: node scripts/playback/measure-hls-playback.mjs FIXTURES [--phase-seconds 120] [--output tmp/hls-baseline/latest.json]")
 for (let i = 0; i < args.length; i += 2) {
   if (args[i] === "--phase-seconds") seconds = Number(args[i + 1])
   else if (args[i] === "--output") output = args[i + 1]

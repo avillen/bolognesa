@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {parseFixture, renderPlaylist, publishedSegments, summarizePhase} from "../../scripts/hls_measurement.mjs"
+import {parseFixture, renderPlaylist, publishedSegments, summarizePhase} from "../../scripts/playback/hls-measurement-helpers.mjs"
 
 const fixture = () => parseFixture(`#EXTM3U
 #EXT-X-TARGETDURATION:3

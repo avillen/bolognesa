@@ -47,7 +47,7 @@ Use one reviewable commit per task or coherent subtask. Inspect Git before each 
 
 ## Task 1 — Make the request baseline reproducible
 
-**Files:** extend `scripts/verify_video_player.mjs`; add `scripts/measure_hls_playback.mjs` only if isolating measurement keeps the regression harness short; update `deploy/compose/monitoring.md` with the operator procedure. Disposable fixtures/results belong under `tmp/`; private HARs and media inventories must not be committed.
+**Files:** extend `scripts/playback/verify-video-player.mjs`; add `scripts/playback/measure-hls-playback.mjs` only if isolating measurement keeps the regression harness short; update `deploy/compose/monitoring.md` with the operator procedure. Disposable fixtures/results belong under `tmp/`; private HARs and media inventories must not be committed.
 
 **Contract:** count requests at the HTTP boundary by manifest/segment, phase and status, with monotonic timestamps. Support evolving and frozen synthetic playlists, the existing completed fixture, and an explicit destruction phase. Output JSON containing phase duration, request counts, intervals, segment bytes and browser errors. Never present simulated output as real Phoenix/FFmpeg performance.
 
@@ -113,7 +113,7 @@ remain pending; do not mark those checkboxes complete from the synthetic run.
 
 ## Task 5 — Separate useful metrics from routine HTTP logs
 
-**Files:** `lib/bolognesa/infrastructure/observability/playback_metrics.ex`, `playback_events.ex`, `observability.ex`, `lib/bolognesa_web/endpoint.ex`, `scripts/build-operational-dashboard.py`, generated `grafana/dashboards/operational.json`, `deploy/compose/monitoring.md`, `docs/conventions/observability.md`; tests in `test/bolognesa/infrastructure/prom_ex_test.exs`, `observability_test.exs`, `test/grafana/overview-test.py`.
+**Files:** `lib/bolognesa/infrastructure/observability/playback_metrics.ex`, `playback_events.ex`, `observability.ex`, `lib/bolognesa_web/endpoint.ex`, `scripts/monitoring/build-overview-dashboard.py`, generated `grafana/dashboards/operational.json`, `deploy/compose/monitoring.md`, `docs/conventions/observability.md`; tests in `test/bolognesa/infrastructure/prom_ex_test.exs`, `observability_test.exs`, `test/grafana/overview-test.py`.
 
 **Interfaces:** reuse existing HTTP counters/histograms for request rate and endpoint latency. Add `TranscodeManager.runtime_snapshot/0 :: %{sessions: 0 | 1, ffmpeg_processes: 0 | 1, suspended_processes: 0 | 1}` for optional bounded polling metrics; expose counts only. A live session with an exited FFmpeg has zero producer count. These states do not prove the browser is playing.
 

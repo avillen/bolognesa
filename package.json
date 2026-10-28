@@ -1,10 +1,10 @@
 {
   "scripts": {
     "screenshots": "make screenshots",
-    "capture-screenshots": "node scripts/capture_readme.mjs",
-    "vendor-videojs": "node scripts/vendor_videojs.mjs",
-    "test-video-player": "node scripts/verify_video_player.mjs",
-    "measure-hls": "node scripts/measure_hls_playback.mjs"
+    "capture-screenshots": "node scripts/screenshots/capture-readme-screenshots.mjs",
+    "vendor-videojs": "node scripts/playback/build-videojs-bundle.mjs",
+    "test-video-player": "node scripts/playback/verify-video-player.mjs",
+    "measure-hls": "node scripts/playback/measure-hls-playback.mjs"
   },
   "devDependencies": {
     "@videojs/html": "10.1.0",

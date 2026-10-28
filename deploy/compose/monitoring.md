@@ -306,7 +306,7 @@ maintained in the repository and queries Bolognesa's fixed event metrics. To reg
 the PromEx dashboards after a dependency update, run from a development checkout:
 
 ```sh
-python3 scripts/export-grafana-dashboards.py
+python3 scripts/monitoring/export-promex-grafana-dashboards.py
 ```
 
 The script writes `application.json`, `beam.json`, `phoenix.json`, `ecto.json`, and
@@ -315,7 +315,7 @@ files together with the dependency change. `operational.json` is generated from 
 layout/query definitions. Regenerate it with:
 
 ```sh
-python3 scripts/build-operational-dashboard.py
+python3 scripts/monitoring/build-overview-dashboard.py
 python3 test/grafana/overview-test.py
 # Optional PromQL checks against empty data and sparse histograms with a counter reset:
 docker run --rm -v "$PWD/tmp/operational-overview:/config:ro" --entrypoint /bin/promtool \
