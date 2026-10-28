@@ -29,6 +29,8 @@ Set `TMDB_READ_TOKEN` in the environment for identification. Set `BOLOGNESA_LIBR
 
 Describe what you expected, what happened, and how to reproduce it. Include your OS, browser/version, and media container/codecs when relevant. Distinguish actual device results from automated checks. Remove credentials, personal paths, and private media names.
 
+Keep setup and everyday use understandable, stay practical on modest hardware, and make background work recoverable with clear failures. Preserve manual corrections and distinguish verified behavior from expectations.
+
 Discuss larger features before implementing them. Keep fixes focused and add tests when behavior changes. The maintainer chooses scope and cannot promise to merge every proposal.
 
 Code lives in `lib/bolognesa/` and `lib/bolognesa_web/`, with corresponding tests under `test/`. Follow the [project conventions](docs/README.md) and [commit/privacy rules](docs/conventions/commits.md).

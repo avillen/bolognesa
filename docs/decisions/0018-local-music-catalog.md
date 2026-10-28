@@ -1,6 +1,6 @@
 # 0018. Local music identities and durable import
 
-Status: Event-based handoff and recovery superseded by [0020](0020-direct-durable-jobs.md). Implemented. Deployment evidence and playback verification limits are tracked in [project status](../status.md).
+Status: Event-based handoff and recovery superseded by [0020](0020-direct-durable-jobs.md). Implemented.
 
 [0019](0019-content-context-boundaries.md) clarifies that Music remains an independent content owner. Movies and Series replace the former video Identification boundary; music/video selectors and queues remain separate as described here.
 

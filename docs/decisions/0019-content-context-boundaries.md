@@ -1,6 +1,6 @@
 # 0019. Content-owned contexts
 
-Status: Implemented and reviewed; its retained identification outbox mechanism is superseded by [0020](0020-direct-durable-jobs.md). Deployment evidence is tracked in [project status](../status.md).
+Status: Implemented and reviewed; its retained identification outbox mechanism is superseded by [0020](0020-direct-durable-jobs.md).
 
 ## Purpose
 
@@ -100,7 +100,7 @@ The implemented owners have independent facades, domain models, DTOs, tables, pr
 | `Libraries.Infrastructure.Repositories.EctoScanRepository` calling `Movies.request_batch_in_transaction!/2` or `Series.request_batch_in_transaction!/2` | The physical inventory request shape is the same; destination ownership is explicit and Music uses its existing inspection handoff. | Retain explicit type routing inside the inventory transaction and validation in both owners. A generic workflow would hide the atomicity boundary without reducing domain coupling. |
 | `Playback.Infrastructure.Repositories.EctoPlaybackRepository`, `ContentRef`, `Source`, and `TranscodeSession`, consumed by direct/HLS controllers and detail playback helpers | Authorization, physical source selection, range delivery, temporary sessions, and revision checks have the same playback meaning across video kinds. Music keeps its separate selector. | Retain Playback ownership and typed references. Read joins project owner tables without importing their domain internals or writing their data. No new cross-content projection is warranted by current screens. |
 
-No new business context, generic workflow, repository framework, or cross-content entity is warranted. A technical extraction remains possible when it has a concrete consumer benefit. Automated acceptance and fresh review are recorded separately in project status.
+No new business context, generic workflow, repository framework, or cross-content entity is warranted. A technical extraction remains possible when it has a concrete consumer benefit. Record automated acceptance and review evidence in the relevant issue or pull request.
 
 Movie and episode detail reads accept at most one hundred physical versions, ordered by file ID. Series details accept at most one hundred seasons, ordered by season number and ID. Readers fetch one extra item to detect overflow and return an explicit error without truncation; the UI explains the limit. These limits bound detail reads independently of paginated catalog and episode lists. Supporting larger details requires pagination rather than silently dropping associations.
 
@@ -108,4 +108,4 @@ Movie and episode detail reads accept at most one hundred physical versions, ord
 
 The owner split passed the complete local suite and a fresh whole-change review. The review exposed merged-query-parameter ambiguity in HLS routing; manifest and segment tests reproduced the bypass, and controllers now construct content identity exclusively from route path parameters. Public playback helpers use the typed reference contract. Source ownership and independent-ID cleanup assertions were reviewed alongside transactional and recovery coverage.
 
-The backend convention describes current responsibilities. Decisions 0005, 0010, 0012, 0013, and 0018 retain their still-valid matching, consistency, and recovery rules with links clarifying superseded ownership. Current automated, browser, and deployment evidence belongs in [project status](../status.md). Completed temporary implementation notes have been removed.
+The backend convention describes current responsibilities. Decisions 0005, 0010, 0012, 0013, and 0018 retain their still-valid matching, consistency, and recovery rules with links clarifying superseded ownership. Record automated, browser, and deployment evidence in the relevant issue or pull request. Completed temporary implementation notes have been removed.

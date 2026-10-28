@@ -7,11 +7,10 @@ The repository's documentation is part of the public project interface. Keep it 
 - `README.md` at the repository root: project introduction and local setup.
 - `CONTRIBUTING.md`: contribution workflow and checks.
 - `CHANGELOG.md`: release notes and version-specific upgrade information; keep the README independent of application release versions. Internal changes before the first announcement do not need user migration instructions.
-- `docs/product.md`: audience, scope, and product principles.
-- `docs/status.md`: a short snapshot of implemented behavior, evidence limits, and release blockers.
-- `docs/roadmap.md`: product outcomes and open questions, without duplicating status details.
 - `docs/conventions/`: current, durable rules. Update the relevant convention when an agreed rule changes.
 - `docs/decisions/`: durable architectural decisions, rationale, consequences, and replacement links.
+
+Track tasks, verification gaps, and blockers in GitHub issues; track release scope and acceptance criteria in milestones. Record verification evidence in the relevant issue or pull request. Keep user-facing capabilities and limitations in the README or relevant guide.
 
 Temporary designs and execution plans belong in the change that uses them. Remove completed working notes or distill any lasting rule into a convention or decision. Do not keep deployment diaries, personal inventories, or redundant milestone histories in the public documentation.
 

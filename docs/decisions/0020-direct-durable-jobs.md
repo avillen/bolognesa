@@ -1,6 +1,6 @@
 # 0020. Direct durable job creation
 
-Status: Accepted; inspection, Music import and video identification delivery implemented locally. Verification belongs in project status.
+Status: Accepted; inspection, Music import and video identification delivery implemented locally.
 
 ## Decision
 

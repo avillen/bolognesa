@@ -88,13 +88,9 @@ This quick start uses development credentials and binds to your own machine. For
 
 ## Playback limits
 
-Playback depends on browser support for the file's container and codecs. Limited FFmpeg/HLS conversion is available, with one shared conversion session; performance depends on your hardware. Files containing several episodes play in full.
+Playback depends on browser codec support and server hardware. Limited FFmpeg/HLS conversion supports one shared conversion session. Files containing several episodes play in full.
 
-Video can recover its position and pause state **in the same tab**, on a best-effort basis, for up to 12 hours. Changing files, closing the tab, or losing browser storage can lose recovery. You may need to press Play again. This is not saved account progress or cross-device resume.
-
-Music plays without conversion and stops when leaving the music screen or reloading. Queue editing and saved playlists/progress are not available.
-
-See [status](docs/status.md) for automated checks, browser observations, actual device reports, and known problems. None establishes universal playback support.
+Video position and pause state can recover in the same tab for up to 12 hours, on a best-effort basis; progress is not saved across tabs or devices. Music plays without conversion and stops when leaving the music screen or reloading.
 
 ## Before updating
 
@@ -107,7 +103,7 @@ The [deployment guide](deploy/compose/README.md#backup-update-and-recovery) expl
 Bug reports, setup feedback, documentation, and focused fixes are welcome. Discuss larger features first. See [CONTRIBUTING](CONTRIBUTING.md) for native development and checks.
 
 - [Changelog](CHANGELOG.md)
-- [Product](docs/product.md), [status](docs/status.md), and [roadmap](docs/roadmap.md)
+- [Issues](https://github.com/avillen/bolognesa/issues) and [milestones](https://github.com/avillen/bolognesa/milestones)
 - [Documentation and architecture](docs/README.md)
 - [Linux deployment](deploy/compose/README.md)
 

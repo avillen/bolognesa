@@ -4,15 +4,15 @@ A Phoenix web application for learning and home use. Bolognesa's decisions and c
 
 ## Session continuity
 
-- At the start, read the [product overview](docs/product.md), [status](docs/status.md), [roadmap](docs/roadmap.md), and applicable conventions. Inspect Git and preserve others' changes.
+- At the start, read the [README](README.md), relevant GitHub issues and milestones, and applicable conventions. Inspect Git and preserve others' changes.
 - Choose a bounded task with acceptance criteria; read the relevant [decisions](docs/decisions/README.md) and conventions. Check the code before assuming a feature exists.
-- After significant work, run `mix precommit` and the relevant checks; fix failures and update `docs/status.md` with the actual status, verification, blockers, and next step. Do not claim deployment or device compatibility without evidence.
-- If work remains incomplete, record the files or branch, pending steps, failed command, and reproducible symptoms. Do not store credentials or private media inventories.
-- Mark a milestone complete only when the criteria in `docs/roadmap.md` are met. Avoid empty plans or speculative implementations.
+- After significant work, run `mix precommit` and the relevant checks; fix failures and record actual verification, blockers, and the next step in the relevant issue or pull request. Do not claim deployment or device compatibility without evidence.
+- If work remains incomplete, record the files or branch, pending steps, failed command, and reproducible symptoms in the relevant issue or pull request. Do not store credentials or private media inventories.
+- Mark a milestone complete only when its acceptance criteria in GitHub are met. Avoid empty plans or speculative implementations.
 
 ## Documentation organization
 
-Consult [docs/README.md](docs/README.md) and follow the [documentation convention](docs/conventions/documentation.md). Keep public content in English and free of private details. Status is a snapshot, not a history; when temporary work is finished, remove its notes or summarize lasting information in a convention or decision. Do not create directories for individual tools or duplicate instructions in agent-specific files.
+Consult [docs/README.md](docs/README.md) and follow the [documentation convention](docs/conventions/documentation.md). Keep public content in English and free of private details. Track work and release scope in GitHub issues and milestones. When temporary work is finished, remove its notes or summarize lasting information in a convention or decision. Do not create directories for individual tools or duplicate instructions in agent-specific files.
 
 ## Conventions by area
 

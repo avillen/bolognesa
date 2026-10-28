@@ -35,7 +35,7 @@ Tasks 1–5 form the first delivery: baseline, pause correctness, resource clean
 
 Each implementation task follows focused failing behavioral test → minimal fix → focused checks → review → `mix precommit` for significant work. A measurement-only task can finish with a documented decision to keep current behavior; it must record the measurements and rationale. Missing hardware evidence leaves that acceptance item pending rather than blocking independent local work or claiming compatibility.
 
-Use one reviewable commit per task or coherent subtask. Inspect Git before each task and preserve unrelated changes. After significant implementation, update `docs/status.md` with actual verification and the next step; keep unexecuted work out of implemented behavior.
+Use one reviewable commit per task or coherent subtask. Inspect Git before each task and preserve unrelated changes. After significant implementation, record actual verification and the next step in the relevant issue or pull request; keep unexecuted work out of implemented behavior.
 
 ## Review focus
 
@@ -167,7 +167,7 @@ remain pending; do not mark those checkboxes complete from the synthetic run.
 
 ## Task 9 — Validate browser memory, native HLS and segment characteristics
 
-**Files:** production-hook harness and measurement script; `assets/js/hooks/transcode_video.js` only for a proven adjustment; existing fixtures and `docs/status.md` for verified limits.
+**Files:** production-hook harness and measurement script; `assets/js/hooks/transcode_video.js` only for a proven adjustment; existing fixtures; record verified limits in the relevant issue or pull request.
 
 - [ ] Measure an extended hls.js playback (at least 30 minutes), buffered-range retention and browser memory. The current infinite back buffer is a risk, not proof of a leak; memory includes browser-owned buffers outside JS heap.
 - [ ] If retention is harmful, compare `backBufferLength:60` with the baseline, keeping forward-buffer defaults initially. Verify full-file seeking, local seeks from Task 7 and long playback. Keep the change only with lower retained memory and no added stalls; do not conflate browser RAM with NAS RAM.
@@ -180,7 +180,7 @@ remain pending; do not mark those checkboxes complete from the synthetic run.
 
 ## Task 10 — Combined acceptance and release readiness
 
-**Files:** `docs/status.md`; decision 0011 and observability/testing conventions only where implemented behavior changed. Do not mark roadmap outcomes complete based solely on this plan.
+**Files:** decision 0011 and observability/testing conventions only where implemented behavior changed. Record verification evidence and remaining work in the relevant issue or pull request. Do not mark issues or milestones complete based solely on this plan.
 
 - [ ] Run `node --test assets/test/*.mjs`, the production-player browser harness, the Grafana dashboard checks when changed, relevant real-FFmpeg integration checks and `mix precommit`.
 - [ ] Exercise movies, episodes, consecutive parts, multi-episode files, direct delivery, audio conversion, full conversion and remux if enabled. Cover autoplay block, pause/long pause, buffered/unbuffered seeks, EOF, retry, reload, reconnect, navigation, logout and same-actor tab replacement.

@@ -1,6 +1,6 @@
 # 0012. Shared catalog identity and atomic identification writes
 
-Status: Implemented locally; deployment status is tracked in [project status](../status.md).
+Status: Implemented locally.
 
 The shared catalog identity, preserved-ID migration, and Catalog/Identification ownership are superseded by [0019](0019-content-context-boundaries.md). Independent content identities replace the shared table. Atomic identity/association writes, provider uniqueness, metadata preservation, and authorized selection remain required.
 

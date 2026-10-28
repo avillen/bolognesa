@@ -69,7 +69,7 @@ Owns library-local tracks, artists, albums, file associations, import attempts, 
 
 Libraries owns sanitized observations; Music accepts them through its transaction-aware facade and owns pending import state, linked jobs, and recovery from acceptance onward. Imports revalidate the current observation before writing, tolerate duplicate delivery, and reject stale revisions or inspection tokens. Reads are authorized and library-scoped; Playback reauthorizes each selected track.
 
-Identity keys, import locking and recovery, browsing limits, and album playback contracts are defined in [decision 0018](../decisions/0018-local-music-catalog.md). Current listening behavior and verification limits belong in [project status](../status.md).
+Identity keys, import locking and recovery, browsing limits, and album playback contracts are defined in [decision 0018](../decisions/0018-local-music-catalog.md). User-facing listening behavior and limitations belong in the [README](../../README.md#playback-limits); record verification evidence in the relevant issue or pull request.
 
 ### Playback
 

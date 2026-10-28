@@ -1,6 +1,6 @@
 # Changelog
 
-Release notes and upgrade information. See the [README](README.md) for setup and [status](docs/status.md) for verification limits.
+Release notes and upgrade information. See the [README](README.md) for setup and playback limits.
 
 ## 0.1.0 — Unreleased
 
