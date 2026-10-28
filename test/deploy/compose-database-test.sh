@@ -12,7 +12,11 @@ if [ "$1" = compose ]; then
   shift
   while [ "${1:-}" = -f ] || [ "${1:-}" = --env-file ] || [ "${1:-}" = --project-directory ]; do shift 2; done
   case "$*" in
-    'config --environment') printf 'POSTGRES_DATA_PATH=%s\n' "${PRIVATE_DATABASE_PATH:-}" ;;
+    'config --environment')
+      printf 'POSTGRES_DATA_PATH=%s\n' "${PRIVATE_DATABASE_PATH:-}"
+      printf 'MEDIA_AUTOMATION_DATA_PATH=%s\n' "${MEDIA_AUTOMATION_DATA_PATH:-}"
+      printf 'MEDIA_AUTOMATION_CONFIG_PATH=%s\n' "${MEDIA_AUTOMATION_CONFIG_PATH:-}"
+      ;;
     'ps -a -q db') [ "$CASE" = present ] && echo current-db; exit 0 ;;
     'up -d db') echo recreated-db >> "$TRACE" ;;
     'exec -T db sh -c'*) echo dump >> "$TRACE"; echo synthetic ;;
@@ -35,6 +39,11 @@ chmod 000 "$test_dir/private-postgres"
 export PRIVATE_DATABASE_PATH="$test_dir/private-postgres"
 trap 'chmod 700 "$test_dir/private-postgres"; rm -rf "$test_dir"' EXIT
 sh "$repo_dir/deploy/compose/scripts/operate.sh" preflight >/dev/null
+# Disabling optional services must leave ordinary application preflight usable,
+# even when their old storage settings remain in the runtime environment.
+MEDIA_AUTOMATION_DATA_PATH="$test_dir/removed-media-data" \
+MEDIA_AUTOMATION_CONFIG_PATH="$test_dir/removed-media-config" \
+  sh "$repo_dir/deploy/compose/scripts/operate.sh" preflight >/dev/null
 cat > "$test_dir/bin/df" <<'SH'
 #!/bin/sh
 printf 'Filesystem 1024-blocks Used Available Capacity Mounted\n'

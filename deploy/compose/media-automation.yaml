@@ -1,0 +1,83 @@
+# Optional Sonarr/Radarr/Prowlarr. Configure a download client separately.
+services:
+  sonarr:
+    image: ${SONARR_IMAGE:?Set SONARR_IMAGE to a pinned LinuxServer image}
+    restart: unless-stopped
+    mem_limit: ${SONARR_MEMORY_LIMIT:-512m}
+    cpus: ${SONARR_CPUS:-1.0}
+    logging:
+      driver: json-file
+      options:
+        max-size: ${LOG_MAX_SIZE:-10m}
+        max-file: "${LOG_MAX_FILES:-3}"
+    environment:
+      PUID: ${MEDIA_AUTOMATION_PUID:?Set MEDIA_AUTOMATION_PUID to the media user ID}
+      PGID: ${MEDIA_AUTOMATION_PGID:?Set MEDIA_AUTOMATION_PGID to the shared media group ID}
+      TZ: ${MEDIA_AUTOMATION_TZ:-Etc/UTC}
+      UMASK: "002"
+    ports:
+      - "${MEDIA_AUTOMATION_BIND_IP:-127.0.0.1}:${SONARR_PORT:-8989}:8989"
+    volumes:
+      - type: bind
+        source: ${MEDIA_AUTOMATION_CONFIG_PATH:?Set MEDIA_AUTOMATION_CONFIG_PATH}/sonarr
+        target: /config
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${MEDIA_AUTOMATION_DATA_PATH:?Set MEDIA_AUTOMATION_DATA_PATH to the common download/library parent}
+        target: /data
+        bind:
+          create_host_path: false
+
+  radarr:
+    image: ${RADARR_IMAGE:?Set RADARR_IMAGE to a pinned LinuxServer image}
+    restart: unless-stopped
+    mem_limit: ${RADARR_MEMORY_LIMIT:-512m}
+    cpus: ${RADARR_CPUS:-1.0}
+    logging:
+      driver: json-file
+      options:
+        max-size: ${LOG_MAX_SIZE:-10m}
+        max-file: "${LOG_MAX_FILES:-3}"
+    environment:
+      PUID: ${MEDIA_AUTOMATION_PUID:?Set MEDIA_AUTOMATION_PUID to the media user ID}
+      PGID: ${MEDIA_AUTOMATION_PGID:?Set MEDIA_AUTOMATION_PGID to the shared media group ID}
+      TZ: ${MEDIA_AUTOMATION_TZ:-Etc/UTC}
+      UMASK: "002"
+    ports:
+      - "${MEDIA_AUTOMATION_BIND_IP:-127.0.0.1}:${RADARR_PORT:-7878}:7878"
+    volumes:
+      - type: bind
+        source: ${MEDIA_AUTOMATION_CONFIG_PATH:?Set MEDIA_AUTOMATION_CONFIG_PATH}/radarr
+        target: /config
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${MEDIA_AUTOMATION_DATA_PATH:?Set MEDIA_AUTOMATION_DATA_PATH to the common download/library parent}
+        target: /data
+        bind:
+          create_host_path: false
+
+  prowlarr:
+    image: ${PROWLARR_IMAGE:?Set PROWLARR_IMAGE to a pinned LinuxServer image}
+    restart: unless-stopped
+    mem_limit: ${PROWLARR_MEMORY_LIMIT:-512m}
+    cpus: ${PROWLARR_CPUS:-1.0}
+    logging:
+      driver: json-file
+      options:
+        max-size: ${LOG_MAX_SIZE:-10m}
+        max-file: "${LOG_MAX_FILES:-3}"
+    environment:
+      PUID: ${MEDIA_AUTOMATION_PUID:?Set MEDIA_AUTOMATION_PUID to the media user ID}
+      PGID: ${MEDIA_AUTOMATION_PGID:?Set MEDIA_AUTOMATION_PGID to the shared media group ID}
+      TZ: ${MEDIA_AUTOMATION_TZ:-Etc/UTC}
+      UMASK: "002"
+    ports:
+      - "${MEDIA_AUTOMATION_BIND_IP:-127.0.0.1}:${PROWLARR_PORT:-9696}:9696"
+    volumes:
+      - type: bind
+        source: ${MEDIA_AUTOMATION_CONFIG_PATH:?Set MEDIA_AUTOMATION_CONFIG_PATH}/prowlarr
+        target: /config
+        bind:
+          create_host_path: false

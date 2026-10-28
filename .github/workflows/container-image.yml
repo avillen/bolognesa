@@ -57,6 +57,7 @@ jobs:
         run: |
           sh test/deploy/compose-config-test.sh
           sh test/deploy/compose-monitoring-test.sh
+          sh test/deploy/compose-media-test.sh
           bash test/deploy/compose-update-test.sh
           bash test/deploy/compose-database-test.sh
           bash test/deploy/compose-transport-test.sh

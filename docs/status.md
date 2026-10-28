@@ -1,6 +1,23 @@
 # Project status
 
-Last reviewed: 2026-10-27.
+Last reviewed: 2026-10-28.
+
+## Optional media automation deployment
+
+The optional [Sonarr/Radarr/Prowlarr recipe](../deploy/compose/media-automation.md)
+uses configurable images, private ports, media UID/GID and persistent directories.
+Separate `deploy-media-up/status/logs/stop` commands leave the application/database
+lifecycle and media mounts unchanged. Download clients and indexers are configured
+in the upstream applications; Bolognesa rescans remain manual.
+
+An ARM64 installation verified authenticated panels, download-client/app connections,
+indexer synchronization, restart persistence and a disposable hardlink test. This
+does not establish end-to-end download/import/seeding/playback or capacity under load.
+Local deployment checks cover optionality, unchanged app/database definitions,
+required configuration, port overrides, scoped operations and failed-pull protection.
+The deployment checks and independent review passed; `mix precommit` passed
+compilation, formatting, Credo and 653 tests with one skipped. Next step: verify a
+controlled end-to-end download/import/seeding/playback workflow.
 
 ## Pending playback work
 

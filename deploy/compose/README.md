@@ -42,6 +42,13 @@ make deploy-install
 
 Install requires that the PostgreSQL service for that project does not already exist. It pulls the image, waits for a healthy database, creates an initial backup, runs migrations, starts the application, and verifies HTTP health. Open `http://<PHX_HOST>:<PUBLIC_PORT>/setup` to create the initial administrator account. The TMDb token `TMDB_READ_TOKEN` is optional at boot and required for automatic work identification.
 
+## Optional media automation
+
+[Sonarr, Radarr and Prowlarr](media-automation.md) can be added with
+`media-automation.yaml`, using an existing external Transmission installation.
+They have separate startup/update commands and persistent configuration; ordinary
+Bolognesa releases do not start or update these services.
+
 ## Optional monitoring
 
 [PromEx and Grafana Cloud with Alloy](monitoring.md) are opt-in. The base installation

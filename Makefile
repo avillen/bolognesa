@@ -14,6 +14,7 @@ help:
 	  'deploy-install       Install a new project with migrations and HTTP verification' \
 	  'deploy-update        Update an existing project with backup and recovery guards' \
 	  'deploy-release       Deploy the verified digest of a published main commit' \
+	  'deploy-media-up/status/logs/stop  Operate optional Sonarr, Radarr and Prowlarr' \
 	  'deploy-backup        Save a validated private PostgreSQL backup' \
 	  'deploy-restore       Restore BACKUP_FILE with explicit confirmation' \
 	  'deploy-status/logs/console/psql/stop  Operate locally or over SSH using DEPLOY_CONFIG'
@@ -48,7 +49,7 @@ export BUILD_DOCKER_BIN IMAGE_REF BACKUP_FILE DEPLOY_MIN_FREE_KIB
 export ALLOW_DATABASE_CONFIG_CHANGE EXPECTED_DATABASE_SOURCE IMAGE_REPOSITORY DEPLOY_WORKFLOW DEPLOY_ARTIFACT DEPLOY_RUN_ID COMMIT_SHA
 
 .PHONY: deploy-preflight deploy-init deploy-build deploy-upload deploy-install deploy-update deploy-release deploy-backup deploy-restore deploy-status deploy-logs deploy-console deploy-psql deploy-stop
-.NOTPARALLEL: deploy-install deploy-update deploy-release
+.NOTPARALLEL: deploy-install deploy-update deploy-release deploy-media-up
 
 deploy-install: deploy-upload deploy-preflight
 	@bash $(DEPLOY_SCRIPT) install "$${IMAGE_REF:-}"
@@ -63,5 +64,9 @@ deploy-restore:
 	@test -n "$${BACKUP_FILE:-}" || { echo 'Set BACKUP_FILE to an existing backup on the server' >&2; exit 2; }
 	@bash $(DEPLOY_SCRIPT) restore "$${BACKUP_FILE:-}"
 
-deploy-preflight deploy-init deploy-build deploy-upload deploy-backup deploy-status deploy-logs deploy-console deploy-psql deploy-stop:
+deploy-media-up: deploy-upload deploy-preflight
+	@bash $(DEPLOY_SCRIPT) media-up
+
+.PHONY: deploy-media-up deploy-media-status deploy-media-logs deploy-media-stop
+deploy-preflight deploy-init deploy-build deploy-upload deploy-backup deploy-status deploy-logs deploy-console deploy-psql deploy-stop deploy-media-status deploy-media-logs deploy-media-stop:
 	@bash $(DEPLOY_SCRIPT) $(patsubst deploy-%,%,$@)

@@ -44,6 +44,15 @@ case "$operation" in
   backup) exec "$script_dir/backup.sh" "$@" ;;
   restore) exec "$script_dir/restore.sh" "$@" ;;
   status) require_runtime; compose ps ;;
+  media-up)
+    require_runtime
+    compose pull sonarr radarr prowlarr
+    compose up -d --no-deps sonarr radarr prowlarr
+    compose ps sonarr radarr prowlarr
+    ;;
+  media-status) require_runtime; compose ps sonarr radarr prowlarr ;;
+  media-logs) require_runtime; compose logs --tail 100 --follow sonarr radarr prowlarr ;;
+  media-stop) require_runtime; compose stop sonarr radarr prowlarr ;;
   logs) require_runtime; compose logs --tail 100 --follow app db ;;
   console) require_runtime; compose exec app /app/bin/bolognesa remote ;;
   psql) require_runtime; compose exec db psql -U bolognesa -d bolognesa ;;
