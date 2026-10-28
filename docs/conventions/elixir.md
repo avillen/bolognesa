@@ -31,18 +31,17 @@ Define struct modules in this order, after module documentation, aliases, and ot
 
 Always write the struct body in `@type t` across multiple lines, with one field per line and the closing brace on its own line, even for small structs.
 
-Credo's built-in `StrictModuleLayout` check enforces `@type` declarations before `defstruct`, and both before functions. The configuration extends the default checks and leaves unrelated declarations and the order between function categories unrestricted. Ordering field types before `@type t`, keeping `@enforce_keys` beside `defstruct`, and writing multiline struct types remain review conventions; the built-in check does not enforce them.
+`mix format` and the configured Credo checks are the mechanical baseline. `StrictModuleLayout` checks types before structs and functions; the remaining struct layout rules are review conventions.
 
 ## Control flow and language rules
 
-- Do not nest conditionals (`if`, `case`, `cond`, or `with`) inside another conditional in the same function. Extract the inner decision into a well-named private function.
+- Prefer pattern-matched clauses, guards, and `with` for clear success/error flow. Keep branching shallow; extract a named helper when it clarifies a decision, rather than forbidding all nesting.
 - Keep the expected path visible. Separate validation, errors, and side effects when a branch or anonymous function hides the flow.
-- Lists do not support access syntax by index. Use `Enum.at/2`, pattern matching, or `List` functions.
 - Bind the result of block expressions when it is needed afterward; rebinding a variable inside an `if` or `case` branch does not update the outer binding.
 - Keep one module per file. Do not use map access syntax on structs; access fields directly or use the struct's API.
 - Do not create atoms from user input. Predicate names end in `?`; reserve `is_*` names for guards.
 - Prefer the standard `Time`, `Date`, `DateTime`, and `Calendar` modules. Add a dependency only when the task requires it.
-- Give named OTP processes explicit child-spec names. Use `Task.async_stream/3` for concurrent enumeration with back-pressure and select its timeout deliberately.
+- Name registered processes explicitly; use unique child-spec IDs when starting multiple instances of the same module. For concurrent enumeration, consider `Task.async_stream/3` with explicit concurrency, timeout, and failure handling; do not spawn one unbounded task per item.
 
 ## Mix
 

@@ -2,13 +2,14 @@
 
 The repository's documentation is part of the public project interface. Keep it concise, accurate, in English, and understandable without private deployment details or prior conversations. Prefer short explanations and direct steps; put technical detail in the relevant guide instead of repeating it in the README.
 
-## What belongs in `docs/`
+## Where documentation belongs
 
 - `README.md` at the repository root: project introduction and local setup.
 - `CONTRIBUTING.md`: contribution workflow and checks.
 - `CHANGELOG.md`: release notes and version-specific upgrade information; keep the README independent of application release versions. Internal changes before the first announcement do not need user migration instructions.
 - `docs/conventions/`: current, durable rules. Update the relevant convention when an agreed rule changes.
 - `docs/decisions/`: durable architectural decisions, rationale, consequences, and replacement links.
+- `deploy/compose/`: installation, backup, recovery, and monitoring procedures.
 
 Track tasks, verification gaps, and blockers in GitHub issues; track release scope and acceptance criteria in milestones. Record verification evidence in the relevant issue or pull request. Keep user-facing capabilities and limitations in the README or relevant guide.
 

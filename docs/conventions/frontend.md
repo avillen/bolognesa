@@ -4,7 +4,7 @@ This document defines Bolognesa's web presentation rules. It complements [Phoeni
 
 ## Organize by screen
 
-Each screen owns its LiveView, template, reducers, view models, forms, and screen-specific components. Use one file per public reducer operation under a singular `reducer/` directory. Add directories only when a feature needs them.
+Each screen owns its LiveView, template, reducers, view models, forms, and screen-specific components. Use a singular `reducer/` directory for coherent presentation operations; keep trivial assignments in the caller. Add directories only when a feature needs them.
 
 ```text
 lib/bolognesa_web/live/movie/index/
@@ -32,13 +32,13 @@ Each reducer exposes `call(socket, ...)`, takes the socket first, and always ret
 
 ## Presentation state and forms
 
-The socket owns screen state. Do not duplicate all assigns and streams in a parallel state struct. Put screen-specific view models in `state/`; they contain only prepared display data and remain independent of domain entities and persistence schemas. Stream items need stable identities. Use assigns for simple state and streams for collections; extract shared stream helpers only after real reuse appears.
+The socket owns screen state. Do not duplicate all assigns and streams in a parallel state struct. Put screen-specific view models in `state/`; they contain only prepared display data and remain independent of domain entities and persistence schemas. Stream items need stable identities. Use assigns for simple state and small bounded collections, and streams for growing or paginated collections; extract shared stream helpers only after real reuse appears.
 
 Put presentation-only models and changesets in `forms/`, using embedded schemas or schema-less changesets. They validate input shape and required fields; the backend validates business rules again. Do not expose persistence schemas to the UI. Web params arrive with string keys; convert validated form data to the atom-keyed shape promised by the backend facade.
 
 ## Loading, errors, and navigation
 
-- Run slow queries with LiveView async operations. Keep the async function's inputs small; do not capture the entire socket.
+- Run slow work with LiveView async operations, following the [Phoenix API guidance](phoenix.md#liveview-and-hooks).
 - Discard stale responses so an older request cannot replace a newer result.
 - Keep loading, empty, and error states distinct. A failed refresh is not an empty collection.
 - Reducers translate backend results and async failures into visible UI state and feedback.
@@ -50,13 +50,11 @@ Put presentation-only models and changesets in `forms/`, using embedded schemas 
 
 The screen template lives beside its LiveView. Function components receive attributes and emit events; they do not query the backend. Use LiveComponents only when their own state or lifecycle is needed. Keep components within the screen until real reuse justifies a shared location.
 
-LiveView templates start with `<Layouts.app flash={@flash} ...>`. JavaScript hooks live in `assets/js/hooks/` and are imported by `assets/js/app.js`; additional styles are imported by `assets/css/app.css`. Do not add ordinary inline scripts or external scripts to templates.
+LiveView templates start with `<Layouts.app flash={@flash} ...>`. Follow [Phoenix conventions](phoenix.md) for HEEx, hooks, forms, and accessible interactions.
 
 The browser owns immediate player state such as position, volume, and fullscreen. Send meaningful actions and progress to the backend; do not send every visual update.
 
-Native dialogs and disclosures also own their open state. Preserve their `open` attribute across LiveView patches with `JS.ignore_attributes("open")`; responsive navigation must remain accessible when changing between mobile and desktop.
-
-Support mouse, touch, keyboard, and remote control: essential actions must not depend on hover, focus stays visible, and dynamic dialogs handle focus predictably. Validate TV navigation and playback on the real device; a browser alone does not establish compatibility.
+Native dialogs and disclosures also own their open state. Preserve their `open` attribute across LiveView patches with `JS.ignore_attributes("open")`. Keep responsive navigation accessible when changing between mobile and desktop.
 
 ## Visual design
 
@@ -70,4 +68,4 @@ Translate changeset messages when displaying them, without translating them twic
 
 ## Verification
 
-Organize LiveView tests by screen and assert stable selectors and user-visible results. Test reducers, view models, and forms directly when they contain meaningful transitions or transformations, without automatically duplicating every interaction test. Cover loading, error, empty, stale-response, form, and stream behavior where relevant.
+Follow [testing conventions](testing.md). Cover loading, error, empty, stale-response, form, and stream behavior where relevant, without duplicating every interaction at the reducer level.

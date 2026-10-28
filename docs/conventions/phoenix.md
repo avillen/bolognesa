@@ -1,47 +1,52 @@
 # Phoenix, LiveView, and UI conventions
 
-Follow existing Phoenix 1.8 patterns and the project's layout and component conventions. Keep interface behavior in LiveView and presentation modules, and keep business rules in backend contexts.
-
-## Components and styling
-
-- Use the existing Tailwind setup and shared CoreComponents. Prefer reusable function components for stateless presentation.
-- Keep JavaScript small and scoped to hooks. Avoid adding dependencies or one-off global behavior without a concrete need.
-- Design mobile-first with clear hierarchy, useful empty and error states, visible focus, and controls that work by touch and keyboard.
-- Use semantic HTML, labels, and accessible names. Do not rely on color or hover alone to communicate state.
+Follow the project's pinned Phoenix 1.8 and LiveView APIs. [Frontend conventions](frontend.md)
+own screen organization and presentation state; [backend conventions](backend.md) own domain,
+Ecto, query, and transaction rules.
 
 ## Router and security
 
-- Group routes by browser/session requirements and use pipelines for shared behavior.
-- Protect authenticated pages and actions on the server. A LiveView mount or hidden button is not authorization.
-- Media endpoints must re-authorize every request and return media responses rather than browser-page redirects.
-- Use CSRF protections for state-changing browser requests. Keep secrets in runtime configuration.
+- Group routes by browser/session requirements. Authenticate in the HTTP pipeline and in
+  LiveView `mount`/`on_mount`; navigation within a `live_session` bypasses the plug pipeline.
+- Authorize backend reads and mutations, including events and parameter changes. Hidden
+  controls, client-supplied IDs, and authenticated mounts do not grant resource access.
+- Media endpoints reauthorize every request and return media responses rather than page redirects.
+- Keep CSRF protection for state-changing browser requests and secrets in runtime configuration.
+- Authorize PubSub subscriptions; topic names do not grant access. Treat notifications as
+  hints and re-fetch authoritative state through the owning facade.
 
-## Ecto
+See the official [LiveView security model](https://hexdocs.pm/phoenix_live_view/security-model.html).
 
-- Keep schemas and queries in persistence adapters. Use changesets for persistence constraints and database constraints for invariants that must survive concurrency.
-- Build queries with explicit fields, ordering, and pagination. Avoid loading unbounded collections.
-- Keep transactions short. Do not hold a transaction during HTTP calls, filesystem scans, or media inspection.
-- Do not pass persistence schemas or changesets through public context APIs.
+## HEEx, forms, and accessibility
 
-## HEEx and forms
+- Use HEEx and existing function components instead of string-built HTML. Escape untrusted
+  text normally; never mark user or provider content as safe HTML.
+- Use `<.form>` with `to_form/2` and shared `<.input>` components. Keep submitted values on
+  validation errors and show errors beside their fields; use the presentation forms described
+  in [frontend conventions](frontend.md#presentation-state-and-forms).
+- Use the existing Tailwind setup, semantic CSS tokens, and CoreComponents. Keep styles in
+  `assets/css/app.css` or files it imports.
+- Use semantic HTML, labels, accessible names, visible focus, and controls operable by touch,
+  keyboard, and remote control. Essential actions must not depend on hover or color alone.
+  Dialogs need predictable focus entry, dismissal, and return. Respect reduced-motion preferences.
+- Build mobile-first. Verify device navigation and playback on the target device separately
+  from synthetic browser checks.
 
-- Use function components and HEEx attributes; avoid string-built HTML.
-- Use `<.form>` and shared `<.input>` components with changesets or form data prepared by the LiveView.
-- Preserve submitted values on validation errors and show errors next to the relevant controls.
-- Escape untrusted text through normal HEEx rendering. Do not mark user or provider content as safe HTML.
+## LiveView and hooks
 
-## LiveView
+- Use streams for growing or paginated collections. Give the container an ID and
+  `phx-update="stream"`, and each item its stream DOM ID. Reset streams when filters change;
+  use stream limits when accumulating pages would otherwise grow browser state indefinitely.
+- Use `assign_async/3` for async assigns or `start_async/3` with `handle_async/3` for custom
+  coordination. Capture only required inputs, never the socket. Handle failures and stale
+  results explicitly; durable jobs belong in the backend, not LiveView tasks.
+- Hooks live in `assets/js/hooks/` and are imported by `assets/js/app.js`. Add JavaScript
+  only for browser APIs or immediate interactions; use `Phoenix.LiveView.JS` for supported
+  DOM operations. Do not add ordinary inline scripts to templates.
+- Use documented hook/event APIs. Clean up timers, listeners, observers, and player instances
+  in `destroyed`; handle reconnects when an interaction depends on the connection.
+- Keep immediate playback state in the browser and send meaningful actions or progress,
+  rather than every frame. See [frontend state ownership](frontend.md#templates-components-and-browser-code).
 
-- Keep LiveViews focused on lifecycle and event delegation. Put coherent presentation operations in screen-local reducers.
-- Use streams for growing or paginated collections. Give streamed elements stable DOM IDs and follow the stream reset/insert rules when state changes.
-- Run slow work asynchronously with only the required input data. Handle success, failure, and stale results explicitly.
-- Re-fetch authoritative state after notifications; PubSub messages are hints and are not a source of truth.
-- Authorize PubSub subscriptions and every backend read or write. A topic name does not grant access.
-
-### JavaScript hooks and events
-
-Use colocated or external hooks only when the browser API or immediate interaction requires JavaScript. Keep hooks focused, clean up listeners and timers, and use documented LiveView event APIs. Browser-owned playback state should be sent only when it carries useful application meaning, not on every frame.
-
-## LiveView tests
-
-Test through `Phoenix.LiveViewTest` and stable selectors. Assert rendered behavior, navigation, validation feedback, and authorization outcomes. Keep process and synchronization guidance in [testing conventions](testing.md).
+Follow the [LiveView API reference](https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html)
+and [testing conventions](testing.md) for interaction checks.

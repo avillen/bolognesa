@@ -23,7 +23,7 @@ Documentation-only and formatting changes do not need artificial red/green tests
 | --- | --- |
 | Domain | Invariants, transitions, and errors without a database |
 | Application | Public use cases and ports; use doubles to isolate external effects |
-| Persistence and infrastructure | PostgreSQL constraints, mappers, transactions, and outbox; controlled external resources |
+| Persistence and infrastructure | PostgreSQL constraints, mappers, atomic request/job insertion, and controlled external resources |
 | LiveView | LiveViewTest interactions, stable selectors, visible results, and navigation |
 | Reducers, view models, and forms | Direct tests when a meaningful transition or validation warrants them |
 | Jobs and events | Recovery, duplicates, stale results, durable effects, and deterministic synchronization |
@@ -34,9 +34,12 @@ Keep doubles at external boundaries. Integration tests verify guarantees doubles
 
 Run focused tests during development and broaden checks when risk or project requirements call for it. Record actual commands and distinguish automated checks from manual device verification. Unit tests do not establish hardware compatibility.
 
-- The test PostgreSQL pool must support at least five connections for concurrent tests: one sandbox owner, one coordinator, and three workers. Do not compensate for insufficient pool capacity with longer timeouts.
+- Use `Bolognesa.DataCase` for database tests. Give collaborating processes sandbox allowances; shared mode requires `async: false`. A shared sandbox connection does not prove behavior between independent transactions.
+- Use distinct fixture values for unique constraints. For race/locking tests, use independent connections and deterministic coordination; keep the configured minimum pool size of five. Do not hide pool exhaustion with longer timeouts.
 - Start processes with `start_supervised!/1` so they are cleaned up between tests.
-- Avoid `Process.sleep/1` and `Process.alive?/1`. Monitor a process and assert on its `DOWN` message, or use `_ = :sys.get_state/1` to synchronize before a subsequent call.
+- Synchronize on messages, monitors, or explicit acknowledgements instead of sleeping or polling `Process.alive?/1`. A synchronous call such as `:sys.get_state/1` can flush earlier messages sent by the same sender; it does not prove completion of work delegated to another process.
+
+See the [SQL Sandbox ownership guide](https://hexdocs.pm/ecto_sql/Ecto.Adapters.SQL.Sandbox.html) for allowances, shared mode, and process cleanup.
 
 ## Browser player verification
 

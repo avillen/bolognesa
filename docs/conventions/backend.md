@@ -4,7 +4,7 @@ This is the current backend reference. Update it when an agreed rule changes. Op
 
 ## Architecture
 
-Bolognesa is one Phoenix application organized into bounded contexts. Each context follows domain-driven design and hexagonal architecture:
+Bolognesa is one Phoenix application organized into bounded contexts. Context boundaries follow [decision 0001](../decisions/0001-architecture-foundation.md); add abstractions for concrete responsibilities:
 
 - **Domain** owns entities, value objects, policies, invariants, and transitions. It does not depend on Phoenix, Ecto, HTTP clients, external processes, or the filesystem.
 - **Application** coordinates authorization, domain behavior, and ports. It defines transaction boundaries.
@@ -79,9 +79,9 @@ Do not assume a server can transcode fast enough or that a browser supports a gi
 
 ## Background work, events, and recovery
 
-Run long tasks outside web requests with durable jobs, bounded retries, and measured concurrency. Workers call use cases; the domain does not depend on Oban. Delivery is at least once, so consumers tolerate duplicates. A generation or request token rejects stale results; do not promise exactly-once execution.
+Run long tasks outside web requests with durable jobs, bounded retries, and measured concurrency. Job uniqueness limits duplicate insertion; it does not guarantee idempotent execution or serialize workers. Workers call use cases; the domain does not depend on Oban. Delivery is at least once, so consumers tolerate duplicates. A generation or request token rejects stale results; do not promise exactly-once execution.
 
-When durable work uses Oban in the same PostgreSQL database, insert its job and request state in the same transaction and link the job before commit. An additional outbox is unnecessary for this boundary. Retain an outbox when delivery has a separate consistency boundary or an explicit existing contract pending migration. PubSub may notify connected clients but is not a source of truth or a recovery mechanism. Authorize subscriptions and actions independently; topic names do not grant access. Notifications contain minimal references, never private paths or media content.
+When durable work uses Oban in the same PostgreSQL database, insert its job and request state in the same transaction and link the job before commit. An additional outbox is unnecessary for this boundary; see [decision 0020](../decisions/0020-direct-durable-jobs.md). Retain an outbox when delivery has a separate consistency boundary or an explicit existing contract pending migration. PubSub may notify connected clients but is not a source of truth or a recovery mechanism. Authorize subscriptions and actions independently; topic names do not grant access. Notifications contain minimal references, never private paths or media content.
 
 Application use cases signal confirmed status changes through a context-owned notification port after repository operations succeed. Repositories persist and return results; they do not publish PubSub hints. Recovery results retain references changed by successful transactions even when later work fails, so application can notify those committed changes before returning the error. Notification adapters define topics and payloads and contain delivery failures, preserving successful persistence. Authorize subscriptions at the context facade and keep domain models independent of notification transport.
 
@@ -105,4 +105,4 @@ Apply this convention to new and revised contracts. Existing DTOs will be reorga
 
 Use case names describe user or system outcomes; do not create a module for every trivial operation. Apply [testing conventions](testing.md): test domain rules without a database, application behavior through public contracts, persistence guarantees with PostgreSQL, and UI behavior through LiveViewTest. Use controlled external resources; ordinary tests do not depend on public providers, a NAS, or a TV.
 
-Meaningful implementation changes run `mix precommit`. Automated tests do not establish deployment, device compatibility, or real-world media performance.
+Verification commands and evidence follow [testing conventions](testing.md); automated tests do not establish deployment, device compatibility, or real-world media performance.
