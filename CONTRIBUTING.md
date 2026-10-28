@@ -1,48 +1,42 @@
 # Contributing to Boloñesa
 
-This is a personal project developed in public to learn Elixir and build a media center for home use. The maintainer hopes people will try it, share concrete feedback, and help improve the existing experience. The project favors understandable changes, reliable workflows, and good performance on modest hardware.
+Boloñesa is a personal learning project. The most useful contributions make its existing setup, scanning, identification, and playback easier and more reliable.
 
-## Where help is useful
+## Get started
 
-- Try the local setup and point out unclear or broken steps.
-- Report reproducible problems, especially around scanning, metadata matching, and browser playback.
-- Share results from other operating systems, browsers, media formats, or modest hardware. State what you tested; automated tests do not establish device compatibility.
-- Improve focused areas such as reliability, tests, accessibility, documentation, and performance.
-- Explore Elixir or OTP ideas when they solve a real problem and remain easy to understand.
-
-Larger features should be discussed before implementation. Ideas are welcome, but the maintainer sets priorities and may not have capacity to support every use case, review every pull request, or merge every proposal. Boloñesa is a learning project, not a promise of production support.
-
-The project is licensed under [MIT](LICENSE). By submitting a contribution, you agree that it can be distributed under that license. Third-party components keep their own license and attribution notices.
-
-## Get it running
-
-The quickest path is Docker Compose:
+Follow the [Docker quick start](README.md#try-it-with-docker) or [native setup below](#native-development). PostgreSQL is required for tests:
 
 ```sh
-mkdir -p media
-docker compose up --build
+mix precommit
 ```
 
-Open [http://localhost:4000](http://localhost:4000) and create the first administrator account. See the README for media mounts, TMDb setup and Docker details.
+Before updating an existing database, read the [upgrade guidance](README.md#before-updating). The local Compose setup uses development credentials; the separate [server profile](deploy/compose/README.md) is for private networks and must not be exposed directly to the public Internet.
 
-For native development, install Elixir 1.17 or newer in the supported 1.x series, Erlang/OTP, PostgreSQL and `ffprobe`. Configure PostgreSQL as in `config/dev.exs`, then run `mix setup` and `mix phx.server`. Use `mix test` for the test suite and `mix precommit` for the full local check. Tests use PostgreSQL. Movies and Series behavior is covered under `test/bolognesa/movies/` and `test/bolognesa/series/`; current-schema migration checks run with `MIX_ENV=test mix run --no-start scripts/verify_content_context_migrations.exs` against a fixed disposable database. The README explains the required development database rebuild for the content-context change.
+## Native development
 
-For interface changes, regenerate the README gallery with `make screenshots`. This needs Docker and Node.js/npm. The command uses a pinned Linux/amd64 Playwright container so Chromium and fonts match CI, starts a temporary PostgreSQL container and uses synthetic demo data and a browser-generated video. CI runs the same capture flow for application, asset, configuration, or screenshot workflow changes and fails when the committed images are stale.
+Use the CI/Docker versions: Elixir 1.20.3, Erlang/OTP 28.3.3, PostgreSQL 17, and `ffprobe`. The project permits Elixir 1.17+ in the 1.x series; older combinations are unverified. Conversion needs FFmpeg with `-readrate_initial_burst` support.
 
-The app is organized by domain context under `lib/bolognesa/`, with the Phoenix interface in `lib/bolognesa_web/` and matching tests under `test/`. See the [architecture decision](docs/decisions/0001-architecture-foundation.md) and [backend conventions](docs/conventions/backend.md) for details. Follow the nearest existing pattern; explain a change when it improves that pattern.
+Configure PostgreSQL as in `config/dev.exs`, then run:
 
-## Propose a change
+```sh
+mix setup
+mix phx.server
+```
 
-For a bug, describe what you expected, what happened, and how to reproduce it. Include relevant environment details such as OS, browser, and media container/codecs when known. Remove personal paths, filenames, credentials, and private library details from reports and logs.
+Set `TMDB_READ_TOKEN` in the environment for identification. Set `BOLOGNESA_LIBRARY_ROOTS` to a colon-separated list of media folders; its development default is a temporary directory.
 
-For a feature or larger refactor, open an issue or discussion first so the scope can be agreed before implementation. Small experiments are welcome when they are easy to understand and remove if they do not work out.
+## Report a problem or propose a change
 
-Please keep changes focused. Prefer a small patch with a clear reason over a broad rewrite. When changing behavior, add a targeted test that describes what a user or caller should observe. Consider the effect on startup time, memory, disk reads and responsiveness, especially on modest hardware.
+Describe what you expected, what happened, and how to reproduce it. Include your OS, browser/version, and media container/codecs when relevant. Distinguish actual device results from automated checks. Remove credentials, personal paths, and private media names.
 
-Use the commit format and privacy checks in the [commit convention](docs/conventions/commits.md). CI scans incoming commits for known secret patterns, but contributors must still review staged changes for personal or operational details that automated scanners may not recognize.
+Discuss larger features before implementing them. Keep fixes focused and add tests when behavior changes. The maintainer chooses scope and cannot promise to merge every proposal.
 
-## Pull requests
+Code lives in `lib/bolognesa/` and `lib/bolognesa_web/`, with corresponding tests under `test/`. Follow the [project conventions](docs/README.md) and [commit/privacy rules](docs/conventions/commits.md).
 
-Open a pull request with a short description of the problem and the behavior after the change. Include relevant test results and screenshots for interface changes when available. Mention anything you could not verify, such as a browser, device, or real media format. Keep personal media, credentials, local `.env` files, and private library details out of the PR.
+## Open a pull request
 
-There is no strict template or release process. A clear title, a focused diff and enough context for someone else to review are plenty.
+Explain the problem, the change, and how you checked it. Mention anything you could not verify.
+
+For interface changes, run `make screenshots` and include changed captures; `make check-screenshots` checks them against the pinned browser environment. This requires Docker and Node.js/npm. Synthetic captures verify specific interactions, not general device compatibility.
+
+Contributions are distributed under [MIT](LICENSE); preserve third-party notices.

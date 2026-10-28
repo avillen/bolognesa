@@ -17,4 +17,4 @@ Bolognesa began on a QNAP NAS, and its deployment files made that device appear 
 
 ## Consequences
 
-The application does not need to know the host vendor or directory layout. More deployment options require the operator to choose Compose files and data paths carefully. HTTP does not encrypt credentials or cookies; public access requires TLS. Local integration with synthetic data verifies deployment mechanics but does not establish a particular server's performance.
+The application does not need to know the host vendor or directory layout. More deployment options require the operator to choose Compose files and data paths carefully. HTTP does not encrypt credentials or cookies. This profile must not be exposed directly to the public Internet; general remote access is outside the experimental preview, and adding TLS alone does not establish a supported public deployment. Local integration with synthetic data verifies deployment mechanics but does not establish a particular server's performance.

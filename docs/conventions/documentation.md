@@ -1,11 +1,12 @@
 # Documentation conventions
 
-The repository's documentation is part of the public project interface. Keep it concise, accurate, in English, and useful to a developer who has not seen private deployments or prior conversations.
+The repository's documentation is part of the public project interface. Keep it concise, accurate, in English, and understandable without private deployment details or prior conversations. Prefer short explanations and direct steps; put technical detail in the relevant guide instead of repeating it in the README.
 
 ## What belongs in `docs/`
 
 - `README.md` at the repository root: project introduction and local setup.
 - `CONTRIBUTING.md`: contribution workflow and checks.
+- `CHANGELOG.md`: release notes and version-specific upgrade information; keep the README independent of application release versions. Internal changes before the first announcement do not need user migration instructions.
 - `docs/product.md`: audience, scope, and product principles.
 - `docs/status.md`: a short snapshot of implemented behavior, evidence limits, and release blockers.
 - `docs/roadmap.md`: product outcomes and open questions, without duplicating status details.

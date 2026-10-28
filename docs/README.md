@@ -1,6 +1,6 @@
 # Documentation
 
-Start with the [product overview](product.md), [current status](status.md), and [roadmap](roadmap.md).
+Start with the [product overview](product.md), [current status](status.md), and [roadmap](roadmap.md). Release notes live in the [changelog](../CHANGELOG.md).
 
 - [Conventions](conventions/): current backend, frontend, Elixir, Phoenix, testing, observability, documentation, and commit rules.
 - [Architecture decisions](decisions/README.md): accepted choices, rationale, and trade-offs.

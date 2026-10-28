@@ -1,29 +1,23 @@
 # Product
 
-Bolognesa is a self-hosted media center built with Elixir and Phoenix. It began as a way to learn Elixir by building something useful at home, and it is developed in public so others can try it and learn from it too. The product aims to make a personal media library easy to scan, identify, browse, and play.
+Bolognesa is a self-hosted media center for home use, built with Elixir and Phoenix. It began as a personal learning project and is developed in public.
 
-## Audience and scope
+## Scope
 
-Bolognesa is an early, personal project. The target first complete journey is to create an administrator account, add a media folder, scan and identify files, correct matches, play a browser-compatible file, and eventually resume playback later. Original media files are read-only: Bolognesa does not move, rename, or delete them.
+The v0.1.0 experimental preview lets one administrator add media folders, scan files, identify movies and series with TMDb, correct matches, and play compatible files. Local music supports tracks, artists, albums, and ordered album playback. Original files are read-only.
 
-Movies, series, and local music are supported. Music uses embedded tags with a filename fallback, artist/album browsing, and authenticated direct audio delivery. Albums play in order with automatic advance and previous/next controls; listening survives browsing within the music screen. Queue editing, playback across other screens, independent accounts, general remote access, and dedicated clients remain future work. The generic Compose deployment is intended for trusted private networks; it must not be exposed directly to the public Internet.
+Video has temporary same-tab recovery, not durable account progress or cross-device resume. Music playback stays within the music screen. More accounts, playlists, general remote access, and dedicated clients remain future possibilities.
 
-## Community and growth
+The LAN/HTTP deployment must not be exposed directly to the public Internet. Database compatibility across 0.x releases is not guaranteed; keep backups before updating.
 
-The project is maintained around one real home use case. People are invited to run it, report bugs, share environment and playback results, improve documentation and tests, and contribute focused fixes when code contributions are open. Larger features should start with a discussion about the problem and the smallest useful change. The maintainer chooses priorities and cannot promise support or a merge for every proposal.
+## Principles
 
-Growth should follow evidence from use: first make setup, scanning, identification, correction, and playback more reliable across real environments. Consider broader media types, more accounts, remote access, and dedicated clients when there is a concrete need and capacity to maintain them. These are possibilities, not commitments.
+- Keep setup and the application understandable.
+- Stay practical on modest hardware.
+- Make background work recoverable and failures clear.
+- Preserve manual corrections.
+- Describe verified behavior separately from expectations.
 
-## Product principles
+People are welcome to try the project, report reproducible problems, and contribute focused improvements. Discuss substantial features first; the maintainer sets priorities and cannot promise support for every use case.
 
-- Keep the application understandable and practical to run at home.
-- Prefer simple designs that remain responsive on modest hardware.
-- Make background work recoverable and explain failures to users.
-- Treat user corrections and future persisted progress as durable data.
-- Record what has been verified separately from expected behavior.
-
-Video playback keeps a best-effort position and pause checkpoint in the same browser
-tab for recovery after page recreation. Durable account progress and continuing on
-another device remain future work.
-
-The [roadmap](roadmap.md) describes current milestones. Architecture rules live in [conventions](conventions/), and accepted trade-offs are in [decisions](decisions/).
+See the [status](status.md), [roadmap](roadmap.md), and [architecture decisions](decisions/README.md).

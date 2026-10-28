@@ -2,57 +2,20 @@
 
 <h1 align="center">Boloñesa</h1>
 
-Boloñesa is a self-hosted media center built with Elixir, Phoenix and LiveView. It is named after my cat, and it started as a fun way to explore Elixir by building something I use at home.
+Boloñesa is a self-hosted media center for movies, TV series, and local music, built with Elixir and Phoenix. It is named after my cat and started as a way to learn Elixir while building something useful at home.
 
-This is an early personal project developed in public. It began as a way to learn Elixir by building a media center for home use. The aim is to make that experience understandable, practical to run, and responsive on modest hardware. Boloñesa is not yet a mature, general-purpose alternative to established media servers.
+**This is an experimental project.** Expect bugs, limited browser compatibility, and breaking changes. See the [changelog](CHANGELOG.md) for release notes.
 
-People can help most by trying the setup, reporting reproducible problems, and sharing what works on their hardware and browsers. Focused fixes to reliability, tests, documentation, accessibility, and performance fit especially well. Discuss larger features before investing in them; the maintainer will set the project's scope and may not be able to review or merge every proposal.
+## What you can do
 
-## What works today
+- Add media folders, scan their files, and browse each library. Original files stay untouched.
+- Identify movies and series with TMDb, review matches, and correct mistakes.
+- Play movies and episodes, choose file versions, and continue to the next episode or numbered part.
+- Browse local tracks, artists, and albums. Play individual songs or an album in order.
 
-- Create the first administrator account and sign in.
-- Register movie, series, and music folders, scan them, and inspect discovered files.
-- Identify movies and series with TMDb, review matches, and browse the catalog.
-- Open movie and episode pages and choose an available file version.
-- Play directly when the browser supports the file's container and codecs. The server streams bounded byte ranges, so browser seeking does not load the whole file into memory.
-- Use the existing optional HLS/FFmpeg compatibility path for some unsupported video combinations.
-- Browse local songs by embedded tags or filename fallbacks and select individual tracks for direct audio playback.
+## Screenshots
 
-## Current limits
-
-Boloñesa is still changing quickly and has only been used as a personal project. Browser and codec compatibility varies; a file in the library is not guaranteed to play. One MP4 played in Chrome during a private deployment check, but pause and seeking on the authenticated route, mobile playback, and TV playback have not been fully verified. Playback progress is not saved after the player session. Transcoding exists for some cases, but performance depends on the hardware and format.
-
-Scanning discovers files; it does not by itself create catalog movies. Movie and series identification uses TMDb. The application starts without a TMDb token, but automatic identification and metadata lookup need one. A token is optional for startup and can be supplied locally through `.env`.
-
-There is no demo media bundled with the repository. Use a video you have the right to play. For a public demo, choose a file whose license explicitly permits redistribution and display, and include its attribution and license terms.
-
-For a ready-made sample, download the standard MP4 from the [official Big Buck Bunny download directory](https://download.blender.org/demo/movies/BBB/) and place it under `./media`. The Blender Foundation releases the film under [CC BY 3.0](https://peach.blender.org/about/); when showing or sharing the film, retain its credits and attribution: `© copyright 2008, Blender Foundation / www.bigbuckbunny.org`. The normal 1080p MP4 archive is about 263 MiB, so it is not included in this repository.
-
-## Screenshots and demo
-
-Screenshots should come from a real running Boloñesa instance. The most useful screens for an introduction are:
-
-1. Home or the movie library.
-2. A movie detail page with an available version.
-3. The video player after playback starts.
-
-The captures below show a sample movie library, a movie detail page, the player with a generated sample video, and local music with generated WAV audio. Playback support still depends on each file's format and the browser.
-
-<table>
-  <tr>
-    <td align="center"><a href="docs/screenshots/library.png"><img src="docs/screenshots/library.png" alt="Bolognesa movie library with a sample title" width="420"></a><br><strong>Movie library</strong></td>
-    <td align="center"><a href="docs/screenshots/movie.png"><img src="docs/screenshots/movie.png" alt="Sample movie detail page with an available version" width="420"></a><br><strong>Movie details</strong></td>
-  </tr>
-</table>
-
-<a href="docs/screenshots/player.png"><img src="docs/screenshots/player.png" alt="Generated sample video in the Bolognesa movie player" width="860"></a>
-
-<table>
-  <tr>
-    <td align="center"><a href="docs/screenshots/music.png"><img src="docs/screenshots/music.png" alt="Local music library with tagged and untagged synthetic songs" width="420"></a><br><strong>Music library</strong></td>
-    <td align="center"><a href="docs/screenshots/music-player.png"><img src="docs/screenshots/music-player.png" alt="Native audio player with a generated WAV paused after seeking" width="420"></a><br><strong>Music player</strong></td>
-  </tr>
-</table>
+[![Movie library](docs/screenshots/library.png)](docs/screenshots/library.png)
 
 <details>
   <summary>Explore screenshots of every screen</summary>
@@ -83,7 +46,7 @@ The captures below show a sample movie library, a movie detail page, the player 
 
   | Music library | Music player |
   | --- | --- |
-  | [<img src="docs/screenshots/music.png" alt="Local music library" width="260">](docs/screenshots/music.png) | [<img src="docs/screenshots/music-player.png" alt="Native audio player" width="260">](docs/screenshots/music-player.png) |
+  | [<img src="docs/screenshots/music.png" alt="Local music library" width="260">](docs/screenshots/music.png) | [<img src="docs/screenshots/music-player.png" alt="Audio player" width="260">](docs/screenshots/music-player.png) |
 
   **Account**
 
@@ -92,70 +55,60 @@ The captures below show a sample movie library, a movie detail page, the player 
   | [<img src="docs/screenshots/settings.png" alt="Settings screen" width="260">](docs/screenshots/settings.png) | [<img src="docs/screenshots/about.png" alt="About screen" width="260">](docs/screenshots/about.png) |
 </details>
 
-The complete screenshot gallery is regenerated with `make screenshots`. The capture workflow verifies play, pause, seeking, and retained position after a list refresh using generated PCM WAV audio in Chromium; it does not establish other audio formats or device compatibility. Captures use byte-exact comparison with narrowly bounded, per-image rasterization exceptions defined in the [screenshot comparator](scripts/check_readme_screenshots.py). Comparator tests reject changes beyond each pixel and channel budget. Interface and application changes are checked in CI; if the rendered screens change, include the regenerated images in the same pull request.
+These captures use synthetic media. A screenshot does not establish playback support on a device.
 
-## Quick start with Docker
+## Try it with Docker
 
-Requirements: Docker with the Compose plugin and a compatible video file for playback. For the full scan-to-play journey, configure a TMDb API Read Access Token first. Create a TMDb account, request API access in its API settings, then copy the read token as described in [TMDb's authentication guide](https://developer.themoviedb.org/docs/authentication-application). The app displays TMDb attribution on its **About** page.
+You need Git and Docker with the Compose plugin. For a new checkout:
 
 ```sh
+git clone https://github.com/avillen/bolognesa.git
+cd bolognesa
 mkdir -p media
 cp .env.example .env
-# Edit .env and set TMDB_READ_TOKEN; the default media path is ./media
-# Copy a compatible video into ./media (see the licensed sample above)
+# Put some media in ./media before starting.
 docker compose up --build
 ```
 
-Or run the equivalent `make local-up`; it also creates `./media` if needed. Follow logs in another terminal with `make local-logs`, and stop the app with `make local-down` (the database volume is preserved).
+Already have a checkout? Skip cloning and keep your existing `.env`. The first build may take several minutes. Elixir, PostgreSQL, and media tools are included in the containers.
 
-The app is available at [http://localhost:4000](http://localhost:4000). The first visit opens `/setup`; create the administrator account, then sign in. Compose starts PostgreSQL, waits for it to become healthy, runs database migrations and starts the app. The local database is stored in a named Docker volume.
+1. Open [http://localhost:4000](http://localhost:4000), create the administrator account, and sign in.
+2. Open **Libraries**, add a movie library at `/media`, and start a scan.
+3. Wait for inspection and identification, then open a movie. Review any unmatched items.
 
-In Boloñesa, open **Libraries**, add a movie library with the path `/media`, and start a scan. Discovered files are identified in the background and then appear in the movie catalog. Allow identification to finish before opening the movie. The `/media` mount is read-only inside the app container. Change `MEDIA_PATH` in `.env` to use another host folder, or set `BOLOGNESA_PORT` if port 4000 is already taken. Keep `.env` private; it is ignored by Git. The web port is bound to `127.0.0.1`.
+Movie and series identification needs a [TMDb API Read Access Token](https://developer.themoviedb.org/docs/authentication-application). Set `TMDB_READ_TOKEN` in `.env` before starting. The app can start without it, and local music does not need it.
 
-Stop the services with `docker compose down`. This keeps the database volume. Removing that volume deletes the local Boloñesa database and account.
+For separate libraries, use folders such as `media/movies`, `media/series`, and `media/music`, then register the matching **container paths**: `/media/movies`, `/media/series`, and `/media/music`. The container reads media as `nobody`; folders and files must be readable by that user.
 
-For a private server deployment, use the [generic Linux Docker Compose profile](deploy/compose/README.md). It is configured for direct HTTP access over a trusted LAN or Tailscale network and must not be exposed to the Internet. Its multi-architecture publication and private server deployment have been verified; the current GHCR package requires authentication, or you can build locally/use your own registry. The root Compose file above remains the local development quick start.
+Set `MEDIA_PATH` in `.env` to use another host folder, or `BOLOGNESA_PORT` to change the web port. `docker compose down` stops the services and keeps the database. `make local-up`, `make local-down`, and `make local-logs` are shortcuts.
 
-## Run from source
+If startup fails, check `docker compose logs --tail 100 app db`. On a slow first boot, the app may report `db:5432` connection refused before PostgreSQL finishes initializing. Wait for `PostgreSQL init process complete` and the final ready message, then retry with `docker compose up -d`; keep the database volume.
 
-For native development, install Elixir 1.17 or newer in the supported 1.x series, Erlang/OTP, PostgreSQL, and `ffprobe` (and `ffmpeg` with `-readrate_initial_burst` support if you want to work on the compatibility playback path). Configure PostgreSQL to match `config/dev.exs`, then run:
+This quick start uses development credentials and binds to your own machine. For a private server, follow the [Linux deployment guide](deploy/compose/README.md). **The LAN/HTTP profile must not be exposed directly to the public Internet.**
 
-```sh
-mix setup
-mix phx.server
-```
+## Playback limits
 
-Visit [http://localhost:4000](http://localhost:4000). The default development media root is a temporary directory; set `BOLOGNESA_LIBRARY_ROOTS` to a colon-separated list of directories when starting Mix if you need different roots. Set `TMDB_READ_TOKEN` in the environment to enable identification and metadata lookup.
+Playback depends on browser support for the file's container and codecs. Limited FFmpeg/HLS conversion is available, with one shared conversion session; performance depends on your hardware. Files containing several episodes play in full.
 
-Run the tests with PostgreSQL available:
+Video can recover its position and pause state **in the same tab**, on a best-effort basis, for up to 12 hours. Changing files, closing the tab, or losing browser storage can lose recovery. You may need to press Play again. This is not saved account progress or cross-device resume.
 
-```sh
-mix test
-```
+Music plays without conversion and stops when leaving the music screen or reloading. Queue editing and saved playlists/progress are not available.
 
-The project's full local quality check is:
+See [status](docs/status.md) for automated checks, browser observations, actual device reports, and known problems. None establishes universal playback support.
 
-```sh
-mix precommit
-```
+## Before updating
 
-## Rebuilding an existing development database
+Compatibility between releases is not guaranteed during early development. Read the [changelog](CHANGELOG.md) before updating, and keep a validated database backup, its matching application image, and private configuration. Back up original media separately. Restarting with an older image does not undo migrations.
 
-The content-context change in [decision 0019](docs/decisions/0019-content-context-boundaries.md) requires a whole-database rebuild. Stop the application and workers, verify the configured development database, then run `mix ecto.reset`. This discards accounts, sessions, library configuration, corrections, catalog data, and persisted jobs. Source media remains untouched. Restart the application, create the administrator at `/setup`, configure sources with their existing internal paths, then scan and identify again. Tests use their separate database.
+The [deployment guide](deploy/compose/README.md#backup-update-and-recovery) explains backup and restore. The local quick start applies migrations automatically and has no managed backup workflow. Never use `docker compose down -v` to update data you want to keep.
 
-For an existing server, follow the [one-time deployment rebuild](deploy/compose/README.md#one-time-content-context-rebuild); an ordinary in-place upgrade is not supported for this change.
+## Contribute
 
-## Contributing
+Bug reports, setup feedback, documentation, and focused fixes are welcome. Discuss larger features first. See [CONTRIBUTING](CONTRIBUTING.md) for native development and checks.
 
-The most useful next contributions help make the existing journey reliable: first-run setup, scanning, identification and correction, and browser playback. Trying Boloñesa on another Linux setup, browser, or device and reporting the result is valuable even without a code change. See [CONTRIBUTING.md](CONTRIBUTING.md) for what to include in feedback and how to propose work.
+- [Changelog](CHANGELOG.md)
+- [Product](docs/product.md), [status](docs/status.md), and [roadmap](docs/roadmap.md)
+- [Documentation and architecture](docs/README.md)
+- [Linux deployment](deploy/compose/README.md)
 
-The project is licensed under [MIT](LICENSE). Third-party components and media retain their own licenses and attribution; for example, the vendored hls.js license is in `assets/vendor/hls.LICENSE`.
-
-## Project notes
-
-- [Documentation index](docs/README.md)
-- [Product and scope](docs/product.md)
-- [Current status and verification](docs/status.md)
-- [Roadmap](docs/roadmap.md)
-- [Architecture and project conventions](docs/conventions/)
-- [Generic Linux Docker Compose deployment](deploy/compose/README.md)
+Licensed under [MIT](LICENSE). Third-party components and media keep their own licenses. No demo media is bundled; use files you have the right to play and share.

@@ -4,7 +4,7 @@ Status: Implemented and reviewed; its retained identification outbox mechanism i
 
 ## Purpose
 
-Bolognesa should accommodate contributions that grow movie, series, and music capabilities independently. Organize business ownership around those three domains while retaining one Phoenix application, PostgreSQL database, and deployment. Preserve existing product capabilities. The maintainer explicitly permits breaking changes and discarding the entire database followed by setup, source configuration, scanning, and identification again. Existing IDs, URLs containing those IDs, accounts, corrections, jobs, and other persisted records do not need migration or compatibility.
+Bolognesa should accommodate contributions that grow movie, series, and music capabilities independently. Organize business ownership around those three domains while retaining one Phoenix application, PostgreSQL database, and deployment. Preserve existing product capabilities.
 
 The requested final architecture review is part of completion. Its outcome may be to retain duplication, share technical infrastructure, propose a shared business context, or record follow-up work. It does not presume an extraction is necessary.
 
@@ -39,7 +39,7 @@ Catalog and Identification cease to be business contexts. No universal media ent
 - Playback continues to use its own projections and authorized readers. Cross-context table joins remain permitted by the backend convention. It need not call both new contexts to resolve a file, and music/video IDs remain distinguished at the existing endpoints.
 - Persisted schemas stay under `Bolognesa.Infrastructure.Persistence`. Moving a business module does not require moving its schema.
 
-## Persistence and clean rebuild
+## Persistence
 
 Remove `catalog_entries`, `media_identifications`, `identification_entries`, and `media_identification_events` from the target schema. Do not preserve a universal video ID or a central identification store.
 
@@ -48,13 +48,11 @@ Remove `catalog_entries`, `media_identifications`, `identification_entries`, and
 - `movie_identifications` owns one decision per inventory file, current revision/token, provenance, candidates, job/recovery fields, and a nullable `movie_id`. Only confirmed decisions have an active movie reference. Several file decisions can point to the same movie as versions.
 - `series_identifications` owns one decision per inventory file and the equivalent series-specific decision state. `series_identification_episodes` owns its ordered episode references, with uniqueness and positive-position constraints. Preserve the bounded, same-season, all-or-nothing selection policy.
 - `movie_identification_events` and `series_identification_events` are separate durable outboxes. Each domain owns its dispatcher, worker, backfill, and reconciler.
-- Existing Libraries, Music, Accounts, and Oban schemas remain unless a concrete dependency requires a change. The allowed whole-database reset also clears old accounts, library configuration, and jobs; source media is never modified.
+- Existing Libraries, Music, Accounts, and Oban schemas remain unless a concrete dependency requires a change. Source media is never modified.
 
 Keep current TMDb matching and local music identity behavior. Introducing local unmatched video works or recording/release deduplication is outside scope. Do not add a universal provider-reference table without a concrete requirement.
 
-Add an explicit schema migration that replaces the obsolete video tables and constraints with the target tables. Fresh database setup through the full migration chain and rebuilding an existing disposable database must both work. The change does not backfill data or support restoring old identities. A destructive reverse migration must refuse rather than imply it can recover removed data; returning to the old application requires rebuilding the old database separately.
-
-Document the one-time reset procedure: stop the application and workers, reset the configured Bolognesa database including persisted Oban jobs, run migrations with the new application, restart, create the administrator, configure sources, scan, and identify again. Do not ship old-worker adapters, dual writes, transitional tables, or fallback APIs. Deployment and reset of a running installation require an explicitly authorized operation beyond local implementation checks; follow the shared deployment guide and retain a validated pre-reset backup.
+The schema migration replaces obsolete video tables and constraints with the context-owned tables. Fresh database setup follows the normal migration chain. No old-worker adapters, dual writes, transitional tables, or fallback APIs are retained.
 
 Retain the existing video Oban queue and concurrency budget initially. Each context has separately named dispatcher/reconciler processes and its own outbox. Preserve startup controls used by tests. Recovery handles new jobs only, with the current duplicate/stale/retry guarantees.
 
@@ -72,14 +70,14 @@ Stages are dependent work within one refactor branch, not independently deployab
 2. **Build independent persistence and movie ownership.** Add the destructive schema migration and Movies models, DTOs, queries, identification, providers, repositories, outbox, and recovery. Update movie fixtures and callers. Keep the existing matching and correction behavior while removing generic catalog identity from this domain.
 3. **Build series ownership.** Introduce Series reads, hierarchy, identification, corrections, providers, repositories, outbox, and recovery against the independent schemas. Preserve ordered multi-episode replacement and whole-selection atomicity. Update series/episode fixtures and callers.
 4. **Wire Libraries, Playback, and runtime processes.** Route scan transactions to the owner, adopt typed video references throughout direct/HLS playback, update supervision/configuration, test support, and development scripts. Remove all reliance on generic catalog/identification tables or old worker names.
-5. **Remove obsolete boundaries and verify the rebuilt application.** Delete Catalog/Identification facades and internals. Update conventions, decision links, setup/reset instructions, and status. Verify fresh setup and reset on disposable databases; exercise administrator setup, configuration, scan, identification/correction, browsing, and authorized playback. Run `mix precommit` and relevant existing screenshot/browser checks. Report actual evidence and any remaining limitations.
+5. **Remove obsolete boundaries and verify the application.** Delete Catalog/Identification facades and internals. Update conventions, decision links, setup instructions, and status. Verify fresh setup on disposable databases; exercise administrator setup, configuration, scan, identification/correction, browsing, and authorized playback. Run `mix precommit` and relevant existing screenshot/browser checks. Report actual evidence and any remaining limitations.
 6. **Review the resulting boundaries.** Inspect real implementations after all three content contexts work. Record the candidate assessment and conclusion in this decision or a linked successor. Complete the review even if its conclusion is that no extraction is justified.
 
 ## Verification and acceptance
 
 Use current behavior tests as refactor protection. Reorganize them with their owner without weakening their assertions. Add coverage only for meaningful gaps introduced or exposed by the split.
 
-- The new application initializes from an empty database and after a documented reset. No legacy rows, worker module names, or identity mappings are required. Old data is explicitly disposable; no reset touches source media.
+- The application initializes from an empty database. No legacy rows, worker module names, or identity mappings are required. Source media stays read-only.
 - Movie and series public mutation APIs reject files from another library type; retries, backfill, outbox delivery, and recovery do not mutate the other domain's rows. Mixed-library inventory batches cannot starve the owning type by applying the limit first.
 - Duplicate jobs, stale tokens/revisions, provider failures, manual-vs-automatic races, and interrupted-job recovery retain existing behavior for the new workers.
 - Injected persistence failure rolls back inventory/request/event together and identity/details/association together. Multi-episode selection never persists only a subset.

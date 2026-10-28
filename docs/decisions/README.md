@@ -22,10 +22,10 @@
 | [0016](0016-user-locale-and-settings.md) | Implemented | Per-account language preference and settings |
 | [0017](0017-generic-linux-compose-deployment.md) | Implemented | Configurable generic Linux Compose deployment |
 | [0018](0018-local-music-catalog.md) | Implemented | Local music identity, durable inspection handoff, and direct audio |
-| [0019](0019-content-context-boundaries.md) | Implemented and reviewed | Content-owned Movies, Series, and Music contexts with a clean database rebuild |
+| [0019](0019-content-context-boundaries.md) | Implemented and reviewed | Content-owned Movies, Series, and Music contexts |
 | [0020](0020-direct-durable-jobs.md) | Implemented locally | Atomic request/job creation without intermediate inspection, Music or video outboxes |
 | [0021](0021-optional-prometheus-metrics.md) | Implemented and deployed | Opt-in PromEx export and Alloy remote write without a required external service |
 | [0022](0022-optional-loki-logs.md) | Implemented and activated | Opt-in application-only Loki forwarding through an isolated Alloy service |
 | [0023](0023-project-overview-monitoring.md) | Implemented locally | Context overview with sparse-traffic timings, bounded LiveView/Playback metrics and optional Docker resources |
-| [0024](0024-tab-playback-recovery.md) | Implemented locally | Same-tab video checkpoints and bounded page/transport diagnostics |
+| [0024](0024-tab-playback-recovery.md) | Implemented and deployed; target-device checks pending | Same-tab video checkpoints and bounded page/transport diagnostics |
 | [0025](0025-consecutive-episode-parts.md) | Implemented locally | Ordered physical parts sharing one provider episode, part entries and continuation |
