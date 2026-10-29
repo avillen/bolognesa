@@ -2,7 +2,7 @@
 
 Release notes and upgrade information. See the [README](README.md) for setup and playback limits.
 
-## 0.1.0 — Unreleased
+## 0.1.0 — 2026-10-29
 
 First experimental preview for private home use.
 
@@ -14,6 +14,7 @@ First experimental preview for private home use.
 - Limited FFmpeg/HLS video conversion and best-effort same-tab position/pause recovery.
 - Local tracks, artists, albums, and ordered album playback.
 - Local Docker setup and a private Linux server profile with backup/restore tools.
+- Public Linux AMD64/ARM64 images at `ghcr.io/avillen/bolognesa:v0.1.0`, with the immutable digest recorded in the release notes, and a source-build alternative from tag `v0.1.0`.
 
 ### Limits
 

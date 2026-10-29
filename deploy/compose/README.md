@@ -10,7 +10,7 @@ For your own development machine, use the [local quick start](../../README.md#tr
 - `curl`, `openssl`, and a POSIX shell on the server; Bash and Make on the operator machine.
 - Media folders readable by the app container's `nobody` user.
 - For remote operation: SSH keys and Docker access for the remote user.
-- For published releases: Git and authenticated `gh` on the operator machine, plus image pull access on the server.
+- Git on the operator machine. The maintainer's `deploy-release` command also needs authenticated `gh`; installing a public image by digest does not.
 
 ## First installation
 
@@ -51,7 +51,9 @@ Avoid binding to `0.0.0.0` unless you have appropriate firewall filtering: [Dock
 
 ### 3. Make the image available
 
-The default `ghcr.io/avillen/bolognesa:latest-lan` currently requires authentication. On the server, authenticate Docker to GHCR with package read permission (`read:packages`), or use the [local build path](#local-build-and-daily-operation). Prefer a commit tag or digest for controlled updates.
+The published `ghcr.io/avillen/bolognesa` images can be pulled anonymously. No GitHub login or maintainer credentials are needed. The default `latest-lan` tag follows published `main` builds; prefer a commit tag or immutable digest for controlled installations. The [source-build path](#build-from-release-source) is an alternative to downloading the application image.
+
+For the first experimental preview, set `BOLOGNESA_IMAGE=ghcr.io/avillen/bolognesa:v0.1.0` in the server's `.env`. For an immutable installation, use the `ghcr.io/avillen/bolognesa@sha256:<digest>` reference recorded in the [release notes](https://github.com/avillen/bolognesa/releases/tag/v0.1.0). The image and source tag `v0.1.0` identify the same commit; distribution evidence is recorded in [#13](https://github.com/avillen/bolognesa/issues/13).
 
 ### 4. Install and open the app
 
@@ -94,7 +96,37 @@ For Docker volumes, use the existing volume name instead of a path. Do not leave
 
 ## Images and releases
 
-The image workflow publishes HTTP images for `linux/amd64` and `linux/arm64`, tagged `latest-lan` and `sha-<commit>-lan`. Docker selects the native architecture. Older HTTPS tags are no longer updated.
+The image workflow publishes HTTP images for `linux/amd64` and `linux/arm64`, tagged `latest-lan` and `sha-<commit>-lan`. Docker selects the native architecture. Historical HTTPS tags (`latest` and `sha-<commit>`) were removed during preparation for public distribution; do not reuse them for these HTTP builds.
+
+### Versioned public distribution
+
+The first release pairs source tag `v0.1.0` with image tag `ghcr.io/avillen/bolognesa:v0.1.0`. Both select the same source commit. This versioned image uses the private LAN/HTTP build, despite having no `-lan` suffix. Existing `latest-lan` and `sha-<commit>-lan` tags keep their LAN/HTTP meaning; historical `latest` and `sha-<commit>` tags retain their HTTPS meaning. A release tag must not be reassigned to a different image. Install by the recorded digest to avoid mutable-tag ambiguity.
+
+The existing workflow can supply the release image without workflow changes. After the final release commit is selected in #14, the maintainer must:
+
+1. Verify a successful `container-image.yml` run on `main` for that exact commit, including both native build jobs and the publish job. Download its `server-image-ref` artifact before its 30-day expiry; check `variant=lan`, the full commit SHA, and the repository/digest. Preserve this evidence in #13 and the release notes.
+2. Inspect that digest with `docker buildx imagetools inspect --raw ghcr.io/avillen/bolognesa@sha256:<digest>`. Require exactly `linux/amd64` and `linux/arm64` in the manifest. Native build and manifest evidence does not establish runtime or playback compatibility on both architectures; state the environments actually tested separately.
+3. After explicit image-publication approval, add `v0.1.0` to that verified manifest using `docker buildx imagetools create -t ghcr.io/avillen/bolognesa:v0.1.0 ghcr.io/avillen/bolognesa@sha256:<digest>`. Verify that the version tag resolves to the same digest and platforms. This leaves the existing rolling and commit tags in place.
+4. For a package that is still private, inspect the retained images for private files and embedded credentials before changing visibility. Either review every existing package version or, with explicit deletion approval, remove obsolete versions first. Preserve the selected multi-architecture manifest and both referenced platform manifests, including those without tags. Keep a private recovery copy of any image needed by an existing installation before deleting its registry version. Removing a tag alone does not remove a version. Obtain separate approval for the visibility change, then apply it through GitHub's package settings. GitHub does not allow a public package to become private again. The upstream package has completed this visibility preparation; inspect any new release image before promoting it.
+5. Verify anonymous access on a disposable Docker daemon with an empty credential configuration, as below. Record the command results, tag, immutable digest, source commit, and workflow URL in #13. Publish the corresponding source tag and release only under #14's separate authorization.
+
+For the anonymous check, replace the digest with the release manifest digest. Run on a disposable daemon because these commands download both platform images. The temporary client configuration prevents use of saved registry credentials:
+
+```sh
+image=ghcr.io/avillen/bolognesa
+digest='sha256:<digest>'
+anonymous_config=$(mktemp -d)
+trap 'rm -rf "$anonymous_config"' EXIT
+printf '%s\n' '{"auths":{"ghcr.io":{}},"credHelpers":{}}' > "$anonymous_config/config.json"
+DOCKER_CONFIG="$anonymous_config" docker manifest inspect "$image:v0.1.0"
+DOCKER_CONFIG="$anonymous_config" docker manifest inspect "$image@$digest"
+DOCKER_CONFIG="$anonymous_config" docker pull --platform linux/amd64 "$image@$digest"
+DOCKER_CONFIG="$anonymous_config" docker pull --platform linux/arm64 "$image@$digest"
+```
+
+These pulls verify anonymous distribution, not execution on the target hardware. External testers install with the recorded digest through the first-installation steps above; no GitHub login or maintainer token is needed once this check passes.
+
+### Deploy a verified main image
 
 For a published commit on `main`, after local checks and CI:
 
@@ -108,7 +140,7 @@ This verifies the image workflow's commit, branch, success, and digest artifact 
 
 ## Local build and daily operation
 
-To avoid the private GHCR package, build an HTTP image on the operator machine and load it on the server. Select the server's architecture; cross-building may need emulation. For ARM64:
+Build an HTTP image on the operator machine and load it on the server. Select the server's architecture; cross-building may need emulation. For ARM64:
 
 ```sh
 make deploy-build DEPLOY_BUILD_PLATFORM=linux/arm64 DEPLOY_IMAGE_TAR=/tmp/bolognesa-image.tar
@@ -118,6 +150,28 @@ make deploy-install IMAGE_REF=bolognesa:lan
 ```
 
 `DEPLOY_IMAGE_NAME` changes the exported tag; `BUILD_DOCKER_BIN` selects the build binary. Use this build command: HTTP must be enabled at compile time, not just by setting a runtime variable on an arbitrary image.
+
+### Build from release source
+
+Start with a fresh checkout of source tag `v0.1.0` and confirm its commit matches the release notes:
+
+```sh
+git clone --branch v0.1.0 --depth 1 https://github.com/avillen/bolognesa.git bolognesa-v0.1.0
+cd bolognesa-v0.1.0
+git rev-parse HEAD
+```
+
+Follow first-installation steps 1 and 2, then build and install for your server's architecture. This example uses AMD64; use `linux/arm64` for ARM64:
+
+```sh
+make deploy-build DEPLOY_BUILD_PLATFORM=linux/amd64 DEPLOY_IMAGE_NAME=bolognesa:v0.1.0 DEPLOY_IMAGE_TAR=/tmp/bolognesa-v0.1.0.tar
+make deploy-upload DEPLOY_IMAGE_TAR=/tmp/bolognesa-v0.1.0.tar
+make deploy-install IMAGE_REF=bolognesa:v0.1.0
+```
+
+The source build does not require GHCR credentials; it downloads public base images, operating-system packages, and application dependencies. It reproduces the build procedure from the release source, not a guaranteed byte-identical image: base tags and package repositories can change. The published digest identifies the exact distributed image.
+
+### Daily operation
 
 ```sh
 make deploy-status
