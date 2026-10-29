@@ -27,16 +27,21 @@ try {
         // MediaRecorder omits a duration header. Normalize its known six-second
         // timeline for captures while keeping the real Video.js controls mounted.
         video.pause();
-        const descriptors = Object.fromEntries(["duration", "seekable", "buffered"]
+        const descriptors = Object.fromEntries(["duration", "seekable", "buffered", "currentTime", "paused", "ended", "seeking", "play"]
           .map(key => [key, Object.getOwnPropertyDescriptor(video, key)]));
         const ranges = {length: 1, start: () => 0, end: () => 6};
         Object.defineProperties(video, {
           duration: {configurable: true, get: () => 6},
           seekable: {configurable: true, get: () => ranges},
           buffered: {configurable: true, get: () => ranges},
+          currentTime: {configurable: true, get: () => 2},
+          paused: {configurable: true, get: () => true},
+          ended: {configurable: true, get: () => false},
+          seeking: {configurable: true, get: () => false},
+          // A delayed metadata/autoplay callback must not restart a capture.
+          play: {configurable: true, value: () => Promise.resolve()},
         });
-        video.currentTime = 2;
-        for (const event of ["durationchange", "progress", "timeupdate"]) video.dispatchEvent(new Event(event));
+        for (const event of ["durationchange", "progress", "timeupdate", "pause", "seeked"]) video.dispatchEvent(new Event(event));
         const image = new Image();
         image.src = `data:image/svg+xml,${encodeURIComponent(artwork)}`;
         image.width = video.getBoundingClientRect().width;

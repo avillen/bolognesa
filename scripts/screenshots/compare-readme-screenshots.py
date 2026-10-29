@@ -18,6 +18,8 @@ RASTER_LIMITS = {
     "series-detail-mobile.png": (64, 2, 0, 0, 0),
     "episode-mobile.png": (8, 1, 0, 0, 0),
     "movie-mobile.png": (128, 2, 0, 0, 0),
+    # Observed antialiasing on the compact music player's rounded bottom corners.
+    "music-mobile.png": (128, 2, 0, 0, 0),
     "episode.png": (32, 2, 1, 16, 20),
     "movie.png": (0, 0, 1, 16, 20),
     "player.png": (0, 0, 1, 16, 20),

@@ -72,8 +72,8 @@ class ScreenshotCheckTest(unittest.TestCase):
                 self.assertEqual(checker.differences(expected, actual), [name])
                 (actual / name).write_bytes((expected / name).read_bytes())
 
-    def test_mobile_series_corners_have_small_capture_specific_budgets(self):
-        for name, budget, delta in [('series.png', 8, 1), ('series-mobile.png', 8, 1), ('series-detail-mobile.png', 64, 2), ('episode-mobile.png', 8, 1)]:
+    def test_mobile_corners_have_small_capture_specific_budgets(self):
+        for name, budget, delta in [('series.png', 8, 1), ('series-mobile.png', 8, 1), ('series-detail-mobile.png', 64, 2), ('episode-mobile.png', 8, 1), ('music-mobile.png', 128, 2)]:
             with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:
                 expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
                 expected.mkdir(); actual.mkdir()
