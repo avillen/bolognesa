@@ -32,18 +32,11 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryForm do
             type="button"
             phx-click="close_library_form"
             aria-label={gettext("Cerrar")}
-            class="library-secondary"
+            class="library-create-close"
           ><.icon name="hero-x-mark" class="size-5" /></button>
         </div>
         <p class="mt-2 text-sm leading-6 text-muted">
           {gettext("Usa la ruta visible para Bolognesa dentro del servidor.")}
-        </p>
-        <p class="mt-2 text-sm leading-6 text-muted">
-          <a
-            id="library-deployment-help"
-            href="https://github.com/avillen/bolognesa/blob/main/deploy/compose/README.md#networking-persistence-and-libraries"
-            class="text-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >{gettext("Docker Compose: consulta la guía de montajes y carpetas permitidas.")}</a>
         </p>
         <p
           :if={@error}
@@ -58,7 +51,7 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryForm do
           id="library-form"
           phx-change="validate"
           phx-submit="save"
-          class="mt-6 space-y-5"
+          class="library-create-form mt-6"
         >
           <.input
             field={@form[:name]}
@@ -66,7 +59,8 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryForm do
             type="text"
             label={gettext("Nombre")}
             required
-            class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
+            class="library-form-control"
+            error_class="library-form-control-error"
           />
           <.input
             field={@form[:content_type]}
@@ -79,28 +73,43 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryForm do
               {gettext("Música"), :music}
             ]}
             required
+            class="library-form-control library-form-select"
+            error_class="library-form-control-error"
           />
-          <.input
-            field={@form[:path]}
-            id="library-path"
-            type="text"
-            label={gettext("Carpeta de origen")}
-            placeholder="/media/movies"
-            required
-            class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
-          />
-          <button
-            id="library-create-cancel"
-            type="button"
-            phx-click="close_library_form"
-            class="library-secondary w-full"
-          >{gettext("Cancelar")}</button>
-          <button
-            id="library-submit"
-            type="submit"
-            phx-disable-with={gettext("Guardando…")}
-            class="min-h-12 w-full rounded-xl bg-accent px-5 py-3 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >{gettext("Guardar biblioteca")}</button>
+          <div class="library-source-field">
+            <.input
+              field={@form[:path]}
+              id="library-path"
+              type="text"
+              label={gettext("Carpeta de origen")}
+              placeholder="/media/movies"
+              aria-describedby="library-deployment-help"
+              required
+              class="library-form-control"
+              error_class="library-form-control-error"
+            />
+            <a
+              id="library-deployment-help"
+              href="https://github.com/avillen/bolognesa/blob/main/deploy/compose/README.md#networking-persistence-and-libraries"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="library-deployment-help"
+            >{gettext("Ayuda con las carpetas del servidor (abre en otra pestaña)")}</a>
+          </div>
+          <div class="library-form-actions">
+            <button
+              id="library-create-cancel"
+              type="button"
+              phx-click="close_library_form"
+              class="library-secondary"
+            >{gettext("Cancelar")}</button>
+            <button
+              id="library-submit"
+              type="submit"
+              phx-disable-with={gettext("Guardando…")}
+              class="library-primary"
+            >{gettext("Guardar biblioteca")}</button>
+          </div>
         </.form>
       </.focus_wrap>
     </div>

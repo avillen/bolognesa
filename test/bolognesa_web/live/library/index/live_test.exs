@@ -234,7 +234,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
 
         assert has_element?(
                  view,
-                 "#library-deployment-help[href='https://github.com/avillen/bolognesa/blob/main/deploy/compose/README.md#networking-persistence-and-libraries']"
+                 "#library-deployment-help[target='_blank'][rel='noopener noreferrer'][href='https://github.com/avillen/bolognesa/blob/main/deploy/compose/README.md#networking-persistence-and-libraries']"
                )
       end
     end

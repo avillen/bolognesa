@@ -1821,8 +1821,8 @@ msgstr "Partes del episodio"
 
 #: lib/bolognesa_web/live/library/index/components/library_form.ex:43
 #, elixir-autogen, elixir-format
-msgid "Docker Compose: consulta la guía de montajes y carpetas permitidas."
-msgstr "Docker Compose: consulta la guía de montajes y carpetas permitidas."
+msgid "Ayuda con las carpetas del servidor (abre en otra pestaña)"
+msgstr "Ayuda con las carpetas del servidor (abre en otra pestaña)"
 
 #: lib/bolognesa_web/live/library/index/reducers/save.ex:62
 #, elixir-autogen, elixir-format
@@ -1897,8 +1897,8 @@ msgstr "Detalles del escaneo"
 
 #: lib/bolognesa_web/live/library/index/live.html.heex:96
 #, elixir-autogen, elixir-format
-msgid "Escanear busca cambios en la carpeta y analiza archivos nuevos o modificados. Reanalizar repite el escaneo y fuerza el análisis técnico de los archivos. Puedes salir de esta pantalla mientras continúa."
-msgstr "Escanear busca cambios en la carpeta y analiza archivos nuevos o modificados. Reanalizar repite el escaneo y fuerza el análisis técnico de los archivos. Puedes salir de esta pantalla mientras continúa."
+msgid "Escanear busca cambios en la carpeta y analiza archivos nuevos o modificados. En «Detalles del escaneo» encontrarás Reanalizar, que repite el escaneo y fuerza el análisis técnico de los archivos. Puedes salir de esta pantalla mientras continúa."
+msgstr "Escanear busca cambios en la carpeta y analiza archivos nuevos o modificados. En «Detalles del escaneo» encontrarás Reanalizar, que repite el escaneo y fuerza el análisis técnico de los archivos. Puedes salir de esta pantalla mientras continúa."
 
 #: lib/bolognesa_web/live/library/index/live.html.heex:76
 #, elixir-autogen, elixir-format

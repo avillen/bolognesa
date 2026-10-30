@@ -97,18 +97,23 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryRow do
         <summary class="min-h-11 cursor-pointer py-3 text-xs text-muted focus-visible:outline-2 focus-visible:outline-accent">
           {gettext("Detalles del escaneo")}
         </summary>
-        <div class="flex flex-wrap items-start justify-between gap-4 pt-2">
-          <div class="min-w-0 space-y-2">
-            <p
-              :if={@library.last_completed_at}
-              id={"library-scan-completed-#{@library.id}"}
-              class="text-xs text-muted"
+        <div class="library-scan-details">
+          <div class="min-w-0 flex-1 space-y-3">
+            <div
+              :if={@library.last_completed_at || @library.state != :not_scanned}
+              class="library-scan-meta"
             >
-              {gettext("Último escaneo completo:")} {@library.last_completed_at}
-            </p>
-            <p :if={@library.state != :not_scanned} class="text-xs text-muted">
-              {gettext("Intento %{attempt}", attempt: @library.attempt)}
-            </p>
+              <p
+                :if={@library.last_completed_at}
+                id={"library-scan-completed-#{@library.id}"}
+                class="text-xs text-muted"
+              >
+                {gettext("Último escaneo completo:")} {@library.last_completed_at}
+              </p>
+              <p :if={@library.state != :not_scanned} class="text-xs text-muted">
+                {gettext("Intento %{attempt}", attempt: @library.attempt)}
+              </p>
+            </div>
             <p
               id={"library-inspection-counts-#{@library.id}"}
               role="status"
@@ -116,7 +121,7 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryRow do
               data-running={@library.inspection_counts.running}
               data-succeeded={@library.inspection_counts.succeeded}
               data-failed={@library.inspection_counts.failed}
-              class="max-w-md text-xs leading-5 text-muted"
+              class="text-sm leading-6 text-ink"
             >
               {@library.inspection_summary}
             </p>
@@ -135,7 +140,7 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryRow do
             <p
               :if={@library.inspection_counts.failed > 0}
               id={"library-inspection-help-#{@library.id}"}
-              class="max-w-md text-xs leading-5 text-muted"
+              class="max-w-prose text-xs leading-5 text-muted"
             >
               {gettext(
                 "El análisis técnico no terminó para esos archivos. Esto no confirma un problema de reproducción."

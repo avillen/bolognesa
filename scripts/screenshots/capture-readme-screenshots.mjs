@@ -257,6 +257,11 @@ try {
 
     if (!librariesOnly) await capture("home.png", "/");
     await capture("libraries.png", "/libraries");
+    await page.locator('#library-add').click();
+    await page.waitForFunction(() => document.activeElement?.id === "library-name");
+    await page.screenshot({ animations: "disabled", path: screenshotPath("library-create.png") });
+    await page.locator('#library-create-cancel').click();
+    await page.locator('#library-form').waitFor({state: "detached"});
     // Exercise the library screen with the same synthetic data at each requested width.
     for (const width of [375, 430, 768, 1280]) {
       await page.setViewportSize({width, height: 900});
@@ -268,6 +273,9 @@ try {
       await scan.waitFor({state: "visible"});
       if (!await scan.isEnabled()) throw new Error("Initial scan action is unavailable.");
       await row.locator('summary').click();
+      if (width === 375 || width === 1280) {
+        await page.screenshot({ animations: "disabled", path: screenshotPath(width === 375 ? "library-scan-details-mobile.png" : "library-scan-details.png"), fullPage: true });
+      }
       await row.locator('[id^="library-reinspect-"]').click();
       const confirmation = page.locator('[role="dialog"][id^="library-reinspect-confirm-"]');
       await confirmation.waitFor({state: "visible"});
@@ -281,6 +289,9 @@ try {
       // JS.focus retries across two frames; wait before editing another field.
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       await page.waitForFunction(() => document.activeElement?.id === "library-name");
+      if (width === 375) {
+        await page.screenshot({ animations: "disabled", path: screenshotPath("library-create-mobile.png") });
+      }
       const draftName = `Draft library ${width}`;
       await page.locator('#library-name').fill(draftName);
       await page.waitForFunction(() => !document.querySelector('#library-form').classList.contains('phx-change-loading'));
