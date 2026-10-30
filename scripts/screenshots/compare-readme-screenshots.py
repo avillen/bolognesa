@@ -7,6 +7,8 @@ from pathlib import Path
 MAX_NATIVE_PIXELS = 128
 MAX_CHANNEL_DELTA = 64
 RASTER_LIMITS = {
+    # Observed three one-level antialiasing differences on the mobile modal corner.
+    "library-create-mobile.png": (8, 1, 0, 0, 0),
     "music-player.png": (MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA, 0, 0, 0),
     "music.png": (16, 1, 0, 0, 0),
     "series-detail.png": (16, 1, 0, 0, 0),
