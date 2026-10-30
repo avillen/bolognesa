@@ -9,14 +9,13 @@ msgstr ""
 msgid " · Revisar"
 msgstr " · Revisar"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:78
 #, elixir-autogen, elixir-format
 msgid "%{count} archivo descubierto · Intento %{attempt}"
 msgid_plural "%{count} archivos descubiertos · Intento %{attempt}"
 msgstr[0] "%{count} archivo descubierto · Intento %{attempt}"
 msgstr[1] "%{count} archivos descubiertos · Intento %{attempt}"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:159
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:167
 #, elixir-autogen, elixir-format
 msgid "%{count} archivo registrado antes del fallo. El escaneo no ha terminado de recorrer la carpeta."
 msgid_plural "%{count} archivos registrados antes del fallo. El escaneo no ha terminado de recorrer la carpeta."
@@ -125,7 +124,6 @@ msgstr "Intentando reconectar"
 msgid "Ausente"
 msgstr "Ausente"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:204
 #, elixir-autogen, elixir-format
 msgid "Añadir fuente"
 msgstr "Añadir fuente"
@@ -144,22 +142,24 @@ msgid "Aún no hay películas con ese nombre. Escanea una biblioteca o revisa la
 msgstr "Aún no hay películas con ese nombre. Escanea una biblioteca o revisa las identificaciones."
 
 #: lib/bolognesa_web/live/library/index/live.html.heex:13
+#: lib/bolognesa_web/live/library/index/live.html.heex:74
 #, elixir-autogen, elixir-format
 msgid "Biblioteca"
 msgstr "Biblioteca"
 
-#: lib/bolognesa_web/live/library/index/reducers/save.ex:33
+#: lib/bolognesa_web/live/library/index/reducers/save.ex:34
 #, elixir-autogen, elixir-format
 msgid "Biblioteca guardada. La carpeta todavía no se ha escaneado."
 msgstr "Biblioteca guardada. La carpeta todavía no se ha escaneado."
 
 #: lib/bolognesa_web/components/layouts.ex:119
-#: lib/bolognesa_web/live/library/index/reducers/initialize.ex:18
+#: lib/bolognesa_web/live/library/index/live.html.heex:16
+#: lib/bolognesa_web/live/library/index/reducers/initialize.ex:19
 #, elixir-autogen, elixir-format
 msgid "Bibliotecas"
 msgstr "Bibliotecas"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:33
+#: lib/bolognesa_web/live/library/index/live.html.heex:71
 #, elixir-autogen, elixir-format
 msgid "Bibliotecas registradas"
 msgstr "Bibliotecas registradas"
@@ -214,7 +214,8 @@ msgstr "Buscar serie en TMDb"
 msgid "Buscar series"
 msgstr "Buscar series"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:198
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:94
+#: lib/bolognesa_web/live/library/index/components/reinspect_confirmation.ex:41
 #, elixir-autogen, elixir-format
 msgid "Cancelar"
 msgstr "Cancelar"
@@ -266,7 +267,8 @@ msgstr "Cargando temporada…"
 msgid "Cargar episodios"
 msgstr "Cargar episodios"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:262
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:84
+#: lib/bolognesa_web/live/library/index/live.html.heex:74
 #, elixir-autogen, elixir-format
 msgid "Carpeta de origen"
 msgstr "Carpeta de origen"
@@ -294,12 +296,12 @@ msgstr "Configura una carpeta de películas o series para empezar a construir tu
 msgid "Configurar bibliotecas"
 msgstr "Configurar bibliotecas"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:192
+#: lib/bolognesa_web/live/library/index/components/reinspect_confirmation.ex:35
 #, elixir-autogen, elixir-format
 msgid "Confirmar"
 msgstr "Confirmar"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:177
+#: lib/bolognesa_web/live/library/index/components/reinspect_confirmation.ex:15
 #, elixir-autogen, elixir-format
 msgid "Confirmar nuevo análisis"
 msgstr "Confirmar nuevo análisis"
@@ -309,7 +311,7 @@ msgstr "Confirmar nuevo análisis"
 msgid "Confirmar película"
 msgstr "Confirmar película"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:250
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:72
 #, elixir-autogen, elixir-format
 msgid "Contenido"
 msgstr "Contenido"
@@ -397,12 +399,12 @@ msgstr "Duración:"
 msgid "El almacenamiento está temporalmente indisponible."
 msgstr "El almacenamiento está temporalmente indisponible."
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:166
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:174
 #, elixir-autogen, elixir-format
 msgid "El análisis de los archivos ya registrados continúa. Puedes salir de esta pantalla mientras termina."
 msgstr "El análisis de los archivos ya registrados continúa. Puedes salir de esta pantalla mientras termina."
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:120
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:140
 #, elixir-autogen, elixir-format
 msgid "El análisis técnico no terminó para esos archivos. Esto no confirma un problema de reproducción."
 msgstr "El análisis técnico no terminó para esos archivos. Esto no confirma un problema de reproducción."
@@ -505,7 +507,6 @@ msgstr "Ficha de película"
 msgid "Formato no admitido"
 msgstr "Formato no admitido"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:16
 #, elixir-autogen, elixir-format
 msgid "Fuentes multimedia"
 msgstr "Fuentes multimedia"
@@ -515,10 +516,10 @@ msgstr "Fuentes multimedia"
 msgid "Guardando corrección…"
 msgstr "Guardando corrección…"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:270
 #: lib/bolognesa_web/live/movie/review/live.html.heex:131
 #: lib/bolognesa_web/live/series/review/live.html.heex:158
 #: lib/bolognesa_web/live/settings/live.html.heex:37
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:98
 #, elixir-autogen, elixir-format
 msgid "Guardando…"
 msgstr "Guardando…"
@@ -528,7 +529,7 @@ msgstr "Guardando…"
 msgid "Guardar"
 msgstr "Guardar"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:272
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:100
 #, elixir-autogen, elixir-format
 msgid "Guardar biblioteca"
 msgstr "Guardar biblioteca"
@@ -614,12 +615,12 @@ msgstr "Imagen de %{value0}"
 msgid "Inicio"
 msgstr "Inicio"
 
-#: lib/bolognesa_web/live/library/index/reducers/save.ex:71
+#: lib/bolognesa_web/live/library/index/reducers/save.ex:78
 #, elixir-autogen, elixir-format
 msgid "Introduce un nombre válido."
 msgstr "Introduce un nombre válido."
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:155
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:163
 #, elixir-autogen, elixir-format
 msgid "Inventario incompleto"
 msgstr "Inventario incompleto"
@@ -756,8 +757,8 @@ msgid "No se ha podido guardar el idioma. Vuelve a intentarlo."
 msgstr "No se ha podido guardar el idioma. Vuelve a intentarlo."
 
 #: lib/bolognesa_web/library_navigation.ex:35
-#: lib/bolognesa_web/live/library/index/reducers/initialize.ex:38
-#: lib/bolognesa_web/live/library/index/reducers/initialize.ex:57
+#: lib/bolognesa_web/live/library/index/reducers/initialize.ex:45
+#: lib/bolognesa_web/live/library/index/reducers/initialize.ex:64
 #, elixir-autogen, elixir-format
 msgid "No se pudieron cargar las bibliotecas. Recarga para reintentar."
 msgstr "No se pudieron cargar las bibliotecas. Recarga para reintentar."
@@ -767,8 +768,7 @@ msgstr "No se pudieron cargar las bibliotecas. Recarga para reintentar."
 msgid "No se pudieron interpretar los datos técnicos"
 msgstr "No se pudieron interpretar los datos técnicos"
 
-#: lib/bolognesa_web/live/library/index/reducers/apply_scan_statuses.ex:40
-#: lib/bolognesa_web/live/library/index/reducers/apply_scan_statuses.ex:44
+#: lib/bolognesa_web/live/library/index/live.html.heex:64
 #, elixir-autogen, elixir-format
 msgid "No se pudo actualizar el escaneo. Vuelve a intentarlo."
 msgstr "No se pudo actualizar el escaneo. Vuelve a intentarlo."
@@ -877,8 +877,8 @@ msgstr "No se puede leer la carpeta de origen."
 msgid "No tienes permiso para escanear esta biblioteca."
 msgstr "No tienes permiso para escanear esta biblioteca."
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:242
 #: lib/bolognesa_web/live/setup/live.html.heex:27
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:64
 #, elixir-autogen, elixir-format
 msgid "Nombre"
 msgstr "Nombre"
@@ -894,9 +894,9 @@ msgstr "Nombre de archivo no interpretable"
 msgid "Paginación"
 msgstr "Paginación"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:252
-#: lib/bolognesa_web/live/library/index/state/library.ex:83
 #: lib/bolognesa_web/live/movie/index/live.html.heex:14
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:74
+#: lib/bolognesa_web/live/library/index/state/library.ex:83
 #, elixir-autogen, elixir-format
 msgid "Películas"
 msgstr "Películas"
@@ -949,23 +949,22 @@ msgstr "Páginas de series"
 msgid "Páginas del catálogo"
 msgstr "Páginas del catálogo"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:144
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:152
 #, elixir-autogen, elixir-format
 msgid "Reanalizar"
 msgstr "Reanalizar"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:19
 #, elixir-autogen, elixir-format
 msgid "Registra una carpeta y escanéala para descubrir sus archivos multimedia. Puedes salir de esta pantalla mientras continúa."
 msgstr "Registra una carpeta y escanéala para descubrir sus archivos multimedia. Puedes salir de esta pantalla mientras continúa."
 
-#: lib/bolognesa_web/live/library/index/state/library.ex:79
 #: lib/bolognesa_web/live/movie/review/live.html.heex:82
 #: lib/bolognesa_web/live/music/index/live.html.heex:116
 #: lib/bolognesa_web/live/series/index/live.html.heex:61
 #: lib/bolognesa_web/live/series/review/live.html.heex:22
 #: lib/bolognesa_web/live/series/season/live.html.heex:34
 #: lib/bolognesa_web/live/series/show/live.html.heex:24
+#: lib/bolognesa_web/live/library/index/state/library.ex:79
 #, elixir-autogen, elixir-format
 msgid "Reintentar"
 msgstr "Reintentar"
@@ -1023,8 +1022,8 @@ msgstr "Revisión de series"
 msgid "Se agotaron los intentos automáticos. Puedes reintentar."
 msgstr "Se agotaron los intentos automáticos. Puedes reintentar."
 
-#: lib/bolognesa_web/live/library/index/state/library.ex:132
 #: lib/bolognesa_web/live/movie/review/live.ex:150
+#: lib/bolognesa_web/live/library/index/state/library.ex:132
 #, elixir-autogen, elixir-format
 msgid "Se agotaron los reintentos"
 msgstr "Se agotaron los reintentos"
@@ -1034,7 +1033,7 @@ msgstr "Se agotaron los reintentos"
 msgid "Se agotó el tiempo de análisis"
 msgstr "Se agotó el tiempo de análisis"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:181
+#: lib/bolognesa_web/live/library/index/components/reinspect_confirmation.ex:24
 #, elixir-autogen, elixir-format
 msgid "Se volverán a leer los archivos de esta biblioteca. El análisis puede tardar y utilizar recursos del servidor."
 msgstr "Se volverán a leer los archivos de esta biblioteca. El análisis puede tardar y utilizar recursos del servidor."
@@ -1075,12 +1074,12 @@ msgstr "Selecciona una serie."
 msgid "Serie seleccionada:"
 msgstr "Serie seleccionada:"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:253
-#: lib/bolognesa_web/live/library/index/state/library.ex:84
 #: lib/bolognesa_web/live/series/index/live.html.heex:18
 #: lib/bolognesa_web/live/series/season/live.html.heex:22
 #: lib/bolognesa_web/live/series/show/live.html.heex:16
 #: lib/bolognesa_web/live/series/show/live.html.heex:54
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:75
+#: lib/bolognesa_web/live/library/index/state/library.ex:84
 #, elixir-autogen, elixir-format
 msgid "Series"
 msgstr "Series"
@@ -1130,7 +1129,7 @@ msgstr "Sin coincidencia"
 msgid "Sin identificar manualmente"
 msgstr "Sin identificar manualmente"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:132
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:86
 #, elixir-autogen, elixir-format
 msgid "Solicitando…"
 msgstr "Solicitando…"
@@ -1195,7 +1194,7 @@ msgstr "Temporadas en tu biblioteca"
 msgid "This product uses the TMDB API but is not endorsed or certified by TMDB."
 msgstr "Este producto utiliza la API de TMDB, pero TMDB no lo respalda ni certifica."
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:47
+#: lib/bolognesa_web/live/library/index/live.html.heex:84
 #, elixir-autogen, elixir-format
 msgid "Todavía no hay bibliotecas."
 msgstr "Todavía no hay bibliotecas."
@@ -1236,7 +1235,7 @@ msgstr "Tu elección se guarda en tu cuenta y se aplica en todos tus dispositivo
 msgid "Tu navegador no admite la reproducción de vídeo."
 msgstr "Tu navegador no admite la reproducción de vídeo."
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:206
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:36
 #, elixir-autogen, elixir-format
 msgid "Usa la ruta visible para Bolognesa dentro del servidor."
 msgstr "Usa la ruta visible para Bolognesa dentro del servidor."
@@ -1266,7 +1265,6 @@ msgstr "Versión"
 msgid "Visitar TMDB"
 msgstr "Visitar TMDB"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:28
 #, elixir-autogen, elixir-format
 msgid "Volver a Inicio"
 msgstr "Volver a Inicio"
@@ -1298,7 +1296,7 @@ msgstr "· episodios"
 msgid "· temporada"
 msgstr "· temporada"
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:90
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:107
 #, elixir-autogen, elixir-format
 msgid "Último escaneo completo:"
 msgstr "Último escaneo completo:"
@@ -1343,6 +1341,7 @@ msgid_plural "%{count} correctos"
 msgstr[0] "%{count} correcto"
 msgstr[1] "%{count} correctos"
 
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:68
 #: lib/bolognesa_web/live/library/index/state/library.ex:91
 #, elixir-autogen, elixir-format
 msgid "%{count} en curso"
@@ -1418,9 +1417,9 @@ msgstr "Importación de audio en cola."
 msgid "La canción ya no está disponible. Actualiza la lista."
 msgstr "La canción ya no está disponible. Actualiza la lista."
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:254
-#: lib/bolognesa_web/live/library/index/state/library.ex:85
 #: lib/bolognesa_web/live/music/index/live.html.heex:12
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:76
+#: lib/bolognesa_web/live/library/index/state/library.ex:85
 #, elixir-autogen, elixir-format
 msgid "Música"
 msgstr "Música"
@@ -1820,37 +1819,103 @@ msgid "Partes del episodio"
 msgstr "Partes del episodio"
 
 
-#: lib/bolognesa_web/live/library/index/live.html.heex:213
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:43
 #, elixir-autogen, elixir-format
 msgid "Docker Compose: consulta la guía de montajes y carpetas permitidas."
 msgstr "Docker Compose: consulta la guía de montajes y carpetas permitidas."
 
-#: lib/bolognesa_web/live/library/index/reducers/save.ex:57
+#: lib/bolognesa_web/live/library/index/reducers/save.ex:62
 #, elixir-autogen, elixir-format
 msgid "Esta carpeta ya está registrada. Usa la biblioteca existente o elige otra carpeta."
 msgstr "Esta carpeta ya está registrada. Usa la biblioteca existente o elige otra carpeta."
 
-#: lib/bolognesa_web/live/library/index/reducers/save.ex:75
+#: lib/bolognesa_web/live/library/index/reducers/save.ex:83
 #, elixir-autogen, elixir-format
 msgid "Introduce una ruta absoluta válida. Comprueba cómo está escrita; en Docker, usa la ruta dentro del contenedor."
 msgstr "Introduce una ruta absoluta válida. Comprueba cómo está escrita; en Docker, usa la ruta dentro del contenedor."
 
-#: lib/bolognesa_web/live/library/index/reducers/save.ex:67
+#: lib/bolognesa_web/live/library/index/reducers/save.ex:74
 #, elixir-autogen, elixir-format
 msgid "La carpeta está fuera de las ubicaciones permitidas. Elige una carpeta dentro de BOLOGNESA_LIBRARY_ROOTS o pide al administrador que revise esa configuración. En Docker, debe coincidir con la ruta de destino del montaje dentro del contenedor."
 msgstr "La carpeta está fuera de las ubicaciones permitidas. Elige una carpeta dentro de BOLOGNESA_LIBRARY_ROOTS o pide al administrador que revise esa configuración. En Docker, debe coincidir con la ruta de destino del montaje dentro del contenedor."
 
-#: lib/bolognesa_web/live/library/index/reducers/save.ex:79
+#: lib/bolognesa_web/live/library/index/reducers/save.ex:89
 #, elixir-autogen, elixir-format
 msgid "No se ha podido guardar la biblioteca por un error inesperado. Si persiste, informa de la versión de Bolognesa, la hora del fallo y los pasos para reproducirlo. Omite credenciales, rutas privadas y nombres de archivos."
 msgstr "No se ha podido guardar la biblioteca por un error inesperado. Si persiste, informa de la versión de Bolognesa, la hora del fallo y los pasos para reproducirlo. Omite credenciales, rutas privadas y nombres de archivos."
 
-#: lib/bolognesa_web/live/library/index/reducers/save.ex:61
+#: lib/bolognesa_web/live/library/index/reducers/save.ex:68
 #, elixir-autogen, elixir-format
 msgid "No se puede leer la carpeta. Comprueba que la ruta sea absoluta, esté bien escrita y que la carpeta exista y tenga permisos de lectura para Bolognesa. En Docker, usa la ruta de destino del montaje dentro del contenedor."
 msgstr "No se puede leer la carpeta. Comprueba que la ruta sea absoluta, esté bien escrita y que la carpeta exista y tenga permisos de lectura para Bolognesa. En Docker, usa la ruta de destino del montaje dentro del contenedor."
 
-#: lib/bolognesa_web/live/library/index/reducers/save.ex:72
+#: lib/bolognesa_web/live/library/index/reducers/save.ex:79
 #, elixir-autogen, elixir-format
 msgid "Selecciona películas, series o música."
 msgstr "Selecciona películas, series o música."
+
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:44
+#, elixir-autogen, elixir-format
+msgid "%{count} archivo"
+msgid_plural "%{count} archivos"
+msgstr[0] "%{count} archivo"
+msgstr[1] "%{count} archivos"
+
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:72
+#, elixir-autogen, elixir-format
+msgid "%{count} con error"
+msgid_plural "%{count} con error"
+msgstr[0] "%{count} con error"
+msgstr[1] "%{count} con error"
+
+#: lib/bolognesa_web/live/library/index/live.html.heex:76
+#, elixir-autogen, elixir-format
+msgid "Acciones"
+msgstr "Acciones"
+
+#: lib/bolognesa_web/live/library/index/live.html.heex:74
+#, elixir-autogen, elixir-format
+msgid "Archivos"
+msgstr "Archivos"
+
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:25
+#: lib/bolognesa_web/live/library/index/live.html.heex:30
+#: lib/bolognesa_web/live/library/index/live.html.heex:85
+#, elixir-autogen, elixir-format
+msgid "Añadir biblioteca"
+msgstr "Añadir biblioteca"
+
+#: lib/bolognesa_web/live/library/index/components/library_form.ex:31
+#, elixir-autogen, elixir-format
+msgid "Cerrar"
+msgstr "Cerrar"
+
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:98
+#, elixir-autogen, elixir-format
+msgid "Detalles del escaneo"
+msgstr "Detalles del escaneo"
+
+#: lib/bolognesa_web/live/library/index/live.html.heex:96
+#, elixir-autogen, elixir-format
+msgid "Escanear busca cambios en la carpeta y analiza archivos nuevos o modificados. Reanalizar repite el escaneo y fuerza el análisis técnico de los archivos. Puedes salir de esta pantalla mientras continúa."
+msgstr "Escanear busca cambios en la carpeta y analiza archivos nuevos o modificados. Reanalizar repite el escaneo y fuerza el análisis técnico de los archivos. Puedes salir de esta pantalla mientras continúa."
+
+#: lib/bolognesa_web/live/library/index/live.html.heex:76
+#, elixir-autogen, elixir-format
+msgid "Estado"
+msgstr "Estado"
+
+#: lib/bolognesa_web/live/library/index/live.html.heex:19
+#, elixir-autogen, elixir-format
+msgid "Gestiona tus fuentes multimedia y sus escaneos."
+msgstr "Gestiona tus fuentes multimedia y sus escaneos."
+
+#: lib/bolognesa_web/live/library/index/components/library_row.ex:110
+#, elixir-autogen, elixir-format
+msgid "Intento %{attempt}"
+msgstr "Intento %{attempt}"
+
+#: lib/bolognesa_web/live/library/index/live.html.heex:95
+#, elixir-autogen, elixir-format
+msgid "¿Qué hace cada acción?"
+msgstr "¿Qué hace cada acción?"

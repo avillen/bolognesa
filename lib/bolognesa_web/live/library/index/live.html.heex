@@ -6,272 +6,100 @@
   current_scope={@current_scope}
   active_section={:libraries}
 >
-  <section id="libraries-screen" class="mx-auto max-w-5xl space-y-8">
-    <header class="flex flex-wrap items-end justify-between gap-4">
-      <div>
+  <section id="libraries-screen" class="mx-auto max-w-6xl space-y-6">
+    <header class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div class="min-w-0">
         <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">
           {gettext("Biblioteca")}
         </p>
-        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-ink">
-          {gettext("Fuentes multimedia")}
+        <h1 class="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+          {gettext("Bibliotecas")}
         </h1>
         <p class="mt-3 max-w-2xl text-sm leading-6 text-muted">
+          {gettext("Gestiona tus fuentes multimedia y sus escaneos.")}
+        </p>
+      </div>
+      <button
+        id="library-add"
+        type="button"
+        phx-click="open_library_form"
+        aria-haspopup="dialog"
+        aria-controls="library-create-panel"
+        class="library-primary shrink-0"
+      >
+        <.icon name="hero-plus" class="size-4" />{gettext("Añadir biblioteca")}
+      </button>
+    </header>
+    <p
+      :if={@success}
+      id="library-success"
+      role="status"
+      class="mt-5 rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-4 text-sm text-emerald-200"
+    >
+      {@success}
+    </p>
+
+    <p
+      :if={@load_error}
+      id="library-load-error"
+      role="alert"
+      class="rounded-xl border border-red-300/30 p-4 text-sm text-red-200"
+    >
+      {@load_error}
+    </p>
+    <p
+      :if={@scan_feedback}
+      id="library-scan-feedback"
+      role="status"
+      class="rounded-xl border border-border p-4 text-sm text-ink"
+    >
+      {@scan_feedback}
+    </p>
+    <p
+      :if={@scan_refresh_error == :unavailable}
+      id="library-scan-refresh-error"
+      role="alert"
+      class="rounded-xl border border-border p-4 text-sm text-ink"
+    >
+      {gettext("No se pudo actualizar el escaneo. Vuelve a intentarlo.")}
+    </p>
+    <section class="library-section" aria-labelledby="registered-libraries-title">
+      <h2
+        id="registered-libraries-title"
+        class="px-1 pb-4 text-base font-semibold text-ink md:px-5 md:pt-5"
+      >
+        {gettext("Bibliotecas registradas")}
+      </h2>
+      <div class="library-columns library-list-heading" aria-hidden="true">
+        <span>{gettext("Biblioteca")}</span><span>{gettext("Carpeta de origen")}</span><span>{gettext(
+          "Archivos"
+        )}</span><span>{gettext("Estado")}</span><span class="text-right">{gettext("Acciones")}</span>
+      </div>
+      <div id="library-list" phx-update="stream" class="library-list">
+        <div
+          :if={is_nil(@load_error)}
+          id="libraries-empty"
+          class="hidden rounded-xl border border-dashed border-border p-6 text-sm text-muted only:block"
+        >
+          <p>{gettext("Todavía no hay bibliotecas.")}</p>
+          <button type="button" phx-click="open_library_form" class="library-secondary mt-4">{gettext(
+            "Añadir biblioteca"
+          )}</button>
+        </div>
+        <LibraryRow.render :for={{id, library} <- @streams.libraries} id={id} library={library} />
+      </div>
+    </section>
+    <aside class="flex gap-3 rounded-xl border border-border p-5 text-sm leading-6 text-muted">
+      <.icon name="hero-information-circle" class="mt-1 size-5 shrink-0" />
+      <div>
+        <h2 class="font-semibold text-ink">{gettext("¿Qué hace cada acción?")}</h2><p>
           {gettext(
-            "Registra una carpeta y escanéala para descubrir sus archivos multimedia. Puedes salir de esta pantalla mientras continúa."
+            "Escanear busca cambios en la carpeta y analiza archivos nuevos o modificados. Reanalizar repite el escaneo y fuerza el análisis técnico de los archivos. Puedes salir de esta pantalla mientras continúa."
           )}
         </p>
       </div>
-      <.link
-        navigate={~p"/"}
-        id="libraries-home-link"
-        class="min-h-11 rounded-xl border border-border-strong px-5 py-3 text-sm font-medium text-ink transition hover:border-accent hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >{gettext("Volver a Inicio")}</.link>
-    </header>
-
-    <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.85fr)]">
-      <div class="rounded-xl bg-surface p-6 sm:p-8">
-        <h2 class="text-xl font-semibold text-ink">{gettext("Bibliotecas registradas")}</h2>
-        <p
-          :if={@scan_feedback}
-          id="library-scan-feedback"
-          role="status"
-          class="mt-4 rounded-xl border border-accent/30 bg-accent/10 p-4 text-sm text-accent-soft"
-        >
-          {@scan_feedback}
-        </p>
-        <div id="library-list" phx-update="stream" class="mt-5 space-y-3">
-          <p
-            id="libraries-empty"
-            class="hidden rounded-xl border border-dashed border-border p-5 text-sm text-muted only:block"
-          >
-            {gettext("Todavía no hay bibliotecas.")}
-          </p>
-          <div
-            :for={{id, library} <- @streams.libraries}
-            id={id}
-            data-library-name={library.name}
-            data-content-type={library.content_type}
-            class="rounded-xl border border-border bg-raised/60 p-5"
-          >
-            <h3 class="font-semibold text-ink">{library.name}</h3>
-            <p class="mt-1 text-xs text-accent-soft">{library.content_type_label}</p>
-            <p class="mt-2 break-all text-sm text-muted">{library.path}</p>
-            <div class="mt-5 flex flex-wrap items-center justify-between gap-4">
-              <div class="space-y-2">
-                <p
-                  id={"library-scan-state-#{library.id}"}
-                  data-state={library.state}
-                  class="flex items-center gap-2 text-sm font-medium text-accent-soft"
-                >
-                  <.icon
-                    :if={library.active?}
-                    name="hero-arrow-path"
-                    class="size-4 motion-safe:animate-spin"
-                  />
-                  {library.state_label}
-                </p>
-                <p
-                  :if={library.state != :not_scanned}
-                  id={"library-scan-count-#{library.id}"}
-                  class="text-xs text-muted"
-                >
-                  {ngettext(
-                    "%{count} archivo descubierto · Intento %{attempt}",
-                    "%{count} archivos descubiertos · Intento %{attempt}",
-                    library.files_discovered,
-                    attempt: library.attempt
-                  )}
-                </p>
-                <p
-                  :if={library.last_completed_at}
-                  id={"library-scan-completed-#{library.id}"}
-                  class="text-xs text-muted"
-                >
-                  {gettext("Último escaneo completo:")} {library.last_completed_at}
-                </p>
-                <p
-                  id={"library-inspection-counts-#{library.id}"}
-                  role="status"
-                  data-pending={library.inspection_counts.pending}
-                  data-running={library.inspection_counts.running}
-                  data-succeeded={library.inspection_counts.succeeded}
-                  data-failed={library.inspection_counts.failed}
-                  class="max-w-md text-xs leading-5 text-muted"
-                >
-                  {library.inspection_summary}
-                </p>
-                <ul
-                  :if={library.inspection_failure_reasons != []}
-                  id={"library-inspection-failures-#{library.id}"}
-                  class="space-y-1 border-l-2 border-red-300/40 pl-3 text-xs leading-5 text-red-200"
-                >
-                  <li
-                    :for={failure <- library.inspection_failure_reasons}
-                    id={"library-inspection-failure-#{library.id}-#{failure.reason}"}
-                  >
-                    {failure.count} · {failure.label}
-                  </li>
-                </ul>
-                <p
-                  :if={library.inspection_counts.failed > 0}
-                  id={"library-inspection-help-#{library.id}"}
-                  class="max-w-md text-xs leading-5 text-muted"
-                >
-                  {gettext(
-                    "El análisis técnico no terminó para esos archivos. Esto no confirma un problema de reproducción."
-                  )}
-                </p>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  id={"library-scan-#{library.id}"}
-                  type="button"
-                  phx-click="scan"
-                  phx-value-library_id={library.id}
-                  disabled={library.active?}
-                  phx-disable-with={gettext("Solicitando…")}
-                  class="min-h-11 rounded-xl border border-accent/40 px-5 py-3 text-sm font-semibold text-accent-soft transition hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50"
-                >
-                  {library.button_label}
-                </button>
-                <button
-                  id={"library-reinspect-#{library.id}"}
-                  type="button"
-                  phx-click="prepare_reinspect"
-                  phx-value-library_id={library.id}
-                  disabled={library.active?}
-                  class="min-h-11 rounded-xl border border-border-strong px-5 py-3 text-sm font-medium text-ink transition hover:border-accent hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50"
-                >{gettext("Reanalizar")}</button>
-              </div>
-            </div>
-            <div
-              :if={library.error}
-              id={"library-scan-error-#{library.id}"}
-              role="alert"
-              class="mt-4 rounded-lg border border-red-300/20 bg-red-300/10 p-3 text-sm text-red-200"
-            >
-              <p class="flex items-center gap-2 font-semibold">
-                <.icon name="hero-exclamation-triangle" class="size-5 shrink-0" />
-                {gettext("Inventario incompleto")}
-              </p>
-              <p class="mt-2">{library.error}</p>
-              <p class="mt-2 text-xs leading-5">
-                {ngettext(
-                  "%{count} archivo registrado antes del fallo. El escaneo no ha terminado de recorrer la carpeta.",
-                  "%{count} archivos registrados antes del fallo. El escaneo no ha terminado de recorrer la carpeta.",
-                  library.files_discovered
-                )}
-              </p>
-              <p :if={library.inspection_active?} class="mt-2 text-xs leading-5">
-                {gettext(
-                  "El análisis de los archivos ya registrados continúa. Puedes salir de esta pantalla mientras termina."
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div
-          :if={@reinspect_library_id}
-          id={"library-reinspect-confirm-#{@reinspect_library_id}"}
-          role="group"
-          aria-label={gettext("Confirmar nuevo análisis")}
-          class="mt-5 rounded-xl border border-accent/30 bg-accent/10 p-5"
-        >
-          <p class="text-sm leading-6 text-accent-soft">
-            {gettext(
-              "Se volverán a leer los archivos de esta biblioteca. El análisis puede tardar y utilizar recursos del servidor."
-            )}
-          </p>
-          <div class="mt-4 flex flex-wrap gap-2">
-            <button
-              id={"library-reinspect-confirm-button-#{@reinspect_library_id}"}
-              type="button"
-              phx-click="confirm_reinspect"
-              phx-value-library_id={@reinspect_library_id}
-              class="min-h-11 rounded-xl bg-accent px-4 py-2 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            >{gettext("Confirmar")}</button>
-            <button
-              id={"library-reinspect-cancel-button-#{@reinspect_library_id}"}
-              type="button"
-              phx-click="cancel_reinspect"
-              class="min-h-11 rounded-xl border border-border-strong px-4 py-2 text-ink transition hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            >{gettext("Cancelar")}</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="rounded-xl bg-surface p-6 sm:p-8">
-        <h2 class="text-xl font-semibold text-ink">{gettext("Añadir fuente")}</h2>
-        <p class="mt-2 text-sm leading-6 text-muted">
-          {gettext("Usa la ruta visible para Bolognesa dentro del servidor.")}
-        </p>
-        <p class="mt-2 text-sm leading-6 text-muted">
-          <a
-            id="library-deployment-help"
-            href="https://github.com/avillen/bolognesa/blob/main/deploy/compose/README.md#networking-persistence-and-libraries"
-            class="text-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >{gettext("Docker Compose: consulta la guía de montajes y carpetas permitidas.")}</a>
-        </p>
-        <p
-          :if={@error}
-          id="library-error"
-          role="alert"
-          class="mt-5 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200"
-        >
-          {@error}
-        </p>
-        <p
-          :if={@success}
-          id="library-success"
-          role="status"
-          class="mt-5 rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-4 text-sm text-emerald-200"
-        >
-          {@success}
-        </p>
-        <.form
-          for={@form}
-          id="library-form"
-          phx-change="validate"
-          phx-submit="save"
-          class="mt-6 space-y-5"
-        >
-          <.input
-            field={@form[:name]}
-            id="library-name"
-            type="text"
-            label={gettext("Nombre")}
-            required
-            class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
-          />
-          <.input
-            field={@form[:content_type]}
-            id="library-content-type"
-            type="select"
-            label={gettext("Contenido")}
-            options={[
-              {gettext("Películas"), :movie},
-              {gettext("Series"), :series},
-              {gettext("Música"), :music}
-            ]}
-            required
-          />
-          <.input
-            field={@form[:path]}
-            id="library-path"
-            type="text"
-            label={gettext("Carpeta de origen")}
-            placeholder="/media/movies"
-            required
-            class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
-          />
-          <button
-            id="library-submit"
-            type="submit"
-            phx-disable-with={gettext("Guardando…")}
-            class="min-h-12 w-full rounded-xl bg-accent px-5 py-3 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >{gettext("Guardar biblioteca")}</button>
-        </.form>
-      </div>
-    </div>
+    </aside>
+    <ReinspectConfirmation.render :if={@reinspect_target} target={@reinspect_target} />
+    <LibraryForm.render :if={@show_library_form?} form={@form} error={@form_error} />
   </section>
 </Layouts.app>

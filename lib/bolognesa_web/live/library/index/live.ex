@@ -1,12 +1,19 @@
 defmodule BolognesaWeb.Library.Index.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
+  alias BolognesaWeb.Library.Index.Components.{LibraryForm, LibraryRow, ReinspectConfirmation}
   alias BolognesaWeb.Library.Index.Reducers
 
   @impl true
   def mount(_params, _session, socket), do: {:ok, Reducers.Initialize.call(socket)}
 
   @impl true
+  def handle_event("open_library_form", _params, socket),
+    do: {:noreply, assign(socket, :show_library_form?, true)}
+
+  def handle_event("close_library_form", _params, socket),
+    do: {:noreply, socket |> assign(:show_library_form?, false) |> assign(:form_error, nil)}
+
   def handle_event("validate", %{"library" => params}, socket),
     do: {:noreply, Reducers.Validate.call(socket, params)}
 

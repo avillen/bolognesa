@@ -4,6 +4,7 @@ import { chromium } from "playwright";
 
 const baseUrl = process.env.BOLOGNESA_URL ?? "http://127.0.0.1:4001";
 const phase = process.env.BOLOGNESA_CAPTURE_PHASE ?? "all";
+const librariesOnly = process.env.BOLOGNESA_CAPTURE_LIBRARIES_ONLY === "1";
 const outputDirectory = process.env.BOLOGNESA_SCREENSHOT_OUTPUT_DIR
   ?? fileURLToPath(new URL("../../docs/screenshots/", import.meta.url));
 await mkdir(outputDirectory, { recursive: true });
@@ -216,18 +217,18 @@ try {
         await page.locator('[data-library-name="Series"]').waitFor();
         await page.addStyleTag({
           content: `
-            [data-library-name="Movies"] > p:nth-of-type(2),
-            [data-library-name="Series"] > p:nth-of-type(2),
-            [data-library-name="Music"] > p:nth-of-type(2) { font-size: 0; }
-            [data-library-name="Movies"] > p:nth-of-type(2)::after {
+            [data-library-name="Movies"] > .library-path,
+            [data-library-name="Series"] > .library-path,
+            [data-library-name="Music"] > .library-path { font-size: 0; }
+            [data-library-name="Movies"] > .library-path::after {
               content: "/media/movies";
               font-size: 14px;
             }
-            [data-library-name="Music"] > p:nth-of-type(2)::after {
+            [data-library-name="Music"] > .library-path::after {
               content: "/media/music";
               font-size: 14px;
             }
-            [data-library-name="Series"] > p:nth-of-type(2)::after {
+            [data-library-name="Series"] > .library-path::after {
               content: "/media/series";
               font-size: 14px;
             }
@@ -254,8 +255,45 @@ try {
       await withStableVideoFrame(() => page.screenshot({ animations: "disabled", path: screenshotPath(name), fullPage: true }));
     };
 
-    await capture("home.png", "/");
+    if (!librariesOnly) await capture("home.png", "/");
     await capture("libraries.png", "/libraries");
+    // Exercise the library screen with the same synthetic data at each requested width.
+    for (const width of [375, 430, 768, 1280]) {
+      await page.setViewportSize({width, height: 900});
+      if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) {
+        throw new Error(`Libraries overflow at ${width}px.`);
+      }
+      const row = page.locator(`[data-library-name="Movies"]`);
+      const scan = row.locator('button[id^="library-scan-"]').filter({hasText: "Scan"});
+      await scan.waitFor({state: "visible"});
+      if (!await scan.isEnabled()) throw new Error("Initial scan action is unavailable.");
+      await row.locator('summary').click();
+      await row.locator('[id^="library-reinspect-"]').click();
+      const confirmation = page.locator('[role="dialog"][id^="library-reinspect-confirm-"]');
+      await confirmation.waitFor({state: "visible"});
+      if (!(await confirmation.textContent()).includes("Movies")) throw new Error("Confirmation lost library context.");
+      await page.keyboard.press("Escape");
+      await confirmation.waitFor({state: "detached"});
+      if (!await row.locator('details').evaluate(el => el.open)) throw new Error("LiveView patch closed scan details.");
+      await row.locator('summary').click();
+      await page.locator('#library-add').click();
+      await page.locator('#library-name').waitFor({state: "visible"});
+      await page.waitForFunction(() => document.activeElement?.id === "library-name");
+      await page.locator('#library-name').fill("Draft library");
+      await page.locator('#library-path').fill("/missing-library-source");
+      await page.locator('#library-submit').click();
+      await page.locator('#library-error').waitFor({state: "visible"});
+      if (await page.locator('#library-name').inputValue() !== "Draft library") throw new Error("Invalid source erased form values.");
+      await page.locator('#library-submit').focus();
+      await page.keyboard.press("Tab");
+      if (!await page.locator('#library-create-panel').evaluate(el => el.contains(document.activeElement))) throw new Error("Focus escaped the add panel.");
+      await page.locator('#library-create-cancel').click();
+      await page.locator('#library-form').waitFor({state: "detached"});
+      await page.waitForFunction(() => document.activeElement?.id === "library-add");
+      if (width === 375) await page.screenshot({path: screenshotPath("libraries-mobile.png"), fullPage: true});
+    }
+    await page.setViewportSize({width: 1440, height: 1000});
+    if (!librariesOnly) {
     await capture("library.png", `/movies?library_id=${ids.movie_library}`, "main h1", "#movies-loading");
     await capture("movie-review.png", "/movies/review");
     await capture("movie.png", `/movies/${ids.movie}?library_id=${ids.movie_library}`);
@@ -609,6 +647,35 @@ try {
 
     await capture("settings.png", "/settings");
     await capture("about.png", "/about");
+    }
+
+    await page.goto(`${baseUrl}/libraries`);
+    const libraryRow = page.locator('[data-library-name="Movies"]');
+    const details = libraryRow.locator('details');
+    await details.locator('summary').click();
+    await libraryRow.locator('button[id^="library-reinspect-"]').click();
+    await page.evaluate(() => {
+      window.libraryFocusAudit = [];
+      document.addEventListener("focusin", event => window.libraryFocusAudit.push({id: event.target.id, tag: event.target.tagName}));
+    });
+    await page.locator(`#library-reinspect-confirm-button-${ids.movie_library}`).click();
+    await page.locator(`#library-scan-state-${ids.movie_library}[data-state="queued"]`).waitFor();
+    if (await libraryRow.locator('button[id^="library-scan-"]').isEnabled()) throw new Error("Scan remained enabled while queued.");
+    if (await libraryRow.locator('button[id^="library-reinspect-"]').isEnabled()) throw new Error("Reanalysis remained enabled while queued.");
+    try {
+    await page.waitForFunction(id => document.activeElement === document.querySelector(`#library-details-${id} > summary`), ids.movie_library);
+    } catch (error) {
+      console.log(await page.evaluate(id => ({active: {id: document.activeElement.id, tag: document.activeElement.tagName}, summary: document.querySelector(`#library-details-${id}`)?.outerHTML, audit: window.libraryFocusAudit}), ids.movie_library));
+      throw error;
+    }
+    if (!await details.evaluate(el => el.open)) throw new Error("Status refresh closed scan details.");
+    const musicRow = page.locator('[data-library-name="Music"]');
+    await musicRow.locator('button[id^="library-scan-"]').click();
+    await page.locator(`#library-scan-state-${ids.music_library}[data-state="queued"]`).waitFor();
+    await page.reload();
+    await page.locator(`#library-scan-state-${ids.movie_library}[data-state="queued"]`).waitFor();
+    await page.locator(`#library-scan-state-${ids.music_library}[data-state="queued"]`).waitFor();
+    console.log("Verified responsive libraries at 375/430/768/1280px, form validation and focus, contextual confirmation, disclosure preservation and durable concurrent scan requests.");
   }
 
   console.log(`Captured README screenshots (${phase}) into ${outputDirectory}.`);

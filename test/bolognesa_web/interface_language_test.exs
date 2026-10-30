@@ -33,6 +33,8 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
     render_async(review)
     assert has_element?(review, "h1", "Review")
     {:ok, libraries, _} = live(conn, "/libraries")
+    libraries |> element("#library-add") |> render_click()
+    assert has_element?(libraries, "#library-create-title", "Add library")
     libraries |> form("#library-form", library: %{name: "", path: ""}) |> render_submit()
     assert has_element?(libraries, "#library-form", "can't be blank")
   end

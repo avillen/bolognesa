@@ -40,6 +40,74 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     %{token: token, path: path, actor: actor}
   end
 
+  test "add form is contextual, can be dismissed and closes only after saving", %{
+    conn: conn,
+    token: token,
+    path: path
+  } do
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+    refute has_element?(view, "#library-form")
+    refute has_element?(view, "#libraries-home-link")
+    open_library_form(view)
+    assert has_element?(view, "#library-create-panel[role=dialog][aria-modal=true]")
+    view |> element("#library-create-cancel") |> render_click()
+    refute has_element?(view, "#library-form")
+    open_library_form(view)
+    view |> form("#library-form", library: %{name: "New", path: path}) |> render_submit()
+    refute has_element?(view, "#library-form")
+    assert has_element?(view, "#library-success")
+  end
+
+  test "status refresh removes libraries no longer returned by the server", %{
+    conn: conn,
+    token: token,
+    actor: actor,
+    path: path
+  } do
+    {:ok, library} =
+      Libraries.create_library(actor, %{name: "Removed", path: path, content_type: :movie})
+
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
+    await_status_updates(view)
+    assert has_element?(view, "#libraries-#{library.id}")
+    Repo.get!(Bolognesa.Infrastructure.Persistence.LibrarySchema, library.id) |> Repo.delete!()
+    send(view.pid, {:library_status_changed, library.id})
+    render(view)
+    await_status_updates(view)
+    refute has_element?(view, "#libraries-#{library.id}")
+    assert has_element?(view, "#libraries-empty")
+  end
+
+  test "closing the creation form preserves a load failure and does not show an empty library", %{
+    actor: actor
+  } do
+    socket = status_socket(actor)
+    socket = Phoenix.Component.assign(socket, :current_scope, %{actor: nil})
+    socket = Initialize.call(socket)
+    {:noreply, socket} = Live.handle_event("open_library_form", %{}, socket)
+    {:noreply, socket} = Live.handle_event("close_library_form", %{}, socket)
+    html = render_component(&Live.render/1, Map.put(socket.assigns, :__changed__, nil))
+    document = LazyHTML.from_fragment(html)
+    assert LazyHTML.query(document, "#library-load-error") |> LazyHTML.to_tree() != []
+    assert LazyHTML.query(document, "#libraries-empty") |> LazyHTML.to_tree() == []
+  end
+
+  test "refresh errors are independent of scan feedback and clear on recovery", %{actor: actor} do
+    alias BolognesaWeb.Library.Index.Reducers.{ApplyScanStatuses, StartScan}
+    socket = status_socket(actor) |> StartScan.call("invalid")
+    request = socket.assigns.scan_request_id
+    socket = ApplyScanStatuses.call(socket, request, {:ok, {:error, :unavailable}})
+    html = render_component(&Live.render/1, Map.put(socket.assigns, :__changed__, nil))
+    document = LazyHTML.from_fragment(html)
+    assert LazyHTML.query(document, "#library-scan-feedback") |> LazyHTML.to_tree() != []
+    assert LazyHTML.query(document, "#library-scan-refresh-error") |> LazyHTML.to_tree() != []
+    socket = ApplyScanStatuses.call(socket, request, {:ok, {:ok, []}})
+    html = render_component(&Live.render/1, Map.put(socket.assigns, :__changed__, nil))
+    document = LazyHTML.from_fragment(html)
+    assert LazyHTML.query(document, "#library-scan-feedback") |> LazyHTML.to_tree() != []
+    assert LazyHTML.query(document, "#library-scan-refresh-error") |> LazyHTML.to_tree() == []
+  end
+
   test "creates a music library and updates its navigation immediately", %{
     conn: conn,
     token: token,
@@ -48,6 +116,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/libraries")
 
     view
+    |> open_library_form()
     |> form("#library-form", library: %{name: "Music", path: path, content_type: "music"})
     |> render_submit()
 
@@ -70,6 +139,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     refute has_element?(view, "#library-list [data-library-name='Series']")
 
     view
+    |> open_library_form()
     |> form("#library-form", library: %{name: "Series", path: path, content_type: "series"})
     |> render_submit()
 
@@ -87,9 +157,15 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   } do
     conn = init_test_session(conn, user_token: token)
     {:ok, view, _} = live(conn, ~p"/libraries")
+    refute has_element?(view, "#library-form")
+    view |> element("#library-add") |> render_click()
     assert has_element?(view, "#library-form")
     assert has_element?(view, "#libraries-empty")
-    view |> form("#library-form", library: %{name: "Películas", path: path}) |> render_submit()
+
+    view
+    |> form("#library-form", library: %{name: "Películas", path: path})
+    |> render_submit()
+
     assert has_element?(view, "#library-list [data-library-name='Películas']")
     {:ok, reopened, _} = live(conn, ~p"/libraries")
     assert has_element?(reopened, "#library-list [data-library-name='Películas']")
@@ -107,8 +183,17 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   } do
     conn = init_test_session(conn, user_token: token)
     {:ok, view, _} = live(conn, ~p"/libraries")
-    view |> form("#library-form", library: %{name: "One", path: path}) |> render_submit()
-    view |> form("#library-form", library: %{name: "Two", path: path}) |> render_submit()
+
+    view
+    |> open_library_form()
+    |> form("#library-form", library: %{name: "One", path: path})
+    |> render_submit()
+
+    view
+    |> open_library_form()
+    |> form("#library-form", library: %{name: "Two", path: path})
+    |> render_submit()
+
     assert has_element?(view, "#library-error")
     assert has_element?(view, "#library-list [data-library-name='One']")
   end
@@ -138,10 +223,11 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
             {System.tmp_dir!(), unquote(outside)}
           ] do
         view
+        |> open_library_form()
         |> form("#library-form", library: %{name: "Fix this source", path: source})
         |> render_submit()
 
-        assert has_element?(view, "#library-error", guidance)
+        assert has_element?(view, "#library-create-panel #library-error", guidance)
         assert has_element?(view, "#library-path[value='#{source}']")
         assert has_element?(view, "#library-name[value='Fix this source']")
         refute has_element?(view, "#library-list [data-library-name='Fix this source']")
@@ -218,7 +304,13 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     await_status_updates(view)
     assert has_element?(view, "#library-inspection-counts-#{library.id}[data-pending='1']")
     view |> element("#library-reinspect-#{library.id}") |> render_click()
-    assert has_element?(view, "#library-reinspect-confirm-#{library.id}")
+
+    assert has_element?(
+             view,
+             "#library-reinspect-confirm-#{library.id}[role=dialog]",
+             "Technical"
+           )
+
     view |> element("#library-reinspect-confirm-button-#{library.id}") |> render_click()
     assert has_element?(view, "#library-scan-state-#{library.id}[data-state='queued']")
     assert has_element?(view, "#library-reinspect-#{library.id}[disabled]")
@@ -527,7 +619,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     {:noreply, socket} = Live.handle_async({:scan_statuses, retry_request}, result, socket)
     refute socket.assigns.scan_loading?
     refute socket.assigns.scan_refresh_pending?
-    assert socket.assigns.scan_feedback
+    assert socket.assigns.scan_refresh_error == :unavailable
     assert socket.assigns.scan_request_id == retry_request
   end
 
@@ -581,7 +673,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     assert LazyHTML.query(document, "#library-scan-state-#{library.id}[data-state='queued']")
            |> LazyHTML.to_tree() != []
 
-    assert LazyHTML.query(document, "#library-scan-feedback") |> LazyHTML.to_tree() != []
+    assert LazyHTML.query(document, "#library-scan-refresh-error") |> LazyHTML.to_tree() != []
 
     assert {:ok, %{latest_scan: %{state: :queued}}} =
              Libraries.fetch_scan_status(actor, library.id)
@@ -679,5 +771,10 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
       })
 
     socket
+  end
+
+  defp open_library_form(view) do
+    view |> element("#library-add") |> render_click()
+    view
   end
 end

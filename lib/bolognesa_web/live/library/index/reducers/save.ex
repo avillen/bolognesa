@@ -2,12 +2,12 @@ defmodule BolognesaWeb.Library.Index.Reducers.Save do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
-  import Phoenix.LiveView, only: [stream_insert: 3]
 
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
 
   alias BolognesaWeb.Library.Index.Forms.Library
+  alias BolognesaWeb.Library.Index.LibraryRows
   alias BolognesaWeb.Library.Index.Reducers.CancelScanStatuses
   alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
   alias BolognesaWeb.Library.Index.State.Library, as: LibraryState
@@ -27,28 +27,32 @@ defmodule BolognesaWeb.Library.Index.Reducers.Save do
         |> BolognesaWeb.LibraryNavigation.refresh()
         |> CancelScanStatuses.call()
         |> assign(:form, to_form(Library.changeset()))
-        |> assign(:error, nil)
+        |> assign(:show_library_form?, false)
+        |> assign(:form_error, nil)
         |> assign(
           :success,
           gettext("Biblioteca guardada. La carpeta todavía no se ha escaneado.")
         )
-        |> stream_insert(
-          :libraries,
-          LibraryState.from_domain(library, %ScanStatus{library_id: library.id})
-        )
+        |> insert_library(library)
         |> FetchScanStatuses.call()
 
       {:error, reason} ->
         socket
-        |> assign(:error, message(reason))
+        |> assign(:form_error, message(reason))
         |> assign(:success, nil)
         |> assign(:form, to_form(%{changeset | action: :insert}))
     end
   end
 
+  defp insert_library(socket, library) do
+    index = Enum.find_index(socket.assigns.navigation_libraries, &(&1.id == library.id))
+    row = LibraryState.from_domain(library, %ScanStatus{library_id: library.id})
+    LibraryRows.insert(socket, row, index || -1)
+  end
+
   defp invalid(socket, changeset) do
     socket
-    |> assign(:error, nil)
+    |> assign(:form_error, nil)
     |> assign(:success, nil)
     |> assign(:form, to_form(%{changeset | action: :insert}))
   end

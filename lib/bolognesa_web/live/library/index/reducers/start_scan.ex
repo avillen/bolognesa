@@ -2,9 +2,9 @@ defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
-  import Phoenix.LiveView, only: [stream_insert: 3]
 
   alias Bolognesa.Libraries
+  alias BolognesaWeb.Library.Index.LibraryRows
 
   alias BolognesaWeb.Library.Index.Reducers.CancelScanStatuses
   alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
@@ -34,7 +34,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
 
       socket
       |> assign(:scan_feedback, nil)
-      |> stream_insert(:libraries, row)
+      |> LibraryRows.insert(row)
     else
       _ ->
         assign(
