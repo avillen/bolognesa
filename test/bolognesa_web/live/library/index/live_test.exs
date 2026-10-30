@@ -117,6 +117,43 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     assert {:error, {:redirect, %{to: "/login"}}} = live(conn, ~p"/libraries")
   end
 
+  for {locale, inaccessible, outside} <- [
+        {"en", "exists and is readable", "BOLOGNESA_LIBRARY_ROOTS"},
+        {"es", "exista y tenga permisos de lectura", "BOLOGNESA_LIBRARY_ROOTS"}
+      ] do
+    test "source failures guide correction and preserve input in #{locale}", %{
+      conn: conn,
+      token: token,
+      path: path
+    } do
+      conn =
+        conn
+        |> put_req_header("accept-language", unquote(locale))
+        |> init_test_session(user_token: token)
+
+      {:ok, view, _} = live(conn, ~p"/libraries")
+
+      for {source, guidance} <- [
+            {Path.join(path, "missing"), unquote(inaccessible)},
+            {System.tmp_dir!(), unquote(outside)}
+          ] do
+        view
+        |> form("#library-form", library: %{name: "Fix this source", path: source})
+        |> render_submit()
+
+        assert has_element?(view, "#library-error", guidance)
+        assert has_element?(view, "#library-path[value='#{source}']")
+        assert has_element?(view, "#library-name[value='Fix this source']")
+        refute has_element?(view, "#library-list [data-library-name='Fix this source']")
+
+        assert has_element?(
+                 view,
+                 "#library-deployment-help[href='https://github.com/avillen/bolognesa/blob/main/deploy/compose/README.md#networking-persistence-and-libraries']"
+               )
+      end
+    end
+  end
+
   test "scan is queued durably and remains visible after reconnect", %{
     conn: conn,
     token: token,

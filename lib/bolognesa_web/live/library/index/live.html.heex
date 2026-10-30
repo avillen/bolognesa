@@ -205,6 +205,13 @@
         <p class="mt-2 text-sm leading-6 text-muted">
           {gettext("Usa la ruta visible para Bolognesa dentro del servidor.")}
         </p>
+        <p class="mt-2 text-sm leading-6 text-muted">
+          <a
+            id="library-deployment-help"
+            href="https://github.com/avillen/bolognesa/blob/main/deploy/compose/README.md#networking-persistence-and-libraries"
+            class="text-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >{gettext("Docker Compose: consulta la guía de montajes y carpetas permitidas.")}</a>
+        </p>
         <p
           :if={@error}
           id="library-error"
