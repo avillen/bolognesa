@@ -278,12 +278,19 @@ try {
       await row.locator('summary').click();
       await page.locator('#library-add').click();
       await page.locator('#library-name').waitFor({state: "visible"});
+      // JS.focus retries across two frames; wait before editing another field.
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       await page.waitForFunction(() => document.activeElement?.id === "library-name");
-      await page.locator('#library-name').fill("Draft library");
+      const draftName = `Draft library ${width}`;
+      await page.locator('#library-name').fill(draftName);
+      await page.waitForFunction(() => !document.querySelector('#library-form').classList.contains('phx-change-loading'));
       await page.locator('#library-path').fill("/missing-library-source");
+      await page.waitForFunction(() => !document.querySelector('#library-form').classList.contains('phx-change-loading'));
+      if (await page.locator('#library-name').inputValue() !== draftName) throw new Error(`Draft name changed before submission at ${width}px.`);
       await page.locator('#library-submit').click();
       await page.locator('#library-error').waitFor({state: "visible"});
-      if (await page.locator('#library-name').inputValue() !== "Draft library") throw new Error("Invalid source erased form values.");
+      await page.waitForFunction(() => !document.querySelector('#library-form').classList.contains('phx-submit-loading'));
+      if (await page.locator('#library-name').inputValue() !== draftName) throw new Error(`Invalid source erased form values at ${width}px.`);
       await page.locator('#library-submit').focus();
       await page.keyboard.press("Tab");
       if (!await page.locator('#library-create-panel').evaluate(el => el.contains(document.activeElement))) throw new Error("Focus escaped the add panel.");
