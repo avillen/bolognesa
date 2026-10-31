@@ -113,7 +113,7 @@ remain pending; do not mark those checkboxes complete from the synthetic run.
 
 ## Task 5 — Separate useful metrics from routine HTTP logs
 
-**Files:** `lib/bolognesa/infrastructure/observability/playback_metrics.ex`, `playback_events.ex`, `observability.ex`, `lib/bolognesa_web/endpoint.ex`, `scripts/monitoring/build-overview-dashboard.py`, generated `grafana/dashboards/operational.json`, `deploy/compose/monitoring.md`, `docs/conventions/observability.md`; tests in `test/bolognesa/infrastructure/prom_ex_test.exs`, `observability_test.exs`, `test/grafana/overview-test.py`.
+**Files:** `lib/bolognesa/infrastructure/observability/playback_metrics.ex`, `playback_events.ex`, `observability.ex`, `lib/bolognesa_web/endpoint.ex`, `grafana/build-overview.py`, generated `grafana/dashboards/overview.json`, `deploy/compose/monitoring.md`, `docs/conventions/observability.md`; tests in `test/bolognesa/infrastructure/prom_ex_test.exs`, `observability_test.exs`, `test/grafana/overview-test.py`.
 
 **Interfaces:** reuse existing HTTP counters/histograms for request rate and endpoint latency. Add `TranscodeManager.runtime_snapshot/0 :: %{sessions: 0 | 1, ffmpeg_processes: 0 | 1, suspended_processes: 0 | 1}` for optional bounded polling metrics; expose counts only. A live session with an exited FFmpeg has zero producer count. These states do not prove the browser is playing.
 
