@@ -50,7 +50,7 @@ ROWS = [
         'collapsed': False,
         'panels': [
             {
-                'title': 'Uptime', 'unit': 'ms', 'kind': 'stat', 'width': 6,
+                'title': 'Uptime', 'unit': 'ms', 'kind': 'stat',
                 'queries': [(beam('stats_uptime_milliseconds_count'), 'Uptime')],
             },
             {
@@ -143,7 +143,7 @@ ROWS = [
                 'description': 'Per-container network counters. Host-network containers can share host counters; values must not be summed into a host total.',
             },
             {
-                'title': 'Block I/O · read / write', 'unit': 'Bps',
+                'title': 'Block I/O · read / write', 'unit': 'Bps', 'width': 12,
                 'queries': [
                     (f'sum by (service) (rate({docker(metric)}[$__rate_interval]))', f'{{{{service}}}} · {label}')
                     for metric, label in (
@@ -155,6 +155,7 @@ ROWS = [
             },
             {
                 'title': 'Container starts', 'unit': 'dateTimeAsIso', 'kind': 'stat',
+                'width': 12,
                 'queries': [(f'max by (service) ({docker("container_start_time_seconds")}) * 1000', '{{service}}')],
                 'description': 'Most recent container start timestamp. This is not a durable restart counter.',
             },
@@ -185,8 +186,8 @@ class Dashboard:
 
     def panel(self, title, queries, unit='short', kind='timeseries',
               width=None, description='', height=None):
-        width = width or (6 if kind == 'stat' else 8)
-        height = height or (5 if kind == 'stat' else 8)
+        width = width or 8
+        height = height or 8
         if self.x + width > 24:
             self.next_line()
         defaults = {'unit': unit, 'noValue': 'No data', 'color': {'mode': 'palette-classic'}}

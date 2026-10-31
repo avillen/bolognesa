@@ -48,6 +48,24 @@ for panel in panels:
         assert target['expr'], panel['title']
         assert 'or vector(0)' not in target['expr'], panel['title']
 
+for index, row in enumerate(rows):
+    row_y = row['gridPos']['y']
+    if row['collapsed']:
+        children = row.get('panels', [])
+    else:
+        next_y = rows[index + 1]['gridPos']['y'] if index + 1 < len(rows) else float('inf')
+        children = [
+            panel for panel in dashboard['panels']
+            if panel['type'] != 'row' and row_y < panel['gridPos']['y'] < next_y
+        ]
+    lines = {}
+    for child in children:
+        lines.setdefault(child['gridPos']['y'], []).append(child)
+    assert lines, row['title']
+    for y, line in lines.items():
+        assert sum(child['gridPos']['w'] for child in line) == 24, (row['title'], y)
+        assert {child['gridPos']['h'] for child in line} == {8}, (row['title'], y)
+
 queries = [target['expr'] for panel in panels for target in panel.get('targets', [])]
 for metric in (
     'bolognesa_prom_ex_beam_stats_uptime_milliseconds_count',

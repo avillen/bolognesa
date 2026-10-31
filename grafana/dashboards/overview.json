@@ -57,8 +57,8 @@
       "gridPos": {
         "x": 0,
         "y": 1,
-        "w": 6,
-        "h": 5
+        "w": 8,
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -105,7 +105,7 @@
         "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
-        "x": 6,
+        "x": 8,
         "y": 1,
         "w": 8,
         "h": 8
@@ -201,7 +201,7 @@
         "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
-        "x": 14,
+        "x": 16,
         "y": 1,
         "w": 8,
         "h": 8
@@ -633,8 +633,8 @@
           "gridPos": {
             "x": 0,
             "y": 26,
-            "w": 6,
-            "h": 5
+            "w": 8,
+            "h": 8
           },
           "fieldConfig": {
             "defaults": {
@@ -681,10 +681,10 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "gridPos": {
-            "x": 6,
+            "x": 8,
             "y": 26,
-            "w": 6,
-            "h": 5
+            "w": 8,
+            "h": 8
           },
           "fieldConfig": {
             "defaults": {
@@ -731,7 +731,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "gridPos": {
-            "x": 12,
+            "x": 16,
             "y": 26,
             "w": 8,
             "h": 8
@@ -965,7 +965,7 @@
           "gridPos": {
             "x": 0,
             "y": 42,
-            "w": 8,
+            "w": 12,
             "h": 8
           },
           "fieldConfig": {
@@ -1027,10 +1027,10 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "gridPos": {
-            "x": 8,
+            "x": 12,
             "y": 42,
-            "w": 6,
-            "h": 5
+            "w": 12,
+            "h": 8
           },
           "fieldConfig": {
             "defaults": {
