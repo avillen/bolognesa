@@ -210,6 +210,25 @@ series_file =
 
 ReadmeScreenshotSeed.insert_identification!(series_file.id, :automatic, episode.id)
 
+# Only the playback regression needs a continuation target; keep README captures unchanged.
+next_episode_id =
+  if System.get_env("BOLOGNESA_VERIFY_EPISODE_FULLSCREEN") == "1" do
+    next_episode =
+      Repo.insert!(%EpisodeSchema{
+        provider: :tmdb,
+        provider_id: 900_005,
+        season_id: season.id,
+        number: 2,
+        title: "The Second Call"
+      })
+
+    next_path = "Small Hours/Season 1/Small Hours S01E02.webm"
+    File.cp!(movie_path, Path.join(series_directory, next_path))
+    next_file = ReadmeScreenshotSeed.insert_media_file!(series_library.id, series_directory, next_path)
+    ReadmeScreenshotSeed.insert_identification!(next_file.id, :automatic, next_episode.id)
+    next_episode.id
+  end
+
 series_review_file =
   ReadmeScreenshotSeed.insert_media_file!(
     series_library.id,
@@ -275,7 +294,8 @@ System.fetch_env!("BOLOGNESA_SCREENSHOT_IDS")
     movie: movie.id,
     series: series.id,
     season: season.id,
-    episode: episode.id
+    episode: episode.id,
+    next_episode: next_episode_id
   })
 )
 

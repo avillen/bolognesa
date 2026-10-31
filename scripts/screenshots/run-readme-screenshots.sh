@@ -5,8 +5,8 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
 mode="${1:-generate}"
-if [[ "$mode" != "generate" && "$mode" != "--check" ]]; then
-  echo "Usage: $0 [--check]" >&2
+if [[ "$mode" != "generate" && "$mode" != "--check" && "$mode" != "--verify-fullscreen" ]]; then
+  echo "Usage: $0 [--check|--verify-fullscreen]" >&2
   exit 2
 fi
 
@@ -133,16 +133,24 @@ run_capture() {
     npm run capture-screenshots
 }
 
-start_server
-run_capture public
-kill "$server_pid"
-wait "$server_pid" 2>/dev/null || true
-server_pid=""
+if [[ "$mode" == "--verify-fullscreen" ]]; then
+  export BOLOGNESA_VERIFY_EPISODE_FULLSCREEN=1
+else
+  start_server
+  run_capture public
+  kill "$server_pid"
+  wait "$server_pid" 2>/dev/null || true
+  server_pid=""
+fi
 
 PORT=0 mix run scripts/screenshots/seed_readme_screenshots.exs
 
 start_server
-run_capture app
+if [[ "$mode" == "--verify-fullscreen" ]]; then
+  node scripts/playback/verify-episode-fullscreen.mjs
+else
+  run_capture app
+fi
 
 if [[ "$mode" == "--check" ]]; then
   python3 -B -m unittest discover -s test/scripts -p 'test_readme_screenshot_check.py'
