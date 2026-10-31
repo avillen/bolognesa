@@ -17,13 +17,17 @@ Docker socket, or media mounts are collected by the metrics-only Alloy service.
 
 ## Measure HLS request behavior
 
-The project overview's Playback request panel evaluates
-`sum by (path, status)(increase(bolognesa_prom_ex_phoenix_http_requests_total{...}[$window]))`.
-The default activity window is one hour, independently of the dashboard's visible
-24-hour range. Each point is a rolling estimate; the legend uses `lastNotNull`,
-not the sum of the plotted values. Route labels combine different files and sessions.
-Do not interpret a displayed count as one hour of continuous playback by one viewer.
-The separate Phoenix `Path Requests` panel uses `irate`, a rate per second.
+To inspect HLS request behavior, evaluate this in Grafana Explore with an
+explicit window such as one hour:
+
+```promql
+sum by (path, status)(increase(bolognesa_prom_ex_phoenix_http_requests_total{job="bolognesa"}[1h]))
+```
+
+Use the table view, not a single legend value, when reading it. Route labels
+combine different files and sessions. Do not interpret a displayed count as one
+hour of continuous playback by one viewer. The Phoenix dashboard's Path Requests
+panel uses `irate`, a rate per second.
 
 For a production baseline, save the Query Inspector expression and evaluation time,
 effective window, visible range, legend reduction, job/instance and deployed commit.
@@ -299,72 +303,30 @@ Oban node names; review those values before sharing metrics publicly.
 
 ## Dashboards
 
-The application never uploads dashboards or needs a Grafana service-account token.
-The repository keeps Grafana import JSON in `grafana/dashboards/`. The five framework
-dashboards are generated from the pinned PromEx dependency; the operational dashboard is
-maintained in the repository and queries Bolognesa's fixed event metrics. To regenerate
-the PromEx dashboards after a dependency update, run from a development checkout:
+The application never uploads dashboards or needs a Grafana service-account
+token. The repository keeps Grafana JSON in `grafana/dashboards/`. The five
+framework dashboards are generated from the pinned PromEx dependency; the project
+overview is generated from a declarative specification and published explicitly.
 
 ```sh
 python3 grafana/export-promex-dashboards.py
+make grafana-build
+make grafana-publish
 ```
 
-The script writes `application.json`, `beam.json`, `phoenix.json`, `ecto.json`, and
-`oban.json` as Grafana datasource-selection templates. Review and commit regenerated
-files together with the dependency change. `operational.json` is generated from the application's event catalog and the project-owned
-layout/query definitions. Regenerate it with:
+The export script writes `application.json`, `beam.json`, `phoenix.json`,
+`ecto.json`, and `oban.json` as Grafana datasource-selection templates. Review
+and commit regenerated files together with the dependency change.
+[`grafana/README.md`](../../grafana/README.md) documents the required credentials
+and the dry-run flow. Import through **Dashboards → New → Import** with the
+stack's Prometheus data source remains a fallback.
 
-```sh
-python3 scripts/monitoring/build-overview-dashboard.py
-python3 test/grafana/overview-test.py
-# Optional PromQL checks against empty data and sparse histograms with a counter reset:
-docker run --rm -v "$PWD/tmp/operational-overview:/config:ro" --entrypoint /bin/promtool \
-  prom/prometheus:v3.5.0 test rules /config/queries.json
-```
-
-Import `operational.json` through **Dashboards → New → Import** and select the stack's
-Prometheus data source. Its stable UID replaces the earlier operational dashboard.
-Publishing remains manual; regenerating source does not change Grafana Cloud.
-
-The project overview has an expanded summary and collapsed detail rows for Accounts,
-Libraries, Movies, Series, Music, Playback, global Phoenix/LiveView, Ecto, Oban, BEAM,
-and optional Docker. Expand a context to inspect functionality outcomes, rolling activity,
-measured-operation counts, mean, p50, and p95. The default time range is 24 hours;
-**Activity / latency window** independently selects 15 minutes, 1 hour (default), 6 hours,
-or 24 hours for trend estimates. Stats explicitly labelled selected range cover the whole
-range; resource gauges show current samples. Collapsed rows defer diagnostic query loading.
-
-Interpretation:
-
-- Counts use Prometheus `increase`, not exact durable event totals. Sparse activity,
-  extrapolation, restarts, or events before the first scrape can produce fractions or
-  undercounts. Starts, retries and outcomes are distinct observations, never summed into
-  a claimed number of completed workflows. No data is not displayed as healthy zero.
-- Duration sample counts accompany operational timings. Quantiles are bucket estimates;
-  p50 and p95 can coincide with very few samples. The mean uses measured sums/counts.
-  Operational timings combine measured outcomes within one functionality; session duration
-  is lifetime until close, not preparation time. Logs remain the source for a specific
-  execution. When upgrading buckets, use a range entirely after the rollout; mixed old
-  and new bucket layouts distort historical quantiles until the old samples leave the window.
-- HTTP ownership follows route templates; direct/HLS media requests belong to Playback.
-  LiveView ownership follows its fixed screen module, so player interactions on movie or
-  episode screens remain with Movies/Series. HTTP does not count WebSocket interactions.
-- Ecto ownership follows the primary source table reported by Ecto; joins do not establish
-  caller ownership. Playback reads content-owned tables and has no persistence table of its
-  own. The global row includes all queries, connection queue/decode/idle time, and shared or
-  unclassified sources. Query errors have a dedicated counter, `bolognesa_prom_ex_ecto_repo_query_errors_total`,
-  filtered on Ecto error results with repo/source labels. Command `unavailable` remains
-  an unclassified command, not an error classification. Pool size is configuration,
-  not connection occupancy.
-- Oban processing follows worker ownership; Movies and Series share a queue. Queue gauges,
-  concurrency, exceptions and circuit breakers also have a global row. Exceptions describe
-  attempts and do not necessarily indicate a persisted terminal failure.
-- Playback diagnostics are best effort and retain the existing 120-observation cap per
-  LiveView lifetime. Browser waits/errors and FFmpeg exit results are distinct signals.
-
-The five bundled PromEx dashboards remain available for detailed framework exploration.
-The Phoenix dashboard's URL and channel/socket panels remain empty because those metrics
-are intentionally omitted.
+The overview currently contains only BEAM runtime resources and the optional
+Docker collector. It grows deliberately; context, HTTP, LiveView, Ecto and Oban
+detail stays in the bundled PromEx dashboards. Missing data is not zero: rate
+panels need at least two scrapes, counters restart with the application, and
+collapsed rows remain visible but do not issue queries until expanded. The
+Docker limitations below apply to its row.
 
 ## Optional Docker resources on native Linux
 
