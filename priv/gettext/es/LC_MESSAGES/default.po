@@ -1525,6 +1525,7 @@ msgstr "En pausa"
 msgid "Pausar %{title}"
 msgstr "Pausar %{title}"
 
+#: lib/bolognesa_web/components/music_player.ex:99
 #: lib/bolognesa_web/live/music/index/live.html.heex:197
 #, elixir-autogen, elixir-format
 msgid "Sonando"
@@ -1853,32 +1854,33 @@ msgstr "¿Qué hace cada acción?"
 msgid "Ampliar"
 msgstr "Ampliar"
 
-#: lib/bolognesa_web/components/music_player.ex:85
+#: lib/bolognesa_web/components/music_player.ex:107
 #, elixir-autogen, elixir-format
 msgid "El navegador ha bloqueado la reproducción automática. Pulsa reproducir para continuar."
 msgstr "El navegador ha bloqueado la reproducción automática. Pulsa reproducir para continuar."
 
-#: lib/bolognesa_web/components/music_player.ex:91
+#: lib/bolognesa_web/components/music_player.ex:113
 #, elixir-autogen, elixir-format
 msgid "Este audio no está disponible en este momento."
 msgstr "Este audio no está disponible en este momento."
 
-#: lib/bolognesa_web/components/music_player.ex:97
+#: lib/bolognesa_web/components/music_player.ex:119
 #, elixir-autogen, elixir-format
 msgid "Este álbum no tiene canciones disponibles."
 msgstr "Este álbum no tiene canciones disponibles."
 
 #: lib/bolognesa_web/components/music_player.ex:22
+#: lib/bolognesa_web/components/music_player.ex:95
 #, elixir-autogen, elixir-format
 msgid "Nada en reproducción"
 msgstr "Nada en reproducción"
 
-#: lib/bolognesa_web/components/music_player.ex:88
+#: lib/bolognesa_web/components/music_player.ex:110
 #, elixir-autogen, elixir-format
 msgid "No se pudo reproducir este audio. Prueba otro formato o reintenta."
 msgstr "No se pudo reproducir este audio. Prueba otro formato o reintenta."
 
-#: lib/bolognesa_web/components/music_player.ex:94
+#: lib/bolognesa_web/components/music_player.ex:116
 #, elixir-autogen, elixir-format
 msgid "No tienes permiso para reproducir este audio."
 msgstr "No tienes permiso para reproducir este audio."
@@ -1893,7 +1895,7 @@ msgstr "Pausar"
 msgid "Posición de reproducción"
 msgstr "Opciones de reproducción"
 
-#: lib/bolognesa_web/components/music_player.ex:83
+#: lib/bolognesa_web/components/music_player.ex:105
 #, elixir-autogen, elixir-format
 msgid "Preparando reproducción…"
 msgstr "Preparando reproducción…"
@@ -1927,3 +1929,25 @@ msgstr "Sesión terminada"
 #, elixir-autogen, elixir-format
 msgid "Añadir álbum a la cola"
 msgstr "Añadir álbum a la cola"
+
+#: lib/bolognesa_web/components/music_player.ex:87
+#: lib/bolognesa_web/components/music_player.ex:91
+#: lib/bolognesa_web/components/music_player.ex:101
+#, elixir-autogen, elixir-format
+msgid "A continuación"
+msgstr "A continuación"
+
+#: lib/bolognesa_web/components/music_player.ex:97
+#, elixir-autogen, elixir-format
+msgid "Cola de reproducción"
+msgstr "Cola de reproducción"
+
+#: lib/bolognesa_web/components/music_player.ex:102
+#, elixir-autogen, elixir-format
+msgid "No hay canciones en espera"
+msgstr "No hay canciones en espera"
+
+#: lib/bolognesa_web/components/music_player.ex:88
+#, elixir-autogen, elixir-format
+msgid "Volver al reproductor"
+msgstr "Volver al reproductor"

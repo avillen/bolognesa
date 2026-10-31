@@ -11,7 +11,7 @@ Boloñesa is a self-hosted media center for movies, TV series, and local music, 
 - Add media folders, scan their files, and browse each library. Original files stay untouched.
 - Identify movies and series with TMDb, review matches, and correct mistakes.
 - Play movies and episodes, choose file versions, and continue to the next episode or numbered part.
-- Browse local tracks, artists, and albums. Play individual songs or an album in order, and add tracks or albums to the current queue.
+- Browse local tracks, artists, and albums. Play individual songs or an album in order, add tracks or albums to the current queue, and see what comes next in the expanded player.
 
 ## Screenshots
 

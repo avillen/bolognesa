@@ -187,6 +187,7 @@
  .music-player[data-expanded="true"] [data-player-action="previous"], .music-player[data-expanded="true"] [data-player-action="next"] { display: inline-flex; }
  .music-player[data-expanded="true"] #queue-position, .music-player[data-expanded="true"] [data-player-time] { display: block; }
 }
+
 @media (max-height: 540px) { .music-player[data-expanded="true"] { align-content: start; } }
 #music-player-host > audio-player {
   position: absolute !important;
@@ -219,4 +220,28 @@
   .music-player:not([data-expanded="true"]) [data-player-action="next"] { display: inline-flex; }
   .music-player:not([data-expanded="true"]) #music-player-seek { height: 12px; min-height: 12px; }
   .music-player[data-expanded="true"] .music-player-art { width: min(72vw, 300px, 36dvh); margin-inline: calc(50% - min(36vw, 150px, 18dvh)); }
+}
+
+.music-player:not([data-expanded="true"]) .music-queue-toggle { display: none; }
+.music-player .music-queue-toggle { border: 1px solid var(--color-border-strong); }
+.music-up-next { width: 100%; min-width: 0; max-height: 55dvh; overflow-y: auto; padding: 16px; border: 1px solid var(--color-border-strong); border-radius: 16px; background: var(--color-surface); }
+.music-up-next h2, .music-up-next h3 { font-weight: 700; }
+.music-up-next h3 { margin-top: 18px; }
+.music-up-next h4 { margin-top: 14px; color: var(--color-muted); font-size: 12px; font-weight: 700; }
+.music-up-next li li { padding-block: 6px; overflow-wrap: anywhere; }
+.music-up-next [data-queue-empty] { color: var(--color-muted); }
+@media (min-width: 641px) {
+  .music-player[data-expanded="true"] .music-queue-toggle { grid-column: 2; grid-row: 5; justify-self: end; }
+  .music-player[data-expanded="true"] .music-up-next { grid-column: 1 / -1; grid-row: 6; }
+}
+@media (min-width: 900px) {
+  .music-player[data-expanded="true"][data-queue-open="true"] { grid-template-columns: minmax(180px, 300px) minmax(200px, 360px) minmax(220px, 320px); }
+  .music-player[data-expanded="true"] .music-up-next { grid-column: 3; grid-row: 1 / span 5; align-self: stretch; }
+  .music-player[data-expanded="true"] #music-player-seek { grid-column: 1 / 3; }
+  .music-player[data-expanded="true"] [data-player-time] { grid-column: 1 / 3; }
+}
+@media (max-width: 640px) {
+  .music-player[data-expanded="true"][data-queue-open="true"] > :not(.music-up-next):not(.music-queue-toggle):not([data-player-action="collapse"]) { display: none !important; }
+  .music-player[data-expanded="true"][data-queue-open="true"] { align-content: start; }
+  .music-player[data-expanded="true"] .music-up-next { max-height: none; }
 }

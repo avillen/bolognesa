@@ -1,3 +1,5 @@
+import {renderQueue} from "./queue_view.mjs"
+
 const timeLabel = seconds => {
   if (!Number.isFinite(seconds) || seconds < 0) return "--:--"
   const value = Math.floor(seconds)
@@ -17,13 +19,26 @@ export function connectMusicPlayerView(host, session) {
   const queuePosition = host.querySelector("#queue-position")
   const time = host.querySelector("[data-player-time]")
   const finished = host.querySelector("#queue-finished")
+  const queuePanel = host.querySelector("#music-up-next")
+  const queueButton = host.querySelector('[data-player-action="queue"]')
   let inertElements = null
   let expanded = false
   let previousFocus = null
+  let queueOpen = false
+  let queueSnapshot = null
+
+  const setQueueOpen = open => {
+    queueOpen = open
+    player.dataset.queueOpen = String(open)
+    if (queuePanel) queuePanel.hidden = !open
+    queueButton?.setAttribute("aria-expanded", String(open))
+    if (queueButton) queueButton.textContent = open ? queueButton.dataset.hideLabel : queueButton.dataset.showLabel
+  }
 
   const collapse = restoreFocus => {
     if (!expanded) return
     expanded = false
+    setQueueOpen(false)
     player.dataset.expanded = "false"
     player.setAttribute("role", "region")
     player.removeAttribute("aria-modal")
@@ -58,12 +73,13 @@ export function connectMusicPlayerView(host, session) {
     if (action === "retry") session.retry()
     if (action === "expand") expand()
     if (action === "collapse") collapse(true)
+    if (action === "queue") setQueueOpen(!queueOpen)
   }
   const onInput = event => { if (event.target === seek) session.seek(Number(seek.value)) }
   const onKeydown = event => {
     if (event.key === "Escape" && expanded) { event.preventDefault(); collapse(true); return }
     if (event.key !== "Tab" || !expanded) return
-    const focusable = [...player.querySelectorAll('button:not([disabled]):not([hidden]), input:not([disabled]):not([hidden]), a[href]')]
+    const focusable = [...player.querySelectorAll('button:not([disabled]):not([hidden]), input:not([disabled]):not([hidden]), a[href]')].filter(element => element.getClientRects().length)
     if (!focusable.length) return
     const first = focusable[0], last = focusable[focusable.length - 1]
     if (event.shiftKey && player.ownerDocument.activeElement === first) { event.preventDefault(); last.focus() }
@@ -81,6 +97,8 @@ export function connectMusicPlayerView(host, session) {
   }) : null
   observer?.observe(player)
   const unsubscribe = session.subscribe(state => {
+    const queueData = JSON.stringify([state.selected, state.queueIndex, state.queue])
+    if (queueData !== queueSnapshot) { renderQueue(queuePanel, state); queueSnapshot = queueData }
     const visible = Boolean(state.selected || state.queue.length || state.error || state.loading)
     host.hidden = !visible
     if (!visible) player.ownerDocument.body.style.setProperty("--music-player-height", "0px")

@@ -1533,6 +1533,7 @@ msgstr ""
 msgid "Pausar %{title}"
 msgstr ""
 
+#: lib/bolognesa_web/components/music_player.ex:99
 #: lib/bolognesa_web/live/music/index/live.html.heex:197
 #, elixir-autogen, elixir-format
 msgid "Sonando"
@@ -1861,32 +1862,33 @@ msgstr ""
 msgid "Ampliar"
 msgstr ""
 
-#: lib/bolognesa_web/components/music_player.ex:85
+#: lib/bolognesa_web/components/music_player.ex:107
 #, elixir-autogen, elixir-format
 msgid "El navegador ha bloqueado la reproducción automática. Pulsa reproducir para continuar."
 msgstr ""
 
-#: lib/bolognesa_web/components/music_player.ex:91
+#: lib/bolognesa_web/components/music_player.ex:113
 #, elixir-autogen, elixir-format
 msgid "Este audio no está disponible en este momento."
 msgstr ""
 
-#: lib/bolognesa_web/components/music_player.ex:97
+#: lib/bolognesa_web/components/music_player.ex:119
 #, elixir-autogen, elixir-format
 msgid "Este álbum no tiene canciones disponibles."
 msgstr ""
 
 #: lib/bolognesa_web/components/music_player.ex:22
+#: lib/bolognesa_web/components/music_player.ex:95
 #, elixir-autogen, elixir-format
 msgid "Nada en reproducción"
 msgstr ""
 
-#: lib/bolognesa_web/components/music_player.ex:88
+#: lib/bolognesa_web/components/music_player.ex:110
 #, elixir-autogen, elixir-format
 msgid "No se pudo reproducir este audio. Prueba otro formato o reintenta."
 msgstr ""
 
-#: lib/bolognesa_web/components/music_player.ex:94
+#: lib/bolognesa_web/components/music_player.ex:116
 #, elixir-autogen, elixir-format
 msgid "No tienes permiso para reproducir este audio."
 msgstr ""
@@ -1901,7 +1903,7 @@ msgstr ""
 msgid "Posición de reproducción"
 msgstr ""
 
-#: lib/bolognesa_web/components/music_player.ex:83
+#: lib/bolognesa_web/components/music_player.ex:105
 #, elixir-autogen, elixir-format
 msgid "Preparando reproducción…"
 msgstr ""
@@ -1934,4 +1936,26 @@ msgstr ""
 #: lib/bolognesa_web/live/music/index/live.html.heex:94
 #, elixir-autogen, elixir-format
 msgid "Añadir álbum a la cola"
+msgstr ""
+
+#: lib/bolognesa_web/components/music_player.ex:87
+#: lib/bolognesa_web/components/music_player.ex:91
+#: lib/bolognesa_web/components/music_player.ex:101
+#, elixir-autogen, elixir-format
+msgid "A continuación"
+msgstr ""
+
+#: lib/bolognesa_web/components/music_player.ex:97
+#, elixir-autogen, elixir-format
+msgid "Cola de reproducción"
+msgstr ""
+
+#: lib/bolognesa_web/components/music_player.ex:102
+#, elixir-autogen, elixir-format
+msgid "No hay canciones en espera"
+msgstr ""
+
+#: lib/bolognesa_web/components/music_player.ex:88
+#, elixir-autogen, elixir-format
+msgid "Volver al reproductor"
 msgstr ""

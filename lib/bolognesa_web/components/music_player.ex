@@ -80,6 +80,28 @@ defmodule BolognesaWeb.MusicPlayer do
           title={gettext("Cerrar")}
           hidden
         ><.icon name="hero-chevron-down" class="size-5" /></button>
+        <button
+          type="button"
+          class="music-queue-toggle"
+          data-player-action="queue"
+          data-show-label={gettext("A continuación")}
+          data-hide-label={gettext("Volver al reproductor")}
+          aria-controls="music-up-next"
+          aria-expanded="false"
+        >{gettext("A continuación")}</button>
+        <section
+          id="music-up-next"
+          class="music-up-next"
+          data-no-current={gettext("Nada en reproducción")}
+          hidden
+          aria-label={gettext("Cola de reproducción")}
+        >
+          <h2>{gettext("Sonando")}</h2>
+          <p data-queue-current></p>
+          <h3>{gettext("A continuación")}</h3>
+          <p data-queue-empty>{gettext("No hay canciones en espera")}</p>
+          <ol data-queue-list></ol>
+        </section>
         <p data-player-loading role="status" hidden>{gettext("Preparando reproducción…")}</p>
         <p id="audio-error" role="alert" hidden></p>
         <span hidden data-player-error="autoplay_blocked">{gettext(
