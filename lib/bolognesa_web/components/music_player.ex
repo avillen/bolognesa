@@ -52,7 +52,7 @@ defmodule BolognesaWeb.MusicPlayer do
         </button>
         <span id="queue-position" aria-live="polite"></span>
         <span data-player-time></span>
-        <span id="queue-finished" hidden>{gettext("Álbum terminado")}</span>
+        <span id="queue-finished" hidden>{gettext("Sesión terminada")}</span>
         <label class="sr-only" for="music-player-seek">{gettext("Posición de reproducción")}</label>
         <input
           id="music-player-seek"

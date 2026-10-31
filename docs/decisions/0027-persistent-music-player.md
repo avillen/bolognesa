@@ -16,4 +16,4 @@ The Music LiveView previously owned the audio element and album queue. Navigatin
 
 ## Consequences
 
-The player host is independent of routed LiveViews, while the server continues to authorize selected tracks and deliver direct audio. The session is intentionally ephemeral and does not add a background process, browser storage, or queue editing. See [browser verification commands](../conventions/testing.md#browser-player-verification).
+The player host is independent of routed LiveViews, while the server continues to authorize selected tracks and deliver direct audio. The session is intentionally ephemeral and does not add a background process or browser storage. See [browser verification commands](../conventions/testing.md#browser-player-verification).

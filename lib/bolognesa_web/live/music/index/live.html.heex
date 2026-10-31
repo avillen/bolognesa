@@ -6,6 +6,15 @@
   active_library_id={@active_library_id}
 >
   <section id="music-screen" class="music-library" phx-hook="AudioPlayer">
+    <p
+      id="music-queue-feedback"
+      role="status"
+      aria-live="polite"
+      class="text-sm text-muted"
+      data-added={gettext("Añadida a la cola")}
+      data-failed={gettext("No se pudo añadir a la cola")}
+    >
+    </p>
     <header class="music-header">
       <div>
         <p class="music-eyebrow">{gettext("Biblioteca local")}</p><h1 class="music-title">
@@ -181,6 +190,16 @@
             <span class="music-paused-label">{gettext("En pausa")}</span><span class="music-track-state">{track.state_label}</span>
           </p>
         </div>
+        <button
+          :if={track.state == :ready}
+          type="button"
+          data-music-action="append-track"
+          data-track-id={track.track_id}
+          data-file-id={track.id}
+          class="music-track-queue"
+          aria-label={gettext("Añadir %{title} a la cola", title: track.title)}
+          title={gettext("Añadir a la cola")}
+        ><.icon name="hero-plus" class="size-5" /></button>
         <button
           :if={track.state == :ready}
           id={"play-track-#{track.track_id}"}

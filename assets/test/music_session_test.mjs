@@ -114,3 +114,90 @@ test("a native media error is visible and keeps the selected track retryable", a
   assert.deepEqual(session.getSnapshot().error, {code: "playback_failed", retryable: true})
   assert.equal(session.getSnapshot().selected.id, 1)
 })
+
+test("appending duplicate tracks preserves paused single-track playback", async () => {
+  const audio = new FakeAudio()
+  const transport = {
+    async selectTrack({trackId, fileId}) {
+      return {track: {id: trackId, file_id: fileId, title: `Track ${trackId}`, state: "ready"}, src: `/music/tracks/${trackId}/media/${fileId}`}
+    },
+    async loadAlbum() { return {tracks: []} },
+  }
+  const session = createMusicSession({audio, transport})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  audio.currentTime = 7
+  audio.pause()
+  await session.appendTrack({trackId: 2, fileId: 12})
+  await session.appendTrack({trackId: 2, fileId: 12})
+  const snapshot = session.getSnapshot()
+  assert.deepEqual(snapshot.queue.map(track => track.id), [1, 2, 2])
+  assert.notEqual(snapshot.queue[1].entry_id, snapshot.queue[2].entry_id)
+  assert.equal(snapshot.queueIndex, 0)
+  assert.equal(audio.src, "/music/tracks/1/media/11")
+  assert.equal(audio.currentTime, 7)
+  assert.equal(audio.paused, true)
+  assert.equal(audio.playCalls, 1)
+})
+
+test("queued track plays after the current individual track ends", async () => {
+  const audio = new FakeAudio()
+  const session = createMusicSession({audio, transport: {
+    async selectTrack({trackId, fileId}) {
+      return {track: {id: trackId, file_id: fileId, title: `Track ${trackId}`, state: "ready"}, src: `/music/tracks/${trackId}/media/${fileId}`}
+    },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  await session.appendTrack({trackId: 2, fileId: 12})
+  audio.dispatchEvent(new Event("ended"))
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(session.getSnapshot().selected.id, 2)
+  assert.equal(audio.src, "/music/tracks/2/media/12")
+})
+
+test("a pending append cannot change a replacement session", async () => {
+  const audio = new FakeAudio()
+  let resolveAppend
+  const session = createMusicSession({audio, transport: {
+    selectTrack({trackId, fileId}) {
+      if (trackId === 2) return new Promise(resolve => { resolveAppend = resolve })
+      return Promise.resolve({track: {id: trackId, file_id: fileId, title: "Track", state: "ready"}, src: `/music/tracks/${trackId}/media/${fileId}`})
+    },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  const pending = session.appendTrack({trackId: 2, fileId: 12})
+  await session.selectTrack({trackId: 3, fileId: 13})
+  resolveAppend({track: {id: 2, file_id: 12, title: "Track", state: "ready"}, src: "/music/tracks/2/media/12"})
+  assert.equal(await pending, false)
+  assert.equal(session.getSnapshot().selected.id, 3)
+  assert.deepEqual(session.getSnapshot().queue, [])
+})
+
+test("rapid track appends retain request order when responses arrive out of order", async () => {
+  const audio = new FakeAudio()
+  const resolves = new Map()
+  const session = createMusicSession({audio, transport: {
+    selectTrack({trackId, fileId}) {
+      if (trackId === 1) return Promise.resolve({track: {id: 1, file_id: 11, title: "One", state: "ready"}, src: "/music/tracks/1/media/11"})
+      return new Promise(resolve => resolves.set(trackId, () => resolve({track: {id: trackId, file_id: fileId, title: "Track", state: "ready"}, src: `/music/tracks/${trackId}/media/${fileId}`})))
+    },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  const first = session.appendTrack({trackId: 2, fileId: 12})
+  const second = session.appendTrack({trackId: 3, fileId: 13})
+  resolves.get(3)()
+  resolves.get(2)()
+  await Promise.all([first, second])
+  assert.deepEqual(session.getSnapshot().queue.map(track => track.id), [1, 2, 3])
+})
+
+test("tracks queued before playback wait until play is requested", async () => {
+  const audio = new FakeAudio()
+  const session = createMusicSession({audio, transport: {
+    async selectTrack({trackId, fileId}) { return {track: {id: trackId, file_id: fileId, title: "Track", state: "ready"}, src: `/music/tracks/${trackId}/media/${fileId}`} },
+  }})
+  await session.appendTrack({trackId: 2, fileId: 12})
+  assert.equal(audio.playCalls, 0)
+  await session.play()
+  assert.equal(session.getSnapshot().selected.id, 2)
+  assert.equal(audio.src, "/music/tracks/2/media/12")
+})

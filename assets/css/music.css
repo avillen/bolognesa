@@ -117,7 +117,8 @@
 .music-player-frame audio { width: 100%; }
 
 /* Playback state belongs to the audio element, including rows inserted by a patch. */
-.app-content .music-track-play { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; border: 1px solid var(--color-border-strong); border-radius: 50%; background: var(--color-raised); color: var(--color-ink); }
+.app-content .music-track-play, .app-content .music-track-queue { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; border: 1px solid var(--color-border-strong); border-radius: 50%; background: var(--color-raised); color: var(--color-ink); }
+.music-track-queue:hover { background: var(--color-accent); color: var(--color-canvas); border-color: var(--color-accent); }
 .music-track-play:hover { background: var(--color-accent); color: var(--color-canvas); border-color: var(--color-accent); }
 .music-pause-icon, .music-playing-label, .music-paused-label, .music-equalizer { display: none; }
 .music-track-row[data-playback="playing"], .music-track-row[data-playback="paused"] { background: color-mix(in srgb, var(--color-accent) 10%, var(--color-canvas)); box-shadow: inset 3px 0 var(--color-accent); }

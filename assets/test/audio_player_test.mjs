@@ -44,3 +44,26 @@ test("Music screen commands the document session and unmount only detaches it", 
     assert.ok(context.session === null)
   } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
 })
+
+test("add-to-queue action reports the result", async () => {
+  const listeners = new Map()
+  const feedback = {dataset: {added: "Added to queue", failed: "Could not add"}, textContent: ""}
+  const calls = []
+  const session = {subscribe: () => () => {}, appendTrack: async value => { calls.push(value); return true }}
+  const list = {querySelectorAll: () => []}
+  const button = {dataset: {musicAction: "append-track", trackId: "4", fileId: "9"}}
+  const el = {querySelector: selector => selector === "#music-queue-feedback" ? feedback : list, addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: name => listeners.delete(name), contains: () => true}
+  const originalWindow = globalThis.window
+  const originalObserver = globalThis.MutationObserver
+  globalThis.MutationObserver = class {observe() {} disconnect() {}}
+  globalThis.window = {bolognesaMusicPlayer: {session}}
+  const context = {el}
+  try {
+    hook.mounted.call(context)
+    listeners.get("click")({target: {closest: () => button}, preventDefault() {}, stopImmediatePropagation() {}})
+    await new Promise(resolve => setImmediate(resolve))
+    assert.deepEqual(calls, [{trackId: 4, fileId: 9}])
+    assert.equal(feedback.textContent, "Added to queue")
+    hook.destroyed.call(context)
+  } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
+})
