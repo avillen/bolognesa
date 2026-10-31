@@ -780,100 +780,6 @@
         {
           "id": 15,
           "type": "timeseries",
-          "title": "Memory \u00b7 usage vs limit",
-          "description": "Working set is current usage summed by service; the dashed line is the configured container limit. Unlimited containers can report the host limit. Limits are per container, so replicas would make the sum and max incomparable.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "gridPos": {
-            "x": 0,
-            "y": 18,
-            "w": 12,
-            "h": 4
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "bytes",
-              "noValue": "No data",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "drawStyle": "line",
-                "lineWidth": 1,
-                "fillOpacity": 8,
-                "showPoints": "auto",
-                "spanNulls": false
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byRegexp",
-                  "options": ".* \u00b7 limit"
-                },
-                "properties": [
-                  {
-                    "id": "custom.lineStyle",
-                    "value": {
-                      "fill": "dash",
-                      "dash": [
-                        10,
-                        10
-                      ]
-                    }
-                  },
-                  {
-                    "id": "custom.fillOpacity",
-                    "value": 0
-                  },
-                  {
-                    "id": "color",
-                    "value": {
-                      "mode": "fixed",
-                      "fixedColor": "#8a8a8a"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "calcs": [
-                "lastNotNull"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "targets": [
-            {
-              "refId": "Q0",
-              "expr": "sum by (service) (container_memory_working_set_bytes{job=\"bolognesa-docker\", instance=\"$instance\"})",
-              "legendFormat": "{{service}} \u00b7 usage",
-              "editorMode": "code",
-              "instant": false,
-              "range": true
-            },
-            {
-              "refId": "Q1",
-              "expr": "max by (service) (container_spec_memory_limit_bytes{job=\"bolognesa-docker\", instance=\"$instance\"})",
-              "legendFormat": "{{service}} \u00b7 limit",
-              "editorMode": "code",
-              "instant": false,
-              "range": true
-            }
-          ]
-        },
-        {
-          "id": 16,
-          "type": "timeseries",
           "title": "Network \u00b7 receive / transmit",
           "description": "Per-container network counters. Host-network containers can share host counters; values must not be summed into a host total.",
           "datasource": {
@@ -881,9 +787,9 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "gridPos": {
-            "x": 12,
+            "x": 0,
             "y": 18,
-            "w": 12,
+            "w": 8,
             "h": 4
           },
           "fieldConfig": {
@@ -936,7 +842,7 @@
           ]
         },
         {
-          "id": 17,
+          "id": 16,
           "type": "timeseries",
           "title": "Block I/O \u00b7 read / write",
           "description": "Block I/O exposed by the runtime; may be absent depending on storage driver. Does not measure media capacity or free space.",
@@ -945,9 +851,9 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "gridPos": {
-            "x": 0,
-            "y": 22,
-            "w": 12,
+            "x": 8,
+            "y": 18,
+            "w": 8,
             "h": 4
           },
           "fieldConfig": {
@@ -1000,7 +906,7 @@
           ]
         },
         {
-          "id": 18,
+          "id": 17,
           "type": "stat",
           "title": "Container starts",
           "description": "Most recent container start timestamp. This is not a durable restart counter.",
@@ -1009,9 +915,9 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "gridPos": {
-            "x": 12,
-            "y": 22,
-            "w": 12,
+            "x": 16,
+            "y": 18,
+            "w": 8,
             "h": 4
           },
           "fieldConfig": {
@@ -1046,6 +952,102 @@
               "editorMode": "code",
               "instant": true,
               "range": false
+            }
+          ]
+        },
+        {
+          "id": 18,
+          "type": "timeseries",
+          "title": "Memory \u00b7 $service",
+          "description": "Working set is current usage for this service; the dashed line is its configured container limit. Unlimited containers can report the host limit.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "repeat": "service",
+          "repeatDirection": "v",
+          "gridPos": {
+            "x": 0,
+            "y": 22,
+            "w": 24,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "noValue": "No data",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 8,
+                "showPoints": "auto",
+                "spanNulls": false
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "limit"
+                },
+                "properties": [
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        10,
+                        10
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "#8a8a8a"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "Q0",
+              "expr": "sum(container_memory_working_set_bytes{job=\"bolognesa-docker\", instance=\"$instance\", service=~\"$service\"})",
+              "legendFormat": "usage",
+              "editorMode": "code",
+              "instant": false,
+              "range": true
+            },
+            {
+              "refId": "Q1",
+              "expr": "max(container_spec_memory_limit_bytes{job=\"bolognesa-docker\", instance=\"$instance\", service=~\"$service\"})",
+              "legendFormat": "limit",
+              "editorMode": "code",
+              "instant": false,
+              "range": true
             }
           ]
         }
@@ -1102,6 +1104,36 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "${DS_PROMETHEUS}",
+        "definition": "label_values(container_memory_working_set_bytes{job=\"bolognesa-docker\"}, service)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Docker service",
+        "multi": true,
+        "name": "service",
+        "options": [],
+        "query": "label_values(container_memory_working_set_bytes{job=\"bolognesa-docker\"}, service)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
         "tagValuesQuery": "",
         "tags": [],
         "tagsQuery": "",

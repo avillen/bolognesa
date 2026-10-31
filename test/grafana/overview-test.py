@@ -39,9 +39,16 @@ panels = dashboard['panels'] + [p for row in rows for p in row.get('panels', [])
 assert len({panel['id'] for panel in panels}) == len(panels)
 
 titles = [panel['title'] for panel in panels]
-assert 'Memory · usage vs limit' in titles
-assert 'Memory · working set' not in titles
-assert 'Memory · configured limit' not in titles
+assert 'Memory · $service' in titles
+assert 'Memory · usage vs limit' not in titles
+
+variables = {variable['name'] for variable in dashboard['templating']['list']}
+assert {'job', 'instance', 'service'} <= variables
+memory = next(panel for panel in panels if panel['title'] == 'Memory · $service')
+assert memory['repeat'] == 'service'
+assert memory['repeatDirection'] == 'v'
+assert memory['gridPos']['w'] == 24
+assert len(memory['targets']) == 2
 
 for panel in panels:
     if panel['type'] == 'row':

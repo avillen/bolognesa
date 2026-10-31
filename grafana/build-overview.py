@@ -30,6 +30,18 @@ INSTANCE_VARIABLE = {
     'tagValuesQuery': '', 'tags': [], 'tagsQuery': '', 'type': 'query',
     'useTags': False,
 }
+SERVICE_VARIABLE = {
+    'allValue': '.*',
+    'current': {'selected': True, 'text': ['All'], 'value': ['$__all']},
+    'datasource': '${DS_PROMETHEUS}',
+    'definition': 'label_values(container_memory_working_set_bytes{job="bolognesa-docker"}, service)',
+    'hide': 0, 'includeAll': True, 'label': 'Docker service', 'multi': True,
+    'name': 'service', 'options': [],
+    'query': 'label_values(container_memory_working_set_bytes{job="bolognesa-docker"}, service)',
+    'refresh': 2, 'regex': '', 'skipUrlSync': False, 'sort': 1,
+    'tagValuesQuery': '', 'tags': [], 'tagsQuery': '', 'type': 'query',
+    'useTags': False,
+}
 
 
 def beam(name):
@@ -46,7 +58,7 @@ def docker(name):
 
 LIMIT_OVERRIDES = [
     {
-        'matcher': {'id': 'byRegexp', 'options': '.* · limit'},
+        'matcher': {'id': 'byRegexp', 'options': 'limit'},
         'properties': [
             {'id': 'custom.lineStyle', 'value': {'fill': 'dash', 'dash': [10, 10]}},
             {'id': 'custom.fillOpacity', 'value': 0},
@@ -135,16 +147,7 @@ ROWS = [
                 'description': 'One unit is one CPU core. Includes FFmpeg subprocesses in the app container.',
             },
             {
-                'title': 'Memory · usage vs limit', 'unit': 'bytes', 'width': 12,
-                'queries': [
-                    (f'sum by (service) ({docker("container_memory_working_set_bytes")})', '{{service}} · usage'),
-                    (f'max by (service) ({docker("container_spec_memory_limit_bytes")})', '{{service}} · limit'),
-                ],
-                'description': 'Working set is current usage summed by service; the dashed line is the configured container limit. Unlimited containers can report the host limit. Limits are per container, so replicas would make the sum and max incomparable.',
-                'overrides': LIMIT_OVERRIDES,
-            },
-            {
-                'title': 'Network · receive / transmit', 'unit': 'Bps', 'width': 12,
+                'title': 'Network · receive / transmit', 'unit': 'Bps',
                 'queries': [
                     (f'sum by (service) (rate({docker(metric)}[$__rate_interval]))', f'{{{{service}}}} · {label}')
                     for metric, label in (
@@ -155,7 +158,7 @@ ROWS = [
                 'description': 'Per-container network counters. Host-network containers can share host counters; values must not be summed into a host total.',
             },
             {
-                'title': 'Block I/O · read / write', 'unit': 'Bps', 'width': 12,
+                'title': 'Block I/O · read / write', 'unit': 'Bps',
                 'queries': [
                     (f'sum by (service) (rate({docker(metric)}[$__rate_interval]))', f'{{{{service}}}} · {label}')
                     for metric, label in (
@@ -167,9 +170,18 @@ ROWS = [
             },
             {
                 'title': 'Container starts', 'unit': 'dateTimeAsIso', 'kind': 'stat',
-                'width': 12,
                 'queries': [(f'max by (service) ({docker("container_start_time_seconds")}) * 1000', '{{service}}')],
                 'description': 'Most recent container start timestamp. This is not a durable restart counter.',
+            },
+            {
+                'title': 'Memory · $service', 'unit': 'bytes', 'width': 24,
+                'repeat': 'service', 'repeat_direction': 'v',
+                'queries': [
+                    (f'sum(container_memory_working_set_bytes{{{DOCKER_SCOPE}, service=~"$service"}})', 'usage'),
+                    (f'max(container_spec_memory_limit_bytes{{{DOCKER_SCOPE}, service=~"$service"}})', 'limit'),
+                ],
+                'description': 'Working set is current usage for this service; the dashed line is its configured container limit. Unlimited containers can report the host limit.',
+                'overrides': LIMIT_OVERRIDES,
             },
         ],
     },
@@ -197,7 +209,8 @@ class Dashboard:
         self.y += 1
 
     def panel(self, title, queries, unit='short', kind='timeseries',
-              width=None, description='', height=None, overrides=None):
+              width=None, description='', height=None, overrides=None,
+              repeat=None, repeat_direction='h'):
         width = width or 8
         height = height or 4
         if self.x + width > 24:
@@ -223,6 +236,7 @@ class Dashboard:
         self.panels.append({
             'id': len(self.panels) + 1, 'type': kind, 'title': title,
             'description': description, 'datasource': DS,
+            **({'repeat': repeat, 'repeatDirection': repeat_direction} if repeat else {}),
             'gridPos': {'x': self.x, 'y': self.y, 'w': width, 'h': height},
             'fieldConfig': {'defaults': defaults, 'overrides': overrides or []},
             'options': options,
@@ -289,7 +303,7 @@ def build():
         'refresh': '1m',
         'schemaVersion': 39,
         'tags': ['bolognesa', 'operations'],
-        'templating': {'list': [JOB_VARIABLE, INSTANCE_VARIABLE]},
+        'templating': {'list': [JOB_VARIABLE, INSTANCE_VARIABLE, SERVICE_VARIABLE]},
         'time': {'from': 'now-24h', 'to': 'now'},
         'timezone': 'browser',
         'title': 'Bolognesa · Overview',
