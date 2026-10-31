@@ -306,7 +306,7 @@ maintained in the repository and queries Bolognesa's fixed event metrics. To reg
 the PromEx dashboards after a dependency update, run from a development checkout:
 
 ```sh
-python3 scripts/monitoring/export-promex-grafana-dashboards.py
+python3 grafana/export-promex-dashboards.py
 ```
 
 The script writes `application.json`, `beam.json`, `phoenix.json`, `ecto.json`, and
