@@ -79,12 +79,12 @@ msgstr "Ajustes"
 msgid "Almacenamiento no disponible"
 msgstr "Almacenamiento no disponible"
 
-#: lib/bolognesa_web/components/music_player.ex:28
-#: lib/bolognesa_web/components/music_player.ex:29
+#: lib/bolognesa_web/components/music_player.ex:30
+#: lib/bolognesa_web/components/music_player.ex:31
 #: lib/bolognesa_web/live/episode/show/live.html.heex:134
 #: lib/bolognesa_web/live/movie/index/live.html.heex:118
 #: lib/bolognesa_web/live/movie/review/live.html.heex:161
-#: lib/bolognesa_web/live/music/index/live.html.heex:259
+#: lib/bolognesa_web/live/music/index/live.html.heex:275
 #: lib/bolognesa_web/live/series/index/live.html.heex:122
 #: lib/bolognesa_web/live/series/review/live.html.heex:57
 #: lib/bolognesa_web/live/series/season/live.html.heex:135
@@ -902,7 +902,7 @@ msgstr "Primer acceso"
 
 #: lib/bolognesa_web/live/movie/index/live.html.heex:119
 #: lib/bolognesa_web/live/movie/review/live.html.heex:162
-#: lib/bolognesa_web/live/music/index/live.html.heex:260
+#: lib/bolognesa_web/live/music/index/live.html.heex:276
 #: lib/bolognesa_web/live/series/review/live.html.heex:58
 #, elixir-autogen, elixir-format
 msgid "Página %{page}"
@@ -933,8 +933,8 @@ msgstr "Páginas del catálogo"
 msgid "Reanalizar"
 msgstr "Reanalizar"
 
-#: lib/bolognesa_web/components/music_player.ex:66
-#: lib/bolognesa_web/components/music_player.ex:66
+#: lib/bolognesa_web/components/music_player.ex:68
+#: lib/bolognesa_web/components/music_player.ex:68
 #: lib/bolognesa_web/live/library/index/state/library.ex:79
 #: lib/bolognesa_web/live/movie/review/live.html.heex:82
 #: lib/bolognesa_web/live/music/index/live.html.heex:125
@@ -956,14 +956,15 @@ msgstr "Reintentar identificación"
 msgid "Repite la contraseña"
 msgstr "Repite la contraseña"
 
-#: lib/bolognesa_web/components/music_player.ex:37
 #: lib/bolognesa_web/components/music_player.ex:39
+#: lib/bolognesa_web/components/music_player.ex:41
 #: lib/bolognesa_web/live/movie/show/live.html.heex:121
 #: lib/bolognesa_web/live/series/season/live.html.heex:124
 #, elixir-autogen, elixir-format
 msgid "Reproducir"
 msgstr "Reproducir"
 
+#: lib/bolognesa_web/components/music_player.ex:18
 #: lib/bolognesa_web/components/player.ex:30
 #, elixir-autogen, elixir-format
 msgid "Reproductor"
@@ -1084,12 +1085,12 @@ msgstr "Servicio temporalmente no disponible. Inténtalo de nuevo."
 msgid "Sesión iniciada como %{email}"
 msgstr "Sesión iniciada como %{email}"
 
-#: lib/bolognesa_web/components/music_player.ex:47
-#: lib/bolognesa_web/components/music_player.ex:48
+#: lib/bolognesa_web/components/music_player.ex:49
+#: lib/bolognesa_web/components/music_player.ex:50
 #: lib/bolognesa_web/live/episode/show/live.html.heex:147
 #: lib/bolognesa_web/live/movie/index/live.html.heex:124
 #: lib/bolognesa_web/live/movie/review/live.html.heex:167
-#: lib/bolognesa_web/live/music/index/live.html.heex:265
+#: lib/bolognesa_web/live/music/index/live.html.heex:281
 #: lib/bolognesa_web/live/series/index/live.html.heex:128
 #: lib/bolognesa_web/live/series/review/live.html.heex:59
 #: lib/bolognesa_web/live/series/season/live.html.heex:142
@@ -1363,7 +1364,7 @@ msgstr "Artista desconocido"
 msgid "Biblioteca local"
 msgstr "Biblioteca local"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:105
+#: lib/bolognesa_web/live/music/index/live.html.heex:104
 #, elixir-autogen, elixir-format
 msgid "Buscar canciones, artistas o álbumes"
 msgstr "Buscar canciones, artistas o álbumes"
@@ -1405,7 +1406,7 @@ msgstr "No se pudo cargar la música. Puedes reintentar."
 msgid "No se pudo reintentar la importación."
 msgstr "No se pudo reintentar la importación."
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:252
+#: lib/bolognesa_web/live/music/index/live.html.heex:268
 #, elixir-autogen, elixir-format
 msgid "Paginación de música"
 msgstr "Paginación de música"
@@ -1415,18 +1416,18 @@ msgstr "Paginación de música"
 msgid "Procesando audio"
 msgstr "Procesando audio"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:247
+#: lib/bolognesa_web/live/music/index/live.html.heex:263
 #, elixir-autogen, elixir-format
 msgid "Reanalizar en bibliotecas"
 msgstr "Reanalizar en bibliotecas"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:242
+#: lib/bolognesa_web/live/music/index/live.html.heex:258
 #, elixir-autogen, elixir-format
 msgid "Reintentar importación"
 msgstr "Reintentar importación"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:229
-#: lib/bolognesa_web/live/music/index/live.html.heex:230
+#: lib/bolognesa_web/live/music/index/live.html.heex:245
+#: lib/bolognesa_web/live/music/index/live.html.heex:246
 #: lib/bolognesa_web/live/series/season/live.html.heex:111
 #, elixir-autogen, elixir-format
 msgid "Reproducir %{title}"
@@ -1453,11 +1454,6 @@ msgstr "Artistas"
 msgid "Canciones"
 msgstr "Canciones"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:188
-#, elixir-autogen, elixir-format
-msgid "Disco %{disc} · Pista %{track}"
-msgstr "Disco %{disc} · Pista %{track}"
-
 #: lib/bolognesa_web/live/music/index/live.html.heex:32
 #, elixir-autogen, elixir-format
 msgid "Explorar música"
@@ -1468,17 +1464,18 @@ msgstr "Explorar música"
 msgid "No hay resultados. Prueba otra búsqueda o escanea tu biblioteca de música."
 msgstr "No hay resultados. Prueba otra búsqueda o escanea tu biblioteca de música."
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:86
+#: lib/bolognesa_web/live/music/index/live.html.heex:84
+#: lib/bolognesa_web/live/music/index/live.html.heex:85
 #, elixir-autogen, elixir-format
 msgid "Reproducir álbum"
 msgstr "Reproducir álbum"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:63
+#: lib/bolognesa_web/live/music/index/live.html.heex:60
 #, elixir-autogen, elixir-format
 msgid "Volver a artistas"
 msgstr "Volver a artistas"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:70
+#: lib/bolognesa_web/live/music/index/live.html.heex:67
 #, elixir-autogen, elixir-format
 msgid "Volver a álbumes"
 msgstr "Volver a álbumes"
@@ -1515,18 +1512,18 @@ msgstr "Buscar por título…"
 msgid "Tu biblioteca"
 msgstr "Tu biblioteca"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:198
+#: lib/bolognesa_web/live/music/index/live.html.heex:192
 #, elixir-autogen, elixir-format
 msgid "En pausa"
 msgstr "En pausa"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:231
+#: lib/bolognesa_web/live/music/index/live.html.heex:247
 #, elixir-autogen, elixir-format
 msgid "Pausar %{title}"
 msgstr "Pausar %{title}"
 
-#: lib/bolognesa_web/components/music_player.ex:102
-#: lib/bolognesa_web/live/music/index/live.html.heex:197
+#: lib/bolognesa_web/components/music_player.ex:107
+#: lib/bolognesa_web/live/music/index/live.html.heex:191
 #, elixir-autogen, elixir-format
 msgid "Sonando"
 msgstr "Sonando"
@@ -1811,8 +1808,8 @@ msgstr "Archivos"
 msgid "Añadir biblioteca"
 msgstr "Añadir biblioteca"
 
-#: lib/bolognesa_web/components/music_player.ex:79
-#: lib/bolognesa_web/components/music_player.ex:80
+#: lib/bolognesa_web/components/music_player.ex:81
+#: lib/bolognesa_web/components/music_player.ex:82
 #: lib/bolognesa_web/live/library/index/components/library_form.ex:34
 #, elixir-autogen, elixir-format
 msgid "Cerrar"
@@ -1848,54 +1845,54 @@ msgstr "Intento %{attempt}"
 msgid "¿Qué hace cada acción?"
 msgstr "¿Qué hace cada acción?"
 
-#: lib/bolognesa_web/components/music_player.ex:72
-#: lib/bolognesa_web/components/music_player.ex:73
+#: lib/bolognesa_web/components/music_player.ex:74
+#: lib/bolognesa_web/components/music_player.ex:75
 #, elixir-autogen, elixir-format
 msgid "Ampliar"
 msgstr "Ampliar"
 
-#: lib/bolognesa_web/components/music_player.ex:111
+#: lib/bolognesa_web/components/music_player.ex:128
 #, elixir-autogen, elixir-format
 msgid "El navegador ha bloqueado la reproducción automática. Pulsa reproducir para continuar."
 msgstr "El navegador ha bloqueado la reproducción automática. Pulsa reproducir para continuar."
 
-#: lib/bolognesa_web/components/music_player.ex:117
+#: lib/bolognesa_web/components/music_player.ex:134
 #, elixir-autogen, elixir-format
 msgid "Este audio no está disponible en este momento."
 msgstr "Este audio no está disponible en este momento."
 
-#: lib/bolognesa_web/components/music_player.ex:123
+#: lib/bolognesa_web/components/music_player.ex:140
 #, elixir-autogen, elixir-format
 msgid "Este álbum no tiene canciones disponibles."
 msgstr "Este álbum no tiene canciones disponibles."
 
-#: lib/bolognesa_web/components/music_player.ex:22
-#: lib/bolognesa_web/components/music_player.ex:95
+#: lib/bolognesa_web/components/music_player.ex:23
+#: lib/bolognesa_web/components/music_player.ex:98
 #, elixir-autogen, elixir-format
 msgid "Nada en reproducción"
 msgstr "Nada en reproducción"
 
-#: lib/bolognesa_web/components/music_player.ex:114
+#: lib/bolognesa_web/components/music_player.ex:131
 #, elixir-autogen, elixir-format
 msgid "No se pudo reproducir este audio. Prueba otro formato o reintenta."
 msgstr "No se pudo reproducir este audio. Prueba otro formato o reintenta."
 
-#: lib/bolognesa_web/components/music_player.ex:120
+#: lib/bolognesa_web/components/music_player.ex:137
 #, elixir-autogen, elixir-format
 msgid "No tienes permiso para reproducir este audio."
 msgstr "No tienes permiso para reproducir este audio."
 
-#: lib/bolognesa_web/components/music_player.ex:38
+#: lib/bolognesa_web/components/music_player.ex:40
 #, elixir-autogen, elixir-format
 msgid "Pausar"
 msgstr "Pausar"
 
-#: lib/bolognesa_web/components/music_player.ex:56
+#: lib/bolognesa_web/components/music_player.ex:58
 #, elixir-autogen, elixir-format
 msgid "Posición de reproducción"
 msgstr "Opciones de reproducción"
 
-#: lib/bolognesa_web/components/music_player.ex:109
+#: lib/bolognesa_web/components/music_player.ex:126
 #, elixir-autogen, elixir-format
 msgid "Preparando reproducción…"
 msgstr "Preparando reproducción…"
@@ -1905,12 +1902,13 @@ msgstr "Preparando reproducción…"
 msgid "Añadida a la cola"
 msgstr "Se ha añadido a la cola"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:218
+#: lib/bolognesa_web/live/music/index/live.html.heex:203
 #, elixir-autogen, elixir-format
 msgid "Añadir %{title} a la cola"
 msgstr "Añadir %{title} a la cola"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:219
+#: lib/bolognesa_web/live/music/index/live.html.heex:92
+#: lib/bolognesa_web/live/music/index/live.html.heex:204
 #, elixir-autogen, elixir-format
 msgid "Añadir a la cola"
 msgstr "Añadir a la cola"
@@ -1920,64 +1918,105 @@ msgstr "Añadir a la cola"
 msgid "No se pudo añadir a la cola"
 msgstr "No se pudo añadir a la cola"
 
-#: lib/bolognesa_web/components/music_player.ex:55
+#: lib/bolognesa_web/components/music_player.ex:57
 #, elixir-autogen, elixir-format
 msgid "Sesión terminada"
 msgstr "Sesión terminada"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:94
+#: lib/bolognesa_web/live/music/index/live.html.heex:91
 #, elixir-autogen, elixir-format
 msgid "Añadir álbum a la cola"
 msgstr "Añadir álbum a la cola"
 
-#: lib/bolognesa_web/components/music_player.ex:87
-#: lib/bolognesa_web/components/music_player.ex:91
-#: lib/bolognesa_web/components/music_player.ex:104
+#: lib/bolognesa_web/components/music_player.ex:89
+#: lib/bolognesa_web/components/music_player.ex:94
+#: lib/bolognesa_web/components/music_player.ex:117
 #, elixir-autogen, elixir-format
 msgid "A continuación"
 msgstr "A continuación"
 
-#: lib/bolognesa_web/components/music_player.ex:100
+#: lib/bolognesa_web/components/music_player.ex:104
 #, elixir-autogen, elixir-format
 msgid "Cola de reproducción"
 msgstr "Cola de reproducción"
 
-#: lib/bolognesa_web/components/music_player.ex:106
+#: lib/bolognesa_web/components/music_player.ex:123
 #, elixir-autogen, elixir-format
 msgid "No hay canciones en espera"
 msgstr "No hay canciones en espera"
 
-#: lib/bolognesa_web/components/music_player.ex:88
+#: lib/bolognesa_web/components/music_player.ex:90
 #, elixir-autogen, elixir-format
 msgid "Volver al reproductor"
 msgstr "Volver al reproductor"
 
-#: lib/bolognesa_web/components/music_player.ex:96
+#: lib/bolognesa_web/components/music_player.ex:100
 #, elixir-autogen, elixir-format
 msgid "Quitar de la cola"
 msgstr "Quitar de la cola"
 
-#: lib/bolognesa_web/components/music_player.ex:105
+#: lib/bolognesa_web/components/music_player.ex:119
 #, elixir-autogen, elixir-format
 msgid "Vaciar cola"
 msgstr "Vaciar cola"
 
-#: lib/bolognesa_web/components/music_player.ex:98
+#: lib/bolognesa_web/components/music_player.ex:102
 #, elixir-autogen, elixir-format
 msgid "Bajar"
 msgstr "Bajar"
 
-#: lib/bolognesa_web/components/music_player.ex:97
+#: lib/bolognesa_web/components/music_player.ex:101
 #, elixir-autogen, elixir-format
 msgid "Subir"
 msgstr "Subir"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:208
+#: lib/bolognesa_web/live/music/index/live.html.heex:221
 #, elixir-autogen, elixir-format
 msgid "Reproducir %{title} a continuación"
 msgstr "Reproducir %{title} a continuación"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:209
+#: lib/bolognesa_web/live/music/index/live.html.heex:222
+#: lib/bolognesa_web/live/music/index/live.html.heex:223
 #, elixir-autogen, elixir-format
 msgid "Reproducir a continuación"
 msgstr "Reproducir a continuación"
+
+#: lib/bolognesa_web/live/music/index/live.html.heex:74
+#, elixir-autogen, elixir-format
+msgid "%{count} canción"
+msgid_plural "%{count} canciones"
+msgstr[0] "%{count} canción"
+msgstr[1] "%{count} canciones"
+
+#: lib/bolognesa_web/live/music/index/live.html.heex:105
+#, elixir-autogen, elixir-format
+msgid "Buscar música"
+msgstr "Buscar música"
+
+#: lib/bolognesa_web/components/music_player.ex:99
+#: lib/bolognesa_web/live/music/index/live.html.heex:211
+#: lib/bolognesa_web/live/music/index/live.html.heex:211
+#, elixir-autogen, elixir-format
+msgid "Más opciones"
+msgstr "Más opciones"
+
+#: lib/bolognesa_web/live/music/index/live.html.heex:231
+#, elixir-autogen, elixir-format
+msgid "Reproducir solo %{title}"
+msgstr "Reproducir solo %{title}"
+
+#: lib/bolognesa_web/live/music/index/live.html.heex:232
+#: lib/bolognesa_web/live/music/index/live.html.heex:233
+#, elixir-autogen, elixir-format
+msgid "Reproducir solo esta canción"
+msgstr "Reproducir solo esta canción"
+
+#: lib/bolognesa_web/components/music_player.ex:91
+#, elixir-autogen, elixir-format
+msgid "A continuación (%{count})"
+msgstr "A continuación (%{count})"
+
+#: lib/bolognesa_web/components/music_player.ex:116
+#, elixir-autogen, elixir-format
+msgid "Siguientes (%{count})"
+msgstr "Siguientes (%{count})"

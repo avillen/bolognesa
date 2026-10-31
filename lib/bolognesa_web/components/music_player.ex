@@ -15,12 +15,14 @@ defmodule BolognesaWeb.MusicPlayer do
     >
       <audio id="music-playback" preload="metadata"></audio>
       <section id="music-player" class="music-player" aria-label={gettext("Reproductor de música")}>
+        <p class="music-player-heading">{gettext("Reproductor")}</p>
         <div class="music-player-art" aria-hidden="true">
           <img src={~p"/images/bolognesa-cat.svg"} alt="" />
         </div>
         <div class="music-player-track">
           <p id="now-playing" class="music-player-title">{gettext("Nada en reproducción")}</p>
           <p data-player-artist class="music-player-artist"></p>
+          <p data-player-album class="music-player-album"></p>
         </div>
         <button
           type="button"
@@ -51,7 +53,7 @@ defmodule BolognesaWeb.MusicPlayer do
           <.icon name="hero-forward-solid" class="size-5" />
         </button>
         <span id="queue-position" aria-live="polite"></span>
-        <span data-player-time></span>
+        <span data-player-time><span data-player-elapsed></span><span class="music-time-separator"> / </span><span data-player-duration></span></span>
         <span id="queue-finished" hidden>{gettext("Sesión terminada")}</span>
         <label class="sr-only" for="music-player-seek">{gettext("Posición de reproducción")}</label>
         <input
@@ -86,6 +88,7 @@ defmodule BolognesaWeb.MusicPlayer do
           data-player-action="queue"
           data-show-label={gettext("A continuación")}
           data-hide-label={gettext("Volver al reproductor")}
+          data-count-label={gettext("A continuación (%{count})", count: "__COUNT__")}
           aria-controls="music-up-next"
           aria-expanded="false"
         >{gettext("A continuación")}</button>
@@ -93,18 +96,33 @@ defmodule BolognesaWeb.MusicPlayer do
           id="music-up-next"
           class="music-up-next"
           data-no-current={gettext("Nada en reproducción")}
+          data-options-label={gettext("Más opciones")}
           data-remove-label={gettext("Quitar de la cola")}
           data-up-label={gettext("Subir")}
           data-down-label={gettext("Bajar")}
           hidden
           aria-label={gettext("Cola de reproducción")}
         >
-          <h2>{gettext("Sonando")}</h2>
-          <p data-queue-current></p>
-          <h3>{gettext("A continuación")}</h3>
-          <button type="button" data-player-action="clear-upcoming">{gettext("Vaciar cola")}</button>
-          <p data-queue-empty>{gettext("No hay canciones en espera")}</p>
-          <ol data-queue-list></ol>
+          <div class="music-queue-header">
+            <h2 class="music-queue-mobile-title">{gettext("A continuación")}</h2>
+            <h2>{gettext("Sonando")}</h2>
+            <div class="music-queue-current">
+              <div class="music-queue-art" aria-hidden="true">
+                <img src={~p"/images/bolognesa-cat.svg"} alt="" />
+              </div><div>
+                <p data-queue-current></p><p data-queue-artist></p>
+              </div>
+            </div>
+            <div class="music-queue-list-heading">
+              <h3 data-queue-heading data-label={gettext("Siguientes (%{count})", count: "__COUNT__")}>
+                {gettext("A continuación")}
+              </h3>
+              <button type="button" data-player-action="clear-upcoming">{gettext("Vaciar cola")}</button>
+            </div>
+          </div>
+          <div class="music-queue-scroll">
+            <p data-queue-empty>{gettext("No hay canciones en espera")}</p><ol data-queue-list></ol>
+          </div>
         </section>
         <p data-player-loading role="status" hidden>{gettext("Preparando reproducción…")}</p>
         <p id="audio-error" role="alert" hidden></p>

@@ -5,7 +5,11 @@ export function syncTrackRows(list, snapshot) {
     const playing = current && !snapshot.paused && !snapshot.finished
     row.dataset.playback = current ? (playing ? "playing" : "paused") : ""
     const button = row.querySelector(".music-track-play")
-    if (button) button.setAttribute("aria-label", playing ? button.dataset.pauseLabel : button.dataset.playLabel)
+    if (button) {
+      const label = playing ? button.dataset.pauseLabel : button.dataset.playLabel
+      button.setAttribute("aria-label", label)
+      button.setAttribute("title", label)
+    }
   }
 }
 

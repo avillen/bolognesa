@@ -12,9 +12,11 @@ test("streamed row indicators match track and file identity from the shared sess
   syncTrackRows(list, snapshot)
   assert.equal(row.dataset.playback, "playing")
   assert.equal(button["aria-label"], "Pause song")
+  assert.equal(button.title, "Pause song")
   snapshot.paused = true
   syncTrackRows(list, snapshot)
   assert.equal(row.dataset.playback, "paused")
+  assert.equal(button.title, "Play song")
   snapshot.selected.file_id = 9
   syncTrackRows(list, snapshot)
   assert.equal(row.dataset.playback, "")

@@ -67,3 +67,22 @@ test("add-to-queue action reports the result", async () => {
     hook.destroyed.call(context)
   } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
 })
+
+test("a playback action closes a different open track menu", () => {
+  const listeners = new Map()
+  const menu = {open: true}
+  const button = {dataset: {musicAction: "track", trackId: "1", fileId: "2"}, closest: () => null}
+  const session = {subscribe: () => () => {}, getSnapshot: () => ({selected: null}), selectTrack() {}}
+  const list = {querySelectorAll: () => []}
+  const el = {querySelector: () => list, querySelectorAll: () => [menu], contains: () => true, addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener() {}}
+  const originalWindow = globalThis.window, originalObserver = globalThis.MutationObserver
+  globalThis.window = {bolognesaMusicPlayer: {session}}
+  globalThis.MutationObserver = class {observe() {} disconnect() {}}
+  try {
+    const context = {el}
+    hook.mounted.call(context)
+    listeners.get("click")({target: {closest: () => button}, preventDefault() {}, stopImmediatePropagation() {}})
+    assert.equal(menu.open, false)
+    hook.destroyed.call(context)
+  } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
+})

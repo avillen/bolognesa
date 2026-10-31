@@ -8,6 +8,12 @@ const positiveId = value => {
 
 export default {
   mounted() {
+    this.showQueueFeedback = (feedback, message) => {
+      if (!feedback) return
+      feedback.textContent = message
+      clearTimeout(this.feedbackTimer)
+      this.feedbackTimer = setTimeout(() => { feedback.textContent = "" }, 3000)
+    }
     this.session = window.bolognesaMusicPlayer?.session
     if (!this.session) return
     this.trackRows = connectTrackRows(this.el.querySelector("#music-tracks"), this.session)
@@ -15,6 +21,9 @@ export default {
       const button = event.target.closest?.('[data-music-action]')
       if (!button || !this.el.contains(button)) return
       const action = button.dataset.musicAction
+      const menu = button.closest?.("details")
+      for (const openMenu of this.el.querySelectorAll?.("details[open]") || []) if (openMenu !== menu) openMenu.open = false
+      if (menu) { menu.open = false; menu.querySelector("summary")?.focus() }
       if (action === "track" || action === "track-only" || action === "album-track" || action === "play-from-here") {
         const trackId = positiveId(button.dataset.trackId)
         const fileId = positiveId(button.dataset.fileId)
@@ -41,9 +50,9 @@ export default {
         const feedback = this.el.querySelector("#music-queue-feedback")
         const operation = action === "play-next" ? this.session.playNext({trackId, fileId}) : this.session.appendTrack({trackId, fileId})
         operation.then(added => {
-          if (added && feedback) feedback.textContent = feedback.dataset.added
+          if (added && feedback) this.showQueueFeedback(feedback, feedback.dataset.added)
         }).catch(() => {
-          if (feedback) feedback.textContent = feedback.dataset.failed
+          if (feedback) this.showQueueFeedback(feedback, feedback.dataset.failed)
         })
       } else if (action === "album" || action === "append-album") {
         const albumId = positiveId(button.dataset.albumId)
@@ -55,19 +64,31 @@ export default {
         else {
           const feedback = this.el.querySelector("#music-queue-feedback")
           this.session.appendAlbum({albumId, libraryId}).then(added => {
-            if (added && feedback) feedback.textContent = feedback.dataset.added
+            if (added && feedback) this.showQueueFeedback(feedback, feedback.dataset.added)
           }).catch(() => {
-            if (feedback) feedback.textContent = feedback.dataset.failed
+            if (feedback) this.showQueueFeedback(feedback, feedback.dataset.failed)
           })
         }
       }
     }
+    this.onMenuDismiss = event => {
+      const open = this.el.querySelectorAll("details[open]")
+      for (const menu of open) {
+        if (event.type === "keydown" && event.key === "Escape") { menu.open = false; menu.querySelector("summary")?.focus(); event.stopPropagation(); event.preventDefault() }
+        else if (event.type === "click" && !menu.contains(event.target)) menu.open = false
+      }
+    }
+    this.el.ownerDocument?.addEventListener("click", this.onMenuDismiss)
+    this.el.ownerDocument?.addEventListener("keydown", this.onMenuDismiss)
     this.el.addEventListener("click", this.onMusicAction, true)
   },
   updated() {
     this.trackRows?.sync()
   },
   destroyed() {
+    clearTimeout(this.feedbackTimer)
+    this.el.ownerDocument?.removeEventListener("click", this.onMenuDismiss)
+    this.el.ownerDocument?.removeEventListener("keydown", this.onMenuDismiss)
     this.el.removeEventListener("click", this.onMusicAction, true)
     this.trackRows?.destroy()
     this.session = null

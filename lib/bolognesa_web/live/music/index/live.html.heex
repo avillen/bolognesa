@@ -53,45 +53,44 @@
       :if={@browse_kind == :album || (@browse_kind == :albums && @artist_id)}
       class="music-album-heading"
     >
-      <div class="music-detail-art" aria-hidden="true">
-        <.icon name="hero-musical-note" class="size-16" />
-      </div>
       <.link
         :if={@browse_kind == :albums}
         patch={~p"/music?#{Map.put(@library_params, :view, :artists)}"}
-        class="inline-flex min-h-11 items-center gap-2 text-accent-soft"
+        class="music-back"
       >{gettext("Volver a artistas")}</.link>
       <.link
         :if={@browse_kind == :album}
         patch={
           ~p"/music?#{Map.merge(@library_params, %{view: :albums}) |> then(fn params -> if @artist_id, do: Map.put(params, :artist_id, @artist_id), else: params end)}"
         }
-        class="inline-flex min-h-11 items-center gap-2 text-accent-soft"
+        class="music-back"
       >{gettext("Volver a álbumes")}</.link>
-      <h2
-        :if={!@loading? && @heading}
-        id="music-heading"
-        class="text-2xl font-semibold break-words"
-      >
-        {@heading}
-      </h2>
-      <button
-        :if={@browse_kind == :album && !@error && @total > 0}
-        id="play-album"
-        type="button"
-        data-music-action="album"
-        data-album-id={@album_id}
-        data-library-id={@active_library_id}
-        class="min-h-11 rounded-lg bg-accent px-4 py-2 font-semibold text-canvas hover:bg-accent-hover disabled:opacity-50"
-      >{gettext("Reproducir álbum")}</button>
-      <button
-        :if={@browse_kind == :album && !@error && @total > 0}
-        type="button"
-        data-music-action="append-album"
-        data-album-id={@album_id}
-        data-library-id={@active_library_id}
-        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised"
-      >{gettext("Añadir álbum a la cola")}</button>
+      <div class="music-detail-art" aria-hidden="true">
+        <.icon name="hero-musical-note" class="size-16" />
+      </div>
+      <div class="music-album-copy">
+        <h2 :if={!@loading? && @heading} id="music-heading">{@heading}</h2>
+        <p :if={@browse_kind == :album && !@loading?}>
+          {ngettext("%{count} canción", "%{count} canciones", @total, count: @total)}
+        </p>
+      </div>
+      <div :if={@browse_kind == :album && !@error && @total > 0} class="music-album-actions">
+        <button
+          id="play-album"
+          type="button"
+          data-music-action="album"
+          data-album-id={@album_id}
+          data-library-id={@active_library_id}
+          aria-label={gettext("Reproducir álbum")}
+        ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir álbum")}</button>
+        <button
+          type="button"
+          data-music-action="append-album"
+          data-album-id={@album_id}
+          data-library-id={@active_library_id}
+          aria-label={gettext("Añadir álbum a la cola")}
+        ><.icon name="hero-plus" class="size-5" />{gettext("Añadir a la cola")}</button>
+      </div>
     </div>
     <.form
       for={@form}
@@ -103,6 +102,7 @@
         field={@form[:query]}
         type="search"
         label={gettext("Buscar canciones, artistas o álbumes")}
+        placeholder={gettext("Buscar música")}
       />
       <button
         type="submit"
@@ -177,47 +177,22 @@
         class="music-track-row"
       >
         <div class="music-track-art" aria-hidden="true">
-          <.icon name="hero-musical-note" class="music-track-note size-5" />
+          <span class="music-track-note">{track.track_number || ""}</span>
           <span class="music-equalizer" aria-hidden="true"><i></i><i></i><i></i></span>
         </div>
         <div class="music-track-copy">
-          <p
-            :if={@browse_kind == :album && (track.disc_number || track.track_number)}
-            class="text-xs text-muted"
-          >
-            {gettext("Disco %{disc} · Pista %{track}",
-              disc: track.disc_number || "—",
-              track: track.track_number || "—"
-            )}
-          </p>
           <h2 class="font-semibold break-words">{track.title}</h2><p class="text-sm break-words">
-            {track.artist} · {track.album}
+            {track.artist}
+            <%= if @browse_kind != :album do %>
+              · {track.album}
+            <% end %>
           </p><p class="music-track-meta">
-            <span>{track.duration}</span>
+            <span class="music-track-mobile-duration">{track.duration}</span>
             <span class="music-playing-label">{gettext("Sonando")}</span>
             <span class="music-paused-label">{gettext("En pausa")}</span><span class="music-track-state">{track.state_label}</span>
           </p>
         </div>
-        <button
-          :if={track.state == :ready}
-          type="button"
-          data-music-action="play-next"
-          data-track-id={track.track_id}
-          data-file-id={track.id}
-          class="music-track-queue"
-          aria-label={gettext("Reproducir %{title} a continuación", title: track.title)}
-          title={gettext("Reproducir a continuación")}
-        ><.icon name="hero-forward-solid" class="size-5" /></button>
-        <button
-          :if={@browse_kind == :album && track.state == :ready}
-          type="button"
-          data-music-action="track-only"
-          data-track-id={track.track_id}
-          data-file-id={track.id}
-          class="music-track-queue"
-          aria-label={gettext("Reproducir solo %{title}", title: track.title)}
-          title={gettext("Reproducir solo esta canción")}
-        ><.icon name="hero-play-solid" class="size-5" /></button>
+        <span class="music-track-duration">{track.duration}</span>
         <button
           :if={track.state == :ready}
           type="button"
@@ -228,6 +203,35 @@
           aria-label={gettext("Añadir %{title} a la cola", title: track.title)}
           title={gettext("Añadir a la cola")}
         ><.icon name="hero-plus" class="size-5" /></button>
+        <details
+          :if={track.state == :ready}
+          class="music-action-menu"
+          phx-mounted={JS.ignore_attributes("open")}
+        >
+          <summary aria-label={gettext("Más opciones")} title={gettext("Más opciones")}>
+            <.icon name="hero-ellipsis-horizontal" class="size-5" />
+          </summary>
+          <button
+            :if={track.state == :ready}
+            type="button"
+            data-music-action="play-next"
+            data-track-id={track.track_id}
+            data-file-id={track.id}
+            class="music-track-queue"
+            aria-label={gettext("Reproducir %{title} a continuación", title: track.title)}
+            title={gettext("Reproducir a continuación")}
+          ><.icon name="hero-forward-solid" class="size-5" />{gettext("Reproducir a continuación")}</button>
+          <button
+            :if={@browse_kind == :album && track.state == :ready}
+            type="button"
+            data-music-action="track-only"
+            data-track-id={track.track_id}
+            data-file-id={track.id}
+            class="music-track-queue"
+            aria-label={gettext("Reproducir solo %{title}", title: track.title)}
+            title={gettext("Reproducir solo esta canción")}
+          ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir solo esta canción")}</button>
+        </details>
         <button
           :if={track.state == :ready}
           id={"play-track-#{track.track_id}"}
@@ -239,6 +243,7 @@
           data-library-id={@browse_kind == :album && @active_library_id}
           class="music-track-play"
           aria-label={gettext("Reproducir %{title}", title: track.title)}
+          title={gettext("Reproducir %{title}", title: track.title)}
           data-play-label={gettext("Reproducir %{title}", title: track.title)}
           data-pause-label={gettext("Pausar %{title}", title: track.title)}
         >
