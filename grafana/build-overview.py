@@ -187,7 +187,7 @@ class Dashboard:
     def panel(self, title, queries, unit='short', kind='timeseries',
               width=None, description='', height=None):
         width = width or 8
-        height = height or 8
+        height = height or 4
         if self.x + width > 24:
             self.next_line()
         defaults = {'unit': unit, 'noValue': 'No data', 'color': {'mode': 'palette-classic'}}

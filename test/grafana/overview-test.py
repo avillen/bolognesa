@@ -64,7 +64,7 @@ for index, row in enumerate(rows):
     assert lines, row['title']
     for y, line in lines.items():
         assert sum(child['gridPos']['w'] for child in line) == 24, (row['title'], y)
-        assert {child['gridPos']['h'] for child in line} == {8}, (row['title'], y)
+        assert {child['gridPos']['h'] for child in line} == {4}, (row['title'], y)
 
 queries = [target['expr'] for panel in panels for target in panel.get('targets', [])]
 for metric in (
