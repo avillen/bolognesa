@@ -7,7 +7,7 @@ target="$test_dir/install with ' quote"
 mkdir -p "$target/scripts" "$test_dir/bin"
 cat > "$target/scripts/operate.sh" <<'SH'
 #!/bin/sh
-printf '%s\n' "$DEPLOY_DIR" "$DOCKER_BIN" "$COMPOSE_FILE" "$DEPLOY_HEALTH_URL" "$@" > "$TRACE"
+printf '%s\n' "$DEPLOY_DIR" "$DOCKER_BIN" "$COMPOSE_FILE" "$DEPLOY_HEALTH_URL" "${DEPLOY_BACKUP_KEEP:-}" "$@" > "$TRACE"
 SH
 cat > "$test_dir/bin/ssh" <<'SH'
 #!/bin/sh
@@ -20,6 +20,7 @@ exec sh -c "$1"
 SH
 chmod +x "$test_dir/bin/ssh"
 export DEPLOY_DIR="$target" DOCKER_BIN="$test_dir/docker with space" COMPOSE_FILE="first.yaml:second with space.yaml"
+export DEPLOY_BACKUP_KEEP=5
 export DEPLOY_HEALTH_URL='http://private:4000/' PATH="$test_dir/bin:$PATH" TRACE="$test_dir/trace"
 DEPLOY_TRANSPORT=local bash "$repo_dir/deploy/compose/scripts/deploy.sh" status "argument with ' quote"
 cp "$TRACE" "$test_dir/local"

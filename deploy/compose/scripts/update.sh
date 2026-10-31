@@ -1,7 +1,9 @@
 #!/bin/sh
 set -eu
 . "$(dirname -- "$0")/common.sh"
+. "$script_dir/backup-lock.sh"
 require_runtime
+sh "$script_dir/prune-backups.sh" --check
 operation=${DEPLOY_OPERATION:-update}
 image_ref=${1:-}
 test -n "${DEPLOY_HEALTH_URL:-}" || { echo 'Set DEPLOY_HEALTH_URL' >&2; exit 2; }
@@ -21,12 +23,7 @@ if [ "$operation" = update ]; then
 else
   test -z "$db_id" || { echo 'Installation already exists; use update' >&2; exit 1; }
 fi
-old_app=$(compose ps -a -q app)
 old_image=; old_running=false
-if [ -n "$old_app" ]; then
-  old_image=$("$DOCKER_BIN" inspect --format '{{.Config.Image}}' "$old_app")
-  old_running=$("$DOCKER_BIN" inspect --format '{{.State.Running}}' "$old_app")
-fi
 if [ -n "$image_ref" ]; then
   "$DOCKER_BIN" image inspect "$image_ref" >/dev/null 2>&1 || "$DOCKER_BIN" pull "$image_ref"
 else
@@ -55,12 +52,20 @@ finish() {
     fi
   fi
   if [ -n "$env_tmp" ]; then rm -f "$env_tmp"; fi
+  backup_lock_release
   exit "$result"
 }
 trap finish 0
+umask 077
+backup_lock_acquire "${DEPLOY_BACKUP_DIR:-$DEPLOY_DIR/backups}"
+old_app=$(compose ps -a -q app)
+if [ -n "$old_app" ]; then
+  old_image=$("$DOCKER_BIN" inspect --format '{{.Config.Image}}' "$old_app")
+  old_running=$("$DOCKER_BIN" inspect --format '{{.State.Running}}' "$old_app")
+fi
 app_stopped=1
 compose stop app
-backup=$("$script_dir/backup.sh" "${DEPLOY_BACKUP_DIR:-$DEPLOY_DIR/backups}")
+backup=$(DEPLOY_BACKUP_PRUNE=no "$script_dir/backup.sh" "${DEPLOY_BACKUP_DIR:-$DEPLOY_DIR/backups}")
 umask 077
 printf '%s\n' "$old_image" > "$backup.image-ref"
 migration_started=1
@@ -76,5 +81,6 @@ env_tmp=
 compose config --hash db > .database-config.tmp
 mv .database-config.tmp .database-config
 app_stopped=0
+sh "$script_dir/prune-backups.sh" "${DEPLOY_BACKUP_DIR:-$DEPLOY_DIR/backups}" "${backup##*/}" >&2
 compose ps
 printf 'Image deployed: %s\nDatabase backup: %s\n' "$image_ref" "$backup"

@@ -80,6 +80,30 @@ make deploy-restore BACKUP_FILE=/path/on/server/backups/file.dump
 
 Keep backups outside the server, with the matching application image and private configuration. Dumps include accounts, libraries, corrections, metadata, and jobs. They exclude media and configuration; back those up separately. Backups default to `<DEPLOY_DIR>/backups` (`DEPLOY_BACKUP_DIR` overrides it), use private permissions, and are checked with `pg_restore --list`. Rehearse a full restore on a disposable installation.
 
+The scripts retain the **three most recent managed backups** by modification time.
+Set `DEPLOY_BACKUP_KEEP` to a positive integer in the operator's `.env.deploy` to
+change this limit. Standalone backups prune only after the new dump passes validation;
+updates prune after successful migration and HTTP verification. Failed updates retain
+their backups. The backup created by the current operation is always kept.
+
+Installing these scripts applies this policy to existing backups on the next successful
+backup or update. Pruning removes only generated `pre-migration-*.dump` files with the
+expected timestamp name (with or without the process ID used by newer scripts) and
+their matching `.image-ref` files. Other files,
+temporary dumps, and symbolic links are left alone. To preview a cleanup on the server:
+
+```sh
+DEPLOY_BACKUP_KEEP=3 sh /srv/bolognesa/scripts/prune-backups.sh --dry-run /srv/bolognesa/backups
+```
+
+Use the installation's actual script and backup directories. Review the preview and
+the retained recovery copies before running the same command without `--dry-run`.
+
+Backup, update and cleanup share a lock in the backup directory. An overlapping
+operation fails before changing backups; retry when the first operation finishes.
+If an interrupted process leaves `.bolognesa-backup.lock` behind, verify that no backup
+or update is still running before removing that lock directory and its `owner` file.
+
 Update obtains the image, stops the app, backs up the database and records the old image, migrates, starts the app, and checks HTTP before saving the new image reference. Transient connection errors are normal while Phoenix starts.
 
 If failure occurs before migrations, update attempts to restore the old image. Once migrations start, failure leaves the app stopped. An older image does not undo migrations: inspect the schema and backup before recovery.

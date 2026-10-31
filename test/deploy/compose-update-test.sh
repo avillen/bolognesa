@@ -16,7 +16,7 @@ case "$*" in
   pull*) echo pull >> "$MOCK_TRACE" ;;
   'image inspect'*) echo arm64 ;;
   'inspect --format'*)
-    case "$*" in *Health*) echo healthy ;; *Running*) if [ "$MOCK_FAIL" = stopped-backup ]; then echo false; else echo true; fi ;; *Image*) echo "$MOCK_OLD_IMAGE" ;; *) echo /existing/database ;; esac ;;
+    case "$*" in *Health*) echo healthy ;; *Running*) test -d "$DEPLOY_DIR/backups/.bolognesa-backup.lock"; if [ "$MOCK_FAIL" = stopped-backup ]; then echo false; else echo true; fi ;; *Image*) test -d "$DEPLOY_DIR/backups/.bolognesa-backup.lock"; echo "$MOCK_OLD_IMAGE" ;; *) echo /existing/database ;; esac ;;
   'compose ps -a -q db') test "$MOCK_FAIL" != missing-db && echo db-id ;;
   'compose ps -a -q app') echo app-id ;;
   'compose config --hash db') echo 'db stable-hash' ;;
@@ -29,6 +29,13 @@ case "$*" in
     ;;
   'compose run --rm --no-deps app /app/bin/migrate')
     echo migrate >> "$MOCK_TRACE"
+    test -d "$DEPLOY_DIR/backups/.bolognesa-backup.lock"
+    if DEPLOY_BACKUP_LOCK_TOKEN= DEPLOY_BACKUP_PRUNE=yes sh "$MOCK_REPO_DIR/deploy/compose/scripts/backup.sh" >/dev/null 2>&1; then
+      echo 'Concurrent backup bypassed the update lock' >&2; exit 1
+    fi
+    if DEPLOY_BACKUP_LOCK_TOKEN= sh "$MOCK_REPO_DIR/deploy/compose/scripts/prune-backups.sh" "$DEPLOY_DIR/backups" >/dev/null 2>&1; then
+      echo 'Concurrent pruning bypassed the update lock' >&2; exit 1
+    fi
     test "$MOCK_FAIL" != migration || exit 1
     ;;
   'compose up -d --force-recreate app') echo "activate:${BOLOGNESA_IMAGE:-unset}" >> "$MOCK_TRACE" ;;
@@ -43,12 +50,20 @@ test "$MOCK_FAIL" != http || exit 22
 printf '200'
 MOCK
 chmod +x "$test_dir/bin/docker" "$test_dir/bin/curl"
-export PATH="$test_dir/bin:$PATH" DEPLOY_HTTP_RETRIES=0
+export PATH="$test_dir/bin:$PATH" DEPLOY_HTTP_RETRIES=0 MOCK_REPO_DIR="$repo_dir"
 image=ghcr.io/avillen/bolognesa-lan@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 old=ghcr.io/avillen/bolognesa-lan@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 for phase in success backup migration http missing-db config-change stopped-backup; do
   dir="$test_dir/$phase"
   mkdir -p "$dir/backups"
+  python3 - "$dir/backups" "$old" <<'PYSEED'
+import os,pathlib,sys
+for number in range(5):
+    p=pathlib.Path(sys.argv[1],f'pre-migration-20000101-12000{number}-1.dump')
+    p.write_text('synthetic old dump')
+    pathlib.Path(str(p)+'.image-ref').write_text(sys.argv[2]+'\n')
+    os.utime(p,(number+1,number+1))
+PYSEED
   printf 'BOLOGNESA_IMAGE=%s\n' "$old" > "$dir/.env"
   touch "$dir/compose.yaml"
   printf "db stable-hash\n" > "$dir/.database-config"
@@ -64,6 +79,9 @@ for phase in success backup migration http missing-db config-change stopped-back
 import pathlib,sys
 trace,phase,image,old,directory=sys.argv[1:]
 steps=pathlib.Path(trace).read_text().splitlines()
+assert not pathlib.Path(directory,'backups/.bolognesa-backup.lock').exists()
+expected_count=3 if phase=='success' else (6 if phase in ('migration','http') else 5)
+assert len(list(pathlib.Path(directory,'backups').glob('*.dump')))==expected_count
 if phase in ('missing-db', 'config-change'):
     assert 'stop' not in steps and 'migrate' not in steps, steps
     assert pathlib.Path(directory,'.env').read_text() == 'BOLOGNESA_IMAGE='+old+'\n'
@@ -73,8 +91,8 @@ if phase == 'success':
     assert steps.index('backup') < steps.index('migrate') < steps.index('activate:'+image) < steps.index('http'), steps
     assert pathlib.Path(directory,'.env').read_text() == 'BOLOGNESA_IMAGE='+image+'\n'
     backups=list(pathlib.Path(directory,'backups').glob('*.dump'))
-    assert len(backups)==1 and backups[0].stat().st_size>0
-    assert pathlib.Path(str(backups[0])+'.image-ref').read_text() == old+'\n'
+    assert len(backups)==3 and all(p.stat().st_size>0 for p in backups)
+    assert all(pathlib.Path(str(p)+'.image-ref').read_text() == old+'\n' for p in backups)
 elif phase == 'stopped-backup':
     assert 'migrate' not in steps and 'activate:'+old not in steps, steps
     assert steps[-1] == 'stop', steps

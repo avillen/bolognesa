@@ -60,6 +60,7 @@ jobs:
           sh test/deploy/compose-media-test.sh
           bash test/deploy/compose-update-test.sh
           bash test/deploy/compose-database-test.sh
+          python3 test/deploy/backup-retention-test.py
           bash test/deploy/compose-transport-test.sh
           bash test/deploy/compose-release-test.sh
 
