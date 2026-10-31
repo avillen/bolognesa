@@ -201,3 +201,35 @@ test("tracks queued before playback wait until play is requested", async () => {
   assert.equal(session.getSnapshot().selected.id, 2)
   assert.equal(audio.src, "/music/tracks/2/media/12")
 })
+
+test("albums appended in request order continue after the current album", async () => {
+  const audio = new FakeAudio()
+  const pending = new Map()
+  const row = id => ({id, file_id: id + 10, title: `Track ${id}`, state: "ready"})
+  const session = createMusicSession({audio, transport: {
+    loadAlbum({albumId}) {
+      if (albumId === 1) return Promise.resolve({tracks: [row(1)]})
+      return new Promise(resolve => pending.set(albumId, resolve))
+    },
+    async selectTrack({trackId, fileId}) { return {track: row(trackId), src: `/music/tracks/${trackId}/media/${fileId}`} },
+  }})
+  await session.playAlbum({albumId: 1, libraryId: null})
+  const second = session.appendAlbum({albumId: 2, libraryId: null})
+  const third = session.appendAlbum({albumId: 3, libraryId: null})
+  pending.get(3)({tracks: [row(4)]})
+  pending.get(2)({tracks: [row(2), row(3)]})
+  await Promise.all([second, third])
+  assert.deepEqual(session.getSnapshot().queue.map(track => track.id), [1, 2, 3, 4])
+  assert.equal(audio.src, "/music/tracks/1/media/11")
+  audio.dispatchEvent(new Event("ended"))
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(session.getSnapshot().selected.id, 2)
+  audio.dispatchEvent(new Event("ended"))
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(session.getSnapshot().selected.id, 3)
+  audio.dispatchEvent(new Event("ended"))
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(session.getSnapshot().selected.id, 4)
+  audio.dispatchEvent(new Event("ended"))
+  assert.equal(session.getSnapshot().finished, true)
+})

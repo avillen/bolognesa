@@ -84,6 +84,14 @@
         data-library-id={@active_library_id}
         class="min-h-11 rounded-lg bg-accent px-4 py-2 font-semibold text-canvas hover:bg-accent-hover disabled:opacity-50"
       >{gettext("Reproducir álbum")}</button>
+      <button
+        :if={@browse_kind == :album && !@error && @total > 0}
+        type="button"
+        data-music-action="append-album"
+        data-album-id={@album_id}
+        data-library-id={@active_library_id}
+        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised"
+      >{gettext("Añadir álbum a la cola")}</button>
     </div>
     <.form
       for={@form}

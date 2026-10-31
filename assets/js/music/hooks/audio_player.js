@@ -37,13 +37,21 @@ export default {
         }).catch(() => {
           if (feedback) feedback.textContent = feedback.dataset.failed
         })
-      } else if (action === "album") {
+      } else if (action === "album" || action === "append-album") {
         const albumId = positiveId(button.dataset.albumId)
         const libraryId = button.dataset.libraryId ? positiveId(button.dataset.libraryId) : null
         if (!albumId || (button.dataset.libraryId && !libraryId)) return
         event.preventDefault()
         event.stopImmediatePropagation()
-        this.session.playAlbum({albumId, libraryId})
+        if (action === "album") this.session.playAlbum({albumId, libraryId})
+        else {
+          const feedback = this.el.querySelector("#music-queue-feedback")
+          this.session.appendAlbum({albumId, libraryId}).then(added => {
+            if (added && feedback) feedback.textContent = feedback.dataset.added
+          }).catch(() => {
+            if (feedback) feedback.textContent = feedback.dataset.failed
+          })
+        }
       }
     }
     this.el.addEventListener("click", this.onMusicAction, true)

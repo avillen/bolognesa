@@ -190,6 +190,29 @@ export function createMusicSession({ audio, transport }) {
     });
   }
 
+  function appendRequest(request) {
+    const generation = sessionGeneration;
+    const pending = request.then(
+      (result) => ({ result }),
+      (error) => ({ error }),
+    );
+    const operation = appendChain.then(async () => {
+      const { result, error } = await pending;
+      if (destroyed || generation !== sessionGeneration) return false;
+      if (error) throw error;
+      if (!result.length) throw new Error("empty_queue");
+      if (queue.index < 0 && state.selected) {
+        queue.replace([state.selected]);
+        queue.select(0);
+      }
+      result.forEach((track) => queue.append(track));
+      notify();
+      return true;
+    });
+    appendChain = operation.catch(() => {});
+    return operation;
+  }
+
   return {
     getSnapshot: snapshot,
     subscribe(listener) {
@@ -255,25 +278,10 @@ export function createMusicSession({ audio, transport }) {
       }
     },
     appendTrack({ trackId, fileId }) {
-      const generation = sessionGeneration;
-      const request = transport.selectTrack({ trackId, fileId }).then(
-        (result) => ({ result }),
-        (error) => ({ error }),
-      );
-      const operation = appendChain.then(async () => {
-        const { result, error } = await request;
-        if (destroyed || generation !== sessionGeneration) return false;
-        if (error) throw error;
-        if (queue.index < 0 && state.selected) {
-          queue.replace([state.selected]);
-          queue.select(0);
-        }
-        queue.append(result.track);
-        notify();
-        return true;
-      });
-      appendChain = operation.catch(() => {});
-      return operation;
+      return appendRequest(transport.selectTrack({ trackId, fileId }).then(({track}) => [track]));
+    },
+    appendAlbum({ albumId, libraryId }) {
+      return appendRequest(transport.loadAlbum({ albumId, libraryId }).then(({tracks}) => tracks));
     },
     next() {
       const index = queue.nextIndex();
