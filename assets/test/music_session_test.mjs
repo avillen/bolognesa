@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createMusicSession} from "../js/music/music_session.mjs"
+import {createMusicSession} from "../js/music/music_bootstrap/session.mjs"
 
 class FakeAudio extends EventTarget {
   constructor() {

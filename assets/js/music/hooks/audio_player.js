@@ -1,4 +1,4 @@
-import {connectTrackRows} from "../audio_track_list.js"
+import {connectTrackRows} from "./audio_player/track_list.js"
 
 const positiveId = value => {
   if (!/^[1-9]\d*$/.test(value || "")) return null

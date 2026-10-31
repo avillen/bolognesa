@@ -38,3 +38,25 @@ test("bootstrap initializes an authenticated host once and reuses its audio sess
 test("bootstrap returns null when the public page has no authenticated host", () => {
   assert.equal(initializeMusicPlayer({querySelector: () => null}, {}), null)
 })
+
+test("publishes selected track metadata and clears it with the playback owner", async () => {
+  const host = new Node(), audio = new Node(), player = new Node()
+  host.nodes = {"#music-playback": audio, "#music-player": player, "#now-playing": new Node(), "[data-player-artist]": new Node(), "#audio-error": new Node(), "[data-player-loading]": new Node(), "#music-player-seek": new Node(), "#queue-position": new Node(), "#queue-finished": new Node(), "[data-player-time]": new Node()}
+  for (const action of ["toggle", "seek", "previous", "next", "retry", "expand", "collapse"]) host.nodes[`[data-player-action="${action}"]`] = new Node()
+  player.nodes = host.nodes
+  const mediaSession = {metadata: null}
+  const document = {body: new Node(), addEventListener() {}, removeEventListener() {}, querySelector: () => host, createElement: () => new Node(), defaultView: {navigator: {mediaSession}, MediaMetadata: class { constructor(data) { Object.assign(this, data) } }, addEventListener() {}, removeEventListener() {}}}
+  player.ownerDocument = host.ownerDocument = document
+  const transport = {selectTrack: async ({trackId}) => ({track: {id: trackId, file_id: 1, title: `Track ${trackId}`, artist: "Artist", album: "Album"}, src: "/audio"})}
+  const instance = initializeMusicPlayer(document, {transport})
+  await instance.session.selectTrack({trackId: 1, fileId: 1})
+  assert.equal(mediaSession.metadata?.title, "Track 1")
+  assert.equal(mediaSession.metadata.artist, "Artist")
+  assert.equal(mediaSession.metadata.album, "Album")
+  assert.deepEqual(mediaSession.metadata.artwork, [{src: "/images/bolognesa-cat.svg", type: "image/svg+xml"}])
+  await instance.session.selectTrack({trackId: 2, fileId: 1})
+  assert.equal(mediaSession.metadata.title, "Track 2")
+  instance.session.clear()
+  assert.equal(mediaSession.metadata, null)
+  instance.destroy()
+})

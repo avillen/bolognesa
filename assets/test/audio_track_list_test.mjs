@@ -1,7 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import {readFile} from "node:fs/promises"
-const code = await readFile(new URL("../js/music/audio_track_list.js", import.meta.url), "utf8")
+const code = await readFile(new URL("../js/music/hooks/audio_player/track_list.js", import.meta.url), "utf8")
 const {syncTrackRows} = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`)
 
 test("streamed row indicators match track and file identity from the shared session", () => {

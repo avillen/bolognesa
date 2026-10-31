@@ -1,9 +1,9 @@
 import {createPlayer, videoFeatures, timeFeature, bufferFeature} from "../../../vendor/videojs.min.mjs"
-import {fileTimeFeature, fileBufferFeature} from "../timeline.mjs"
-import {createPlaybackDiagnostics} from "../playback_diagnostics.mjs"
-import {createPlaybackRecovery} from "../playback_recovery.mjs"
-import VideoError from "./video_error"
-import TranscodeVideo from "./transcode_video"
+import {fileTimeFeature, fileBufferFeature} from "./video_player/timeline.mjs"
+import {createPlaybackDiagnostics} from "./video_player/playback_diagnostics.mjs"
+import {createPlaybackRecovery} from "./video_player/playback_recovery.mjs"
+import VideoError from "./video_player/video_error"
+import TranscodeVideo from "./video_player/transcode_video"
 
 const {PlayerElement} = createPlayer({features: videoFeatures.map(feature => {
   if (feature === timeFeature) return fileTimeFeature(feature)

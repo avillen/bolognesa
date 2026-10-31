@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {fileTimeFeature, fileBufferFeature} from "../js/video/timeline.mjs"
+import {fileTimeFeature, fileBufferFeature} from "../js/video/hooks/video_player/timeline.mjs"
 
 // The native feature boundary supplies browser time; our adapter must publish file time.
 const nativeTime = {
