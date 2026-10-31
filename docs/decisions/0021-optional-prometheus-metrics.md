@@ -1,6 +1,6 @@
 # 0021. Optional Prometheus metrics with PromEx and Alloy
 
-Status: Implemented; ARM64 deployment and Grafana Cloud remote-write acceptance verified. Representative workload budgets remain unmeasured.
+Status: Implemented; ARM64 deployment and Grafana Cloud remote-write acceptance verified. Representative workload budgets remain unmeasured. Dashboard publication superseded by [0026](0026-dashboard-as-code-publication.md).
 
 ## Context
 

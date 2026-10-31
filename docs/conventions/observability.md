@@ -54,8 +54,9 @@ Events.emit(:libraries, :scan, :completed,
   tab, path, query, URL, and raw exception data out of labels; use route templates for HTTP metrics.
 - Keep external export opt-in and credential-protected. Exported operational counters and
   histograms remain unlabelled; richer bounded local labels do not automatically belong in export.
-- Update generated dashboards when metric contracts change. Distinguish missing data from zero
-  and interpret percentiles and scrape-based counts as estimates, especially with few samples.
+- Update generated dashboards when metric contracts change and publish them deliberately; the
+  application never holds Grafana credentials. Distinguish missing data from zero and interpret
+  percentiles and scrape-based counts as estimates, especially with few samples.
 - Monitoring failures must not break business workflows. Keep collectors and their privileges
   separate from the application; follow the [monitoring guide](../../deploy/compose/monitoring.md#optional-docker-resources-on-native-linux) for optional Docker collection.
 
