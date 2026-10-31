@@ -275,6 +275,7 @@
 .music-action-menu[open] { z-index: 5; }
 .music-action-menu > button, .app-content .music-action-menu > button { display: flex; justify-content: flex-start; gap: 8px; width: 260px; max-width: calc(100vw - 32px); height: 44px; padding: 0 12px; border: 0; border-radius: 0; background: var(--color-raised); color: var(--color-ink); font-size: 13px; }
 .music-action-menu > button:hover { background: var(--color-border); }
+.music-player .music-action-menu > button:hover:not(:disabled) { background: color-mix(in srgb, var(--color-border-strong) 35%, var(--color-raised)); }
 .music-action-menu[open] > button { position: relative; }
 .music-track-row .music-action-menu[open], .music-up-next .music-action-menu[open] { isolation: isolate; }
 .music-action-menu[open] > button { position: absolute; right: 0; top: 44px; }
