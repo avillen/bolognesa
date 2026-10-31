@@ -58,11 +58,13 @@ for report interpretation, a short smoke check, and the separate target-server b
 This tool observes paused polling; it does not require that polling to remain present.
 
 `bash scripts/screenshots/run-readme-screenshots.sh --verify-fullscreen` seeds two
-synthetic episodes in an isolated database and checks automatic continuation and the
-next-episode link through the real LiveView. It asserts fullscreen, video identity,
-and continuous connection of the player's ancestors. The hook-only browser fixture
-does not exercise DOM changes made by LiveView. This check uses the screenshot
-workflow's Docker and browser dependencies and does not update README captures.
+synthetic episodes in an isolated database and checks automatic continuation, the
+next-episode link, and a browser-error conversion attempt through the real LiveView.
+It asserts fullscreen, video identity, and continuous connection of the player's
+ancestors. The hook-only browser fixture does not exercise DOM changes made by LiveView.
+This check uses the screenshot workflow's Docker and browser dependencies and does not
+update README captures. When FFmpeg is unavailable, the conversion attempt verifies
+fullscreen through the visible preparation failure instead of a ready HLS session.
 
 Generate disposable fixtures with FFmpeg, then use an installed Chrome with H.264 support:
 

@@ -22,7 +22,7 @@ try {
   }})
   assert.ok(login.ok(), "Synthetic account login succeeds")
 
-  for (const navigation of ["automatic", "next link"]) {
+  for (const navigation of ["automatic", "next link", "conversion attempt"]) {
     await page.goto(`${baseUrl}/episodes/${ids.episode}`)
     await page.waitForFunction(() => document.querySelector("video-skin"))
     await page.evaluate(() => {
@@ -43,17 +43,26 @@ try {
     })
     await page.locator("media-fullscreen-button").click()
     await page.waitForFunction(() => !!document.fullscreenElement)
-    if (navigation === "automatic") {
+    if (navigation === "conversion attempt") {
+      // Force the production direct-error handler to enter HLS preparation.
+      await page.locator("video").evaluate(video => video.dispatchEvent(new Event("error")))
+      await page.waitForFunction(() => {
+        const frame = document.querySelector("#episode-video-frame")
+        return frame?.dataset.sessionId || frame?.dataset.playbackError
+      })
+    } else if (navigation === "automatic") {
       // Deliver the native event to the production hook and let the server find the next episode.
       await page.locator("video").evaluate(video => video.dispatchEvent(new Event("ended")))
     } else {
       // The link is outside fullscreen; invoke its real click handler without leaving fullscreen.
       await page.locator("#episode-next").evaluate(link => link.click())
     }
-    await page.waitForURL(`${baseUrl}/episodes/${ids.next_episode}`)
-    await page.waitForFunction(id =>
-      document.querySelector("#episode-video-frame")?.dataset.src?.includes(`/episodes/${id}/`),
-    ids.next_episode)
+    if (navigation !== "conversion attempt") {
+      await page.waitForURL(`${baseUrl}/episodes/${ids.next_episode}`)
+      await page.waitForFunction(id =>
+        document.querySelector("#episode-video-frame")?.dataset.src?.includes(`/episodes/${id}/`),
+      ids.next_episode)
+    }
     const result = await page.evaluate(async () => {
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
       const {video, skin, removed, observer} = window.fullscreenRegression
