@@ -1710,11 +1710,6 @@ msgstr "Library options"
 msgid "Opciones de reproducción"
 msgstr "Playback options"
 
-#: lib/bolognesa_web/components/player.ex:38
-#, elixir-autogen, elixir-format
-msgid "Preparando versión compatible…"
-msgstr "Preparing compatible version…"
-
 #: lib/bolognesa_web/components/player.ex:88
 #, elixir-autogen, elixir-format
 msgid "Reintentar reproducción"
