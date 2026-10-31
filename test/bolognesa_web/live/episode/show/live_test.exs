@@ -357,6 +357,35 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     assert has_element?(view, "#episode-playback-error")
     refute has_element?(view, "#episode-unavailable")
     assert has_element?(view, "#episode-retry-playback[phx-value-file_id='#{ctx.media_file.id}']")
+
+    assert has_element?(
+             view,
+             "#episode-video-frame[phx-hook='VideoPlayer'][data-playback-error][data-retry-file-id='#{ctx.media_file.id}']"
+           )
+  end
+
+  test "a preparation error after episode navigation retains the player frame", ctx do
+    next_file = add_playable_file(ctx, "unavailable-next.mp4")
+
+    next_episode =
+      Bolognesa.SeriesFixtures.identify(next_file, 1, [1])
+      |> Map.fetch!(:episode_ids)
+      |> hd()
+
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    assert has_element?(view, "#episode-video-frame")
+
+    File.rm!(Path.join(ctx.directory, next_file.relative_path))
+    render_patch(view, "/episodes/#{next_episode}")
+    render_async(view)
+
+    assert has_element?(
+             view,
+             "#episode-video-frame[phx-hook='VideoPlayer'][data-playback-error][data-retry-file-id='#{next_file.id}']"
+           )
+
+    refute has_element?(view, "#episode-video-frame[data-src]")
   end
 
   test "finishing transcode playback advances and releases the session", ctx do
