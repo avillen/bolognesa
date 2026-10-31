@@ -209,6 +209,16 @@
           title={gettext("Reproducir a continuación")}
         ><.icon name="hero-forward-solid" class="size-5" /></button>
         <button
+          :if={@browse_kind == :album && track.state == :ready}
+          type="button"
+          data-music-action="track-only"
+          data-track-id={track.track_id}
+          data-file-id={track.id}
+          class="music-track-queue"
+          aria-label={gettext("Reproducir solo %{title}", title: track.title)}
+          title={gettext("Reproducir solo esta canción")}
+        ><.icon name="hero-play-solid" class="size-5" /></button>
+        <button
           :if={track.state == :ready}
           type="button"
           data-music-action="append-track"
@@ -225,6 +235,8 @@
           data-music-action="track"
           data-track-id={track.track_id}
           data-file-id={track.id}
+          data-album-id={@browse_kind == :album && @album_id}
+          data-library-id={@browse_kind == :album && @active_library_id}
           class="music-track-play"
           aria-label={gettext("Reproducir %{title}", title: track.title)}
           data-play-label={gettext("Reproducir %{title}", title: track.title)}

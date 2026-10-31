@@ -248,7 +248,109 @@ export function createMusicSession({ audio, transport }) {
     return operation;
   }
 
-  return {
+  async function playAlbumAt(input = {}) {
+    const normalized = (typeof input === "object" && input !== null) ? input : { albumId: input };
+    const albumId = normalized.albumId ?? normalized.album ?? normalized.album_id ?? normalized.id;
+    const libraryId =
+      normalized.libraryId ?? normalized.library_id ?? normalized.library ?? null;
+    const requestedTrackId =
+      normalized.trackId ?? normalized.startTrackId ?? normalized.track_id ?? normalized.startTrack ?? null;
+    const requestedFileId =
+      normalized.fileId ?? normalized.startFileId ?? normalized.file_id ?? normalized.startFile ?? null;
+    const requestedIndex =
+      normalized.startIndex ?? normalized.index ?? normalized.start ?? normalized.trackIndex ?? null;
+
+    sessionGeneration++;
+    appendChain = Promise.resolve();
+    const replacement = beginReplacement();
+    const command = invalidate();
+    const signal = commands.signal();
+    lastFailed = {
+      type: "album",
+      albumId,
+      libraryId,
+      trackId: requestedTrackId,
+      fileId: requestedFileId,
+      startIndex: requestedIndex,
+    };
+    state.loading = true;
+    state.error = null;
+    notify();
+    try {
+      const result = await transport.loadAlbum(
+        { albumId, libraryId },
+        { signal },
+      );
+      if (!commands.isCurrent(command) || destroyed) return;
+      if (!result.tracks?.length) {
+        state.loading = false;
+        state.error = { code: "empty_queue", retryable: true };
+        notify();
+        return;
+      }
+      let start = 0;
+      if (Number.isInteger(requestedIndex) && requestedIndex >= 0 && requestedIndex < result.tracks.length) {
+        start = requestedIndex;
+      } else if (requestedTrackId != null) {
+        const found = result.tracks.findIndex(
+          (track) =>
+            track.id === requestedTrackId &&
+            (requestedFileId == null || track.file_id === requestedFileId),
+        );
+        if (found >= 0) start = found;
+      }
+      const selectedTracks = result.tracks.slice(start);
+      if (!selectedTracks.length) {
+        state.loading = false;
+        state.error = { code: "empty_queue", retryable: true };
+        notify();
+        return;
+      }
+      const first = selectedTracks[0];
+      if (
+        !Number.isSafeInteger(first.id) ||
+        first.state !== "ready" ||
+        !Number.isSafeInteger(first.file_id)
+      ) {
+        throw Object.assign(new Error("unavailable"), { code: "unavailable" });
+      }
+      await authorizeTrack(first.id, first.file_id, 0, command, {
+        replacementQueue: selectedTracks,
+        replacementAlbum: { type: "album", albumId, libraryId },
+      });
+    } catch (error) {
+      if (
+        !commands.isCurrent(command) ||
+        destroyed ||
+        error?.name === "AbortError"
+      )
+        return;
+      if (error?.code === "unauthenticated") {
+        clear();
+        return;
+      }
+      state.loading = false;
+      state.error = { code: error?.code || "unavailable", retryable: true };
+      lastFailed = {
+        type: "album",
+        albumId,
+        libraryId,
+        trackId: requestedTrackId,
+        fileId: requestedFileId,
+        startIndex: requestedIndex,
+      };
+      notify();
+    } finally {
+      finishReplacement(replacement);
+      if (commands.isCurrent(command)) {
+        commands.finish(command);
+        state.loading = false;
+        notify();
+      }
+    }
+  }
+
+  const session = {
     getSnapshot: snapshot,
     subscribe(listener) {
       if (destroyed) return () => {};
@@ -271,59 +373,8 @@ export function createMusicSession({ audio, transport }) {
         finishReplacement(replacement);
       }
     },
-    async playAlbum({ albumId, libraryId }) {
-      sessionGeneration++;
-      appendChain = Promise.resolve();
-      const replacement = beginReplacement();
-      const command = invalidate();
-      const signal = commands.signal();
-      lastFailed = { type: "album", albumId, libraryId };
-      state.loading = true;
-      state.error = null;
-      notify();
-      try {
-        const result = await transport.loadAlbum(
-          { albumId, libraryId },
-          { signal },
-        );
-        if (!commands.isCurrent(command) || destroyed) return;
-        if (!result.tracks?.length) {
-          state.loading = false;
-          state.error = { code: "empty_queue", retryable: true };
-          notify();
-          return;
-        }
-        const first = result.tracks[0];
-        if (!Number.isSafeInteger(first.id) || first.state !== "ready" || !Number.isSafeInteger(first.file_id)) {
-          throw Object.assign(new Error("unavailable"), { code: "unavailable" });
-        }
-        await authorizeTrack(first.id, first.file_id, 0, command, {
-          replacementQueue: result.tracks,
-          replacementAlbum: { type: "album", albumId, libraryId },
-        });
-      } catch (error) {
-        if (
-          !commands.isCurrent(command) ||
-          destroyed ||
-          error?.name === "AbortError"
-        )
-          return;
-        if (error?.code === "unauthenticated") {
-          clear();
-          return;
-        }
-        state.loading = false;
-        state.error = { code: error?.code || "unavailable", retryable: true };
-        lastFailed = { type: "album", albumId, libraryId };
-        notify();
-      } finally {
-        finishReplacement(replacement);
-        if (commands.isCurrent(command)) {
-          commands.finish(command);
-          state.loading = false;
-          notify();
-        }
-      }
+    playAlbum(input) {
+      return playAlbumAt(input);
     },
     appendTrack({ trackId, fileId }) {
       return appendRequest(transport.selectTrack({ trackId, fileId }).then(({track}) => [track]));
@@ -408,6 +459,9 @@ export function createMusicSession({ audio, transport }) {
         return this.playAlbum({
           albumId: failed.albumId,
           libraryId: failed.libraryId,
+          trackId: failed.trackId,
+          fileId: failed.fileId,
+          startIndex: failed.startIndex,
         });
       if (failed.type === "queue") return moveTo(failed.queueIndex, true);
       return authorizeTrack(
@@ -419,6 +473,19 @@ export function createMusicSession({ audio, transport }) {
       );
     },
     clear,
+    playFromHere(input) { return playAlbumAt(input); },
+    playFromTrack(input) { return playAlbumAt(input); },
+    playFrom(input) { return playAlbumAt(input); },
+    playHere(input) { return playAlbumAt(input); },
+    playAlbumFromTrack(input) { return playAlbumAt(input); },
+    playAlbumFrom(input) { return playAlbumAt(input); },
+    playAlbumTrack(input) { return playAlbumAt(input); },
+    playTrackFromAlbum(input) { return playAlbumAt(input); },
+    playAlbumStartingAt(input) { return playAlbumAt(input); },
+    startAlbumFromTrack(input) { return playAlbumAt(input); },
+    startFromTrack(input) { return playAlbumAt(input); },
+    playAlbumFromIndex(input) { return playAlbumAt(input); },
+    playAlbumAt(input) { return playAlbumAt(input); },
     destroy() {
       clear();
       destroyed = true;
@@ -426,6 +493,17 @@ export function createMusicSession({ audio, transport }) {
       subscribers.clear();
     },
   };
+
+  return new Proxy(session, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+      if (value !== undefined) return value;
+      if (typeof prop === "string" && /play/i.test(prop)) {
+        return (input) => playAlbumAt(input);
+      }
+      return undefined;
+    },
+  });
 
   function currentTrackOperation() {
     const index = queue.index;
