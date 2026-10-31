@@ -283,6 +283,14 @@ export function createMusicSession({ audio, transport }) {
     appendAlbum({ albumId, libraryId }) {
       return appendRequest(transport.loadAlbum({ albumId, libraryId }).then(({tracks}) => tracks));
     },
+    removeUpcoming(entryId) {
+      if (queue.removeUpcoming(entryId)) notify();
+    },
+    clearUpcoming() {
+      sessionGeneration++;
+      appendChain = Promise.resolve();
+      if (queue.clearUpcoming()) notify();
+    },
     next() {
       const index = queue.nextIndex();
       if (index !== null) return moveTo(index);

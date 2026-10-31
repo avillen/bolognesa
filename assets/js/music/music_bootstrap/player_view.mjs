@@ -66,7 +66,8 @@ export function connectMusicPlayerView(host, session) {
     host.querySelector('[data-player-action="collapse"]')?.focus()
   }
   const onClick = event => {
-    const action = event.target.closest?.("[data-player-action]")?.dataset.playerAction
+    const button = event.target.closest?.("[data-player-action]")
+    const action = button?.dataset.playerAction
     if (action === "previous") session.previous()
     if (action === "next") session.next()
     if (action === "toggle") session.getSnapshot().paused ? session.play() : session.pause()
@@ -74,6 +75,11 @@ export function connectMusicPlayerView(host, session) {
     if (action === "expand") expand()
     if (action === "collapse") collapse(true)
     if (action === "queue") setQueueOpen(!queueOpen)
+    if (action === "remove-upcoming") {
+      session.removeUpcoming(Number(button.dataset.entryId))
+      queueButton?.focus()
+    }
+    if (action === "clear-upcoming") session.clearUpcoming()
   }
   const onInput = event => { if (event.target === seek) session.seek(Number(seek.value)) }
   const onKeydown = event => {

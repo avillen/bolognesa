@@ -93,12 +93,14 @@ defmodule BolognesaWeb.MusicPlayer do
           id="music-up-next"
           class="music-up-next"
           data-no-current={gettext("Nada en reproducción")}
+          data-remove-label={gettext("Quitar de la cola")}
           hidden
           aria-label={gettext("Cola de reproducción")}
         >
           <h2>{gettext("Sonando")}</h2>
           <p data-queue-current></p>
           <h3>{gettext("A continuación")}</h3>
+          <button type="button" data-player-action="clear-upcoming">{gettext("Vaciar cola")}</button>
           <p data-queue-empty>{gettext("No hay canciones en espera")}</p>
           <ol data-queue-list></ol>
         </section>

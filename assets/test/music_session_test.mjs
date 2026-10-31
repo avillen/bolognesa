@@ -233,3 +233,42 @@ test("albums appended in request order continue after the current album", async 
   audio.dispatchEvent(new Event("ended"))
   assert.equal(session.getSnapshot().finished, true)
 })
+
+test("removing one upcoming duplicate and clearing upcoming preserve paused playback", async () => {
+  const audio = new FakeAudio()
+  const session = createMusicSession({audio, transport: {
+    async selectTrack({trackId, fileId}) { return {track: {id: trackId, file_id: fileId, title: "Track", state: "ready"}, src: `/music/tracks/${trackId}/media/${fileId}`} },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  await session.appendTrack({trackId: 2, fileId: 12})
+  await session.appendTrack({trackId: 2, fileId: 12})
+  audio.currentTime = 7
+  audio.pause()
+  const before = session.getSnapshot()
+  session.removeUpcoming(before.queue[1].entry_id)
+  assert.deepEqual(session.getSnapshot().queue.map(track => track.entry_id), [before.queue[0].entry_id, before.queue[2].entry_id])
+  session.removeUpcoming(before.queue[0].entry_id)
+  assert.equal(session.getSnapshot().queue.length, 2)
+  session.clearUpcoming()
+  assert.equal(session.getSnapshot().queue.length, 1)
+  assert.equal(audio.src, "/music/tracks/1/media/11")
+  assert.equal(audio.currentTime, 7)
+  assert.equal(audio.paused, true)
+})
+
+test("clearing upcoming ignores an earlier pending append", async () => {
+  const audio = new FakeAudio()
+  let finishAppend
+  const session = createMusicSession({audio, transport: {
+    selectTrack({trackId, fileId}) {
+      if (trackId === 2) return new Promise(resolve => { finishAppend = resolve })
+      return Promise.resolve({track: {id: trackId, file_id: fileId, title: "Track", state: "ready"}, src: `/music/tracks/${trackId}/media/${fileId}`})
+    },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  const pending = session.appendTrack({trackId: 2, fileId: 12})
+  session.clearUpcoming()
+  finishAppend({track: {id: 2, file_id: 12, title: "Track", state: "ready"}, src: "/music/tracks/2/media/12"})
+  assert.equal(await pending, false)
+  assert.deepEqual(session.getSnapshot().queue, [])
+})

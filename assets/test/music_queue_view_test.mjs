@@ -15,15 +15,16 @@ test("a pending queue without a current track shows every entry", () => {
 test("rendering shows the current track and upcoming album without interpreting titles as HTML", async () => {
   const {renderQueue} = await import("../js/music/music_bootstrap/queue_view.mjs")
   class Element {
-    constructor() { this.children = []; this.textContent = ""; this.hidden = false }
+    constructor() { this.children = []; this.textContent = ""; this.hidden = false; this.dataset = {} }
     append(child) { this.children.push(child) }
     replaceChildren(...children) { this.children = children }
+    setAttribute(name, value) { this[name] = value }
   }
   const current = new Element(), list = new Element(), empty = new Element()
-  const panel = {dataset: {noCurrent: "Nothing playing"}, ownerDocument: {createElement: () => new Element()}, querySelector: selector => ({"[data-queue-current]": current, "[data-queue-list]": list, "[data-queue-empty]": empty})[selector]}
+  const panel = {dataset: {noCurrent: "Nothing playing", removeLabel: "Remove"}, ownerDocument: {createElement: () => new Element()}, querySelector: selector => ({"[data-queue-current]": current, "[data-queue-list]": list, "[data-queue-empty]": empty})[selector]}
   renderQueue(panel, {selected: {title: "Current"}, queueIndex: 0, queue: [{title: "Current"}, {title: "<script>", album: "Album", artist: "Artist"}]})
   assert.equal(current.textContent, "Current")
   assert.equal(list.children[0].children[0].textContent, "Album · Artist")
-  assert.equal(list.children[0].children[1].children[0].textContent, "<script>")
+  assert.equal(list.children[0].children[1].children[0].children[0].textContent, "<script>")
   assert.equal(empty.hidden, true)
 })

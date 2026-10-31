@@ -30,6 +30,17 @@ export function createMusicQueue() {
     append(track) {
       tracks.push(entry(track));
     },
+    removeUpcoming(entryId) {
+      const position = tracks.findIndex((track) => track.entry_id === entryId);
+      if (position <= index || position < 0) return false;
+      tracks.splice(position, 1);
+      return true;
+    },
+    clearUpcoming() {
+      if (index + 1 >= tracks.length) return false;
+      tracks.splice(index + 1);
+      return true;
+    },
     clear() {
       tracks = [];
       index = -1;
