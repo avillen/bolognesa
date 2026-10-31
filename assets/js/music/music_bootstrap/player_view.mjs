@@ -80,6 +80,16 @@ export function connectMusicPlayerView(host, session) {
       queueButton?.focus()
     }
     if (action === "clear-upcoming") session.clearUpcoming()
+    if (action === "move-up" || action === "move-down") {
+      const entryId = Number(button.dataset.entryId)
+      if (!Number.isSafeInteger(entryId)) return
+      session.moveUpcoming(entryId, action === "move-up" ? -1 : 1)
+      const selector = `[data-entry-id="${entryId}"]`
+      const moved = queuePanel?.querySelector(`${selector}[data-player-action="${action}"]:not(:disabled)`)
+        || queuePanel?.querySelector(`${selector}[data-player-action="${action === "move-up" ? "move-down" : "move-up"}"]:not(:disabled)`)
+      const focusTarget = moved || queueButton
+      focusTarget?.focus()
+    }
   }
   const onInput = event => { if (event.target === seek) session.seek(Number(seek.value)) }
   const onKeydown = event => {

@@ -94,6 +94,8 @@ defmodule BolognesaWeb.MusicPlayer do
           class="music-up-next"
           data-no-current={gettext("Nada en reproducción")}
           data-remove-label={gettext("Quitar de la cola")}
+          data-up-label={gettext("Subir")}
+          data-down-label={gettext("Bajar")}
           hidden
           aria-label={gettext("Cola de reproducción")}
         >

@@ -41,6 +41,13 @@ export function createMusicQueue() {
       tracks.splice(index + 1);
       return true;
     },
+    moveUpcoming(entryId, direction) {
+      const position = tracks.findIndex((track) => track.entry_id === entryId);
+      const target = position + direction;
+      if (![1, -1].includes(direction) || position <= index || target <= index || target >= tracks.length || position < 0) return false;
+      [tracks[position], tracks[target]] = [tracks[target], tracks[position]];
+      return true;
+    },
     clear() {
       tracks = [];
       index = -1;

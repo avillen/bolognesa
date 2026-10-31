@@ -230,6 +230,7 @@
 .music-up-next h4 { margin-top: 14px; color: var(--color-muted); font-size: 12px; font-weight: 700; }
 .music-up-next li li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-block: 6px; overflow-wrap: anywhere; }
 .music-up-next li li span { min-width: 0; }
+.music-up-next li li > div { display: flex; flex-wrap: wrap; justify-content: end; }
 .music-up-next li li button { flex: none; }
 .music-up-next [data-queue-empty] { color: var(--color-muted); }
 @media (min-width: 641px) {

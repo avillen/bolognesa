@@ -291,6 +291,9 @@ export function createMusicSession({ audio, transport }) {
       appendChain = Promise.resolve();
       if (queue.clearUpcoming()) notify();
     },
+    moveUpcoming(entryId, direction) {
+      if (queue.moveUpcoming(entryId, direction)) notify();
+    },
     next() {
       const index = queue.nextIndex();
       if (index !== null) return moveTo(index);

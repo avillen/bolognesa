@@ -272,3 +272,22 @@ test("clearing upcoming ignores an earlier pending append", async () => {
   assert.equal(await pending, false)
   assert.deepEqual(session.getSnapshot().queue, [])
 })
+
+test("moving upcoming duplicates changes only their order", async () => {
+  const audio = new FakeAudio()
+  const session = createMusicSession({audio, transport: {
+    async selectTrack({trackId, fileId}) { return {track: {id: trackId, file_id: fileId, title: "Track", state: "ready"}, src: `/music/tracks/${trackId}/media/${fileId}`} },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  await session.appendTrack({trackId: 2, fileId: 12})
+  await session.appendTrack({trackId: 2, fileId: 12})
+  const before = session.getSnapshot()
+  audio.currentTime = 5
+  session.moveUpcoming(before.queue[2].entry_id, -1)
+  assert.deepEqual(session.getSnapshot().queue.map(track => track.entry_id), [before.queue[0].entry_id, before.queue[2].entry_id, before.queue[1].entry_id])
+  session.moveUpcoming(before.queue[2].entry_id, -1)
+  session.moveUpcoming(before.queue[0].entry_id, 1)
+  assert.deepEqual(session.getSnapshot().queue.map(track => track.entry_id), [before.queue[0].entry_id, before.queue[2].entry_id, before.queue[1].entry_id])
+  assert.equal(audio.src, "/music/tracks/1/media/11")
+  assert.equal(audio.currentTime, 5)
+})

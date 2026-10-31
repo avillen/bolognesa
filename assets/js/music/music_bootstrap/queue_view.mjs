@@ -18,9 +18,11 @@ export function renderQueue(panel, state) {
   const empty = panel.querySelector("[data-queue-empty]")
   current.textContent = state.selected?.title || panel.dataset.noCurrent
   const groups = queueGroups(state)
+  const upcoming = groups.flatMap(group => group.tracks)
   empty.hidden = groups.length > 0
   const clear = panel.querySelector('[data-player-action="clear-upcoming"]')
   if (clear) clear.disabled = groups.length === 0
+  let position = 0
   const sections = groups.map(group => {
     const section = document.createElement("li")
     if (group.album) {
@@ -33,6 +35,18 @@ export function renderQueue(panel, state) {
       const item = document.createElement("li")
       const title = document.createElement("span")
       title.textContent = track.title || ""
+      const actions = document.createElement("div")
+      for (const [action, label, disabled] of [["move-up", panel.dataset.upLabel, position === 0], ["move-down", panel.dataset.downLabel, position === upcoming.length - 1]]) {
+        const button = document.createElement("button")
+        button.type = "button"
+        button.dataset.playerAction = action
+        button.dataset.entryId = String(track.entry_id)
+        button.textContent = action === "move-up" ? "↑" : "↓"
+        button.title = label
+        button.disabled = disabled
+        button.setAttribute("aria-label", `${label}: ${track.title || ""}`)
+        actions.append(button)
+      }
       const remove = document.createElement("button")
       remove.type = "button"
       remove.dataset.playerAction = "remove-upcoming"
@@ -40,8 +54,10 @@ export function renderQueue(panel, state) {
       remove.textContent = panel.dataset.removeLabel
       remove.setAttribute("aria-label", `${panel.dataset.removeLabel}: ${track.title || ""}`)
       item.append(title)
-      item.append(remove)
+      actions.append(remove)
+      item.append(actions)
       tracks.append(item)
+      position++
     }
     section.append(tracks)
     return section
