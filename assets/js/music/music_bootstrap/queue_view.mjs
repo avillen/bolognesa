@@ -51,7 +51,11 @@ export function renderQueue(panel, state) {
       remove.type = "button"
       remove.dataset.playerAction = "remove-upcoming"
       remove.dataset.entryId = String(track.entry_id)
-      remove.textContent = panel.dataset.removeLabel
+      const icon = document.createElement("span")
+      icon.className = "hero-x-mark size-4"
+      icon.setAttribute("aria-hidden", "true")
+      remove.append(icon)
+      remove.title = panel.dataset.removeLabel
       remove.setAttribute("aria-label", `${panel.dataset.removeLabel}: ${track.title || ""}`)
       item.append(title)
       actions.append(remove)

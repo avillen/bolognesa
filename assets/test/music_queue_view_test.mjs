@@ -26,5 +26,8 @@ test("rendering shows the current track and upcoming album without interpreting 
   assert.equal(current.textContent, "Current")
   assert.equal(list.children[0].children[0].textContent, "Album · Artist")
   assert.equal(list.children[0].children[1].children[0].children[0].textContent, "<script>")
+  const removeButton = list.children[0].children[1].children[0].children[1].children[2]
+  assert.equal(removeButton.title, "Remove")
+  assert.equal(removeButton.children[0].className, "hero-x-mark size-4")
   assert.equal(empty.hidden, true)
 })
