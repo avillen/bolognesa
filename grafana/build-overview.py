@@ -44,6 +44,18 @@ def docker(name):
     return f'{name}{{{DOCKER_SCOPE}}}'
 
 
+LIMIT_OVERRIDES = [
+    {
+        'matcher': {'id': 'byRegexp', 'options': '.* · limit'},
+        'properties': [
+            {'id': 'custom.lineStyle', 'value': {'fill': 'dash', 'dash': [10, 10]}},
+            {'id': 'custom.fillOpacity', 'value': 0},
+            {'id': 'color', 'value': {'mode': 'fixed', 'fixedColor': '#8a8a8a'}},
+        ],
+    }
+]
+
+
 ROWS = [
     {
         'title': 'BEAM · runtime resources',
@@ -123,16 +135,16 @@ ROWS = [
                 'description': 'One unit is one CPU core. Includes FFmpeg subprocesses in the app container.',
             },
             {
-                'title': 'Memory · working set', 'unit': 'bytes',
-                'queries': [(f'sum by (service) ({docker("container_memory_working_set_bytes")})', '{{service}}')],
+                'title': 'Memory · usage vs limit', 'unit': 'bytes', 'width': 12,
+                'queries': [
+                    (f'sum by (service) ({docker("container_memory_working_set_bytes")})', '{{service}} · usage'),
+                    (f'max by (service) ({docker("container_spec_memory_limit_bytes")})', '{{service}} · limit'),
+                ],
+                'description': 'Working set is current usage summed by service; the dashed line is the configured container limit. Unlimited containers can report the host limit. Limits are per container, so replicas would make the sum and max incomparable.',
+                'overrides': LIMIT_OVERRIDES,
             },
             {
-                'title': 'Memory · configured limit', 'unit': 'bytes',
-                'queries': [(f'max by (service) ({docker("container_spec_memory_limit_bytes")})', '{{service}}')],
-                'description': 'An unlimited container can report the host memory limit.',
-            },
-            {
-                'title': 'Network · receive / transmit', 'unit': 'Bps',
+                'title': 'Network · receive / transmit', 'unit': 'Bps', 'width': 12,
                 'queries': [
                     (f'sum by (service) (rate({docker(metric)}[$__rate_interval]))', f'{{{{service}}}} · {label}')
                     for metric, label in (
@@ -185,7 +197,7 @@ class Dashboard:
         self.y += 1
 
     def panel(self, title, queries, unit='short', kind='timeseries',
-              width=None, description='', height=None):
+              width=None, description='', height=None, overrides=None):
         width = width or 8
         height = height or 4
         if self.x + width > 24:
@@ -212,7 +224,7 @@ class Dashboard:
             'id': len(self.panels) + 1, 'type': kind, 'title': title,
             'description': description, 'datasource': DS,
             'gridPos': {'x': self.x, 'y': self.y, 'w': width, 'h': height},
-            'fieldConfig': {'defaults': defaults, 'overrides': []},
+            'fieldConfig': {'defaults': defaults, 'overrides': overrides or []},
             'options': options,
             'targets': [
                 {

@@ -780,8 +780,8 @@
         {
           "id": 15,
           "type": "timeseries",
-          "title": "Memory \u00b7 working set",
-          "description": "",
+          "title": "Memory \u00b7 usage vs limit",
+          "description": "Working set is current usage summed by service; the dashed line is the configured container limit. Unlimited containers can report the host limit. Limits are per container, so replicas would make the sum and max incomparable.",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -789,7 +789,7 @@
           "gridPos": {
             "x": 0,
             "y": 18,
-            "w": 8,
+            "w": 12,
             "h": 4
           },
           "fieldConfig": {
@@ -807,7 +807,37 @@
                 "spanNulls": false
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".* \u00b7 limit"
+                },
+                "properties": [
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        10,
+                        10
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "#8a8a8a"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "options": {
             "legend": {
@@ -826,7 +856,15 @@
             {
               "refId": "Q0",
               "expr": "sum by (service) (container_memory_working_set_bytes{job=\"bolognesa-docker\", instance=\"$instance\"})",
-              "legendFormat": "{{service}}",
+              "legendFormat": "{{service}} \u00b7 usage",
+              "editorMode": "code",
+              "instant": false,
+              "range": true
+            },
+            {
+              "refId": "Q1",
+              "expr": "max by (service) (container_spec_memory_limit_bytes{job=\"bolognesa-docker\", instance=\"$instance\"})",
+              "legendFormat": "{{service}} \u00b7 limit",
               "editorMode": "code",
               "instant": false,
               "range": true
@@ -836,62 +874,6 @@
         {
           "id": 16,
           "type": "timeseries",
-          "title": "Memory \u00b7 configured limit",
-          "description": "An unlimited container can report the host memory limit.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "gridPos": {
-            "x": 8,
-            "y": 18,
-            "w": 8,
-            "h": 4
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "bytes",
-              "noValue": "No data",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "drawStyle": "line",
-                "lineWidth": 1,
-                "fillOpacity": 8,
-                "showPoints": "auto",
-                "spanNulls": false
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "calcs": [
-                "lastNotNull"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "targets": [
-            {
-              "refId": "Q0",
-              "expr": "max by (service) (container_spec_memory_limit_bytes{job=\"bolognesa-docker\", instance=\"$instance\"})",
-              "legendFormat": "{{service}}",
-              "editorMode": "code",
-              "instant": false,
-              "range": true
-            }
-          ]
-        },
-        {
-          "id": 17,
-          "type": "timeseries",
           "title": "Network \u00b7 receive / transmit",
           "description": "Per-container network counters. Host-network containers can share host counters; values must not be summed into a host total.",
           "datasource": {
@@ -899,9 +881,9 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "gridPos": {
-            "x": 16,
+            "x": 12,
             "y": 18,
-            "w": 8,
+            "w": 12,
             "h": 4
           },
           "fieldConfig": {
@@ -954,7 +936,7 @@
           ]
         },
         {
-          "id": 18,
+          "id": 17,
           "type": "timeseries",
           "title": "Block I/O \u00b7 read / write",
           "description": "Block I/O exposed by the runtime; may be absent depending on storage driver. Does not measure media capacity or free space.",
@@ -1018,7 +1000,7 @@
           ]
         },
         {
-          "id": 19,
+          "id": 18,
           "type": "stat",
           "title": "Container starts",
           "description": "Most recent container start timestamp. This is not a durable restart counter.",

@@ -38,6 +38,11 @@ assert [row['collapsed'] for row in rows] == [False, True]
 panels = dashboard['panels'] + [p for row in rows for p in row.get('panels', [])]
 assert len({panel['id'] for panel in panels}) == len(panels)
 
+titles = [panel['title'] for panel in panels]
+assert 'Memory · usage vs limit' in titles
+assert 'Memory · working set' not in titles
+assert 'Memory · configured limit' not in titles
+
 for panel in panels:
     if panel['type'] == 'row':
         continue
@@ -74,6 +79,8 @@ for metric in (
     'bolognesa_prom_ex_beam_stats_gc_count',
     'container_last_seen',
     'container_cpu_usage_seconds_total',
+    'container_memory_working_set_bytes',
+    'container_spec_memory_limit_bytes',
     'up{job="bolognesa-docker"',
 ):
     assert any(metric in query for query in queries), metric
