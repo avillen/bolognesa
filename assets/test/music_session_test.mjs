@@ -291,3 +291,23 @@ test("moving upcoming duplicates changes only their order", async () => {
   assert.equal(audio.src, "/music/tracks/1/media/11")
   assert.equal(audio.currentTime, 5)
 })
+
+test("successive play-next requests remain FIFO even when responses arrive out of order", async () => {
+  const audio = new FakeAudio(), pending = new Map()
+  const track = (id, fileId) => ({track: {id, file_id: fileId, title: `Track ${id}`, state: "ready"}, src: `/music/tracks/${id}/media/${fileId}`})
+  const session = createMusicSession({audio, transport: {
+    selectTrack({trackId, fileId}) {
+      if (trackId < 3) return Promise.resolve(track(trackId, fileId))
+      return new Promise(resolve => pending.set(trackId, () => resolve(track(trackId, fileId))))
+    },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  await session.appendTrack({trackId: 2, fileId: 12})
+  const first = session.playNext({trackId: 3, fileId: 13})
+  const second = session.playNext({trackId: 4, fileId: 14})
+  pending.get(4)(); pending.get(3)()
+  await Promise.all([first, second])
+  assert.deepEqual(session.getSnapshot().queue.map(item => item.id), [1, 3, 4, 2])
+  assert.equal(audio.src, "/music/tracks/1/media/11")
+  assert.equal(audio.playCalls, 1)
+})

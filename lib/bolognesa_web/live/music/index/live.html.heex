@@ -201,6 +201,16 @@
         <button
           :if={track.state == :ready}
           type="button"
+          data-music-action="play-next"
+          data-track-id={track.track_id}
+          data-file-id={track.id}
+          class="music-track-queue"
+          aria-label={gettext("Reproducir %{title} a continuación", title: track.title)}
+          title={gettext("Reproducir a continuación")}
+        ><.icon name="hero-forward-solid" class="size-5" /></button>
+        <button
+          :if={track.state == :ready}
+          type="button"
           data-music-action="append-track"
           data-track-id={track.track_id}
           data-file-id={track.id}

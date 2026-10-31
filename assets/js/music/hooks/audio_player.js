@@ -25,14 +25,15 @@ export default {
         if (current?.id === trackId && current.file_id === fileId) {
           this.session.getSnapshot().paused ? this.session.play() : this.session.pause()
         } else this.session.selectTrack({trackId, fileId})
-      } else if (action === "append-track") {
+      } else if (action === "append-track" || action === "play-next") {
         const trackId = positiveId(button.dataset.trackId)
         const fileId = positiveId(button.dataset.fileId)
         if (!trackId || !fileId) return
         event.preventDefault()
         event.stopImmediatePropagation()
         const feedback = this.el.querySelector("#music-queue-feedback")
-        this.session.appendTrack({trackId, fileId}).then(added => {
+        const operation = action === "play-next" ? this.session.playNext({trackId, fileId}) : this.session.appendTrack({trackId, fileId})
+        operation.then(added => {
           if (added && feedback) feedback.textContent = feedback.dataset.added
         }).catch(() => {
           if (feedback) feedback.textContent = feedback.dataset.failed

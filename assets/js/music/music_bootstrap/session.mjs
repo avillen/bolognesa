@@ -190,7 +190,7 @@ export function createMusicSession({ audio, transport }) {
     });
   }
 
-  function appendRequest(request) {
+  function appendRequest(request, { next = false } = {}) {
     const generation = sessionGeneration;
     const pending = request.then(
       (result) => ({ result }),
@@ -205,7 +205,7 @@ export function createMusicSession({ audio, transport }) {
         queue.replace([state.selected]);
         queue.select(0);
       }
-      result.forEach((track) => queue.append(track));
+      result.forEach((track) => next ? queue.insertNext(track) : queue.append(track));
       notify();
       return true;
     });
@@ -279,6 +279,9 @@ export function createMusicSession({ audio, transport }) {
     },
     appendTrack({ trackId, fileId }) {
       return appendRequest(transport.selectTrack({ trackId, fileId }).then(({track}) => [track]));
+    },
+    playNext({ trackId, fileId }) {
+      return appendRequest(transport.selectTrack({ trackId, fileId }).then(({track}) => [track]), { next: true });
     },
     appendAlbum({ albumId, libraryId }) {
       return appendRequest(transport.loadAlbum({ albumId, libraryId }).then(({tracks}) => tracks));

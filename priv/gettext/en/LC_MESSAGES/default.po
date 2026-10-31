@@ -84,7 +84,7 @@ msgstr "Storage unavailable"
 #: lib/bolognesa_web/live/episode/show/live.html.heex:134
 #: lib/bolognesa_web/live/movie/index/live.html.heex:118
 #: lib/bolognesa_web/live/movie/review/live.html.heex:161
-#: lib/bolognesa_web/live/music/index/live.html.heex:249
+#: lib/bolognesa_web/live/music/index/live.html.heex:259
 #: lib/bolognesa_web/live/series/index/live.html.heex:122
 #: lib/bolognesa_web/live/series/review/live.html.heex:57
 #: lib/bolognesa_web/live/series/season/live.html.heex:135
@@ -902,7 +902,7 @@ msgstr "First visit"
 
 #: lib/bolognesa_web/live/movie/index/live.html.heex:119
 #: lib/bolognesa_web/live/movie/review/live.html.heex:162
-#: lib/bolognesa_web/live/music/index/live.html.heex:250
+#: lib/bolognesa_web/live/music/index/live.html.heex:260
 #: lib/bolognesa_web/live/series/review/live.html.heex:58
 #, elixir-autogen, elixir-format
 msgid "Página %{page}"
@@ -1089,7 +1089,7 @@ msgstr "Signed in as %{email}"
 #: lib/bolognesa_web/live/episode/show/live.html.heex:147
 #: lib/bolognesa_web/live/movie/index/live.html.heex:124
 #: lib/bolognesa_web/live/movie/review/live.html.heex:167
-#: lib/bolognesa_web/live/music/index/live.html.heex:255
+#: lib/bolognesa_web/live/music/index/live.html.heex:265
 #: lib/bolognesa_web/live/series/index/live.html.heex:128
 #: lib/bolognesa_web/live/series/review/live.html.heex:59
 #: lib/bolognesa_web/live/series/season/live.html.heex:142
@@ -1405,7 +1405,7 @@ msgstr "Music could not be loaded. Try again."
 msgid "No se pudo reintentar la importación."
 msgstr "The import could not be retried."
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:242
+#: lib/bolognesa_web/live/music/index/live.html.heex:252
 #, elixir-autogen, elixir-format
 msgid "Paginación de música"
 msgstr "Music pagination"
@@ -1415,18 +1415,18 @@ msgstr "Music pagination"
 msgid "Procesando audio"
 msgstr "Processing audio"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:237
+#: lib/bolognesa_web/live/music/index/live.html.heex:247
 #, elixir-autogen, elixir-format
 msgid "Reanalizar en bibliotecas"
 msgstr "Reinspect in Libraries"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:232
+#: lib/bolognesa_web/live/music/index/live.html.heex:242
 #, elixir-autogen, elixir-format
 msgid "Reintentar importación"
 msgstr "Retry import"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:219
-#: lib/bolognesa_web/live/music/index/live.html.heex:220
+#: lib/bolognesa_web/live/music/index/live.html.heex:229
+#: lib/bolognesa_web/live/music/index/live.html.heex:230
 #: lib/bolognesa_web/live/series/season/live.html.heex:111
 #, elixir-autogen, elixir-format
 msgid "Reproducir %{title}"
@@ -1520,7 +1520,7 @@ msgstr "Your library"
 msgid "En pausa"
 msgstr "Paused"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:221
+#: lib/bolognesa_web/live/music/index/live.html.heex:231
 #, elixir-autogen, elixir-format
 msgid "Pausar %{title}"
 msgstr "Pause %{title}"
@@ -1905,12 +1905,12 @@ msgstr "Preparing playback…"
 msgid "Añadida a la cola"
 msgstr "Added to queue"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:208
+#: lib/bolognesa_web/live/music/index/live.html.heex:218
 #, elixir-autogen, elixir-format
 msgid "Añadir %{title} a la cola"
 msgstr "Add %{title} to queue"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:209
+#: lib/bolognesa_web/live/music/index/live.html.heex:219
 #, elixir-autogen, elixir-format
 msgid "Añadir a la cola"
 msgstr "Add to queue"
@@ -1971,3 +1971,13 @@ msgstr "Move down"
 #, elixir-autogen, elixir-format
 msgid "Subir"
 msgstr "Move up"
+
+#: lib/bolognesa_web/live/music/index/live.html.heex:208
+#, elixir-autogen, elixir-format
+msgid "Reproducir %{title} a continuación"
+msgstr "Play %{title} next"
+
+#: lib/bolognesa_web/live/music/index/live.html.heex:209
+#, elixir-autogen, elixir-format
+msgid "Reproducir a continuación"
+msgstr "Play next"
