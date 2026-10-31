@@ -6,11 +6,11 @@ export function connectMediaSession(window, audio, session) {
   let ownsControls = false
   let selectedKey = null
 
-  function updateActions({queueIndex, queueCount}) {
+  function updateActions({selected, queueIndex, queueCount}) {
     const enabled = {
       play: ownsControls,
       pause: ownsControls,
-      previoustrack: ownsControls && queueIndex > 0,
+      previoustrack: ownsControls && (Boolean(selected) || queueIndex > 0),
       nexttrack: ownsControls && queueIndex >= 0 && queueIndex < queueCount - 1,
     }
     for (const [action, handler] of Object.entries(actions)) {
@@ -28,7 +28,7 @@ export function connectMediaSession(window, audio, session) {
 
   const unsubscribe = session.subscribe(({selected, paused, queueIndex, queueCount}) => {
     if (!mediaSession) return
-    if (ownsControls) updateActions({queueIndex, queueCount})
+    if (ownsControls) updateActions({selected, queueIndex, queueCount})
     if (ownsControls) mediaSession.playbackState = selected ? (paused ? "paused" : "playing") : "none"
     if (!Metadata) return
     const key = selected ? JSON.stringify([selected.id, selected.file_id, selected.title, selected.artist, selected.album]) : null

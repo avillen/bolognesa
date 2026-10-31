@@ -14,6 +14,7 @@ export function createMusicQueue() {
     },
     current: () => copyTrack(tracks[index]),
     at: (position) => copyTrack(tracks[position]),
+    indexOfEntry: (entryId) => tracks.findIndex((track) => track.entry_id === entryId),
     nextIndex: () => (index < tracks.length - 1 ? index + 1 : null),
     previousIndex: () => (index > 0 ? index - 1 : null),
     select(position) {

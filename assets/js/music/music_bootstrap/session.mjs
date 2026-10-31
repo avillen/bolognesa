@@ -22,6 +22,9 @@ export function createMusicSession({ audio, transport }) {
   let lastFailed = null;
   let sessionGeneration = 0;
   let appendChain = Promise.resolve();
+  let backstack = [];
+  let pendingReplacement = null;
+  let deferredEndedGeneration = null;
   const subscribers = new Set();
 
   const snapshot = () => {
@@ -47,17 +50,37 @@ export function createMusicSession({ audio, transport }) {
     }
   };
   const invalidate = () => commands.start();
+  const beginReplacement = () => {
+    let finish;
+    const done = new Promise((resolve) => { finish = resolve; });
+    const token = { done, finish };
+    pendingReplacement = token;
+    return token;
+  };
+  const finishReplacement = (token) => {
+    const current = pendingReplacement === token;
+    if (current) pendingReplacement = null;
+    token.finish();
+    if (current && deferredEndedGeneration === sourceGeneration && state.selected && !state.loading) {
+      deferredEndedGeneration = null;
+      handleEnded();
+    }
+  };
+  function handleEnded() {
+    if (destroyed || endedGeneration === sourceGeneration) return;
+    endedGeneration = sourceGeneration;
+    const next = queue.nextIndex();
+    if (queue.index >= 0 && next !== null) return moveTo(next);
+    state.finished = true;
+    state.paused = true;
+    notify();
+  }
   const stopListening = listenToMedia(audio, {
     hasSelection: () => Boolean(state.selected),
     isLoading: () => state.loading,
-    onEnded() {
-      if (destroyed || endedGeneration === sourceGeneration) return;
-      endedGeneration = sourceGeneration;
-      const next = queue.nextIndex();
-      if (queue.index >= 0 && next !== null) return moveTo(next);
-      if (queue.index >= 0) state.finished = true;
-      state.paused = true;
-      notify();
+    onEnded: handleEnded,
+    onEndedWhileLoading() {
+      if (pendingReplacement) deferredEndedGeneration = sourceGeneration;
     },
     onError() {
       if (destroyed) return;
@@ -73,7 +96,7 @@ export function createMusicSession({ audio, transport }) {
     fileId,
     queueIndex,
     command,
-    { clearOutgoing = false } = {},
+    { clearOutgoing = false, replacementQueue = null, replacementAlbum = null } = {},
   ) {
     const signal = commands.signal();
     if (clearOutgoing) {
@@ -87,7 +110,7 @@ export function createMusicSession({ audio, transport }) {
     }
     state.loading = true;
     state.error = null;
-    if (queueIndex !== undefined) queue.select(queueIndex);
+    if (queueIndex !== undefined && !replacementQueue) queue.select(queueIndex);
     notify();
     try {
       const result = await transport.selectTrack(
@@ -96,9 +119,15 @@ export function createMusicSession({ audio, transport }) {
       );
       if (!commands.isCurrent(command) || destroyed) return;
       const previousSourceGeneration = sourceGeneration;
+      if (replacementQueue) {
+        queue.replace(replacementQueue);
+        queue.select(0);
+        backstack = [];
+      }
       audio.pause();
       sourceGeneration++;
       endedGeneration = -1;
+      deferredEndedGeneration = null;
       audio.src = result.src;
       audio.load();
       state.selected = copyTrack(result.track);
@@ -108,7 +137,7 @@ export function createMusicSession({ audio, transport }) {
       state.finished = false;
       state.error = null;
       lastFailed = null;
-      if (queueIndex === undefined) queue.clear();
+      if (queueIndex === undefined) { queue.clear(); backstack = []; }
       notify();
       try {
         await audio.play();
@@ -142,8 +171,8 @@ export function createMusicSession({ audio, transport }) {
       }
       state.loading = false;
       state.error = { code: error?.code || "unavailable", retryable: true };
-      lastFailed = { type: "track", trackId, fileId, queueIndex };
-      if (queueIndex !== undefined) {
+      lastFailed = replacementAlbum || { type: "track", trackId, fileId, queueIndex };
+      if (queueIndex !== undefined && !replacementQueue) {
         state.selected = null;
         state.paused = true;
         sourceGeneration++;
@@ -161,8 +190,12 @@ export function createMusicSession({ audio, transport }) {
     }
   }
 
-  async function moveTo(index, retry = false) {
+  async function moveTo(index, retry = false, goingBack = false) {
     if (!queue.at(index) || (!retry && index === queue.index)) return;
+    if (!goingBack && state.selected && queue.current()) {
+      backstack.push(queue.current().entry_id);
+      if (backstack.length > 100) backstack.shift();
+    }
     const command = invalidate();
     const track = queue.at(index);
     queue.select(index);
@@ -192,11 +225,13 @@ export function createMusicSession({ audio, transport }) {
 
   function appendRequest(request, { next = false } = {}) {
     const generation = sessionGeneration;
+    const replacement = pendingReplacement;
     const pending = request.then(
       (result) => ({ result }),
       (error) => ({ error }),
     );
     const operation = appendChain.then(async () => {
+      if (replacement) await replacement.done;
       const { result, error } = await pending;
       if (destroyed || generation !== sessionGeneration) return false;
       if (error) throw error;
@@ -224,16 +259,22 @@ export function createMusicSession({ audio, transport }) {
     async selectTrack({ trackId, fileId }) {
       sessionGeneration++;
       appendChain = Promise.resolve();
+      const replacement = beginReplacement();
       const command = invalidate();
       lastFailed = null;
       state.loading = true;
       state.error = null;
       notify();
-      await authorizeTrack(trackId, fileId, undefined, command);
+      try {
+        await authorizeTrack(trackId, fileId, undefined, command);
+      } finally {
+        finishReplacement(replacement);
+      }
     },
     async playAlbum({ albumId, libraryId }) {
       sessionGeneration++;
       appendChain = Promise.resolve();
+      const replacement = beginReplacement();
       const command = invalidate();
       const signal = commands.signal();
       lastFailed = { type: "album", albumId, libraryId };
@@ -252,8 +293,14 @@ export function createMusicSession({ audio, transport }) {
           notify();
           return;
         }
-        queue.replace(result.tracks);
-        await moveTo(0);
+        const first = result.tracks[0];
+        if (!Number.isSafeInteger(first.id) || first.state !== "ready" || !Number.isSafeInteger(first.file_id)) {
+          throw Object.assign(new Error("unavailable"), { code: "unavailable" });
+        }
+        await authorizeTrack(first.id, first.file_id, 0, command, {
+          replacementQueue: result.tracks,
+          replacementAlbum: { type: "album", albumId, libraryId },
+        });
       } catch (error) {
         if (
           !commands.isCurrent(command) ||
@@ -270,6 +317,7 @@ export function createMusicSession({ audio, transport }) {
         lastFailed = { type: "album", albumId, libraryId };
         notify();
       } finally {
+        finishReplacement(replacement);
         if (commands.isCurrent(command)) {
           commands.finish(command);
           state.loading = false;
@@ -302,13 +350,29 @@ export function createMusicSession({ audio, transport }) {
       if (index !== null) return moveTo(index);
     },
     previous() {
-      const index = queue.previousIndex();
-      if (index !== null) return moveTo(index);
+      if (state.selected && audio.currentTime > 3) {
+        audio.currentTime = 0;
+        state.finished = false;
+        endedGeneration = -1;
+        notify();
+        return;
+      }
+      while (backstack.length) {
+        const index = queue.indexOfEntry(backstack.pop());
+        if (index >= 0 && index !== queue.index) return moveTo(index, false, true);
+      }
     },
     play() {
       if (!state.selected && queue.index < 0 && queue.nextIndex() !== null)
         return moveTo(queue.nextIndex());
       if (!state.selected) return;
+      if (state.finished) {
+        const next = queue.nextIndex();
+        if (queue.index >= 0 && next !== null) return moveTo(next);
+        audio.currentTime = 0;
+        state.finished = false;
+        endedGeneration = -1;
+      }
       const generation = sourceGeneration;
       state.error = null;
       notify();
@@ -389,12 +453,15 @@ export function createMusicSession({ audio, transport }) {
   function clear() {
     sessionGeneration++;
     appendChain = Promise.resolve();
+    pendingReplacement = null;
+    deferredEndedGeneration = null;
     invalidate();
     sourceGeneration++;
     audio.pause();
     audio.removeAttribute("src");
     audio.load();
     queue.clear();
+    backstack = [];
     state = {
       selected: null,
       paused: true,

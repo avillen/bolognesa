@@ -21,11 +21,14 @@ const stateEvents = new Set([
 
 export function listenToMedia(
   audio,
-  { hasSelection, isLoading, onEnded, onError, onChange },
+  { hasSelection, isLoading, onEnded, onEndedWhileLoading, onError, onChange },
 ) {
   const listener = (event) => {
     if (event.type === "ended") {
-      if (hasSelection() && !isLoading()) onEnded();
+      if (hasSelection()) {
+        if (isLoading()) onEndedWhileLoading?.();
+        else onEnded();
+      }
     } else if (event.type === "error" && !isLoading() && hasSelection()) {
       onError();
     } else if (!stateEvents.has(event.type) || hasSelection()) {

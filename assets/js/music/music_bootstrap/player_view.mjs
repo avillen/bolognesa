@@ -122,7 +122,7 @@ export function connectMusicPlayerView(host, session) {
     host.querySelector('[data-player-action="collapse"]').hidden = !expanded
     title.textContent = state.selected?.title || ""
     artist.textContent = state.selected?.artist || ""
-    const canPrevious = state.queueIndex > 0
+    const canPrevious = Boolean(state.selected) || state.queueIndex > 0
     const canNext = state.queueIndex >= 0 && state.queueIndex < state.queueCount - 1
     previous.disabled = !canPrevious
     next.disabled = !canNext

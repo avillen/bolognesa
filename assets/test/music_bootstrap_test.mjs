@@ -134,7 +134,7 @@ test("external track controls follow the album queue and update metadata", async
   const transport = {loadAlbum: async () => ({tracks}), selectTrack: async ({trackId}) => ({track: tracks[trackId - 1], src: `/audio/${trackId}`})}
   const instance = initializeMusicPlayer(document, {transport})
   await instance.session.playAlbum({albumId: 1})
-  assert.equal(handlers.previoustrack, null)
+  assert.equal(typeof handlers.previoustrack, "function")
   assert.equal(typeof handlers.nexttrack, "function")
   await handlers.nexttrack()
   assert.equal(instance.session.getSnapshot().selected.id, 2)
@@ -155,7 +155,7 @@ test("external track controls follow the album queue and update metadata", async
   assert.equal(typeof handlers.previoustrack, "function")
   assert.equal(typeof handlers.nexttrack, "function")
   await instance.session.selectTrack({trackId: 1, fileId: 1})
-  assert.equal(handlers.previoustrack, null)
+  assert.equal(typeof handlers.previoustrack, "function")
   assert.equal(handlers.nexttrack, null)
   instance.destroy()
 })

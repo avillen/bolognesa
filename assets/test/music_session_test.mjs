@@ -311,3 +311,109 @@ test("successive play-next requests remain FIFO even when responses arrive out o
   assert.equal(audio.src, "/music/tracks/1/media/11")
   assert.equal(audio.playCalls, 1)
 })
+
+test("previous restarts after three seconds and otherwise returns to the played entry", async () => {
+  const audio = new FakeAudio()
+  const session = createMusicSession({audio, transport: {
+    async selectTrack({trackId, fileId}) { return {track: {id: trackId, file_id: fileId, title: "Track", state: "ready"}, src: `/music/tracks/${trackId}/media/${fileId}`} },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  await session.appendTrack({trackId: 2, fileId: 12})
+  await session.next()
+  audio.currentTime = 5
+  await session.previous()
+  assert.equal(audio.currentTime, 0)
+  assert.equal(session.getSnapshot().selected.id, 2)
+  await session.previous()
+  assert.equal(session.getSnapshot().selected.id, 1)
+})
+
+test("a finished session stays stopped when appending and play advances to the new entry", async () => {
+  const audio = new FakeAudio()
+  const session = createMusicSession({audio, transport: {
+    async selectTrack({trackId, fileId}) { return {track: {id: trackId, file_id: fileId, title: "Track", state: "ready"}, src: `/music/tracks/${trackId}/media/${fileId}`} },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  audio.paused = true
+  audio.dispatchEvent(new Event("ended"))
+  assert.equal(session.getSnapshot().finished, true)
+  await session.appendTrack({trackId: 2, fileId: 12})
+  assert.equal(audio.paused, true)
+  await session.play()
+  assert.equal(session.getSnapshot().selected.id, 2)
+})
+
+test("previous skips an unavailable entry that was never played", async () => {
+  const audio = new FakeAudio()
+  const tracks = [{id: 1, file_id: 11, title: "One", state: "ready"}, {id: 2, file_id: 12, title: "Unavailable", state: "missing"}, {id: 3, file_id: 13, title: "Three", state: "ready"}]
+  const session = createMusicSession({audio, transport: {
+    async loadAlbum() { return {tracks} },
+    async selectTrack({trackId, fileId}) { return {track: tracks[trackId - 1], src: `/music/tracks/${trackId}/media/${fileId}`} },
+  }})
+  await session.playAlbum({albumId: 1, libraryId: null})
+  await session.next()
+  await session.next()
+  assert.equal(session.getSnapshot().selected.id, 3)
+  await session.previous()
+  assert.equal(session.getSnapshot().selected.id, 1)
+})
+
+test("replacing an album keeps the existing audio until its first track is authorized", async () => {
+  const audio = new FakeAudio()
+  let finishSelection
+  const row = id => ({id, file_id: id + 10, title: `Track ${id}`, state: "ready"})
+  const session = createMusicSession({audio, transport: {
+    async loadAlbum({albumId}) { return {tracks: [row(albumId)]} },
+    selectTrack({trackId, fileId}) {
+      const result = {track: row(trackId), src: `/music/tracks/${trackId}/media/${fileId}`}
+      return trackId === 2 ? new Promise(resolve => { finishSelection = () => resolve(result) }) : Promise.resolve(result)
+    },
+  }})
+  await session.playAlbum({albumId: 1, libraryId: null})
+  audio.currentTime = 4
+  const pending = session.playAlbum({albumId: 2, libraryId: null})
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(audio.src, "/music/tracks/1/media/11")
+  assert.equal(audio.paused, false)
+  assert.equal(audio.currentTime, 4)
+  finishSelection()
+  await pending
+  assert.equal(audio.src, "/music/tracks/2/media/12")
+})
+
+test("an append requested during replacement belongs to the new session", async () => {
+  const audio = new FakeAudio()
+  let finishReplacement
+  const row = id => ({id, file_id: id + 10, title: `Track ${id}`, state: "ready"})
+  const session = createMusicSession({audio, transport: {
+    selectTrack({trackId, fileId}) {
+      const result = {track: row(trackId), src: `/music/tracks/${trackId}/media/${fileId}`}
+      return trackId === 2 ? new Promise(resolve => { finishReplacement = () => resolve(result) }) : Promise.resolve(result)
+    },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  const replacement = session.selectTrack({trackId: 2, fileId: 12})
+  const append = session.appendTrack({trackId: 3, fileId: 13})
+  await new Promise(resolve => setImmediate(resolve))
+  finishReplacement()
+  await Promise.all([replacement, append])
+  assert.deepEqual(session.getSnapshot().queue.map(item => item.id), [2, 3])
+})
+
+test("an old track ending during a failed replacement is handled once", async () => {
+  const audio = new FakeAudio()
+  let rejectReplacement
+  const session = createMusicSession({audio, transport: {
+    selectTrack({trackId, fileId}) {
+      if (trackId === 2) return new Promise((_, reject) => { rejectReplacement = reject })
+      return Promise.resolve({track: {id: trackId, file_id: fileId, title: "Track", state: "ready"}, src: `/music/tracks/${trackId}/media/${fileId}`})
+    },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  const replacement = session.selectTrack({trackId: 2, fileId: 12})
+  audio.paused = true
+  audio.dispatchEvent(new Event("ended"))
+  rejectReplacement(Object.assign(new Error("unavailable"), {code: "unavailable"}))
+  await replacement
+  assert.equal(session.getSnapshot().finished, true)
+})
