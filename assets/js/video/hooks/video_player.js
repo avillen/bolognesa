@@ -1,5 +1,5 @@
-import {createPlayer, videoFeatures, timeFeature, bufferFeature} from "../../vendor/videojs.min.mjs"
-import {fileTimeFeature, fileBufferFeature} from "../video_timeline.mjs"
+import {createPlayer, videoFeatures, timeFeature, bufferFeature} from "../../../vendor/videojs.min.mjs"
+import {fileTimeFeature, fileBufferFeature} from "../timeline.mjs"
 import {createPlaybackDiagnostics} from "../playback_diagnostics.mjs"
 import {createPlaybackRecovery} from "../playback_recovery.mjs"
 import VideoError from "./video_error"
@@ -15,6 +15,7 @@ customElements.define("bolognesa-video-player", PlayerElement)
 const VideoPlayer = {
   mounted() {
     this.video = this.el.querySelector("video")
+    this.unregisterMedia = window.bolognesaMusicPlayer?.coordinator.register(this.video)
     // Connect the player before its skin so all controls find the player's context.
     const player = document.createElement("bolognesa-video-player")
     const skin = document.createElement("video-skin")
@@ -108,6 +109,8 @@ const VideoPlayer = {
   disconnected() { this.diagnostics?.disconnected() },
   reconnected() { this.diagnostics?.reconnected() },
   destroyed() {
+    this.unregisterMedia?.()
+    this.unregisterMedia = null
     document.removeEventListener("fullscreenchange", this.onFullscreenChange)
     document.removeEventListener("webkitfullscreenchange", this.onFullscreenChange)
     this.recovery?.destroy()

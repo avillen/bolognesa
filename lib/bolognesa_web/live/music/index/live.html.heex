@@ -5,7 +5,7 @@
   navigation_error={@navigation_error}
   active_library_id={@active_library_id}
 >
-  <section class="music-library">
+  <section id="music-screen" class="music-library" phx-hook="AudioPlayer">
     <header class="music-header">
       <div>
         <p class="music-eyebrow">{gettext("Biblioteca local")}</p><h1 class="music-title">
@@ -70,8 +70,9 @@
         :if={@browse_kind == :album && !@error && @total > 0}
         id="play-album"
         type="button"
-        phx-click="play-album"
-        disabled={@loading? || @queue_loading?}
+        data-music-action="album"
+        data-album-id={@album_id}
+        data-library-id={@active_library_id}
         class="min-h-11 rounded-lg bg-accent px-4 py-2 font-semibold text-canvas hover:bg-accent-hover disabled:opacity-50"
       >{gettext("Reproducir álbum")}</button>
     </div>
@@ -91,15 +92,6 @@
         class="min-h-11 rounded-lg bg-accent px-4 py-2 font-semibold text-canvas hover:bg-accent-hover disabled:opacity-50"
       >{gettext("Buscar")}</button>
     </.form>
-    <p :if={@queue_loading?} id="queue-loading" role="status">{gettext("Preparando álbum…")}</p>
-    <p
-      :if={@audio_error}
-      id="audio-error"
-      role="alert"
-      class="music-feedback music-feedback-error"
-    >
-      {@audio_error}
-    </p>
     <p :if={@loading?} id="music-loading" role="status" class="music-feedback">
       {gettext("Cargando música…")}
     </p>
@@ -163,7 +155,8 @@
         :for={{dom_id, track} <- @streams.tracks}
         id={dom_id}
         data-state={track.state}
-        data-track-src={track.track_id && "/music/tracks/#{track.track_id}/media/#{track.id}"}
+        data-track-id={track.track_id}
+        data-file-id={track.id}
         class="music-track-row"
       >
         <div class="music-track-art" aria-hidden="true">
@@ -192,9 +185,9 @@
           :if={track.state == :ready}
           id={"play-track-#{track.track_id}"}
           type="button"
-          phx-click="play"
-          phx-value-track_id={track.track_id}
-          phx-value-file_id={track.id}
+          data-music-action="track"
+          data-track-id={track.track_id}
+          data-file-id={track.id}
           class="music-track-play"
           aria-label={gettext("Reproducir %{title}", title: track.title)}
           data-play-label={gettext("Reproducir %{title}", title: track.title)}
@@ -234,102 +227,5 @@
         class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
       >{gettext("Siguiente")}</.link>
     </nav>
-    <div
-      :if={@selected || @queue != []}
-      id="music-playback"
-      class="music-playback"
-      data-expanded="false"
-      data-has-player={to_string(not is_nil(@selected))}
-      phx-hook={if(@selected, do: "AudioPlayer")}
-      data-src={
-        if(@selected, do: "/music/tracks/#{@selected.track_id}/media/#{@selected.file_id}")
-      }
-      data-generation={@player_generation}
-      data-play-requested={to_string(@play_requested?)}
-      data-stopped={to_string(@player_stopped?)}
-      role="region"
-      aria-label={gettext("Reproductor de música")}
-    >
-      <button
-        :if={@selected}
-        type="button"
-        class="music-mini-player"
-        data-player-action="expand"
-        aria-label={gettext("Abrir reproductor")}
-        aria-expanded="false"
-        aria-controls="music-player-frame"
-      >
-        <span class="music-player-art" aria-hidden="true">
-          <img src={~p"/images/bolognesa-cat.svg"} width="96" height="96" alt="" />
-        </span>
-        <span class="music-mini-copy">
-          <span class="music-mini-title">{@selected.title}</span>
-          <span class="music-mini-artist">{Map.get(@selected, :artist)}</span>
-        </span>
-        <span aria-hidden="true"><.icon name="hero-chevron-up" class="size-5" /></span>
-      </button>
-      <button
-        :if={@selected}
-        type="button"
-        class="music-player-close"
-        data-player-action="collapse"
-        aria-label={gettext("Minimizar reproductor")}
-      >
-        <span aria-hidden="true"><.icon name="hero-chevron-down" class="size-6" /></span>
-      </button>
-      <div class="music-player-art" aria-hidden="true">
-        <img src={~p"/images/bolognesa-cat.svg"} width="96" height="96" alt="" />
-      </div>
-      <div class="music-player-copy">
-        <h2 class="music-eyebrow">{gettext("Reproductor de música")}</h2>
-        <p
-          :if={@selected && @selected.title}
-          id="now-playing"
-          aria-live="polite"
-          class="break-words"
-        >
-          {@selected.title}
-        </p>
-      </div>
-      <div
-        :if={@selected}
-        id="music-player-frame"
-        phx-update="ignore"
-        class="music-player-frame"
-      >
-        <media-i18n lang={Gettext.get_locale(BolognesaWeb.Gettext)}>
-          <audio
-            id="music-player"
-            controls
-            preload="metadata"
-            aria-label={gettext("Reproductor de música")}
-          >
-            <source src={"/music/tracks/#{@selected.track_id}/media/#{@selected.file_id}"} />
-          </audio>
-        </media-i18n>
-      </div>
-      <div :if={@queue != []} class="music-queue-controls flex flex-wrap items-center gap-3">
-        <button
-          id="queue-previous"
-          type="button"
-          phx-click="queue-previous"
-          disabled={@queue_position == 0}
-          class="min-h-11 rounded-lg border border-border-strong px-4 py-2 disabled:opacity-50"
-        >{gettext("Anterior")}</button>
-        <span id="queue-position" class="text-sm text-muted">{gettext(
-          "Canción %{position} de %{total}",
-          position: @queue_position + 1,
-          total: length(@queue)
-        )}</span>
-        <button
-          id="queue-next"
-          type="button"
-          phx-click="queue-next"
-          disabled={@queue_position + 1 >= length(@queue)}
-          class="min-h-11 rounded-lg border border-border-strong px-4 py-2 disabled:opacity-50"
-        >{gettext("Siguiente")}</button>
-      </div>
-      <p :if={@queue_finished?} id="queue-finished" role="status">{gettext("Álbum terminado")}</p>
-    </div>
   </section>
 </Layouts.app>

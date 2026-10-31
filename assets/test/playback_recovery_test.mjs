@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createPlaybackRecovery} from "../js/playback_recovery.mjs"
+import {createPlaybackRecovery} from "../js/video/playback_recovery.mjs"
 
 function setup(storage = new Map(), data = {}) {
   const video = new EventTarget()

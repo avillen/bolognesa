@@ -50,6 +50,14 @@ at the browser boundary. It checks controls, global seeks, pause/resume, fullscr
 replacement, drag commit behavior, paused seeks, and Spanish labels. This does not replace
 an end-to-end check with FFmpeg sessions and representative media on target devices.
 
+`bash scripts/screenshots/run-readme-screenshots.sh --verify-music-host` verifies that the
+authenticated root layout renders the persistent player host and public pages do not.
+`bash scripts/screenshots/run-readme-screenshots.sh --verify-persistent-music` uses
+synthetic media and an isolated database to verify navigation continuity, queue progression
+outside Music, socket reconnection, unavailable-track retry, logout cleanup, keyboard
+expansion, and a 375px browser viewport. The viewport check runs in desktop Chromium and
+does not establish compatibility with real mobile browsers or devices.
+
 `npm run measure-hls -- tmp/videojs-fixtures` measures the production hook against
 a controlled synthetic HTTP producer, with two-minute phases and bootstrap reported
 separately. Accounting and playlist-generation tests run with the Node suite. See the

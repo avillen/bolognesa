@@ -1,76 +1,42 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import {readFile} from "node:fs/promises"
-const code = await readFile(new URL("../js/hooks/audio_track_list.js", import.meta.url), "utf8")
+const code = await readFile(new URL("../js/music/audio_track_list.js", import.meta.url), "utf8")
 const {syncTrackRows} = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`)
-test("visible rows follow the actual source, playing, paused and ended states", () => {
+
+test("streamed row indicators match track and file identity from the shared session", () => {
   const button = {dataset: {playLabel: "Play song", pauseLabel: "Pause song"}, setAttribute(name, value) {this[name] = value}}
-  const row = {dataset: {trackSrc: "/song"}, querySelector: () => button}
+  const row = {dataset: {trackId: "3", fileId: "8"}, querySelector: () => button}
   const list = {querySelectorAll: () => [row]}
-  const audio = {paused: false, ended: false, error: null}
-  syncTrackRows(list, audio, "/song")
+  const snapshot = {selected: {id: 3, file_id: 8}, paused: false, finished: false}
+  syncTrackRows(list, snapshot)
   assert.equal(row.dataset.playback, "playing")
   assert.equal(button["aria-label"], "Pause song")
-  audio.paused = true
-  syncTrackRows(list, audio, "/song")
+  snapshot.paused = true
+  syncTrackRows(list, snapshot)
   assert.equal(row.dataset.playback, "paused")
-  assert.equal(button["aria-label"], "Play song")
-  audio.ended = true
-  syncTrackRows(list, audio, "/song")
-  assert.equal(row.dataset.playback, "")
-  syncTrackRows(list, audio, "/other")
+  snapshot.selected.file_id = 9
+  syncTrackRows(list, snapshot)
   assert.equal(row.dataset.playback, "")
 })
 
-test("row controls toggle the current audio, reconcile streamed rows and clean up", async () => {
+test("row adapter reconciles stream mutations and disconnects on screen unmount", async () => {
   const {connectTrackRows} = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`)
-  const listeners = new Map()
-  const button = {dataset: {playLabel: "Play", pauseLabel: "Pause"}, setAttribute() {}, closest: () => row}
-  const row = {dataset: {trackSrc: "/song"}, querySelector: () => button}
-  let click
-  let reconcile
-  let disconnected = false
-  let plays = 0
-  const list = {
-    querySelectorAll: () => [row],
-    addEventListener: (_event, fn) => {click = fn},
-    removeEventListener: () => {click = null},
-  }
-  const originalObserver = globalThis.MutationObserver
-  globalThis.MutationObserver = class {
-    constructor(fn) {reconcile = fn}
-    observe() {}
-    disconnect() {disconnected = true}
-  }
-  const audio = {
-    paused: false, ended: false, error: null,
-    addEventListener: (name, fn) => listeners.set(name, fn),
-    removeEventListener: name => listeners.delete(name),
-    pause() {this.paused = true; listeners.get("pause")()},
-    play() {plays++; this.paused = false; listeners.get("playing")(); return Promise.resolve()},
-  }
-  const frame = {dataset: {src: "/song", generation: "1"}, closest: () => ({querySelector: () => list})}
-  const event = {target: {closest: () => button}, preventDefault() {}, stopImmediatePropagation() {}}
+  let mutation, disconnected = false, listener
+  const button = {dataset: {playLabel: "Play", pauseLabel: "Pause"}, setAttribute() {}}
+  const row = {dataset: {trackId: "3", fileId: "8"}, querySelector: () => button}
+  const list = {querySelectorAll: () => [row]}
+  const snapshot = {selected: {id: 3, file_id: 8}, paused: false}
+  const session = {subscribe(fn) {listener = fn; fn(snapshot); return () => {listener = null}}}
+  const oldObserver = globalThis.MutationObserver
+  globalThis.MutationObserver = class { constructor(fn) {mutation = fn} observe() {} disconnect() {disconnected = true} }
   try {
-    const connection = connectTrackRows(frame, audio, () => {})
-    click(event)
+    const connection = connectTrackRows(list, session)
+    snapshot.paused = true; listener(snapshot)
     assert.equal(row.dataset.playback, "paused")
-    click(event)
-    assert.equal(plays, 1)
-    assert.equal(row.dataset.playback, "playing")
-    row.dataset.playback = ""
-    reconcile()
-    assert.equal(row.dataset.playback, "playing")
-    frame.dataset.src = "/other"
-    connection.sync()
-    assert.equal(row.dataset.playback, "")
-    click(event)
-    assert.equal(plays, 1)
+    mutation()
     connection.destroy()
     assert.equal(disconnected, true)
-    assert.equal(listeners.size, 0)
-    assert.equal(click, null)
-  } finally {
-    globalThis.MutationObserver = originalObserver
-  }
+    assert.equal(listener, null)
+  } finally { globalThis.MutationObserver = oldObserver }
 })

@@ -5,6 +5,7 @@ defmodule Bolognesa.Music do
   alias Bolognesa.Music.Application.UseCases.{
     AlbumTracks,
     Browse,
+    FetchTrack,
     ListTracks,
     RefreshTrack,
     RetryImport
@@ -40,6 +41,9 @@ defmodule Bolognesa.Music do
 
   @spec retry_import(AuthenticatedUser.t() | nil, pos_integer()) :: RetryImport.result()
   def retry_import(actor, file_id), do: RetryImport.call(actor, file_id, EctoImportRepository)
+
+  @spec fetch_track(AuthenticatedUser.t() | nil, integer()) :: FetchTrack.result()
+  def fetch_track(actor, track_id), do: FetchTrack.call(actor, track_id, EctoTracksReader)
 
   @spec list_tracks(AuthenticatedUser.t() | nil, String.t(), pos_integer(), pos_integer() | nil) ::
           ListTracks.result()

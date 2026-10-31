@@ -7,7 +7,7 @@ test("the player bundled with the application avoids Safari 16.2 syntax errors",
   const config = await readFile(new URL("../../config/config.exs", import.meta.url), "utf8")
   const target = config.match(/--target=([^\s]+)/)[1].split(",")
   const result = await build({
-    entryPoints: [new URL("../js/hooks/video_player.js", import.meta.url).pathname],
+    entryPoints: [new URL("../js/video/hooks/video_player.js", import.meta.url).pathname],
     bundle: true, target, write: false, minify: true,
   })
   // Safari added class static initialization blocks in 16.4. A parse error in

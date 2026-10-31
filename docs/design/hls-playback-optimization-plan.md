@@ -67,7 +67,7 @@ remain pending; do not mark those checkboxes complete from the synthetic run.
 
 ## Task 2 — Correct pause, load control and expired-session recovery
 
-**Modify:** `assets/js/hooks/transcode_video.js`, `assets/js/hooks/video_player.js`, and only if necessary `assets/js/playback_recovery.mjs`, `lib/bolognesa_web/live_support/playback_events.ex` and `playback_state.ex`.
+**Modify:** `assets/js/video/hooks/transcode_video.js`, `assets/js/video/hooks/video_player.js`, and only if necessary `assets/js/video/playback_recovery.mjs`, `lib/bolognesa_web/live_support/playback_events.ex` and `playback_state.ex`.
 
 **Tests:** `assets/test/transcode_video_test.mjs`, `assets/test/playback_recovery_test.mjs`, the browser harness, and `test/bolognesa_web/live/movie/show/` / `episode/show/`.
 
@@ -143,7 +143,7 @@ remain pending; do not mark those checkboxes complete from the synthetic run.
 
 ## Task 7 — Avoid session replacement for safely buffered seeks
 
-**Files:** `assets/js/hooks/transcode_video.js`, `assets/js/video_timeline.mjs`, their Node tests, browser harness; modify server events only if the existing pause/resume contract requires it.
+**Files:** `assets/js/video/hooks/transcode_video.js`, `assets/js/video/timeline.mjs`, their Node tests, browser harness; modify server events only if the existing pause/resume contract requires it.
 
 **Interface:** keep `fileTimeline.seek(globalSeconds)`; calculate session-local time by subtracting the offset. A local seek is eligible only when the requested point lies strictly inside one actual native `video.buffered` interval, outside a 0.25-second margin at either edge, and there is no pending source replacement. All other seeks keep the existing server event.
 
@@ -167,7 +167,7 @@ remain pending; do not mark those checkboxes complete from the synthetic run.
 
 ## Task 9 — Validate browser memory, native HLS and segment characteristics
 
-**Files:** production-hook harness and measurement script; `assets/js/hooks/transcode_video.js` only for a proven adjustment; existing fixtures; record verified limits in the relevant issue or pull request.
+**Files:** production-hook harness and measurement script; `assets/js/video/hooks/transcode_video.js` only for a proven adjustment; existing fixtures; record verified limits in the relevant issue or pull request.
 
 - [ ] Measure an extended hls.js playback (at least 30 minutes), buffered-range retention and browser memory. The current infinite back buffer is a risk, not proof of a leak; memory includes browser-owned buffers outside JS heap.
 - [ ] If retention is harmful, compare `backBufferLength:60` with the baseline, keeping forward-buffer defaults initially. Verify full-file seeking, local seeks from Task 7 and long playback. Keep the change only with lower retained memory and no added stalls; do not conflate browser RAM with NAS RAM.

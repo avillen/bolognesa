@@ -1,7 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import {readFile} from "node:fs/promises"
-const code = await readFile(new URL("../js/hooks/video_error.js", import.meta.url), "utf8")
+const code = await readFile(new URL("../js/video/hooks/video_error.js", import.meta.url), "utf8")
 const {default: hook} = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`)
 
 test("reports the failed position once and removes its listener", () => {

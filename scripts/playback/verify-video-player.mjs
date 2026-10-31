@@ -14,7 +14,7 @@ const temporary = await mkdtemp(join(tmpdir(), "bolognesa-player-"))
 const bundle = join(temporary, "player.js")
 const buildConfig = await readFile("config/config.exs", "utf8")
 const target = buildConfig.match(/--target=([^\s]+)/)[1].split(",")
-await build({stdin: {contents: `import hook from './assets/js/hooks/video_player.js';
+await build({stdin: {contents: `import hook from './assets/js/video/hooks/video_player.js';
 window.events = [];
 window.context = {el: document.querySelector('#frame'), pushEvent: (...event) => {
   window.events.push(event);

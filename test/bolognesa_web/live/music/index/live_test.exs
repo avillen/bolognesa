@@ -17,46 +17,24 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     %{token: token}
   end
 
-  test "lists tagged and fallback titles and selects native authenticated audio", %{
-    conn: conn,
-    token: token
-  } do
+  test "lists tagged tracks with authorized client actions", %{conn: conn, token: token} do
     fixture = refresh_fixture(tags: %{"title" => "Sample Song", "artist" => "Sample Artist"})
 
     {:ok, view, _} =
       live(init_test_session(conn, user_token: token), "/music?library_id=#{fixture.library.id}")
 
     render_async(view)
+    assert has_element?(view, "#music-screen[phx-hook=AudioPlayer]")
     assert has_element?(view, "#music-tracks", "Sample Song")
     assert has_element?(view, "#music-tracks", "Sample Artist")
-    view |> element("#play-track-#{fixture.track.id}") |> render_click()
-    assert has_element?(view, "#music-playback[phx-hook=AudioPlayer]")
-    assert has_element?(view, "#music-player-frame[phx-update=ignore]")
-    assert has_element?(view, "#music-playback .music-mini-artist", "Sample Artist")
-    assert has_element?(view, "#music-player-frame media-i18n[lang=es]")
-    assert has_element?(view, "audio#music-player[controls]")
-    assert has_element?(view, "#now-playing", "Sample Song")
 
     assert has_element?(
              view,
-             "audio#music-player source[src='/music/tracks/#{fixture.track.id}/media/#{fixture.file.id}']"
+             "#play-track-#{fixture.track.id}[data-music-action=track][data-track-id='#{fixture.track.id}'][data-file-id='#{fixture.file.id}']"
            )
 
-    assert has_element?(view, "#music-playback[data-play-requested=true]")
-
-    assert has_element?(
-             view,
-             "#play-track-#{fixture.track.id}.music-track-play[aria-label='Reproducir Sample Song']"
-           )
-
-    assert has_element?(
-             view,
-             "#tracks-#{fixture.file.id}[data-track-src='/music/tracks/#{fixture.track.id}/media/#{fixture.file.id}']"
-           )
-
-    refute has_element?(view, "audio[autoplay]")
-    render_hook(view, "audio-error", %{})
-    assert has_element?(view, "#audio-error")
+    assert has_element?(view, "#tracks-#{fixture.file.id}[data-state=ready]")
+    refute has_element?(view, "#music-screen button[phx-click=play]")
   end
 
   test "cross-type library selection redirects and empty music libraries remain selectable", %{
@@ -91,12 +69,10 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     assert has_element?(view, "#tracks-#{pending.file.id}[data-state=pending]")
     assert has_element?(view, "#tracks-#{failed.file.id}[data-state=inspection_failed]")
     Repo.update!(Ecto.Changeset.change(ready.file, revision: 2))
-    view |> element("#play-track-#{ready.track.id}") |> render_click()
-    refute has_element?(view, "audio#music-player")
-    assert has_element?(view, "[role=alert]")
+    assert has_element?(view, "#play-track-#{ready.track.id}[data-music-action=track]")
   end
 
-  test "browse artist albums and advance through the album queue", %{conn: conn, token: token} do
+  test "browse artist albums and expose an album play command", %{conn: conn, token: token} do
     f =
       refresh_fixture(
         tags: %{"artist" => "Ensemble", "album" => "First", "title" => "Opening", "track" => "1"}
@@ -124,16 +100,14 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     view |> element("#album-#{f.track.album_id}") |> render_click()
     render_async(view)
     assert has_element?(view, "#music-tracks", "Finale")
-    view |> element("#play-album") |> render_click()
-    render_async(view)
-    assert has_element?(view, "#now-playing", "Opening")
-    render_hook(view, "audio-ended", %{"generation" => player_generation(view)})
-    assert has_element?(view, "#now-playing", "Finale")
-    render_hook(view, "audio-ended", %{"generation" => player_generation(view)})
-    assert has_element?(view, "#queue-finished")
+
+    assert has_element?(
+             view,
+             "#play-album[data-music-action=album][data-album-id='#{f.track.album_id}']"
+           )
   end
 
-  test "unavailable album entries allow next and stale ended events cannot skip tracks", %{
+  test "unavailable album entries stay visible while track controls remain client-side", %{
     conn: conn,
     token: token
   } do
@@ -169,25 +143,12 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
       )
 
     render_async(view)
-    view |> element("#play-album") |> render_click()
-    render_async(view)
-    assert has_element?(view, "#audio-error", "Unavailable")
-    view |> element("#queue-next") |> render_click()
-    assert has_element?(view, "#now-playing", "Available")
-    render_hook(view, "audio-ended", %{"generation" => "1"})
-    refute has_element?(view, "#queue-finished")
-    view |> element("#queue-previous") |> render_click()
-    assert has_element?(view, "#audio-error", "Unavailable")
-    refute has_element?(view, "#music-player")
-    refute has_element?(view, "#now-playing", "Available")
-    assert has_element?(view, "#music-playback[data-has-player=false]")
-    refute has_element?(view, "#music-playback [data-player-action=expand]")
-  end
+    assert has_element?(view, "#play-album[data-music-action=album]")
+    assert has_element?(view, "#tracks-#{f.file.id}[data-state=pending]")
 
-  defp player_generation(view) do
-    view
-    |> element("#music-playback")
-    |> render()
-    |> then(fn html -> Regex.run(~r/data-generation="([^"]+)"/, html) |> Enum.at(1) end)
+    assert has_element?(
+             view,
+             "#tracks-#{second.file.id} .music-track-play[data-music-action=track]"
+           )
   end
 end

@@ -16,6 +16,27 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   alias Bolognesa.Music.Domain.ValueObjects.{Observation, TrackMetadata}
   alias Bolognesa.Repo
   @impl true
+  def fetch_track(track_id) do
+    row =
+      base_query(nil)
+      |> where([_file, _library, _inspection, track], track.id == ^track_id)
+      |> limit(1)
+      |> select(
+        [file, _library, inspection, track, artist, album, import_state],
+        {file, inspection, track, artist.name, album.title, import_state}
+      )
+      |> Repo.one(log: false)
+
+    case row do
+      nil -> {:error, :not_found}
+      value -> {:ok, row(value)}
+    end
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  @impl true
   def list_tracks(query, page, library_id) do
     with :ok <- library_scope(library_id) do
       base = base_query(library_id) |> search(query)

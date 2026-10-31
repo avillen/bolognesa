@@ -5,7 +5,7 @@ defmodule BolognesaWeb.Router do
   import BolognesaWeb.Locale
 
   pipeline :browser do
-    plug :accepts, ["html"]
+    plug :accepts, ["html", "json"]
     plug :fetch_session
     plug :fetch_browser_locale
     plug :fetch_live_flash
@@ -39,6 +39,8 @@ defmodule BolognesaWeb.Router do
     pipe_through :browser
 
     post "/login", SessionController, :create
+    post "/music/playback/track", MusicPlaybackController, :track
+    post "/music/playback/album", MusicPlaybackController, :album
 
     live_session :public_access, on_mount: [{BolognesaWeb.Locale, :default}] do
       live "/setup", Setup.Live, :new

@@ -5,8 +5,8 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
 mode="${1:-generate}"
-if [[ "$mode" != "generate" && "$mode" != "--check" && "$mode" != "--verify-fullscreen" ]]; then
-  echo "Usage: $0 [--check|--verify-fullscreen]" >&2
+if [[ "$mode" != "generate" && "$mode" != "--check" && "$mode" != "--verify-fullscreen" && "$mode" != "--verify-music-host" && "$mode" != "--verify-persistent-music" ]]; then
+  echo "Usage: $0 [--check|--verify-fullscreen|--verify-music-host|--verify-persistent-music]" >&2
   exit 2
 fi
 
@@ -133,9 +133,13 @@ run_capture() {
     npm run capture-screenshots
 }
 
-if [[ "$mode" == "--verify-fullscreen" ]]; then
+if [[ "$mode" == "--verify-fullscreen" || "$mode" == "--verify-music-host" || "$mode" == "--verify-persistent-music" ]]; then
   export BOLOGNESA_VERIFY_EPISODE_FULLSCREEN=1
-else
+fi
+if [[ "$mode" == "--verify-persistent-music" ]]; then
+  export BOLOGNESA_VERIFY_PERSISTENT_MUSIC=1
+fi
+if [[ "$mode" != "--verify-fullscreen" && "$mode" != "--verify-music-host" && "$mode" != "--verify-persistent-music" ]]; then
   start_server
   run_capture public
   kill "$server_pid"
@@ -148,6 +152,10 @@ PORT=0 mix run scripts/screenshots/seed_readme_screenshots.exs
 start_server
 if [[ "$mode" == "--verify-fullscreen" ]]; then
   node scripts/playback/verify-episode-fullscreen.mjs
+elif [[ "$mode" == "--verify-music-host" ]]; then
+  node scripts/playback/verify-music-host.mjs
+elif [[ "$mode" == "--verify-persistent-music" ]]; then
+  node scripts/playback/verify-persistent-music.mjs
 else
   run_capture app
 fi

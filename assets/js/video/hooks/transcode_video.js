@@ -1,4 +1,4 @@
-import Hls from "../../vendor/hls.min.mjs"
+import Hls from "../../../vendor/hls.min.mjs"
 
 const TranscodeVideo = {
   mounted() {
