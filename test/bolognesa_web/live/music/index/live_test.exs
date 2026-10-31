@@ -17,11 +17,32 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     %{token: token}
   end
 
-  test "lists tagged tracks with authorized client actions", %{conn: conn, token: token} do
+  test "opens the artist tab by default and allows switching to songs", %{
+    conn: conn,
+    token: token
+  } do
     fixture = refresh_fixture(tags: %{"title" => "Sample Song", "artist" => "Sample Artist"})
 
     {:ok, view, _} =
       live(init_test_session(conn, user_token: token), "/music?library_id=#{fixture.library.id}")
+
+    render_async(view)
+    assert has_element?(view, "#music-artists-link[aria-current=page]")
+    assert has_element?(view, "#music-browse", "Sample Artist")
+    view |> element("#music-songs-link") |> render_click()
+    render_async(view)
+    assert has_element?(view, "#music-songs-link[aria-current=page]")
+    assert has_element?(view, "#music-tracks", "Sample Song")
+  end
+
+  test "lists tagged tracks with authorized client actions", %{conn: conn, token: token} do
+    fixture = refresh_fixture(tags: %{"title" => "Sample Song", "artist" => "Sample Artist"})
+
+    {:ok, view, _} =
+      live(
+        init_test_session(conn, user_token: token),
+        "/music?library_id=#{fixture.library.id}&view=tracks"
+      )
 
     render_async(view)
     assert has_element?(view, "#music-screen[phx-hook=AudioPlayer]")
@@ -64,7 +85,7 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     pending = music_fixture(inspection_state: :pending)
     failed = music_fixture(inspection_state: :failed)
     ready = refresh_fixture()
-    {:ok, view, _} = live(init_test_session(conn, user_token: token), "/music")
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), "/music?view=tracks")
     render_async(view)
     assert has_element?(view, "#tracks-#{pending.file.id}[data-state=pending]")
     assert has_element?(view, "#tracks-#{failed.file.id}[data-state=inspection_failed]")

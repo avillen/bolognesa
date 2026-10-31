@@ -44,7 +44,7 @@
       >{gettext("Álbumes")}</.link>
       <.link
         id="music-songs-link"
-        patch={~p"/music?#{@library_params}"}
+        patch={~p"/music?#{Map.put(@library_params, :view, :tracks)}"}
         aria-current={@browse_kind == :tracks && "page"}
         class="music-tab"
       >{gettext("Canciones")}</.link>

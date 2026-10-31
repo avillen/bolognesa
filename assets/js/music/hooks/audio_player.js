@@ -11,8 +11,12 @@ export default {
     this.showQueueFeedback = (feedback, message) => {
       if (!feedback) return
       feedback.textContent = message
+      feedback.dataset.visible = "true"
       clearTimeout(this.feedbackTimer)
-      this.feedbackTimer = setTimeout(() => { feedback.textContent = "" }, 3000)
+      this.feedbackTimer = setTimeout(() => {
+        feedback.textContent = ""
+        delete feedback.dataset.visible
+      }, 3000)
     }
     this.session = window.bolognesaMusicPlayer?.session
     if (!this.session) return

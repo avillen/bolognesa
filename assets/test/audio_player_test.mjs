@@ -64,6 +64,7 @@ test("add-to-queue action reports the result", async () => {
     await new Promise(resolve => setImmediate(resolve))
     assert.deepEqual(calls, [{trackId: 4, fileId: 9}])
     assert.equal(feedback.textContent, "Added to queue")
+    assert.equal(feedback.dataset.visible, "true")
     hook.destroyed.call(context)
   } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
 })

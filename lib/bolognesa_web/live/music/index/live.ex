@@ -8,7 +8,7 @@ defmodule BolognesaWeb.Music.Index.Live do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:browse_kind, :tracks)
+     |> assign(:browse_kind, :artists)
      |> assign(:artist_id, nil)
      |> assign(:album_id, nil)
      |> assign(:heading, nil)

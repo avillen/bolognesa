@@ -356,7 +356,7 @@ try {
     await page.mouse.move(1430, 990);
     await withStableVideoFrame(() => page.locator("#movie-player").screenshot({ animations: "disabled", path: screenshotPath("player.png") }));
 
-    await capture("music.png", `/music?library_id=${ids.music_library}`, "main h1", "#music-loading");
+    await capture("music.png", `/music?library_id=${ids.music_library}&view=tracks`, "main h1", "#music-loading");
     await page.locator(`#play-track-${ids.music_track}`).click();
     const audio = page.locator("audio#music-player");
     await audio.waitFor({ state: "attached" });
