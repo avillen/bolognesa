@@ -1,13 +1,15 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: help local-up local-down local-logs screenshots check-screenshots
+.PHONY: help local-up local-down local-logs screenshots check-screenshots grafana-build grafana-check grafana-publish
 
 help:
 	@printf '%s\n' \
 	  'local-up/down/logs    Operate the development Compose project' \
 	  'screenshots           Regenerate README screenshots with isolated demo data' \
 	  'check-screenshots     Verify README screenshots are up to date' \
+	  'grafana-build         Generate and check the Grafana overview' \
+	  'grafana-publish       Publish the Grafana overview to Grafana Cloud' \
 	  'deploy-init/upload   Prepare and distribute the selected server recipe' \
 	  'deploy-preflight     Validate Docker, Compose and configured paths' \
 	  'deploy-build         Build/export an image with configurable local Docker/platform' \
@@ -34,6 +36,17 @@ screenshots:
 
 check-screenshots:
 	@bash scripts/screenshots/run-readme-screenshots.sh --check
+
+grafana-build:
+	@python3 grafana/build-overview.py
+	@python3 test/grafana/overview-test.py
+
+grafana-check:
+	@python3 test/grafana/overview-test.py
+	@python3 test/grafana/publish-test.py
+
+grafana-publish:
+	@python3 grafana/publish-dashboard.py
 
 DEPLOY_CONFIG ?= .env.deploy
 -include $(DEPLOY_CONFIG)

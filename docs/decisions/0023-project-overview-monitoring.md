@@ -1,6 +1,6 @@
 # 0023. Project overview and optional Docker resource metrics
 
-Status: Dashboard imported, exporter release deployed on ARM64, and Docker CPU/memory/network forwarding verified through the Grafana Cloud API. Representative resource accuracy and block-I/O data remain unverified.
+Status: Dashboard layout and publication superseded by [0026](0026-dashboard-as-code-publication.md). The exporter release is deployed on ARM64, and Docker CPU/memory/network forwarding is verified through the Grafana Cloud API. Representative resource accuracy and block-I/O data remain unverified.
 
 ## Context
 

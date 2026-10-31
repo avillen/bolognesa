@@ -1,0 +1,1154 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "Prometheus-compatible metrics data source",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "BEAM runtime and optional Docker resources for a low-traffic home installation. Missing data is never healthy zero.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "BEAM \u00b7 runtime resources",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Uptime",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "bolognesa_prom_ex_beam_stats_uptime_milliseconds_count{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "Uptime",
+          "editorMode": "code",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Memory",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 1,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "bolognesa_prom_ex_beam_memory_allocated_bytes{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "memory_allocated_bytes {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q1",
+          "expr": "bolognesa_prom_ex_beam_memory_processes_total_bytes{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "memory_processes_total_bytes {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q2",
+          "expr": "bolognesa_prom_ex_beam_memory_binary_total_bytes{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "memory_binary_total_bytes {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q3",
+          "expr": "bolognesa_prom_ex_beam_memory_ets_total_bytes{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "memory_ets_total_bytes {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q4",
+          "expr": "bolognesa_prom_ex_beam_memory_atom_total_bytes{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "memory_atom_total_bytes {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q5",
+          "expr": "bolognesa_prom_ex_beam_memory_code_total_bytes{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "memory_code_total_bytes {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Processes / ports / ETS",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 1,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "bolognesa_prom_ex_beam_stats_process_count{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "stats_process_count {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q1",
+          "expr": "bolognesa_prom_ex_beam_stats_port_count{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "stats_port_count {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q2",
+          "expr": "bolognesa_prom_ex_beam_stats_ets_count{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "stats_ets_count {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Scheduler work and run queues",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "bolognesa_prom_ex_beam_stats_active_task_count{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "stats_active_task_count {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q1",
+          "expr": "bolognesa_prom_ex_beam_stats_run_queue_count{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "stats_run_queue_count {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Atoms",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 5,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "bolognesa_prom_ex_beam_stats_atom_count{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "stats_atom_count {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q1",
+          "expr": "bolognesa_prom_ex_beam_system_atom_limit_info{job=\"$job\", instance=\"$instance\"}",
+          "legendFormat": "system_atom_limit_info {{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Garbage collections",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 5,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "rate(bolognesa_prom_ex_beam_stats_gc_count{job=\"$job\", instance=\"$instance\"}[$__rate_interval])",
+          "legendFormat": "{{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "GC reclaimed bytes",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "rate(bolognesa_prom_ex_beam_stats_gc_reclaimed_bytes{job=\"$job\", instance=\"$instance\"}[$__rate_interval])",
+          "legendFormat": "{{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Reductions",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 9,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "rate(bolognesa_prom_ex_beam_stats_reduction_count{job=\"$job\", instance=\"$instance\"}[$__rate_interval])",
+          "legendFormat": "{{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Port I/O",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 9,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "rate(bolognesa_prom_ex_beam_stats_port_io_byte_count{job=\"$job\", instance=\"$instance\"}[$__rate_interval])",
+          "legendFormat": "{{type}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "Docker \u00b7 optional Linux collector",
+      "collapsed": true,
+      "panels": [
+        {
+          "id": 12,
+          "type": "stat",
+          "title": "Docker collector scrape",
+          "description": "Requires monitoring.docker.yaml on native Linux. No data means absent or unavailable collection, not zero resource use. The exporter may be up even when container discovery fails.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 14,
+            "w": 8,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "No data",
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "none",
+            "graphMode": "none",
+            "textMode": "auto",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "Q0",
+              "expr": "up{job=\"bolognesa-docker\", instance=\"$instance\"}",
+              "legendFormat": "Scrape",
+              "editorMode": "code",
+              "instant": true,
+              "range": false
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "type": "stat",
+          "title": "Containers observed recently",
+          "description": "At least one fresh container sample per service. Missing service requires investigation; scrape success alone is insufficient.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "gridPos": {
+            "x": 8,
+            "y": 14,
+            "w": 8,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "No data",
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "none",
+            "graphMode": "none",
+            "textMode": "auto",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "Q0",
+              "expr": "count by (service) (container_last_seen{job=\"bolognesa-docker\", instance=\"$instance\"} > time() - 180)",
+              "legendFormat": "{{service}}",
+              "editorMode": "code",
+              "instant": true,
+              "range": false
+            }
+          ]
+        },
+        {
+          "id": 14,
+          "type": "timeseries",
+          "title": "CPU \u00b7 cores used",
+          "description": "One unit is one CPU core. Includes FFmpeg subprocesses in the app container.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "gridPos": {
+            "x": 16,
+            "y": 14,
+            "w": 8,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "No data",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 8,
+                "showPoints": "auto",
+                "spanNulls": false
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "Q0",
+              "expr": "sum by (service) (rate(container_cpu_usage_seconds_total{job=\"bolognesa-docker\", instance=\"$instance\"}[$__rate_interval]))",
+              "legendFormat": "{{service}}",
+              "editorMode": "code",
+              "instant": false,
+              "range": true
+            }
+          ]
+        },
+        {
+          "id": 15,
+          "type": "timeseries",
+          "title": "Network \u00b7 receive / transmit",
+          "description": "Per-container network counters. Host-network containers can share host counters; values must not be summed into a host total.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 18,
+            "w": 8,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "noValue": "No data",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 8,
+                "showPoints": "auto",
+                "spanNulls": false
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "Q0",
+              "expr": "sum by (service) (rate(container_network_receive_bytes_total{job=\"bolognesa-docker\", instance=\"$instance\"}[$__rate_interval]))",
+              "legendFormat": "{{service}} \u00b7 RX",
+              "editorMode": "code",
+              "instant": false,
+              "range": true
+            },
+            {
+              "refId": "Q1",
+              "expr": "sum by (service) (rate(container_network_transmit_bytes_total{job=\"bolognesa-docker\", instance=\"$instance\"}[$__rate_interval]))",
+              "legendFormat": "{{service}} \u00b7 TX",
+              "editorMode": "code",
+              "instant": false,
+              "range": true
+            }
+          ]
+        },
+        {
+          "id": 16,
+          "type": "timeseries",
+          "title": "Block I/O \u00b7 read / write",
+          "description": "Block I/O exposed by the runtime; may be absent depending on storage driver. Does not measure media capacity or free space.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "gridPos": {
+            "x": 8,
+            "y": 18,
+            "w": 8,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "noValue": "No data",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 8,
+                "showPoints": "auto",
+                "spanNulls": false
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "Q0",
+              "expr": "sum by (service) (rate(container_fs_reads_bytes_total{job=\"bolognesa-docker\", instance=\"$instance\"}[$__rate_interval]))",
+              "legendFormat": "{{service}} \u00b7 read",
+              "editorMode": "code",
+              "instant": false,
+              "range": true
+            },
+            {
+              "refId": "Q1",
+              "expr": "sum by (service) (rate(container_fs_writes_bytes_total{job=\"bolognesa-docker\", instance=\"$instance\"}[$__rate_interval]))",
+              "legendFormat": "{{service}} \u00b7 write",
+              "editorMode": "code",
+              "instant": false,
+              "range": true
+            }
+          ]
+        },
+        {
+          "id": 17,
+          "type": "stat",
+          "title": "Container starts",
+          "description": "Most recent container start timestamp. This is not a durable restart counter.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "gridPos": {
+            "x": 16,
+            "y": 18,
+            "w": 8,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "dateTimeAsIso",
+              "noValue": "No data",
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "none",
+            "graphMode": "none",
+            "textMode": "auto",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "Q0",
+              "expr": "max by (service) (container_start_time_seconds{job=\"bolognesa-docker\", instance=\"$instance\"}) * 1000",
+              "legendFormat": "{{service}}",
+              "editorMode": "code",
+              "instant": true,
+              "range": false
+            }
+          ]
+        },
+        {
+          "id": 18,
+          "type": "timeseries",
+          "title": "Memory \u00b7 $service",
+          "description": "Working set is current usage for this service; the dashed line is its configured container limit. Unlimited containers can report the host limit.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "repeat": "service",
+          "repeatDirection": "v",
+          "gridPos": {
+            "x": 0,
+            "y": 22,
+            "w": 24,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "noValue": "No data",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 8,
+                "showPoints": "auto",
+                "spanNulls": false
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "limit"
+                },
+                "properties": [
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        10,
+                        10
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "#8a8a8a"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "Q0",
+              "expr": "sum(container_memory_working_set_bytes{job=\"bolognesa-docker\", instance=\"$instance\", service=~\"$service\"})",
+              "legendFormat": "usage",
+              "editorMode": "code",
+              "instant": false,
+              "range": true
+            },
+            {
+              "refId": "Q1",
+              "expr": "max(container_spec_memory_limit_bytes{job=\"bolognesa-docker\", instance=\"$instance\", service=~\"$service\"})",
+              "legendFormat": "limit",
+              "editorMode": "code",
+              "instant": false,
+              "range": true
+            }
+          ]
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 1
+      }
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": [
+    "bolognesa",
+    "operations"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allValue": null,
+        "datasource": "${DS_PROMETHEUS}",
+        "definition": "label_values(bolognesa_prom_ex_prom_ex_status_info, job)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Prometheus Job",
+        "multi": false,
+        "name": "job",
+        "options": [],
+        "query": "label_values(bolognesa_prom_ex_prom_ex_status_info, job)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 6,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "datasource": "${DS_PROMETHEUS}",
+        "definition": "label_values(bolognesa_prom_ex_prom_ex_status_info, instance)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Application Instance",
+        "multi": false,
+        "name": "instance",
+        "options": [],
+        "query": "label_values(bolognesa_prom_ex_prom_ex_status_info{job=\"$job\"}, instance)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "${DS_PROMETHEUS}",
+        "definition": "label_values(container_memory_working_set_bytes{job=\"bolognesa-docker\"}, service)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Docker service",
+        "multi": true,
+        "name": "service",
+        "options": [],
+        "query": "label_values(container_memory_working_set_bytes{job=\"bolognesa-docker\"}, service)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Bolognesa \u00b7 Overview",
+  "uid": "bolognesa-overview",
+  "version": 1,
+  "weekStart": ""
+}

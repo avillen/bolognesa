@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "grafana" / "dashboards"
 PROM_EX_MODULE = "Bolognesa.Infrastructure.Observability.PromEx"
 DASHBOARDS = ("application", "beam", "phoenix", "ecto", "oban")
