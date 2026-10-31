@@ -24,7 +24,7 @@ defmodule BolognesaWeb.Player do
 
     ~H"""
     <section
-      :if={@selected_file_id}
+      :if={@selected_file_id || @playback_error}
       id={"#{@prefix}-player"}
       class={@class}
       aria-label={gettext("Reproductor")}
@@ -51,7 +51,7 @@ defmodule BolognesaWeb.Player do
         data-duration-ms={@transcode_session && @transcode_session.duration_ms}
         data-src={!@playback_error && @video_src}
         data-playback-error={@playback_error}
-        data-retry-file-id={@selected_file_id}
+        data-retry-file-id={@selected_file_id || @retry_file_id}
         data-retry-label={gettext("Reintentar reproducción")}
         class="bolognesa-video-frame"
       >
