@@ -3,6 +3,8 @@ defmodule BolognesaWeb.Episode.Show.Reducer.ApplyResult do
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   alias BolognesaWeb.Episode.Show.Reducer.SelectPart
+  alias BolognesaWeb.LiveSupport.PlaybackControl
+  alias BolognesaWeb.LiveSupport.PlaybackState
 
   @spec call(Phoenix.LiveView.Socket.t(), reference(), term()) :: Phoenix.LiveView.Socket.t()
   def call(socket, request_id, result) do
@@ -14,6 +16,7 @@ defmodule BolognesaWeb.Episode.Show.Reducer.ApplyResult do
   defp apply_result(socket, {:ok, {:ok, detail}}) do
     socket
     |> assign(:loading?, false)
+    |> assign(:content_ref, {:episode, detail.episode.id})
     |> assign(:detail, detail)
     |> assign(
       :multi_episode?,
@@ -23,12 +26,18 @@ defmodule BolognesaWeb.Episode.Show.Reducer.ApplyResult do
   end
 
   defp apply_result(socket, {:ok, {:error, :too_many_versions}}),
-    do:
-      socket
-      |> assign(:loading?, false)
-      |> assign(:error, gettext("Esta ficha supera el límite de 100 elementos."))
+    do: failed(socket, gettext("Esta ficha supera el límite de 100 elementos."))
 
-  defp apply_result(socket, _),
-    do:
-      socket |> assign(:loading?, false) |> assign(:error, gettext("No se encontró el episodio."))
+  defp apply_result(socket, _), do: failed(socket, gettext("No se encontró el episodio."))
+
+  defp failed(socket, message) do
+    PlaybackControl.stop_transcode(socket, :version_selected)
+
+    socket
+    |> PlaybackState.initialize()
+    |> assign(:detail, nil)
+    |> assign(:playback_versions, [])
+    |> assign(:loading?, false)
+    |> assign(:error, message)
+  end
 end

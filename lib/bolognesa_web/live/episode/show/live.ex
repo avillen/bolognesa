@@ -10,12 +10,22 @@ defmodule BolognesaWeb.Episode.Show.Live do
 
   @impl true
   def handle_params(params, _uri, socket) do
+    id = parse_id(params["id"])
     part = parse_part(Map.get(params, "part"))
     changed = socket.assigns.requested_part != part
     socket = socket |> Navigation.assign_context(params) |> assign(:requested_part, part)
 
     socket =
-      if changed && socket.assigns.detail, do: Reducer.SelectPart.call(socket, part), else: socket
+      cond do
+        socket.assigns.requested_episode_id != id ->
+          Reducer.Initialize.load(socket, socket.assigns.current_scope.actor, id)
+
+        changed && socket.assigns.detail && !socket.assigns.loading? ->
+          Reducer.SelectPart.call(socket, part)
+
+        true ->
+          socket
+      end
 
     {:noreply, socket}
   end

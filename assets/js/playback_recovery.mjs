@@ -8,7 +8,7 @@ function browserStorage() {
 // One checkpoint per tab. Stored values are hints; HLS seeks still use server authorization.
 export function createPlaybackRecovery(hook, storage = browserStorage()) {
   const {video, el} = hook
-  let fileId, pending, active = false, complete = false, lastSaved = 0
+  let fileId, scope, pending, active = false, complete = false, lastSaved = 0
   let restoreTimer, destroyed = false
   const remove = () => { try { storage?.removeItem(storageKey) } catch {} }
   const read = () => {
@@ -22,11 +22,11 @@ export function createPlaybackRecovery(hook, storage = browserStorage()) {
     return null
   }
   const save = () => {
-    if (!active || pending || complete || !el.dataset.recoveryScope || video.ended || video.error) return
+    if (!active || pending || complete || !scope || video.ended || video.error) return
     const positionMs = Math.floor(((video.fileTimeline?.offset || 0) + video.currentTime) * 1000)
     if (!Number.isFinite(positionMs) || positionMs < 0 || positionMs > 2147483647) return
     try {
-      storage?.setItem(storageKey, JSON.stringify({scope: el.dataset.recoveryScope,
+      storage?.setItem(storageKey, JSON.stringify({scope,
         fileId, positionMs, paused: video.paused, savedAt: Date.now()}))
       lastSaved = Date.now()
     } catch {}
@@ -39,8 +39,9 @@ export function createPlaybackRecovery(hook, storage = browserStorage()) {
 
   return {
     beforeSourceChange() { clearTimeout(restoreTimer); save(); active = false },
-    source() {
-      if (fileId !== el.dataset.fileId) {
+    source({retry = false} = {}) {
+      if (retry || fileId !== el.dataset.fileId || scope !== el.dataset.recoveryScope) {
+        scope = el.dataset.recoveryScope
         fileId = el.dataset.fileId
         pending = read()
         complete = false

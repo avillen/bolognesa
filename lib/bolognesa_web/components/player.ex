@@ -39,7 +39,6 @@ defmodule BolognesaWeb.Player do
         {gettext("Preparando versión compatible…")}
       </p>
       <div
-        :if={!@playback_error}
         id={"#{@prefix}-video-frame"}
         phx-hook="VideoPlayer"
         data-video-id={@video_id}
@@ -50,7 +49,10 @@ defmodule BolognesaWeb.Player do
         data-autoplay={to_string(!@transcode_session || @transcode_autoplay?)}
         data-offset-ms={@transcode_session && @transcode_session.offset_ms}
         data-duration-ms={@transcode_session && @transcode_session.duration_ms}
-        data-src={@video_src}
+        data-src={!@playback_error && @video_src}
+        data-playback-error={@playback_error}
+        data-retry-file-id={@selected_file_id}
+        data-retry-label={gettext("Reintentar reproducción")}
         class="bolognesa-video-frame"
       >
         <div id={"#{@prefix}-video-ui"} phx-update="ignore">
@@ -61,7 +63,7 @@ defmodule BolognesaWeb.Player do
               controls
               playsinline
               preload="metadata"
-              src={!@transcode_session && @video_src}
+              src={!@playback_error && !@transcode_session && @video_src}
               poster={@poster}
               class="aspect-video w-full bg-black"
             >

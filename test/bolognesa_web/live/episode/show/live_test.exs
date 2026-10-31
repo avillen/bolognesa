@@ -59,10 +59,10 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
 
     refute has_element?(view, "#episode-play-#{second.id}")
     render_hook(view, "playback_ended", %{file_id: to_string(first.id)})
-    assert_redirect(view, "/episodes/#{ctx.episode_id}?part=2&season_page=3")
+    render_async(view)
+    assert_patch(view, "/episodes/#{ctx.episode_id}?part=2&season_page=3")
 
-    {:ok, second_view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=2")
-    render_async(second_view)
+    second_view = view
     assert has_element?(second_view, "#episode-title", "Uno (Parte 2)")
 
     assert has_element?(
@@ -72,7 +72,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
 
     assert has_element?(
              second_view,
-             "#episode-previous[href='/episodes/#{ctx.episode_id}?part=1']"
+             "#episode-previous[href='/episodes/#{ctx.episode_id}?part=1&season_page=3']"
            )
   end
 
@@ -121,8 +121,50 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     html = render_hook(view, "playback_error", %{file_id: to_string(first.id)})
     [_, session] = Regex.run(~r/data-session-id="([^"]+)"/, html)
     render_hook(view, "playback_ended", %{session_id: session})
-    assert_redirect(view, "/episodes/#{ctx.episode_id}?part=2")
+    render_async(view)
+    assert_patch(view, "/episodes/#{ctx.episode_id}?part=2")
     assert :not_found = Bolognesa.Playback.video_transcode_status(session)
+  end
+
+  test "a playback error keeps the player mounted for retry", ctx do
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    File.rm!(Path.join(ctx.directory, ctx.media_file.relative_path))
+    render_hook(view, "playback_error", %{file_id: to_string(ctx.media_file.id)})
+    assert has_element?(view, "#episode-playback-error")
+    assert has_element?(view, "#episode-video-frame[phx-hook='VideoPlayer'][data-playback-error]")
+    refute has_element?(view, "#episode-video-frame[data-src]")
+    assert has_element?(view, "#episode-retry-playback")
+  end
+
+  test "failed episode navigation releases conversion and cannot reuse the previous detail",
+       ctx do
+    executable = Path.join(ctx.directory, "navigation-ffmpeg")
+    File.write!(executable, "#!/bin/sh\nwhile :; do sleep 1; done\n")
+    File.chmod!(executable, 0o700)
+    old = Application.get_env(:bolognesa, :ffmpeg_executable)
+    Application.put_env(:bolognesa, :ffmpeg_executable, executable)
+
+    on_exit(fn ->
+      TranscodeManager.stop_all()
+
+      if old,
+        do: Application.put_env(:bolognesa, :ffmpeg_executable, old),
+        else: Application.delete_env(:bolognesa, :ffmpeg_executable)
+    end)
+
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    html = render_hook(view, "playback_error", %{file_id: to_string(ctx.media_file.id)})
+    [_, session] = Regex.run(~r/data-session-id="([^"]+)"/, html)
+    render_patch(view, "/episodes/0")
+    render_async(view)
+    assert has_element?(view, "#episode-error")
+    refute has_element?(view, "#episode-title")
+    assert :not_found = Bolognesa.Playback.video_transcode_status(session)
+    render_patch(view, "/episodes/0?part=1")
+    assert has_element?(view, "#episode-error")
+    refute has_element?(view, "#episode-video-frame")
   end
 
   test "compact heading and localized air date below the synopsis", ctx do
@@ -165,15 +207,14 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
 
     assert has_element?(
              view,
-             "#episode-player + #episode-navigation #episode-next[href='/episodes/#{last}?season_page=3'][data-phx-link='redirect']"
+             "#episode-player + #episode-navigation #episode-next[href='/episodes/#{last}?season_page=3'][data-phx-link='patch']"
            )
 
     assert has_element?(view, "#episode-next", "Siguiente")
 
-    {:ok, next_view, _} =
-      view |> element("#episode-next") |> render_click() |> follow_redirect(ctx.conn)
-
-    render_async(next_view)
+    view |> element("#episode-next") |> render_click()
+    render_async(view)
+    next_view = view
     assert has_element?(next_view, "#episode-previous[href='/episodes/#{first}?season_page=3']")
     refute has_element?(next_view, "#episode-next")
     refute has_element?(next_view, "#episode-air-date")
@@ -279,7 +320,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
   end
 
   test "finishing direct playback advances past episodes sharing the file", ctx do
-    next_file = Bolognesa.SeriesFixtures.file(ctx.library.id, "next.mp4")
+    next_file = add_playable_file(ctx, "next.mp4")
 
     next =
       Bolognesa.SeriesFixtures.identify(next_file, 1, [1]) |> Map.fetch!(:episode_ids) |> hd()
@@ -287,17 +328,25 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
     render_hook(view, "playback_ended", %{file_id: to_string(ctx.media_file.id)})
-    assert_redirect(view, "/episodes/#{next}")
+    render_async(view)
+    assert_patch(view, "/episodes/#{next}")
+    render_async(view)
+
+    assert has_element?(
+             view,
+             "#episode-video-frame[data-src='/episodes/#{next}/media/#{next_file.id}']"
+           )
   end
 
   test "same-season automatic advance preserves the season return page", ctx do
     Bolognesa.SeriesFixtures.identify(ctx.media_file, 0, [1])
-    file = Bolognesa.SeriesFixtures.file(ctx.library.id, "next-same-season.mp4")
+    file = add_playable_file(ctx, "next-same-season.mp4")
     next = Bolognesa.SeriesFixtures.identify(file, 0, [2]) |> Map.fetch!(:episode_ids) |> hd()
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?season_page=3")
     render_async(view)
     render_hook(view, "playback_ended", %{file_id: to_string(ctx.media_file.id)})
-    assert_redirect(view, "/episodes/#{next}?season_page=3")
+    render_async(view)
+    assert_patch(view, "/episodes/#{next}?season_page=3")
   end
 
   test "initial preparation failure keeps a visible retry without claiming no versions exist",
@@ -325,7 +374,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
         else: Application.delete_env(:bolognesa, :ffmpeg_executable)
     end)
 
-    next_file = Bolognesa.SeriesFixtures.file(ctx.library.id, "next.mp4")
+    next_file = add_playable_file(ctx, "next.mp4")
 
     next =
       Bolognesa.SeriesFixtures.identify(next_file, 1, [1]) |> Map.fetch!(:episode_ids) |> hd()
@@ -335,7 +384,15 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
     html = render_hook(view, "playback_error", %{file_id: to_string(ctx.media_file.id)})
     [_, session] = Regex.run(~r/data-session-id="([^"]+)"/, html)
     render_hook(view, "playback_ended", %{session_id: session})
-    assert_redirect(view, "/episodes/#{next}")
+    render_async(view)
+    assert_patch(view, "/episodes/#{next}")
+    render_async(view)
+
+    assert has_element?(
+             view,
+             "#episode-video-frame[data-src='/episodes/#{next}/media/#{next_file.id}']"
+           )
+
     assert :not_found = Bolognesa.Playback.video_transcode_status(session)
   end
 
@@ -373,21 +430,22 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
   end
 
   defp add_part(ctx, part) do
-    name = "Example S00E01-part#{part}.mp4"
+    file = add_playable_file(ctx, "Example S00E01-part#{part}.mp4")
+    Bolognesa.SeriesFixtures.identify(file, 0, [1])
+    file
+  end
+
+  defp add_playable_file(ctx, name) do
     path = Path.join(ctx.directory, name)
     File.cp!(Path.join(ctx.directory, ctx.media_file.relative_path), path)
     stat = File.stat!(path, time: :posix)
     file = Bolognesa.SeriesFixtures.file(ctx.library.id, name)
 
-    file =
-      file
-      |> Ecto.Changeset.change(
-        modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond)
-      )
-      |> Bolognesa.Repo.update!()
-
-    Bolognesa.SeriesFixtures.identify(file, 0, [1])
     file
+    |> Ecto.Changeset.change(
+      modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond)
+    )
+    |> Bolognesa.Repo.update!()
   end
 
   defp mark_unavailable(file) do

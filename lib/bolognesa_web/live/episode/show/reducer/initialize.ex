@@ -13,8 +13,6 @@ defmodule BolognesaWeb.Episode.Show.Reducer.Initialize do
         ) ::
           Phoenix.LiveView.Socket.t()
   def call(socket, actor, id) do
-    request_id = make_ref()
-
     socket
     |> assign(:content_ref, {:episode, id})
     |> assign(:multi_episode?, false)
@@ -29,6 +27,22 @@ defmodule BolognesaWeb.Episode.Show.Reducer.Initialize do
     |> assign(:loading?, true)
     |> assign(:error, nil)
     |> PlaybackState.initialize()
+    |> load(actor, id)
+  end
+
+  @spec load(
+          Phoenix.LiveView.Socket.t(),
+          Bolognesa.Accounts.Domain.Entities.AuthenticatedUser.t(),
+          integer()
+        ) :: Phoenix.LiveView.Socket.t()
+  def load(socket, actor, id) do
+    request_id = make_ref()
+
+    socket
+    |> assign(:requested_episode_id, id)
+    |> assign(:loading?, true)
+    |> assign(:error, nil)
+    |> assign(:advance_request, nil)
     |> assign(:request_id, request_id)
     |> start_async({:episode, request_id}, fn -> Series.fetch_episode(actor, id) end)
   end

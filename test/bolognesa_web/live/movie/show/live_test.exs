@@ -428,7 +428,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       refute has_element?(view, "#movie-playback-error")
     end
 
-    test "failed fallback preparation removes the failed player and does not loop", ctx do
+    test "failed fallback preparation keeps the player for retry and does not loop", ctx do
       %{view: view, first: first} = ctx
       render_click(element(view, "#movie-play-#{first.id}"))
       File.rm!(Path.join(ctx.directory, "first.mp4"))
@@ -438,7 +438,8 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
       assert has_element?(view, "#movie-playback-error[data-reason='file_unavailable']")
       refute has_element?(view, "#movie-playback-preparing")
-      refute has_element?(view, "#movie-player video")
+      assert has_element?(view, "#movie-video-frame[data-playback-error]")
+      refute has_element?(view, "#movie-video-frame[data-src]")
       render_click(element(view, "#movie-play-#{ctx.second.id}"))
 
       assert has_element?(
@@ -453,7 +454,8 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       File.rm!(Path.join(ctx.directory, "first.mp4"))
       render_click(element(ctx.view, "#movie-play-#{ctx.first.id}"))
       assert has_element?(ctx.view, "#movie-playback-error[data-reason='file_unavailable']")
-      refute has_element?(ctx.view, "#movie-player video")
+      assert has_element?(ctx.view, "#movie-video-frame[data-playback-error]")
+      refute has_element?(ctx.view, "#movie-video-frame[data-src]")
     end
   end
 

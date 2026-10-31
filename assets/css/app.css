@@ -127,6 +127,23 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .bolognesa-video-frame { overflow: hidden; border-radius: 12px; background: #000; }
 .bolognesa-video-frame bolognesa-video-player { display: contents; }
 .bolognesa-video-frame video-skin { position: relative; display: block; --media-accent-color: var(--color-accent); }
+.bolognesa-playback-feedback { display: none; }
+.bolognesa-video-frame video-skin[data-player-fullscreen] .bolognesa-playback-feedback:not([hidden]) {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  background: var(--color-canvas, #000);
+  color: var(--color-ink, #fff);
+  text-align: center;
+}
+.bolognesa-playback-feedback button { min-height: 44px; padding: 12px 20px; border-radius: 8px; background: var(--color-accent, #c26e54); cursor: pointer; }
+.bolognesa-playback-feedback button:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
 
 .bolognesa-video-frame video-skin[data-initial-loading]::after {
   content: "";

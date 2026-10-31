@@ -321,6 +321,10 @@ try {
     const partsPage = await browser.newPage()
     partsPage.on("pageerror", error => errors.push(error.message))
     await partsPage.goto(`http://127.0.0.1:${server.address().port}/?parts=${delivery}`)
+    await partsPage.waitForFunction(() => document.querySelector("video").readyState >= 2)
+    await partsPage.locator("video").hover()
+    await partsPage.locator("media-fullscreen-button").click()
+    await partsPage.waitForFunction(() => !!document.fullscreenElement)
     for (const file of [1, 2, 3]) {
       if (file > 1) {
         await partsPage.evaluate(({file, delivery}) => {
@@ -334,6 +338,8 @@ try {
       }
       await partsPage.waitForFunction(() => document.querySelector("video").currentTime > 0.1 &&
         document.querySelector("video").readyState >= 2)
+      assert.equal(await partsPage.evaluate(() => !!document.fullscreenElement), true,
+        "Changing files must retain fullscreen")
       assert.ok(await partsPage.locator("video").evaluate(video => video.currentTime < 5),
         "A new part must start at its own beginning")
       await partsPage.locator("video").evaluate(async video => {
@@ -348,6 +354,32 @@ try {
     }
     await partsPage.close()
   }
+  const errorPage = await browser.newPage()
+  errorPage.setDefaultTimeout(15000)
+  await errorPage.goto(`http://127.0.0.1:${server.address().port}/?recovery=direct`)
+  await errorPage.waitForFunction(() => document.querySelector("video").readyState >= 2)
+  await errorPage.locator("video").hover()
+  await errorPage.locator("media-fullscreen-button").click()
+  await errorPage.waitForFunction(() => !!document.fullscreenElement)
+  await errorPage.locator("video").evaluate(video => { video.currentTime = 5 })
+  await errorPage.waitForFunction(() => document.querySelector("video").currentTime >= 5 && !document.querySelector("video").paused)
+  await errorPage.evaluate(() => {
+    window.originalVideo = window.context.video
+    Object.assign(window.context.el.dataset, {playbackError: "Conversion interrupted", retryFileId: "1", retryLabel: "Retry playback"})
+    window.hook.updated.call(window.context)
+  })
+  await errorPage.getByRole("button", {name: "Retry playback"}).click()
+  assert.deepEqual(await errorPage.evaluate(() => window.events.filter(([name]) => name === "play")),
+    [["play", {file_id: "1"}]])
+  assert.equal(await errorPage.evaluate(() => !!document.fullscreenElement && document.querySelector("video").paused), true)
+  await errorPage.evaluate(() => {
+    delete window.context.el.dataset.playbackError
+    window.hook.updated.call(window.context)
+  })
+  await errorPage.waitForFunction(() => document.querySelector("video").currentTime >= 5 && !document.querySelector("video").paused)
+  assert.equal(await errorPage.evaluate(() => !!document.fullscreenElement && window.originalVideo === document.querySelector("video")), true)
+  await errorPage.close()
+  console.log("Playback errors: fullscreen, visible retry, source recovery, and video identity preserved.")
   console.log("Consecutive files: direct/HLS parts start at zero and emit one completion with the current file/session identity.")
   assert.deepEqual(errors, [])
   await page.evaluate(() => window.hook.destroyed.call(window.context))

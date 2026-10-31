@@ -137,3 +137,43 @@ test("a rejected direct restore reports the failure and still permits playback",
   next.recovery.destroy()
   assert.equal(JSON.parse(next.storage.get("bolognesa.playback.checkpoint")).positionMs, 0)
 })
+
+test("switching episodes saves outgoing progress under the outgoing content scope", () => {
+  const first = setup()
+  first.recovery.source(); first.recovery.ready()
+  first.video.currentTime = 812
+  first.el.dataset.recoveryScope = "1:episode:99"
+  first.recovery.beforeSourceChange()
+  assert.equal(JSON.parse(first.storage.get("bolognesa.playback.checkpoint")).scope, "1:movie:2")
+  first.video.currentTime = 0
+  first.recovery.source(); first.recovery.ready()
+  first.video.currentTime = 10
+  first.video.pause()
+  assert.equal(JSON.parse(first.storage.get("bolognesa.playback.checkpoint")).scope, "1:episode:99")
+  first.recovery.destroy()
+})
+
+test("same-file retry restores the checkpoint without remounting the player", () => {
+  for (const delivery of ["direct", "hls"]) {
+    const first = setup()
+    first.recovery.source(); first.recovery.ready()
+    first.video.currentTime = 400
+    first.recovery.beforeSourceChange()
+    first.video.currentTime = 0
+    first.recovery.beforeSourceChange()
+    if (delivery === "hls") Object.assign(first.el.dataset, {sessionId: "retry", offsetMs: "0"})
+    const attached = first.recovery.source({retry: true})
+    if (delivery === "hls") {
+      assert.equal(attached, false)
+      assert.equal(first.events[0][1].position_ms, "400000")
+      first.el.dataset.offsetMs = "400000"
+      first.recovery.beforeSourceChange()
+      assert.equal(first.recovery.source(), true)
+      first.video.fileTimeline = {offset: 400}
+    }
+    first.recovery.ready()
+    assert.equal((first.video.fileTimeline?.offset || 0) + first.video.currentTime, 400)
+    assert.equal(first.video.paused, false)
+    first.recovery.destroy()
+  }
+})

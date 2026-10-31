@@ -29,6 +29,21 @@ defmodule BolognesaWeb.Episode.Show.ReducersTest do
     assert Advance.apply_result(selected, request, {:ok, {:ok, %Episode{id: 123}}}) == selected
   end
 
+  test "completion during navigation cannot replace the requested episode" do
+    socket = %Phoenix.LiveView.Socket{
+      assigns: %{
+        __changed__: %{},
+        loading?: true,
+        advance_request: nil,
+        transcode_session: nil,
+        selected_file_id: 1,
+        playback_error: nil
+      }
+    }
+
+    assert Advance.call(socket, %{"file_id" => "1"}) == socket
+  end
+
   test "duplicate HLS completion cannot start another continuation" do
     socket = %Phoenix.LiveView.Socket{
       assigns: %{
@@ -96,13 +111,22 @@ defmodule BolognesaWeb.Episode.Show.ReducersTest do
     request = make_ref()
 
     socket = %Phoenix.LiveView.Socket{
-      assigns: %{__changed__: %{}, request_id: request, loading?: true, error: nil}
+      assigns: %{
+        __changed__: %{},
+        request_id: request,
+        loading?: true,
+        error: nil,
+        detail: %{episode: %{id: 1}},
+        transcode_session: nil
+      }
     }
 
     result = {:ok, {:error, :too_many_versions}}
     updated = ApplyResult.call(socket, request, result)
     assert updated.assigns.loading? == false
     assert updated.assigns.error =~ "100"
+    assert updated.assigns.detail == nil
+    assert updated.assigns.selected_file_id == nil
     assert ApplyResult.call(socket, make_ref(), result) == socket
   end
 end

@@ -84,7 +84,7 @@
       >
         <.link
           :for={part <- @parts}
-          navigate={
+          patch={
             ~p"/episodes/#{@detail.episode.id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), %{part_number: part})}"
           }
           aria-current={if part == @active_part, do: "page"}
@@ -122,7 +122,7 @@
           :if={@previous_target}
           id="episode-previous"
           rel="prev"
-          navigate={
+          patch={
             ~p"/episodes/#{@previous_target.id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), @previous_target)}"
           }
           aria-label={gettext("Anterior episodio")}
@@ -136,7 +136,7 @@
           :if={@next_target}
           id="episode-next"
           rel="next"
-          navigate={
+          patch={
             ~p"/episodes/#{@next_target.id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), @next_target)}"
           }
           aria-label={gettext("Siguiente episodio")}

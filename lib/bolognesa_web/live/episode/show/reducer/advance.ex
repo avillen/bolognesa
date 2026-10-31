@@ -3,12 +3,14 @@ defmodule BolognesaWeb.Episode.Show.Reducer.Advance do
   use BolognesaWeb, :verified_routes
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
-  import Phoenix.LiveView, only: [start_async: 3, push_navigate: 2, put_flash: 3]
+  import Phoenix.LiveView, only: [start_async: 3, push_patch: 2, put_flash: 3]
   alias Bolognesa.Series
   alias BolognesaWeb.LiveSupport.PlaybackEvents
   alias BolognesaWeb.Series.Navigation
 
   @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
+  def call(%{assigns: %{loading?: true}} = socket, _params), do: socket
+
   def call(socket, params) do
     if current_playback?(socket, params) and is_nil(socket.assigns[:advance_request]) do
       start_advance(socket, params)
@@ -60,7 +62,7 @@ defmodule BolognesaWeb.Episode.Show.Reducer.Advance do
   defp stop_completed(socket, _params), do: socket
 
   defp finish(socket, {:ok, {:ok, episode}}),
-    do: push_navigate(socket, to: ~p"/episodes/#{episode.id}?#{advance_params(socket, episode)}")
+    do: push_patch(socket, to: ~p"/episodes/#{episode.id}?#{advance_params(socket, episode)}")
 
   defp finish(socket, {:ok, {:error, :part_unavailable}}),
     do:

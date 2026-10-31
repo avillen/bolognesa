@@ -92,6 +92,8 @@ Playback depends on browser codec support and server hardware. Limited FFmpeg/HL
 
 Video position and pause state can recover in the same tab for up to 12 hours, on a best-effort basis; progress is not saved across tabs or devices. Music plays without conversion and stops when leaving the music screen or reloading.
 
+The video player stays mounted when changing episodes or parts and when retrying playback errors, preserving element fullscreen in supported browsers. A full page reload or browser crash exits fullscreen; entering it again requires a user action. Native mobile fullscreen behavior needs separate device verification.
+
 ## Before updating
 
 Compatibility between releases is not guaranteed during early development. Read the [changelog](CHANGELOG.md) before updating, and keep a validated database backup, its matching application image, and private configuration. Back up original media separately. Restarting with an older image does not undo migrations.

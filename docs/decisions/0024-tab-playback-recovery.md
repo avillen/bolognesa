@@ -39,6 +39,14 @@ raw transport reasons, browser error messages, URLs and user-agent strings are e
 
 ## Consequences and limits
 
+Episode and part navigation patches the existing LiveView. Keep the player frame and
+ignored controls mounted while loading the next episode or handling a playback error;
+replace only the media source. Errors stop the source without destroying the fullscreen
+element, with an explicit retry inside element fullscreen. Checkpoints retain the
+outgoing content scope when the same hook switches episodes. Full document reloads
+cannot retain element fullscreen: browsers require a new user action to enter it.
+Native mobile fullscreen remains a separate device-verification requirement.
+
 Observation delivery is best effort. Replays can duplicate events when the server
 received a message but its acknowledgement was lost. Abrupt process termination can
 lose final events or storage entirely; a missing report never proves there was no
