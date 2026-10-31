@@ -29,4 +29,4 @@
 | [0023](0023-project-overview-monitoring.md) | Dashboard layout and publication superseded by 0026 | Context overview with sparse-traffic timings, bounded LiveView/Playback metrics and optional Docker resources |
 | [0024](0024-tab-playback-recovery.md) | Implemented and deployed; target-device checks pending | Same-tab video checkpoints and bounded page/transport diagnostics |
 | [0025](0025-consecutive-episode-parts.md) | Implemented locally | Ordered physical parts sharing one provider episode, part entries and continuation |
-| [0026](0026-dashboard-as-code-publication.md) | Accepted; implementation pending | Minimal overview generated from a declarative spec and published explicitly by API |
+| [0026](0026-dashboard-as-code-publication.md) | Implemented and published | Minimal overview generated from a declarative spec and published explicitly by API |

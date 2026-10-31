@@ -1,6 +1,6 @@
 # 0026. Dashboard as code with explicit publication
 
-Status: Accepted; implementation pending.
+Status: Implemented and published to Grafana Cloud. The dashboard content is intentionally minimal and grows as needed.
 
 ## Context
 
