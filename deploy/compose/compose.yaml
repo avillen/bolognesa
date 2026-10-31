@@ -3,6 +3,7 @@ name: ${COMPOSE_PROJECT_NAME:-bolognesa-server}
 services:
   db:
     image: postgres:17-bookworm
+    init: true
     restart: unless-stopped
     mem_limit: ${DB_MEMORY_LIMIT:-256m}
     cpus: ${DB_CPUS:-1.0}

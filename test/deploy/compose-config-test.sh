@@ -20,6 +20,8 @@ for network in ('bridge', 'host'):
         result = subprocess.run(cmd+['config','--format','json'],env=env,capture_output=True,text=True)
         assert result.returncode == 0, result.stderr
         c = json.loads(result.stdout); app=c['services']['app']; db=c['services']['db']
+        assert app.get('init') is True, app
+        assert db.get('init') is True, db
         assert not db.get('ports'), db
         assert all(v['read_only'] for v in app['volumes']), app['volumes']
         assert {v['target'] for v in app['volumes']} == {'/media/movies','/media/series','/media/music'}
