@@ -15,7 +15,9 @@ defmodule BolognesaWeb.MusicPlayer do
     >
       <audio id="music-playback" preload="metadata"></audio>
       <section id="music-player" class="music-player" aria-label={gettext("Reproductor de música")}>
-        <div class="music-player-art" aria-hidden="true">♫</div>
+        <div class="music-player-art" aria-hidden="true">
+          <img src={~p"/images/bolognesa-cat.svg"} alt="" />
+        </div>
         <div class="music-player-track">
           <p id="now-playing" class="music-player-title">{gettext("Nada en reproducción")}</p>
           <p data-player-artist class="music-player-artist"></p>
@@ -26,21 +28,28 @@ defmodule BolognesaWeb.MusicPlayer do
           data-label={gettext("Anterior")}
           aria-label={gettext("Anterior")}
           disabled
-        >{gettext("Anterior")}</button>
+        >
+          <.icon name="hero-backward-solid" class="size-5" />
+        </button>
         <button
           type="button"
           data-player-action="toggle"
           data-label-play={gettext("Reproducir")}
           data-label-pause={gettext("Pausar")}
           aria-label={gettext("Reproducir")}
-        >{gettext("Reproducir")}</button>
+        >
+          <span data-player-play-icon><.icon name="hero-play-solid" class="size-5" /></span>
+          <span data-player-pause-icon hidden><.icon name="hero-pause-solid" class="size-5" /></span>
+        </button>
         <button
           type="button"
           data-player-action="next"
           data-label={gettext("Siguiente")}
           aria-label={gettext("Siguiente")}
           disabled
-        >{gettext("Siguiente")}</button>
+        >
+          <.icon name="hero-forward-solid" class="size-5" />
+        </button>
         <span id="queue-position" aria-live="polite"></span>
         <span data-player-time></span>
         <span id="queue-finished" hidden>{gettext("Álbum terminado")}</span>
@@ -57,8 +66,20 @@ defmodule BolognesaWeb.MusicPlayer do
         <button type="button" data-player-action="retry" data-label={gettext("Reintentar")} hidden>{gettext(
           "Reintentar"
         )}</button>
-        <button type="button" data-player-action="expand" aria-expanded="false">{gettext("Ampliar")}</button>
-        <button type="button" data-player-action="collapse" hidden>{gettext("Cerrar")}</button>
+        <button
+          type="button"
+          data-player-action="expand"
+          aria-label={gettext("Ampliar")}
+          title={gettext("Ampliar")}
+          aria-expanded="false"
+        ><.icon name="hero-arrows-pointing-out" class="size-5" /></button>
+        <button
+          type="button"
+          data-player-action="collapse"
+          aria-label={gettext("Cerrar")}
+          title={gettext("Cerrar")}
+          hidden
+        ><.icon name="hero-chevron-down" class="size-5" /></button>
         <p data-player-loading role="status" hidden>{gettext("Preparando reproducción…")}</p>
         <p id="audio-error" role="alert" hidden></p>
         <span hidden data-player-error="autoplay_blocked">{gettext(

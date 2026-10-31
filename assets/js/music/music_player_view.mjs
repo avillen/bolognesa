@@ -92,8 +92,13 @@ export function connectMusicPlayerView(host, session) {
     const canNext = state.queueIndex >= 0 && state.queueIndex < state.queueCount - 1
     previous.disabled = !canPrevious
     next.disabled = !canNext
-    toggle.textContent = state.paused ? toggle.dataset.labelPlay : toggle.dataset.labelPause
-    toggle.setAttribute("aria-label", toggle.textContent)
+    const toggleLabel = state.paused ? toggle.dataset.labelPlay : toggle.dataset.labelPause
+    toggle.setAttribute("aria-label", toggleLabel)
+    toggle.setAttribute("title", toggleLabel)
+    const playIcon = toggle.querySelector("[data-player-play-icon]")
+    const pauseIcon = toggle.querySelector("[data-player-pause-icon]")
+    if (playIcon) playIcon.hidden = !state.paused
+    if (pauseIcon) pauseIcon.hidden = state.paused
     queuePosition.textContent = state.queueCount && state.queueIndex >= 0 ? `${state.queueIndex + 1} / ${state.queueCount}` : ""
     time.textContent = `${timeLabel(state.position)} / ${timeLabel(state.duration)}`
     finished.hidden = !state.finished
