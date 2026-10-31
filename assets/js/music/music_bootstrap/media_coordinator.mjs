@@ -1,4 +1,4 @@
-export function createMediaCoordinator() {
+export function createMediaCoordinator({onActiveChange = () => {}} = {}) {
   const participants = new Map()
   let active = null
   return {
@@ -7,6 +7,7 @@ export function createMediaCoordinator() {
       const onPlaying = () => {
         if (active === mediaElement) return
         active = mediaElement
+        onActiveChange(active)
         for (const participant of participants.keys()) {
           if (participant !== mediaElement && !participant.paused) {
             try { participant.pause() } catch { /* Media cleanup must not break the playback that started. */ }
@@ -17,7 +18,7 @@ export function createMediaCoordinator() {
       const unregister = () => {
         mediaElement.removeEventListener("playing", onPlaying)
         participants.delete(mediaElement)
-        if (active === mediaElement) active = null
+        if (active === mediaElement) { active = null; onActiveChange(null) }
       }
       participants.set(mediaElement, {unregister})
       return unregister
