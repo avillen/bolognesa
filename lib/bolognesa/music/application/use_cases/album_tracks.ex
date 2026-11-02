@@ -17,7 +17,7 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
         ) :: result()
   def call(actor, id, query, page, library, reader) do
     with :ok <- validate(actor, id, query, page, library),
-         {:ok, result} <- reader.list_album_tracks(id, query, page, library, 50) do
+         {:ok, result} <- reader.list_album_tracks(id, query, page, library, 50, actor.id) do
       {:ok, TrackPage.from_domain(result)}
     end
   end
@@ -31,7 +31,7 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
           queue_result()
   def queue(actor, id, library, reader) do
     with :ok <- validate(actor, id, "", 1, library),
-         {:ok, result} <- reader.list_album_tracks(id, "", 1, library, 501),
+         {:ok, result} <- reader.list_album_tracks(id, "", 1, library, 501, actor.id),
          true <- result.total <= 500 and length(result.items) <= 500 do
       {:ok, Enum.map(result.items, &Track.from_domain/1)}
     else

@@ -21,6 +21,11 @@ export default {
     this.session = window.bolognesaMusicPlayer?.session
     if (!this.session) return
     this.trackRows = connectTrackRows(this.el.querySelector("#music-tracks"), this.session)
+    let revision
+    this.stopActivityUpdates = this.session.subscribe(snapshot => {
+      if (revision !== undefined && snapshot.activityRevision !== revision) this.pushEvent("refresh", {})
+      revision = snapshot.activityRevision
+    })
     this.onMusicAction = event => {
       const button = event.target.closest?.('[data-music-action]')
       if (!button || !this.el.contains(button)) return
@@ -95,6 +100,7 @@ export default {
     this.el.ownerDocument?.removeEventListener("keydown", this.onMenuDismiss)
     this.el.removeEventListener("click", this.onMusicAction, true)
     this.trackRows?.destroy()
+    this.stopActivityUpdates?.()
     this.session = null
   },
 }

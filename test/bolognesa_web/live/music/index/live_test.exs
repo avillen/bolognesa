@@ -58,6 +58,59 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     refute has_element?(view, "#music-screen button[phx-click=play]")
   end
 
+  test "shows each track's last played date in songs and album views", %{conn: conn, token: token} do
+    fixture = refresh_fixture(tags: %{"title" => "Opening", "album" => "Record"})
+
+    %{rows: [[user_id]]} =
+      Repo.query!("SELECT id FROM accounts_users WHERE email = $1", ["music@example.com"])
+
+    %{rows: [[other_id]]} =
+      Repo.query!("""
+      INSERT INTO accounts_users (name, email, role, hashed_password, locale, inserted_at, updated_at)
+      VALUES ('Other', 'other@example.com', 'member', 'unused', 'en', now(), now()) RETURNING id
+      """)
+
+    Repo.query!(
+      "INSERT INTO music_listening_activity (user_id, track_id, last_played_at) VALUES ($1, $2, $3)",
+      [other_id, fixture.track.id, ~U[2025-01-01 00:00:00Z]]
+    )
+
+    {:ok, view, _} =
+      live(
+        init_test_session(conn, user_token: token),
+        "/music?library_id=#{fixture.library.id}&view=tracks"
+      )
+
+    render_async(view)
+    assert has_element?(view, "#tracks-#{fixture.file.id}", "Nunca reproducida")
+
+    Repo.query!(
+      "INSERT INTO music_listening_activity (user_id, track_id, last_played_at) VALUES ($1, $2, $3)",
+      [user_id, fixture.track.id, ~U[2026-10-28 14:00:00Z]]
+    )
+
+    view |> element("#refresh-music") |> render_click()
+    render_async(view)
+    assert has_element?(view, "#tracks-#{fixture.file.id}", "28/10/2026")
+
+    {:ok, album, _} =
+      live(
+        init_test_session(build_conn(), user_token: token),
+        "/music?library_id=#{fixture.library.id}&view=album&album_id=#{fixture.track.album_id}"
+      )
+
+    render_async(album)
+    assert has_element?(album, "#tracks-#{fixture.file.id}", "28/10/2026")
+  end
+
+  test "translates the never played state to English", %{conn: conn, token: token} do
+    fixture = refresh_fixture()
+    Repo.query!("UPDATE accounts_users SET locale = 'en' WHERE email = $1", ["music@example.com"])
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), "/music?view=tracks")
+    render_async(view)
+    assert has_element?(view, "#tracks-#{fixture.file.id}", "Never played")
+  end
+
   test "cross-type library selection redirects and empty music libraries remain selectable", %{
     conn: conn,
     token: token

@@ -17,7 +17,7 @@ defmodule Bolognesa.Music.Application.UseCases.ListTracks do
   def call(actor, query, page, library_id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
          true <- valid?(query, page, library_id),
-         {:ok, result} <- reader.list_tracks(query, page, library_id) do
+         {:ok, result} <- reader.list_tracks(query, page, library_id, actor.id) do
       {:ok, TrackPage.from_domain(result)}
     else
       false -> {:error, :invalid_query}

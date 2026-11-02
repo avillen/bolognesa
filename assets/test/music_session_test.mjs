@@ -431,6 +431,8 @@ test("reports actual playback once and reports again after replay", async () => 
   assert.equal(reports.length, 0)
   now = 10; audio.currentTime = 10; audio.dispatchEvent(new Event("timeupdate"))
   assert.deepEqual(reports, [{trackId: 1, fileId: 11}])
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(session.getSnapshot().activityRevision, 1)
   now = 20; audio.currentTime = 20; audio.dispatchEvent(new Event("ended"))
   session.play()
   now = 30; audio.currentTime = 10; audio.dispatchEvent(new Event("timeupdate"))

@@ -87,3 +87,21 @@ test("a playback action closes a different open track menu", () => {
     hook.destroyed.call(context)
   } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
 })
+
+test("refreshes visible track dates after listening activity is saved", () => {
+  const listeners = []
+  const session = {subscribe(fn) { listeners.push(fn); fn({activityRevision: 0}); return () => {} }}
+  const list = {querySelectorAll: () => []}
+  const el = {querySelector: () => list, addEventListener() {}, removeEventListener() {}}
+  const originalWindow = globalThis.window, originalObserver = globalThis.MutationObserver
+  globalThis.window = {bolognesaMusicPlayer: {session}}
+  globalThis.MutationObserver = class {observe() {} disconnect() {}}
+  const events = []
+  try {
+    const context = {el, pushEvent: (...args) => events.push(args)}
+    hook.mounted.call(context)
+    for (const listener of listeners) listener({activityRevision: 1})
+    assert.deepEqual(events, [["refresh", {}]])
+    hook.destroyed.call(context)
+  } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
+})
