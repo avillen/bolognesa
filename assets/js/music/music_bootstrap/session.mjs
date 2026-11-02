@@ -1,11 +1,15 @@
 import { createCommandTracker } from "./session/commands.js";
 import { createMusicQueue } from "./session/queue.js";
+import { createListeningActivity } from "./session/listening_activity.mjs";
 import { listenToMedia } from "./session/media_events.js";
 
 const copyTrack = (track) => (track ? { ...track } : null);
 
-export function createMusicSession({ audio, transport }) {
+export function createMusicSession({ audio, transport, clock }) {
   const queue = createMusicQueue();
+  const activity = createListeningActivity({clock, report: track =>
+    transport.recordActivity?.({trackId: track.id, fileId: track.file_id})
+  });
   let state = {
     selected: null,
     paused: true,
@@ -76,6 +80,7 @@ export function createMusicSession({ audio, transport }) {
     notify();
   }
   const stopListening = listenToMedia(audio, {
+    onEvent: event => activity.update({position: audio.currentTime, duration: audio.duration, playing: !audio.paused && event.type !== "ended", seeking: audio.seeking || event.type === "seeking"}),
     hasSelection: () => Boolean(state.selected),
     isLoading: () => state.loading,
     onEnded: handleEnded,
@@ -131,6 +136,7 @@ export function createMusicSession({ audio, transport }) {
       audio.src = result.src;
       audio.load();
       state.selected = copyTrack(result.track);
+      activity.select(state.selected, state.selected.duration_ms / 1000);
       state.position = 0;
       state.duration = null;
       state.loading = false;
@@ -402,6 +408,7 @@ export function createMusicSession({ audio, transport }) {
     },
     previous() {
       if (state.selected && audio.currentTime > 3) {
+        activity.select(state.selected, state.selected.duration_ms / 1000);
         audio.currentTime = 0;
         state.finished = false;
         endedGeneration = -1;
@@ -421,6 +428,7 @@ export function createMusicSession({ audio, transport }) {
         const next = queue.nextIndex();
         if (queue.index >= 0 && next !== null) return moveTo(next);
         audio.currentTime = 0;
+        activity.select(state.selected, state.selected.duration_ms / 1000);
         state.finished = false;
         endedGeneration = -1;
       }
@@ -530,6 +538,7 @@ export function createMusicSession({ audio, transport }) {
 
   function clear() {
     sessionGeneration++;
+    activity.select(null);
     appendChain = Promise.resolve();
     pendingReplacement = null;
     deferredEndedGeneration = null;

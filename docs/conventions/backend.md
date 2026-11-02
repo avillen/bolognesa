@@ -69,6 +69,8 @@ Owns library-local tracks, artists, albums, file associations, import attempts, 
 
 Libraries owns sanitized observations; Music accepts them through its transaction-aware facade and owns pending import state, linked jobs, and recovery from acceptance onward. Imports revalidate the current observation before writing, tolerate duplicate delivery, and reject stale revisions or inspection tokens. Reads are authorized and library-scoped; Playback reauthorizes each selected track.
 
+Listening activity belongs to an account and stores at most one latest timestamp per track and account. The browser reports after 30 seconds of observed playback, or half the duration of a shorter track; pauses and seeks do not count. This is a best-effort client observation, not server-verified proof of listening. Transient failures are retried while that selection remains active. Track identity follows the inventory path: refreshes and replacements at the same path retain activity, while a rename creates a new identity. Deleting an account or track deletes its activity.
+
 Identity keys, import locking and recovery, browsing limits, and album playback contracts are defined in [decision 0018](../decisions/0018-local-music-catalog.md). User-facing listening behavior and limitations belong in the [README](../../README.md#playback-limits); record verification evidence in the relevant issue or pull request.
 
 ### Playback

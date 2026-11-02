@@ -40,6 +40,7 @@ defmodule BolognesaWeb.Router do
 
     post "/login", SessionController, :create
     post "/music/playback/track", MusicPlaybackController, :track
+    post "/music/playback/activity", MusicPlaybackController, :activity
     post "/music/playback/album", MusicPlaybackController, :album
 
     live_session :public_access, on_mount: [{BolognesaWeb.Locale, :default}] do

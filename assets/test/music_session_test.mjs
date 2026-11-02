@@ -417,3 +417,26 @@ test("an old track ending during a failed replacement is handled once", async ()
   await replacement
   assert.equal(session.getSnapshot().finished, true)
 })
+
+test("reports actual playback once and reports again after replay", async () => {
+  let now = 0
+  const audio = new FakeAudio()
+  const reports = []
+  const session = createMusicSession({audio, clock: () => now, transport: {
+    async selectTrack() { return {track: {id: 1, file_id: 11, title: "Track", duration_ms: 20_000, state: "ready"}, src: "/music/tracks/1/media/11"} },
+    async recordActivity(track) { reports.push(track) },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  now = 9; audio.currentTime = 9; audio.dispatchEvent(new Event("timeupdate"))
+  assert.equal(reports.length, 0)
+  now = 10; audio.currentTime = 10; audio.dispatchEvent(new Event("timeupdate"))
+  assert.deepEqual(reports, [{trackId: 1, fileId: 11}])
+  now = 20; audio.currentTime = 20; audio.dispatchEvent(new Event("ended"))
+  session.play()
+  now = 30; audio.currentTime = 10; audio.dispatchEvent(new Event("timeupdate"))
+  assert.equal(reports.length, 2)
+  session.previous()
+  audio.dispatchEvent(new Event("seeked"))
+  now = 40; audio.currentTime = 10; audio.dispatchEvent(new Event("timeupdate"))
+  assert.equal(reports.length, 3)
+})
