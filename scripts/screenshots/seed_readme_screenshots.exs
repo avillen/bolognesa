@@ -210,6 +210,25 @@ series_file =
 
 ReadmeScreenshotSeed.insert_identification!(series_file.id, :automatic, episode.id)
 
+# Only the playback regression needs a continuation target; keep README captures unchanged.
+next_episode_id =
+  if System.get_env("BOLOGNESA_VERIFY_EPISODE_FULLSCREEN") == "1" do
+    next_episode =
+      Repo.insert!(%EpisodeSchema{
+        provider: :tmdb,
+        provider_id: 900_005,
+        season_id: season.id,
+        number: 2,
+        title: "The Second Call"
+      })
+
+    next_path = "Small Hours/Season 1/Small Hours S01E02.webm"
+    File.cp!(movie_path, Path.join(series_directory, next_path))
+    next_file = ReadmeScreenshotSeed.insert_media_file!(series_library.id, series_directory, next_path)
+    ReadmeScreenshotSeed.insert_identification!(next_file.id, :automatic, next_episode.id)
+    next_episode.id
+  end
+
 series_review_file =
   ReadmeScreenshotSeed.insert_media_file!(
     series_library.id,
@@ -262,6 +281,54 @@ music_tracks =
     Repo.get_by!(Bolognesa.Infrastructure.Persistence.MusicTrackSchema, media_file_id: file.id)
   end
 
+queue_middle_track =
+  if System.get_env("BOLOGNESA_VERIFY_PERSISTENT_MUSIC") == "1" do
+    middle_path = "Sample Ensemble/Night Signals/Quiet River.wav"
+    ReadmeScreenshotSeed.write_sample_audio!(Path.join(music_directory, middle_path))
+    middle_file = ReadmeScreenshotSeed.insert_media_file!(music_library.id, music_directory, middle_path)
+    middle_tags = Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags.from_raw(%{
+      "title" => "Quiet River", "artist" => "Sample Ensemble", "album" => "Night Signals", "track" => "3"
+    })
+    Repo.insert!(%InspectionSchema{
+      media_file_id: middle_file.id, token: Ecto.UUID.generate(), observed_revision: 1,
+      state: :succeeded, format: "wav", duration_ms: 10_000,
+      tracks: %{"items" => [%{"kind" => "audio", "codec" => "pcm_s16le"}]},
+      music_tags: Map.from_struct(middle_tags)
+    }, log: false)
+    :ok = Music.refresh_track(middle_file.id, 1)
+    Repo.get_by!(Bolognesa.Infrastructure.Persistence.MusicTrackSchema, media_file_id: middle_file.id)
+  end
+
+pending_queue_track =
+  if System.get_env("BOLOGNESA_VERIFY_PERSISTENT_MUSIC") == "1" do
+    pending_path = "Sample Ensemble/Night Signals/Queue Pending.wav"
+    ReadmeScreenshotSeed.write_sample_audio!(Path.join(music_directory, pending_path))
+    pending_file = ReadmeScreenshotSeed.insert_media_file!(music_library.id, music_directory, pending_path)
+
+    inspection_tags =
+      Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags.from_raw(%{
+        "title" => "Queue Pending",
+        "artist" => "Sample Ensemble",
+        "album" => "Night Signals",
+        "track" => "4"
+      })
+
+    Repo.insert!(%InspectionSchema{
+      media_file_id: pending_file.id,
+      token: Ecto.UUID.generate(),
+      observed_revision: 1,
+      state: :succeeded,
+      format: "wav",
+      duration_ms: 10_000,
+      tracks: %{"items" => [%{"kind" => "audio", "codec" => "pcm_s16le"}]},
+      music_tags: Map.from_struct(inspection_tags)
+    }, log: false)
+
+    :ok = Music.refresh_track(pending_file.id, 1)
+    Repo.update!(Ecto.Changeset.change(pending_file, revision: 2))
+    Repo.get_by!(Bolognesa.Infrastructure.Persistence.MusicTrackSchema, media_file_id: pending_file.id)
+  end
+
 System.fetch_env!("BOLOGNESA_SCREENSHOT_IDS")
 |> File.write!(
   Jason.encode!(%{
@@ -269,13 +336,18 @@ System.fetch_env!("BOLOGNESA_SCREENSHOT_IDS")
     series_library: series_library.id,
     music_library: music_library.id,
     music_track: hd(music_tracks).id,
+    music_file: hd(music_tracks).media_file_id,
     music_artist: hd(music_tracks).artist_id,
     music_album: hd(music_tracks).album_id,
     music_second_track: Enum.at(music_tracks, 1).id,
+    music_second_file: Enum.at(music_tracks, 1).media_file_id,
+    music_middle_track: queue_middle_track && queue_middle_track.id,
+    music_pending_track: pending_queue_track && pending_queue_track.id,
     movie: movie.id,
     series: series.id,
     season: season.id,
-    episode: episode.id
+    episode: episode.id,
+    next_episode: next_episode_id
   })
 )
 

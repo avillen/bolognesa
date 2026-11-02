@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createTimeNumberFormat} from "../js/video_time_format.mjs"
+import {createTimeNumberFormat} from "../js/video/time_format.mjs"
 
 class LegacyNumberFormat extends Intl.NumberFormat {
   constructor(locale, options) {

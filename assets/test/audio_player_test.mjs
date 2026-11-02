@@ -1,105 +1,89 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import {readFile} from "node:fs/promises"
+const code = await readFile(new URL("../js/music/hooks/audio_player.js", import.meta.url), "utf8")
+const rows = `data:text/javascript;base64,${Buffer.from(await readFile(new URL("../js/music/hooks/audio_player/track_list.js", import.meta.url), "utf8")).toString("base64")}`
+const moduleCode = code.replace('"./audio_player/track_list.js"', JSON.stringify(rows))
+const {default: hook} = await import(`data:text/javascript;base64,${Buffer.from(moduleCode).toString("base64")}`)
 
-const moduleUrl = code => `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`
-const errors = moduleUrl(await readFile(new URL("../js/hooks/audio_error.js", import.meta.url), "utf8"))
-const rows = moduleUrl(await readFile(new URL("../js/hooks/audio_track_list.js", import.meta.url), "utf8"))
-const code = (await readFile(new URL("../js/hooks/audio_player.js", import.meta.url), "utf8"))
-  .replace('import "../../vendor/videojs.min.mjs"', "")
-  .replace('"./audio_error"', JSON.stringify(errors))
-  .replace('"./audio_track_list"', JSON.stringify(rows))
-const {default: hook} = await import(moduleUrl(code))
-
-test("audio controls preserve refresh state, load new generations once and stop on exit", () => {
-  let source = "/first"
-  let loads = 0
-  let pauses = 0
-  let plays = 0
+test("Music screen commands the document session and unmount only detaches it", () => {
+  const actions = []
   const listeners = new Map()
-  const sourceElement = {
-    getAttribute: () => source,
-    setAttribute: (_name, value) => { source = value },
-    removeAttribute: () => { source = null },
+  const selected = {id: 3, file_id: 8}
+  const session = {
+    getSnapshot: () => ({selected, paused: true}),
+    subscribe: () => () => {},
+    selectTrack: value => actions.push(["select", value]),
+    playAlbum: value => actions.push(["album", value]),
+    play: () => actions.push(["play"]),
+    pause: () => actions.push(["pause"]),
   }
-  const audio = {
-    dataset: {}, controls: true, currentTime: 3,
-    querySelector: () => sourceElement,
-    replaceWith() {},
+  const list = {querySelectorAll: () => []}
+  const button = {dataset: {musicAction: "track", trackId: "3", fileId: "8"}}
+  const el = {
+    querySelector: () => list,
     addEventListener: (name, fn) => listeners.set(name, fn),
     removeEventListener: name => listeners.delete(name),
-    load: () => loads++, pause: () => pauses++,
-    play: () => { plays++; return Promise.resolve() },
+    contains: () => true,
   }
-  const originalDocument = globalThis.document
-  const documentListeners = new Map()
-  const document = {
-    createElement: () => ({append() {}}),
-    addEventListener: (name, fn) => documentListeners.set(name, fn),
-    removeEventListener: name => documentListeners.delete(name),
-  }
-  const miniPlayer = {
-    setAttribute() {},
-    focus() { document.activeElement = this },
-  }
-  const closePlayer = {focus() { document.activeElement = this }}
-  const background = {inert: false}
-  const pageSibling = {inert: false}
-  const root = {
-    dataset: {src: "/first", generation: "1", playRequested: "false", stopped: "false", expanded: "false"},
-    attributes: {}, listeners: new Map(),
-    parentElement: {children: null, parentElement: {children: null}},
-    querySelector(selector) {
-      if (selector === "audio") return audio
-      return selector.includes("collapse") ? closePlayer : miniPlayer
-    },
-    setAttribute(name, value) { this.attributes[name] = value },
-    removeAttribute(name) { delete this.attributes[name] },
-    addEventListener(name, fn) { this.listeners.set(name, fn) },
-    removeEventListener(name) { this.listeners.delete(name) },
-    contains(target) { return target === this || target === miniPlayer || target === closePlayer },
-  }
-  root.parentElement.children = [root, background]
-  root.parentElement.parentElement.children = [root.parentElement, pageSibling]
-  globalThis.document = {...document, body: root.parentElement.parentElement}
-  const context = {
-    el: root,
-    pushEvent() {},
-  }
+  const originalWindow = globalThis.window
+  const originalObserver = globalThis.MutationObserver
+  globalThis.MutationObserver = class {constructor() {} observe() {} disconnect() {}}
+  globalThis.window = {bolognesaMusicPlayer: {session}}
+  const context = {el}
+  const event = {target: {closest: () => button}, preventDefault() {}, stopImmediatePropagation() {}}
   try {
     hook.mounted.call(context)
-    assert.equal(audio.controls, false)
-    hook.updated.call(context)
-    assert.equal(loads, 0)
-    assert.equal(audio.currentTime, 3)
-    Object.assign(context.el.dataset, {src: "/second", generation: "2", playRequested: "true"})
-    hook.updated.call(context)
-    hook.updated.call(context)
-    assert.equal(source, "/second")
-    assert.equal(loads, 1)
-    assert.equal(plays, 1)
-    assert.equal(audio.dataset.generation, "2")
-    root.listeners.get("click")({target: {closest: () => ({dataset: {playerAction: "expand"}})}})
-    assert.equal(root.attributes.role, "dialog")
-    assert.equal(root.attributes["aria-modal"], "true")
-    assert.equal(background.inert, true)
-    assert.equal(pageSibling.inert, true)
-    root.dataset.expanded = "false"
-    hook.updated.call(context)
-    assert.equal(root.dataset.expanded, "true")
-    assert.equal(background.inert, true)
-    documentListeners.get("keydown")({key: "Escape"})
-    assert.equal(root.dataset.expanded, "false")
-    assert.equal(background.inert, false)
-    assert.equal(pageSibling.inert, false)
-    assert.equal(document.activeElement, miniPlayer)
+    listeners.get("click")(event)
+    assert.deepEqual(actions, [["play"]])
+    button.dataset = {musicAction: "track", trackId: "4", fileId: "9"}
+    listeners.get("click")(event)
+    assert.deepEqual(actions[1], ["select", {trackId: 4, fileId: 9}])
     hook.destroyed.call(context)
     assert.equal(listeners.size, 0)
-    assert.equal(documentListeners.size, 0)
-    assert.equal(pauses, 1)
-    assert.equal(loads, 2)
-    assert.equal(source, null)
-  } finally {
-    globalThis.document = originalDocument
-  }
+    assert.ok(context.session === null)
+  } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
+})
+
+test("add-to-queue action reports the result", async () => {
+  const listeners = new Map()
+  const feedback = {dataset: {added: "Added to queue", failed: "Could not add"}, textContent: ""}
+  const calls = []
+  const session = {subscribe: () => () => {}, appendTrack: async value => { calls.push(value); return true }}
+  const list = {querySelectorAll: () => []}
+  const button = {dataset: {musicAction: "append-track", trackId: "4", fileId: "9"}}
+  const el = {querySelector: selector => selector === "#music-queue-feedback" ? feedback : list, addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: name => listeners.delete(name), contains: () => true}
+  const originalWindow = globalThis.window
+  const originalObserver = globalThis.MutationObserver
+  globalThis.MutationObserver = class {observe() {} disconnect() {}}
+  globalThis.window = {bolognesaMusicPlayer: {session}}
+  const context = {el}
+  try {
+    hook.mounted.call(context)
+    listeners.get("click")({target: {closest: () => button}, preventDefault() {}, stopImmediatePropagation() {}})
+    await new Promise(resolve => setImmediate(resolve))
+    assert.deepEqual(calls, [{trackId: 4, fileId: 9}])
+    assert.equal(feedback.textContent, "Added to queue")
+    assert.equal(feedback.dataset.visible, "true")
+    hook.destroyed.call(context)
+  } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
+})
+
+test("a playback action closes a different open track menu", () => {
+  const listeners = new Map()
+  const menu = {open: true}
+  const button = {dataset: {musicAction: "track", trackId: "1", fileId: "2"}, closest: () => null}
+  const session = {subscribe: () => () => {}, getSnapshot: () => ({selected: null}), selectTrack() {}}
+  const list = {querySelectorAll: () => []}
+  const el = {querySelector: () => list, querySelectorAll: () => [menu], contains: () => true, addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener() {}}
+  const originalWindow = globalThis.window, originalObserver = globalThis.MutationObserver
+  globalThis.window = {bolognesaMusicPlayer: {session}}
+  globalThis.MutationObserver = class {observe() {} disconnect() {}}
+  try {
+    const context = {el}
+    hook.mounted.call(context)
+    listeners.get("click")({target: {closest: () => button}, preventDefault() {}, stopImmediatePropagation() {}})
+    assert.equal(menu.open, false)
+    hook.destroyed.call(context)
+  } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
 })

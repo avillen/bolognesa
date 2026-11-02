@@ -50,12 +50,29 @@ at the browser boundary. It checks controls, global seeks, pause/resume, fullscr
 replacement, drag commit behavior, paused seeks, and Spanish labels. This does not replace
 an end-to-end check with FFmpeg sessions and representative media on target devices.
 
+`bash scripts/screenshots/run-readme-screenshots.sh --verify-music-host` verifies that the
+authenticated root layout renders the persistent player host and public pages do not.
+`bash scripts/screenshots/run-readme-screenshots.sh --verify-persistent-music` uses
+synthetic media and an isolated database to verify navigation continuity, queue progression
+outside Music, socket reconnection, unavailable-track retry, logout cleanup, keyboard
+expansion, and a 375px browser viewport. The viewport check runs in desktop Chromium and
+does not establish compatibility with real mobile browsers or devices.
+
 `npm run measure-hls -- tmp/videojs-fixtures` measures the production hook against
 a controlled synthetic HTTP producer, with two-minute phases and bootstrap reported
 separately. Accounting and playlist-generation tests run with the Node suite. See the
 [monitoring procedure](../../deploy/compose/monitoring.md#measure-hls-request-behavior)
 for report interpretation, a short smoke check, and the separate target-server baseline.
 This tool observes paused polling; it does not require that polling to remain present.
+
+`bash scripts/screenshots/run-readme-screenshots.sh --verify-fullscreen` seeds two
+synthetic episodes in an isolated database and checks automatic continuation, the
+next-episode link, and a browser-error conversion attempt through the real LiveView.
+It asserts fullscreen, video identity, and continuous connection of the player's
+ancestors. The hook-only browser fixture does not exercise DOM changes made by LiveView.
+This check uses the screenshot workflow's Docker and browser dependencies and does not
+update README captures. When FFmpeg is unavailable, the conversion attempt verifies
+fullscreen through the visible preparation failure instead of a ready HLS session.
 
 Generate disposable fixtures with FFmpeg, then use an installed Chrome with H.264 support:
 

@@ -29,15 +29,6 @@ defmodule BolognesaWeb.Player do
       class={@class}
       aria-label={gettext("Reproductor")}
     >
-      <p
-        :if={@transcode_session && !@transcode_ready? && !@playback_error}
-        id={"#{@prefix}-playback-preparing"}
-        role="status"
-        data-session-id={@transcode_session.id}
-        class="text-muted"
-      >
-        {gettext("Preparando versión compatible…")}
-      </p>
       <div
         id={"#{@prefix}-video-frame"}
         phx-hook="VideoPlayer"

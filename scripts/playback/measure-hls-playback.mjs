@@ -25,7 +25,7 @@ const segmentBodies = await Promise.all(fixture.segments.map(segment => readFile
 const config = await readFile("config/config.exs", "utf8")
 const target = config.match(/--target=([^\s]+)/)[1].split(",")
 const bundle = await build({stdin: {resolveDir: process.cwd(), contents: `
-import hook from './assets/js/hooks/video_player.js';
+import hook from './assets/js/video/hooks/video_player.js';
 window.hook = hook;
 window.events = []; window.hlsErrors = [];
 window.context = {el: document.querySelector('#frame'), pushEvent: (name, data, callback) => {

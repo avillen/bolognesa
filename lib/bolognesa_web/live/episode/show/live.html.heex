@@ -39,21 +39,24 @@
           else: gettext("Temporada %{value0}", value0: @detail.season.number)}
       </.link>
     </nav>
-    <p :if={@loading?} id="episode-loading" role="status" class="text-muted">
-      {gettext("Cargando ficha…")}
-    </p>
-    <p
-      :if={@error}
-      id="episode-error"
-      role="alert"
-      class="rounded-xl border border-red-300/30 p-5 text-red-100"
-    >
-      {@error}
-      <.link
-        navigate={~p"/series?#{@catalog_params}"}
-        class="block min-h-11 py-3 text-accent-soft"
-      >{gettext("← Todas las series")}</.link>
-    </p>
+    <%!-- Keep status changes from moving the fullscreen player ancestor during patches. --%>
+    <div id="episode-status">
+      <p :if={@loading?} id="episode-loading" role="status" class="text-muted">
+        {gettext("Cargando ficha…")}
+      </p>
+      <p
+        :if={@error}
+        id="episode-error"
+        role="alert"
+        class="rounded-xl border border-red-300/30 p-5 text-red-100"
+      >
+        {@error}
+        <.link
+          navigate={~p"/series?#{@catalog_params}"}
+          class="block min-h-11 py-3 text-accent-soft"
+        >{gettext("← Todas las series")}</.link>
+      </p>
+    </div>
     <div :if={@detail && !@error}>
       <header class="episode-heading">
         <h1 id="episode-title" class="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">

@@ -40,7 +40,7 @@ See the official [LiveView security model](https://hexdocs.pm/phoenix_live_view/
 - Use `assign_async/3` for async assigns or `start_async/3` with `handle_async/3` for custom
   coordination. Capture only required inputs, never the socket. Handle failures and stale
   results explicitly; durable jobs belong in the backend, not LiveView tasks.
-- Hooks live in `assets/js/hooks/` and are imported by `assets/js/app.js`. Add JavaScript
+- Browser code is grouped by context under `assets/js/music/`, `assets/js/video/`, and `assets/js/shared/`; context hooks live in each area’s `hooks/` directory and are registered by `assets/js/app.js`. Add JavaScript
   only for browser APIs or immediate interactions; use `Phoenix.LiveView.JS` for supported
   DOM operations. Do not add ordinary inline scripts to templates.
 - Use documented hook/event APIs. Clean up timers, listeners, observers, and player instances

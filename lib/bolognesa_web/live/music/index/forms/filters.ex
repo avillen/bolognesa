@@ -11,6 +11,7 @@ defmodule BolognesaWeb.Music.Index.Forms.Filters do
         "artists" -> :artists
         "albums" -> :albums
         "album" -> :album
+        nil -> :artists
         _ -> :tracks
       end
 

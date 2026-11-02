@@ -39,7 +39,7 @@ defmodule BolognesaWeb.Episode.Show.LiveTest do
       position_ms: "invalid"
     })
 
-    assert has_element?(view, "#episode-playback-preparing[role='status']")
+    refute has_element?(view, "#episode-playback-preparing")
     refute has_element?(view, "#episode-video-frame[data-src]")
     refute has_element?(view, "#episode-playback-error")
   end

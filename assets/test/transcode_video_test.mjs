@@ -1,8 +1,8 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import {readFile} from "node:fs/promises"
-const source = (await readFile(new URL("../js/hooks/transcode_video.js", import.meta.url), "utf8"))
-  .replace('import Hls from "../../vendor/hls.min.mjs"', 'const Hls = {isSupported: () => false}')
+const source = (await readFile(new URL("../js/video/hooks/video_player/transcode_video.js", import.meta.url), "utf8"))
+  .replace('import Hls from "../../../../vendor/hls.min.mjs"', 'const Hls = {isSupported: () => false}')
 const {default: hook} = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`)
 
 function setup() {
@@ -56,7 +56,7 @@ test("seeking while paused does not request autoplay", () => {
 
 
 test("fatal HLS failures are diagnosed before the session is stopped", async () => {
-  const raw = await readFile(new URL("../js/hooks/transcode_video.js", import.meta.url), "utf8")
+  const raw = await readFile(new URL("../js/video/hooks/video_player/transcode_video.js", import.meta.url), "utf8")
   const mock = `class Hls {
     static isSupported() { return true }
     static Events = {MANIFEST_PARSED: "ready", ERROR: "error"}
@@ -64,7 +64,7 @@ test("fatal HLS failures are diagnosed before the session is stopped", async () 
     on(event, listener) { this.listeners[event] = listener }
     loadSource() {} attachMedia() {} destroy() {}
   }`
-  const code = raw.replace('import Hls from "../../vendor/hls.min.mjs"', mock)
+  const code = raw.replace('import Hls from "../../../../vendor/hls.min.mjs"', mock)
   const {default: hlsHook} = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`)
   const calls = []
   const el = new EventTarget()

@@ -247,7 +247,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       assert session.offset_ms == 12_000
       refute has_element?(view, "#movie-playback-error")
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
-      assert has_element?(view, "#movie-playback-preparing[data-session-id='#{session.id}']")
+      refute has_element?(view, "#movie-playback-preparing")
     end
 
     test "version preparation selects its source once for direct and transcode playback", ctx do
@@ -276,7 +276,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         refute_receive :playback_source_selected
       end
 
-      assert has_element?(ctx.view, "#movie-playback-preparing")
+      refute has_element?(ctx.view, "#movie-playback-preparing")
     end
 
     test "selecting a direct version releases the previous conversion", ctx do
@@ -298,7 +298,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     test "prepares inspected incompatible media and displays its HLS controls when ready", ctx do
       session = start_inspected_version(ctx)
       assert session.strategy == :audio_only
-      assert has_element?(ctx.view, "#movie-playback-preparing", "Preparando versión compatible")
+      refute has_element?(ctx.view, "#movie-playback-preparing")
       refute has_element?(ctx.view, "#movie-video-frame[data-src]")
       make_ready(ctx.view, session)
 
@@ -486,7 +486,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
   defp preparing_session(view) do
     [_, id] =
-      Regex.run(~r/id="movie-playback-preparing"[^>]*data-session-id="([^"]+)"/, render(view))
+      Regex.run(~r/id="movie-video-frame"[^>]*data-session-id="([^"]+)"/, render(view))
 
     {:ok, session} = TranscodeManager.lookup(id)
     session

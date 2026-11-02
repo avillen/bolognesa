@@ -1,4 +1,6 @@
-import AudioPlayer from "./hooks/audio_player"
+import AudioPlayer from "./music/hooks/audio_player"
+import {createMusicTransport} from "./music/music_transport.mjs"
+import {initializeMusicPlayer} from "./music/music_bootstrap.mjs"
 // If you want to use Phoenix channels, run `mix help phx.gen.channel`
 // to get started and then uncomment the line below.
 // import "./user_socket.js"
@@ -25,12 +27,13 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/bolognesa"
 import topbar from "../vendor/topbar"
-import ImageFallback from "./hooks/image_fallback"
-import VideoPlayer from "./hooks/video_player"
-import NavigationMenu from "./hooks/navigation_menu"
-import BrowsePosition from "./hooks/browse_position"
+import ImageFallback from "./shared/hooks/image_fallback"
+import VideoPlayer from "./video/hooks/video_player"
+import NavigationMenu from "./shared/hooks/navigation_menu"
+import BrowsePosition from "./shared/hooks/browse_position"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+window.bolognesaMusicPlayer = initializeMusicPlayer(document, {transport: createMusicTransport({csrfToken})})
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},

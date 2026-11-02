@@ -207,3 +207,5 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .library-form-actions { flex-direction: row; justify-content: flex-end; }
   .library-create-overlay { align-items: center; }
 }
+
+#app-content { padding-bottom: calc(var(--music-player-height, 0px) + env(safe-area-inset-bottom, 0px)); }

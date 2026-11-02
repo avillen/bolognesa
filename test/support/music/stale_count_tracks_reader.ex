@@ -3,6 +3,8 @@ defmodule Bolognesa.Music.StaleCountTracksReader do
   @behaviour Bolognesa.Music.Application.Ports.Readers.TracksReader
   alias Bolognesa.Music.Domain.ReadModels.{TrackPage, TrackRow}
   @impl true
+  def fetch_track(_), do: {:error, :not_found}
+  @impl true
   def list_tracks(_, _, _), do: {:error, :unavailable}
   @impl true
   def list_album_tracks(_, _, _, _, _) do
