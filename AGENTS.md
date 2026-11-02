@@ -10,6 +10,12 @@ A Phoenix web application for learning and home use. Bolognesa's decisions and c
 - If work remains incomplete, record the files or branch, pending steps, failed command, and reproducible symptoms in the relevant issue or pull request. Do not store credentials or private media inventories.
 - Mark a milestone complete only when its acceptance criteria in GitHub are met. Avoid empty plans or speculative implementations.
 
+## Local development
+
+- For development that needs a running application, use the Docker development environment described in [CONTRIBUTING](CONTRIBUTING.md#development-with-docker): `sh scripts/dev/ensure.sh`. Each worktree has its own PostgreSQL volume and does not use the deployment database.
+- When investigating the running application, use the configured `bolognesa_tidewave` MCP server when available for runtime, log, database, and source information. The local proxy is started for the current worktree and its tools require port `4000` (inside that worktree's app container). Confirm it points to this development instance before relying on its results. If MCP tools are unavailable, continue with other project tools and report the limitation.
+- Run project checks in the development container with `sh scripts/dev/compose.sh exec -T app mix precommit`. Preserve existing volumes and do not enable Tidewave in production.
+
 ## Documentation organization
 
 Consult [docs/README.md](docs/README.md) and follow the [documentation convention](docs/conventions/documentation.md). Keep public content in English and free of private details. Track work and release scope in GitHub issues and milestones. When temporary work is finished, remove its notes or summarize lasting information in a convention or decision. Do not create directories for individual tools or duplicate instructions in agent-specific files.

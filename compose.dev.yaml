@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    cap_drop:
+      - DAC_OVERRIDE
+      - DAC_READ_SEARCH
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      BOLOGNESA_LIBRARY_ROOTS: /media
+      BOLOGNESA_DB_HOST: db
+      TMDB_READ_TOKEN: ${TMDB_READ_TOKEN:-}
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: /app
+    ports:
+      - "127.0.0.1:${BOLOGNESA_DEV_PORT:?Use scripts/dev/compose.sh}:4001"
+    volumes:
+      - .:/app
+      - ${BOLOGNESA_GIT_COMMON_DIR:?Use scripts/dev/compose.sh}:${BOLOGNESA_GIT_COMMON_DIR}:ro
+      - deps:/app/deps
+      - build:/app/_build
+      - ${MEDIA_PATH:-./media}:/media:ro
+    command: ["sh", "scripts/dev/start.sh"]
+
+volumes:
+  database:
+  deps:
+  build:

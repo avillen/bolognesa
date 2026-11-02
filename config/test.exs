@@ -19,7 +19,7 @@ config :bcrypt_elixir, :log_rounds, 4
 config :bolognesa, Bolognesa.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "localhost",
+  hostname: System.get_env("BOLOGNESA_DB_HOST", "localhost"),
   database: "bolognesa_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   # Committed concurrency tests hold a sandbox owner, a coordinator and three workers.

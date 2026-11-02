@@ -4,7 +4,7 @@ import Config
 config :bolognesa, Bolognesa.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "localhost",
+  hostname: System.get_env("BOLOGNESA_DB_HOST", "localhost"),
   database: "bolognesa_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
