@@ -398,10 +398,19 @@ try {
     await audio.evaluate(element => { window.albumPlayerUnderTest = element; element.currentTime = element.duration - 0.2; });
     await page.waitForFunction(id => window.bolognesaMusicPlayer.session.getSnapshot().selected?.id === id && !document.querySelector("#music-playback").paused, ids.music_second_track);
     await page.setViewportSize({width: 1440, height: 1000});
+    await player.locator('[data-player-action="toggle"]').click();
+    await page.waitForFunction(() => document.querySelector("#music-playback")?.paused);
+    await audio.evaluate(async element => {
+      const seeked = new Promise(resolve => element.addEventListener("seeked", resolve, {once: true}));
+      element.currentTime = 2;
+      await seeked;
+    });
     await page.locator("#music-albums-link").click();
     await page.locator(`#album-${ids.music_album}`).waitFor();
     await waitForStablePage();
     await page.screenshot({animations: "disabled", path: screenshotPath("music-albums.png"), fullPage: true});
+    await player.locator('[data-player-action="toggle"]').click();
+    await page.waitForFunction(() => !document.querySelector("#music-playback")?.paused);
     await page.locator(`#nav-library-${ids.series_library}`).click();
     await page.locator("#series-screen").waitFor({state: "visible"});
     if (!await audio.evaluate(element => element === window.albumPlayerUnderTest && element.isConnected && !element.paused)) {
