@@ -382,7 +382,7 @@ try {
     await waitForStablePage();
     await page.evaluate(() => document.activeElement?.blur());
     await page.mouse.move(1430, 990);
-    await page.screenshot({animations: "disabled", path: screenshotPath("music-player.png"), fullPage: true});
+    await page.screenshot({animations: "disabled", path: screenshotPath("music-player.png"), fullPage: false});
     await player.locator('[data-player-action="collapse"]').click();
 
     await page.setViewportSize({width: 390, height: 844});
