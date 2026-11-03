@@ -79,6 +79,23 @@ defmodule Bolognesa.Music.BrowseTest do
     assert {:ok, %{total: 0}} = Music.browse(f.actor, :albums, nil, "", 1, f.library.id)
   end
 
+  test "artists include both track and album credits only while their file is available" do
+    f =
+      refresh_fixture(
+        tags: %{"artist" => "Solo", "album_artist" => "Ensemble", "album" => "First"}
+      )
+
+    assert {:ok, %{items: artists, total: 2}} =
+             Music.browse(f.actor, :artists, nil, "", 1, f.library.id)
+
+    assert Enum.map(artists, & &1.title) == ["Ensemble", "Solo"]
+
+    Repo.update!(change(f.file, availability: :missing))
+
+    assert {:ok, %{items: [], total: 0}} =
+             Music.browse(f.actor, :artists, nil, "", 1, f.library.id)
+  end
+
   test "album playback spans list pages and refuses oversized queues" do
     f = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
     add_tracks(f, 50)

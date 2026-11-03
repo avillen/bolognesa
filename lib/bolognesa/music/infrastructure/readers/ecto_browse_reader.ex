@@ -62,14 +62,24 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
           from(t in MusicTrackSchema,
             join: f in MediaFileSchema,
             on: f.id == t.media_file_id,
-            left_join: album in MusicAlbumSchema,
-            on: album.id == t.album_id,
             where:
               f.availability == :available and
-                (t.artist_id == parent_as(:artist).id or album.artist_id == parent_as(:artist).id),
+                t.artist_id == parent_as(:artist).id,
             select: 1
           )
-        ),
+        ) or
+          exists(
+            from(album in MusicAlbumSchema,
+              join: t in MusicTrackSchema,
+              on: t.album_id == album.id,
+              join: f in MediaFileSchema,
+              on: f.id == t.media_file_id,
+              where:
+                f.availability == :available and
+                  album.artist_id == parent_as(:artist).id,
+              select: 1
+            )
+          ),
       order_by: [asc: a.normalized_name],
       select: %{id: a.id, title: a.name, subtitle: nil, year: nil}
     )
