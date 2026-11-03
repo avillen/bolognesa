@@ -49,17 +49,31 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Cache screenshot dependencies
-        uses: actions/cache@v5
+      - name: Restore screenshot dependencies and build
+        id: screenshot-cache
+        uses: actions/cache/restore@v5
         with:
           path: |
             deps
-          key: ${{ runner.os }}-screenshots-otp-28.3.3-elixir-1.20.3-${{ hashFiles('mix.lock') }}
+            _build/screenshots
+          key: ${{ runner.os }}-screenshots-build-v2-otp-28.3.3-elixir-1.20.3-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-screenshots-otp-28.3.3-elixir-1.20.3-
+            ${{ runner.os }}-screenshots-build-v2-otp-28.3.3-elixir-1.20.3-
 
       - name: Install Mix dependencies
         run: mix deps.get --check-locked
+
+      - name: Compile screenshot environment
+        run: MIX_ENV=screenshots mix compile
+
+      - name: Save screenshot dependencies and build
+        if: steps.screenshot-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            deps
+            _build/screenshots
+          key: ${{ steps.screenshot-cache.outputs.cache-primary-key }}
 
       - name: Install Node dependencies
         run: npm ci

@@ -26,7 +26,7 @@ class ScreenshotCheckTest(unittest.TestCase):
             self.assertEqual(checker.differences(expected, actual), ['home.png'])
 
     def test_catalog_surfaces_allow_only_tiny_antialiasing(self):
-        for name in ['music.png', 'series-detail.png', 'season.png', 'about.png']:
+        for name in ['music.png', 'season.png', 'about.png']:
             with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:
                 expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
                 expected.mkdir(); actual.mkdir()
@@ -50,6 +50,25 @@ class ScreenshotCheckTest(unittest.TestCase):
                 self.assertEqual(checker.differences(expected, actual), [name])
                 (actual / name).write_bytes(png(16, 16, [101] * 768))
                 self.assertEqual(checker.differences(expected, actual), [name])
+
+    def test_series_detail_allows_only_bounded_raster_outliers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
+            expected.mkdir(); actual.mkdir()
+            name = 'series-detail.png'
+            (expected / name).write_bytes(png(8, 8, [100] * 192))
+            changed = [100] * 192
+            for index in range(10):
+                changed[index * 3] = 139
+            (actual / name).write_bytes(png(8, 8, changed))
+            self.assertEqual(checker.differences(expected, actual), [])
+            changed[30] = 139
+            (actual / name).write_bytes(png(8, 8, changed))
+            self.assertEqual(checker.differences(expected, actual), [name])
+            changed[30] = 100
+            changed[0] = 140
+            (actual / name).write_bytes(png(8, 8, changed))
+            self.assertEqual(checker.differences(expected, actual), [name])
 
     def test_video_player_corners_allow_one_small_shadow_raster_difference(self):
         with tempfile.TemporaryDirectory() as folder:
