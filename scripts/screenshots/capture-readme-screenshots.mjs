@@ -367,10 +367,10 @@ try {
     await page.waitForFunction(() => !document.querySelector("#music-playback")?.paused);
     await player.locator('[data-player-action="toggle"]').click();
     await page.waitForFunction(() => document.querySelector("#music-playback")?.paused);
-    await audio.evaluate(async element => {
-      const seeked = new Promise(resolve => element.addEventListener("seeked", resolve, {once: true}));
-      element.currentTime = 2;
-      await seeked;
+    await audio.evaluate(element => { element.currentTime = 2; });
+    await page.waitForFunction(() => {
+      const element = document.querySelector("#music-playback");
+      return element && !element.seeking && Math.abs(element.currentTime - 2) < 0.1;
     });
     await page.locator("#refresh-music").click();
     await page.locator("#music-loading").waitFor({state: "detached"});
@@ -401,10 +401,10 @@ try {
     await page.setViewportSize({width: 1440, height: 1000});
     await player.locator('[data-player-action="toggle"]').click();
     await page.waitForFunction(() => document.querySelector("#music-playback")?.paused);
-    await audio.evaluate(async element => {
-      const seeked = new Promise(resolve => element.addEventListener("seeked", resolve, {once: true}));
-      element.currentTime = 2;
-      await seeked;
+    await audio.evaluate(element => { element.currentTime = 2; });
+    await page.waitForFunction(() => {
+      const element = document.querySelector("#music-playback");
+      return element && !element.seeking && Math.abs(element.currentTime - 2) < 0.1;
     });
     await page.locator("#music-albums-link").click();
     await page.locator(`#album-${ids.music_album}`).waitFor();
