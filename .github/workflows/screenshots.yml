@@ -13,6 +13,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - "README.md"
+      - "docs/screenshots/**"
       - ".github/workflows/screenshots.yml"
   pull_request:
     paths:
@@ -25,6 +26,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - "README.md"
+      - "docs/screenshots/**"
       - ".github/workflows/screenshots.yml"
 
 permissions:
@@ -33,6 +35,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
 
@@ -46,9 +49,40 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: Cache screenshot dependencies
+        uses: actions/cache@v5
+        with:
+          path: |
+            deps
+          key: ${{ runner.os }}-screenshots-otp-28.3.3-elixir-1.20.3-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-screenshots-otp-28.3.3-elixir-1.20.3-
+
       - name: Install Mix dependencies
         run: mix deps.get --check-locked
 
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Verify README screenshots
+        run: make check-screenshots
+
+      - name: Preserve failed synthetic captures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: readme-capture-failure
+          path: /tmp/bolognesa-screenshots.*/output/*.png
+          retention-days: 3
+
+  video:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
       - name: Install Node dependencies
         run: npm ci
 
@@ -74,14 +108,3 @@ jobs:
           ffmpeg -hide_banner -loglevel error -f lavfi -i color=c=black:size=320x180:rate=24 -t 20 -an -c:v libx264 -preset ultrafast -g 24 -pix_fmt yuv420p -movflags +faststart tmp/videojs-fixtures/sample.mp4
           ffmpeg -hide_banner -loglevel error -i tmp/videojs-fixtures/sample.mp4 -c copy -hls_time 2 -hls_list_size 0 -hls_segment_filename 'tmp/videojs-fixtures/segment%03d.ts' tmp/videojs-fixtures/index.m3u8
           npm run test-video-player -- tmp/videojs-fixtures
-
-      - name: Verify README screenshots
-        run: make check-screenshots
-
-      - name: Preserve failed synthetic captures
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: readme-capture-failure
-          path: /tmp/bolognesa-screenshots.*/output/*.png
-          retention-days: 3

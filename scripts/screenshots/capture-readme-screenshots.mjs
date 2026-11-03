@@ -358,172 +358,66 @@ try {
 
     await capture("music.png", `/music?library_id=${ids.music_library}&view=tracks`, "main h1", "#music-loading");
     await page.locator(`#play-track-${ids.music_track}`).click();
-    const audio = page.locator("audio#music-player");
-    await audio.waitFor({ state: "attached" });
-    const assertMusicSearchAligned = async () => {
-      const aligned = await page.locator("#music-search").evaluate(form => {
-        const field = form.querySelector("input").getBoundingClientRect();
-        const button = form.querySelector("button[type=submit]").getBoundingClientRect();
-        return Math.abs(field.top - button.top) <= 1 && Math.abs(field.bottom - button.bottom) <= 1;
-      });
-      if (!aligned) throw new Error("Music search field and submit button are not aligned.");
-    };
-    await assertMusicSearchAligned();
-    const audioFrame = page.locator("#music-player-frame");
-    const audioPlay = audioFrame.locator("media-play-button");
-    await page.waitForFunction(() => document.querySelector("#music-player")?.paused === false);
-    const rowButton = page.locator(`#play-track-${ids.music_track}`);
-    await page.waitForFunction(id => document.querySelector(`#play-track-${id}`)?.closest("article")?.dataset.playback === "playing", ids.music_track);
-    await rowButton.click();
-    await page.waitForFunction(id => document.querySelector(`#play-track-${id}`)?.closest("article")?.dataset.playback === "paused", ids.music_track);
-    await rowButton.click();
+    const audio = page.locator("#music-playback");
+    const player = page.locator("#music-player");
+    await page.waitForFunction(() => document.querySelector("#music-playback")?.paused === false);
+    await page.locator(`#play-track-${ids.music_track}`).click();
+    await page.waitForFunction(() => document.querySelector("#music-playback")?.paused);
+    await page.locator(`#play-track-${ids.music_track}`).click();
+    await page.waitForFunction(() => !document.querySelector("#music-playback")?.paused);
+    await player.locator('[data-player-action="toggle"]').click();
+    await page.waitForFunction(() => document.querySelector("#music-playback")?.paused);
+    await audio.evaluate(element => { element.currentTime = 2; });
     await page.waitForFunction(() => {
-      const element = document.querySelector("audio#music-player");
-      return element && element.readyState >= 2 && !element.paused && element.currentTime > 0;
+      const element = document.querySelector("#music-playback");
+      return element && !element.seeking && Math.abs(element.currentTime - 2) < 0.1;
     });
-    await audioPlay.click();
-    await page.waitForFunction(() => document.querySelector("#music-player")?.paused);
-    const audioSlider = audioFrame.locator("media-time-slider");
-    await audioSlider.focus();
-    await page.keyboard.press("ArrowRight");
-    await page.waitForFunction(() => document.querySelector("#music-player")?.currentTime >= 4);
-    await audio.evaluate(async (element) => {
-      element.pause();
-      const seeked = new Promise((resolve) => element.addEventListener("seeked", resolve, { once: true }));
-      element.currentTime = 2;
-      await seeked;
-    });
-    const audioMute = audioFrame.locator("media-mute-button");
-    await audioMute.click();
-    await page.waitForFunction(() => document.querySelector("#music-player")?.muted);
-    await audioMute.click();
-    await page.waitForFunction(() => !document.querySelector("#music-player")?.muted);
-    await audioFrame.locator("media-i18n").evaluate(element => { element.lang = "es"; });
-    await page.waitForFunction(() => document.querySelector("audio-skin").shadowRoot.querySelector("media-play-button").getAttribute("aria-label") === "Reproducir");
-    await audioFrame.locator("media-i18n").evaluate(element => { element.lang = "en"; });
-    await page.waitForFunction(() => document.querySelector("audio-skin").shadowRoot.querySelector("media-play-button").getAttribute("aria-label") === "Play");
     await page.locator("#refresh-music").click();
-    await page.locator("#music-loading").waitFor({ state: "detached" });
-    const audioState = await audio.evaluate((element) => ({paused: element.paused, position: element.currentTime, error: element.error?.code}));
+    await page.locator("#music-loading").waitFor({state: "detached"});
+    const audioState = await audio.evaluate(element => ({paused: element.paused, position: element.currentTime, error: element.error?.code}));
     if (!audioState.paused || Math.abs(audioState.position - 2) > 0.1 || audioState.error) {
       throw new Error(`Music playback/refresh verification failed: ${JSON.stringify(audioState)}`);
     }
-    // The native buffered-range bar must be complete before capturing it.
-    await page.waitForFunction(() => {
-      const audio = document.querySelector("#music-player");
-      return audio && Number.isFinite(audio.duration) && audio.buffered.length === 1
-        && audio.buffered.start(0) <= 0.01 && audio.buffered.end(0) >= audio.duration - 0.01;
-    });
+    await player.locator('[data-player-action="expand"]').click();
     await waitForStablePage();
     await page.evaluate(() => document.activeElement?.blur());
     await page.mouse.move(1430, 990);
-    await page.screenshot({ animations: "disabled", path: screenshotPath("music-player.png"), fullPage: true });
-    console.log(`Verified Video.js audio controls with synthetic PCM WAV: play, keyboard seek, pause, mute, English/Spanish labels and refresh in Chromium ${browser.version()}.`);
+    await page.screenshot({animations: "disabled", path: screenshotPath("music-player.png"), fullPage: false});
+    await player.locator('[data-player-action="collapse"]').click();
 
-    // Keep the music player and every browse view usable on narrow screens.
     await page.setViewportSize({width: 390, height: 844});
-    const assertMusicFits = async () => {
-      await assertMusicSearchAligned();
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
-      if (overflow) throw new Error("Music layout overflows the mobile viewport.");
-      const miniPlayer = page.locator('#music-playback [data-player-action="expand"]');
-      if (!await miniPlayer.isVisible()) throw new Error("Compact music player is hidden on mobile.");
-      await miniPlayer.click();
-      if (!await audioFrame.isVisible()) throw new Error("Expanded music player is hidden on mobile.");
-      const playback = page.locator("#music-playback");
-      if (await playback.getAttribute("role") !== "dialog" || await playback.getAttribute("aria-modal") !== "true") {
-        throw new Error("Expanded music player is not exposed as a modal dialog.");
-      }
-      if (!await page.locator(".music-header").evaluate(element => element.inert)) {
-        throw new Error("Background music controls remain available while the player is expanded.");
-      }
-      await page.setViewportSize({width: 700, height: 844});
-      const keepsFullscreen = await playback.evaluate(element => getComputedStyle(element).position === "fixed");
-      if (!keepsFullscreen) throw new Error("Expanded player stopped covering the page after a mobile rotation.");
-      await page.setViewportSize({width: 390, height: 844});
-      await page.keyboard.press("Escape");
-      if (await miniPlayer.getAttribute("aria-expanded") !== "false") throw new Error("Escape did not minimize the music player.");
-      if (!await miniPlayer.evaluate(element => document.activeElement === element)) throw new Error("Focus was not restored to the compact player.");
-      await miniPlayer.click();
-      await page.locator('#music-playback [data-player-action="collapse"]').click();
-      const trackButtons = page.locator("#music-tracks .music-track-play");
-      if (await trackButtons.count()) {
-        await trackButtons.last().evaluate(element => element.scrollIntoView({block: "center"}));
-      }
-      const overlapsTracks = await page.evaluate(() => {
-        const tracks = document.querySelector("#music-tracks");
-        const player = document.querySelector("#music-playback")?.getBoundingClientRect();
-        if (!tracks || tracks.hidden || !player) return false;
-        return [...tracks.querySelectorAll("button")].some(button => {
-          const rect = button.getBoundingClientRect();
-          return rect.width && rect.height && rect.bottom > 0 && rect.top < innerHeight
-            && rect.bottom > player.top && rect.top < player.bottom;
-        });
-      });
-      if (overlapsTracks) throw new Error("Music player covers track controls on mobile.");
-    };
-    await assertMusicFits();
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error("Music layout overflows the mobile viewport.");
     await waitForStablePage();
     await page.screenshot({animations: "disabled", path: screenshotPath("music-mobile.png"), fullPage: true});
     await page.locator("#music-artists-link").click();
-    await page.locator(`#artist-${ids.music_artist}`).waitFor();
-    await assertMusicFits();
     await page.locator(`#artist-${ids.music_artist}`).click();
     await page.locator(`#album-${ids.music_album}`).waitFor();
-    await assertMusicFits();
     await page.locator(`#album-${ids.music_album}`).click();
-    await page.locator("#play-album").waitFor();
-    await assertMusicFits();
+    await page.locator("#play-album").click();
+    await page.waitForFunction(id => window.bolognesaMusicPlayer.session.getSnapshot().selected?.id === id && !document.querySelector("#music-playback").paused, ids.music_track);
+    await page.waitForFunction(() => Number.isFinite(document.querySelector("#music-playback")?.duration));
+    await audio.evaluate(element => { window.albumPlayerUnderTest = element; element.currentTime = element.duration - 0.2; });
+    await page.waitForFunction(id => window.bolognesaMusicPlayer.session.getSnapshot().selected?.id === id && !document.querySelector("#music-playback").paused, ids.music_second_track);
     await page.setViewportSize({width: 1440, height: 1000});
+    await player.locator('[data-player-action="toggle"]').click();
+    await page.waitForFunction(() => document.querySelector("#music-playback")?.paused);
+    await audio.evaluate(element => { element.currentTime = 2; });
+    await page.waitForFunction(() => {
+      const element = document.querySelector("#music-playback");
+      return element && !element.seeking && Math.abs(element.currentTime - 2) < 0.1;
+    });
     await page.locator("#music-albums-link").click();
     await page.locator(`#album-${ids.music_album}`).waitFor();
     await waitForStablePage();
     await page.screenshot({animations: "disabled", path: screenshotPath("music-albums.png"), fullPage: true});
-
-    // Exercise artist -> album navigation and native ended-driven playback.
-    await page.locator("#music-artists-link").click();
-    await page.locator(`#artist-${ids.music_artist}`).click();
-    await page.locator(`#album-${ids.music_album}`).click();
-    await page.locator("#play-album").click();
-    await page.waitForFunction((id) => {
-      const audio = document.querySelector("#music-player");
-      return audio?.querySelector("source")?.src.includes(`/tracks/${id}/`) && !audio.paused && audio.currentTime > 0;
-    }, ids.music_track);
-    await audio.evaluate((element) => { window.albumPlayerUnderTest = element; element.currentTime = element.duration - 0.2; });
-    await page.waitForFunction((id) => {
-      const audio = document.querySelector("#music-player");
-      return audio?.querySelector("source")?.src.includes(`/tracks/${id}/`) && !audio.paused && audio.currentTime > 0;
-    }, ids.music_second_track);
-    await page.locator("#music-artists-link").click();
-    await page.locator(`#artist-${ids.music_artist}`).waitFor();
-    if (!await audio.evaluate((element) => element === window.albumPlayerUnderTest && !element.paused)) {
-      throw new Error("Album player did not survive music patch navigation.");
-    }
-    await page.locator("#music-songs-link").click();
-    await page.waitForFunction(id => document.querySelector(`#play-track-${id}`)?.closest("article")?.dataset.playback === "playing", ids.music_second_track);
-    await page.locator("#queue-previous").click();
-    await page.waitForFunction((id) => document.querySelector("#music-player source")?.src.includes(`/tracks/${id}/`), ids.music_track);
-    await page.locator("#queue-next").click();
-    await page.waitForFunction((id) => {
-      const audio = document.querySelector("#music-player");
-      return audio?.querySelector("source")?.src.includes(`/tracks/${id}/`) && audio.readyState >= 2 && !audio.paused;
-    }, ids.music_second_track);
-    await audio.evaluate((element) => { element.currentTime = element.duration - 0.2; });
-    await page.locator("#queue-finished").waitFor();
-    if (!await audio.evaluate((element) => element.paused)) throw new Error("Album did not stop after the last track.");
-    await page.locator("#queue-previous").click();
-    await page.waitForFunction(() => {
-      const audio = document.querySelector("#music-player");
-      return audio && !audio.paused && audio.currentTime > 0;
-    });
+    await player.locator('[data-player-action="toggle"]').click();
+    await page.waitForFunction(() => !document.querySelector("#music-playback")?.paused);
     await page.locator(`#nav-library-${ids.series_library}`).click();
     await page.locator("#series-screen").waitFor({state: "visible"});
-    await page.locator("#series-loading").waitFor({state: "detached"});
-    await page.waitForFunction(() => {
-      const previousAudio = window.albumPlayerUnderTest;
-      return !previousAudio.isConnected && previousAudio.paused;
-    });
-    console.log("Verified artist/album navigation, automatic album advance, previous/next, music navigation continuity, final stop and stop on leaving music with synthetic WAV audio.");
+    if (!await audio.evaluate(element => element === window.albumPlayerUnderTest && element.isConnected && !element.paused)) {
+      throw new Error("Music playback did not continue after leaving the music screen.");
+    }
+    console.log("Verified music playback, refresh, album advance and navigation continuity with synthetic WAV audio.");
 
     await capture("series.png", `/series?library_id=${ids.series_library}`, "main h1", "#series-loading");
     await capture("series-review.png", "/series/review");

@@ -22,7 +22,8 @@ defmodule Bolognesa.Music.Domain.ReadModels.TrackRow do
           state: :pending | :ready | :inspection_failed | :import_failed,
           failure_reason: failure_reason() | nil,
           disc_number: pos_integer() | nil,
-          track_number: pos_integer() | nil
+          track_number: pos_integer() | nil,
+          last_played_at: DateTime.t() | nil
         }
 
   defstruct [
@@ -35,6 +36,7 @@ defmodule Bolognesa.Music.Domain.ReadModels.TrackRow do
     :state,
     :failure_reason,
     :disc_number,
-    :track_number
+    :track_number,
+    :last_played_at
   ]
 end

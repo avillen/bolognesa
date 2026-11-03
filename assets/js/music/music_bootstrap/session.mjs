@@ -7,8 +7,12 @@ const copyTrack = (track) => (track ? { ...track } : null);
 
 export function createMusicSession({ audio, transport, clock }) {
   const queue = createMusicQueue();
+  let activityRevision = 0;
   const activity = createListeningActivity({clock, report: track =>
-    transport.recordActivity?.({trackId: track.id, fileId: track.file_id})
+    Promise.resolve(transport.recordActivity?.({trackId: track.id, fileId: track.file_id})).then(() => {
+      activityRevision++;
+      notify();
+    })
   });
   let state = {
     selected: null,
@@ -35,6 +39,7 @@ export function createMusicSession({ audio, transport, clock }) {
     const queued = queue.snapshot();
     return {
       ...state,
+      activityRevision,
       selected: copyTrack(state.selected),
       queue: queued.tracks,
       queueIndex: queued.index,
