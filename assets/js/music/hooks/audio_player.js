@@ -23,7 +23,7 @@ export default {
     this.trackRows = connectTrackRows(this.el.querySelector("#music-tracks"), this.session)
     let revision
     this.stopActivityUpdates = this.session.subscribe(snapshot => {
-      if (revision !== undefined && snapshot.activityRevision !== revision) this.pushEvent("refresh", {})
+      if (revision !== undefined && snapshot.activityRevision !== revision && Number.isSafeInteger(snapshot.activityTrackId) && snapshot.activityTrackId > 0) this.pushEvent("listening-activity", {track_id: snapshot.activityTrackId})
       revision = snapshot.activityRevision
     })
     this.onMusicAction = event => {

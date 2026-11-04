@@ -103,6 +103,118 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     assert has_element?(album, "#tracks-#{fixture.file.id}", "28/10/2026")
   end
 
+  test "updates a played track without hiding the album list", %{conn: conn, token: token} do
+    fixture = refresh_fixture(tags: %{"title" => "Opening", "album" => "Record"})
+
+    second =
+      music_fixture(
+        relative_path: "album/second.mp3",
+        tags: %{"title" => "Second", "album" => "Record"}
+      )
+
+    Repo.update!(Ecto.Changeset.change(second.file, library_id: fixture.library.id))
+    :ok = Bolognesa.Music.refresh_track(second.file.id, 1)
+
+    %{rows: [[user_id]]} =
+      Repo.query!("SELECT id FROM accounts_users WHERE email = $1", ["music@example.com"])
+
+    {:ok, view, _} =
+      live(
+        init_test_session(conn, user_token: token),
+        "/music?library_id=#{fixture.library.id}&view=album&album_id=#{fixture.track.album_id}"
+      )
+
+    render_async(view)
+    assert has_element?(view, "#tracks-#{fixture.file.id}", "Nunca reproducida")
+
+    initial_order = Regex.scan(~r/id="(tracks-\d+)"/, render(view), capture: :all_but_first)
+
+    assert length(initial_order) == 2
+
+    Repo.query!(
+      "INSERT INTO music_listening_activity (user_id, track_id, last_played_at) VALUES ($1, $2, $3)",
+      [user_id, fixture.track.id, ~U[2026-10-28 14:00:00Z]]
+    )
+
+    view
+    |> element("#music-screen")
+    |> render_hook("listening-activity", %{"track_id" => fixture.track.id})
+
+    refute has_element?(view, "#music-loading")
+    assert has_element?(view, "#tracks-#{fixture.file.id}")
+    render_async(view)
+    assert has_element?(view, "#tracks-#{fixture.file.id}", "28/10/2026")
+
+    assert initial_order ==
+             Regex.scan(~r/id="(tracks-\d+)"/, render(view), capture: :all_but_first)
+
+    other = refresh_fixture(tags: %{"title" => "Other", "album" => "Different"})
+
+    view
+    |> element("#music-screen")
+    |> render_hook("listening-activity", %{"track_id" => other.track.id})
+
+    render_async(view)
+    refute has_element?(view, "#tracks-#{other.file.id}")
+  end
+
+  test "keeps a listening update received while the track list loads", %{conn: conn, token: token} do
+    fixture = refresh_fixture(tags: %{"title" => "Opening", "album" => "Record"})
+
+    %{rows: [[user_id]]} =
+      Repo.query!("SELECT id FROM accounts_users WHERE email = $1", ["music@example.com"])
+
+    handler = {__MODULE__, make_ref()}
+    parent = self()
+    library_id = fixture.library.id
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:bolognesa, :repo, :query],
+        fn _, _, metadata, _ ->
+          query = metadata.query
+
+          if String.contains?(query, "music_listening_activity") and
+               not String.contains?(query, "count(") and library_id in metadata.params do
+            :telemetry.detach(handler)
+            send(parent, {:track_page_read, self()})
+
+            receive do
+              :continue -> :ok
+            after
+              10_000 -> :ok
+            end
+          end
+        end,
+        nil
+      )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+
+    {:ok, view, _} =
+      live(
+        init_test_session(conn, user_token: token),
+        "/music?library_id=#{library_id}&view=album&album_id=#{fixture.track.album_id}"
+      )
+
+    assert_receive {:track_page_read, reader}, 5_000
+
+    Repo.query!(
+      "INSERT INTO music_listening_activity (user_id, track_id, last_played_at) VALUES ($1, $2, $3)",
+      [user_id, fixture.track.id, ~U[2026-10-28 14:00:00Z]]
+    )
+
+    view
+    |> element("#music-screen")
+    |> render_hook("listening-activity", %{"track_id" => fixture.track.id})
+
+    send(reader, :continue)
+    render_async(view, 5_000)
+    render_async(view, 5_000)
+    assert has_element?(view, "#tracks-#{fixture.file.id}", "28/10/2026")
+  end
+
   test "translates the never played state to English", %{conn: conn, token: token} do
     fixture = refresh_fixture()
     Repo.query!("UPDATE accounts_users SET locale = 'en' WHERE email = $1", ["music@example.com"])

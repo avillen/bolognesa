@@ -100,8 +100,8 @@ test("refreshes visible track dates after listening activity is saved", () => {
   try {
     const context = {el, pushEvent: (...args) => events.push(args)}
     hook.mounted.call(context)
-    for (const listener of listeners) listener({activityRevision: 1})
-    assert.deepEqual(events, [["refresh", {}]])
+    for (const listener of listeners) listener({activityRevision: 1, activityTrackId: 3})
+    assert.deepEqual(events, [["listening-activity", {track_id: 3}]])
     hook.destroyed.call(context)
   } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
 })

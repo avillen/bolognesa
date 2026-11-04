@@ -91,6 +91,30 @@ try {
   await page.waitForURL(url => url.searchParams.get("view") === "albums")
   await page.locator(`#album-${ids.music_album}`).click()
   await page.waitForURL(url => url.searchParams.get("view") === "album")
+  await page.setViewportSize({width: 320, height: 568})
+  await page.locator(`#play-track-${ids.music_second_track}`).click()
+  await page.waitForFunction(id => window.bolognesaMusicPlayer.session.getSnapshot().selected?.id === id && !document.getElementById("music-playback").paused, ids.music_second_track)
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  const initialList = await page.evaluate(() => {
+    const list = document.getElementById("music-tracks")
+    window.listeningUpdateProbe = {list, rows: [...list.children], scrollY: window.scrollY}
+    return {order: [...list.children].map(row => row.id), scrollY: window.scrollY}
+  })
+  assert.ok(initialList.scrollY > 0, "album view must be scrolled to test stability")
+  await page.waitForFunction(id => {
+    const row = document.querySelector(`#play-track-${id}`)?.closest("article")
+    return row?.querySelector(".music-track-last-played")?.textContent.includes("Última reproducción:")
+  }, ids.music_second_track, {timeout: 10000})
+  const afterListening = await page.evaluate(() => ({
+    listConnected: window.listeningUpdateProbe.list.isConnected,
+    rowsConnected: window.listeningUpdateProbe.rows.every(row => row.isConnected),
+    order: [...document.getElementById("music-tracks").children].map(row => row.id),
+    scrollY: window.scrollY,
+  }))
+  assert.equal(afterListening.listConnected, true, "list must stay mounted")
+  assert.equal(afterListening.rowsConnected, true, "track rows must stay mounted")
+  assert.deepEqual(afterListening.order, initialList.order, "track order must remain stable")
+  assert.ok(Math.abs(afterListening.scrollY - initialList.scrollY) <= 2, "scroll position must remain stable")
   await page.locator("#play-album").click()
   await page.waitForFunction(id => window.bolognesaMusicPlayer.session.getSnapshot().selected?.id === id && !document.getElementById("music-playback").paused, ids.music_track)
   await page.setViewportSize({width: 320, height: 568})

@@ -8,8 +8,10 @@ const copyTrack = (track) => (track ? { ...track } : null);
 export function createMusicSession({ audio, transport, clock }) {
   const queue = createMusicQueue();
   let activityRevision = 0;
+  let activityTrackId = null;
   const activity = createListeningActivity({clock, report: track =>
     Promise.resolve(transport.recordActivity?.({trackId: track.id, fileId: track.file_id})).then(() => {
+      activityTrackId = track.id;
       activityRevision++;
       notify();
     })
@@ -40,6 +42,7 @@ export function createMusicSession({ audio, transport, clock }) {
     return {
       ...state,
       activityRevision,
+      activityTrackId,
       selected: copyTrack(state.selected),
       queue: queued.tracks,
       queueIndex: queued.index,
