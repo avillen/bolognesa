@@ -410,6 +410,7 @@ try {
     await page.locator(`#album-${ids.music_album}`).waitFor();
     await waitForStablePage();
     await page.screenshot({animations: "disabled", path: screenshotPath("music-albums.png"), fullPage: true});
+    await audio.evaluate(element => { element.playbackRate = 0.25; });
     await player.locator('[data-player-action="toggle"]').click();
     await page.waitForFunction(() => !document.querySelector("#music-playback")?.paused);
     await page.locator(`#nav-library-${ids.series_library}`).click();
@@ -417,6 +418,7 @@ try {
     if (!await audio.evaluate(element => element === window.albumPlayerUnderTest && element.isConnected && !element.paused)) {
       throw new Error("Music playback did not continue after leaving the music screen.");
     }
+    await audio.evaluate(element => { element.playbackRate = 1; });
     console.log("Verified music playback, refresh, album advance and navigation continuity with synthetic WAV audio.");
 
     await capture("series.png", `/series?library_id=${ids.series_library}`, "main h1", "#series-loading");

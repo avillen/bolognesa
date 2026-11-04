@@ -50,7 +50,7 @@ defmodule BolognesaWeb.Music.Index.State.Track do
   defp last_played(nil), do: gettext("Nunca reproducida")
 
   defp last_played(date) do
-    formatted = Calendar.strftime(date, "%d/%m/%Y UTC")
+    formatted = Calendar.strftime(date, "%d/%m/%Y")
     gettext("Última reproducción: %{date}", date: formatted)
   end
 

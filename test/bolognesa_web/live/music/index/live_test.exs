@@ -92,6 +92,7 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     view |> element("#refresh-music") |> render_click()
     render_async(view)
     assert has_element?(view, "#tracks-#{fixture.file.id}", "28/10/2026")
+    refute has_element?(view, "#tracks-#{fixture.file.id}", "UTC")
 
     {:ok, album, _} =
       live(
