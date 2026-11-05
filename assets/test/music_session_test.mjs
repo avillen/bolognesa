@@ -512,3 +512,16 @@ test("a late authorization response cannot revive a destroyed session", async ()
   assert.equal(audio.playCalls, 0)
   assert.equal(session.getSnapshot().selected, null)
 })
+
+test("destroyed sessions reject queue additions without reviving their queue", async () => {
+  const track = {id: 1, file_id: 11, state: "ready"}
+  const session = createMusicSession({audio: new FakeAudio(), transport: {
+    selectTrack: async () => ({track, src: "/audio/1"}),
+    loadAlbum: async () => ({tracks: [track]}),
+  }})
+  session.destroy()
+  assert.equal(await session.appendTrack({trackId: 1, fileId: 11}), false)
+  assert.equal(await session.playNext({trackId: 1, fileId: 11}), false)
+  assert.equal(await session.appendAlbum({albumId: 1}), false)
+  assert.deepEqual(session.getSnapshot().queue, [])
+})

@@ -76,3 +76,22 @@ test("fatal HLS failures are diagnosed before the session is stopped", () => {
   lateError("error", {fatal: true})
   assert.equal(calls.length, 2)
 })
+
+test("native HLS readiness runs once and teardown detaches the ready listener", () => {
+  const video = new EventTarget()
+  const config = {sessionId: "native", offsetMs: "0", durationMs: "60000", src: "/native.m3u8"}
+  Object.assign(video, {canPlayType: () => "probably", dataset: config})
+  let ready = 0
+  const create = () => createHlsController({video, config, Hls, pushEvent() {}, onReady: () => ready++})
+  const controller = create()
+  assert.equal(video.src, "/native.m3u8")
+  video.dispatchEvent(new Event("loadedmetadata"))
+  video.dispatchEvent(new Event("loadedmetadata"))
+  assert.equal(ready, 1)
+  controller.destroy()
+  const replacement = create()
+  replacement.destroy()
+  video.dispatchEvent(new Event("loadedmetadata"))
+  assert.equal(ready, 1)
+  assert.equal(video.fileTimeline, undefined)
+})

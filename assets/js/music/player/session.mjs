@@ -214,6 +214,7 @@ export function createMusicSession({ audio, transport, clock }) {
 
   function appendRequest(request, {next = false} = {}) {
     return commands.append(request, tracks => {
+      if (destroyed) return false;
       if (!tracks.length) throw new Error("empty_queue");
       if (queue.index < 0 && state.selected) {
         queue.replace([state.selected]);
