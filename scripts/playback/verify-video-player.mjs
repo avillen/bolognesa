@@ -381,6 +381,49 @@ try {
   await errorPage.close()
   console.log("Playback errors: fullscreen, visible retry, source recovery, and video identity preserved.")
   console.log("Consecutive files: direct/HLS parts start at zero and emit one completion with the current file/session identity.")
+  const transitionPage = await browser.newPage()
+  transitionPage.on("pageerror", error => errors.push(error.message))
+  await transitionPage.goto(`http://127.0.0.1:${server.address().port}`)
+  await transitionPage.waitForFunction(() => document.querySelector("video").readyState >= 2)
+  await transitionPage.evaluate(() => {
+    window.originalVideo = document.querySelector("video")
+    Object.assign(window.context.el.dataset, {videoId: "outgoing-hls", sessionId: "outgoing", src: "/index.m3u8", offsetMs: "120000", durationMs: "600000"})
+    window.hook.updated.call(window.context)
+  })
+  await transitionPage.waitForFunction(() => document.querySelector("video").currentTime > 0.1 && !!document.querySelector("video").fileTimeline)
+  await transitionPage.locator("video").hover()
+  await transitionPage.locator("media-fullscreen-button").click()
+  await transitionPage.waitForFunction(() => !!document.fullscreenElement)
+  await transitionPage.evaluate(() => {
+    window.originalFullscreen = document.fullscreenElement
+    delete window.context.el.dataset.sessionId
+    Object.assign(window.context.el.dataset, {videoId: "incoming-direct", src: "/sample.mp4?incoming"})
+    window.hook.updated.call(window.context)
+  })
+  await transitionPage.waitForFunction(() => document.querySelector("video").readyState >= 2 && document.querySelector("video").currentTime > 0.1)
+  const transition = await transitionPage.evaluate(() => {
+    const video = document.querySelector("video")
+    window.events = []
+    for (const name of ["pause", "play", "error", "ended"]) video.dispatchEvent(new Event(name))
+    return {sameVideo: video === window.originalVideo, sameFullscreen: document.fullscreenElement === window.originalFullscreen,
+      hasFileTimeline: !!video.fileTimeline, events: window.events}
+  })
+  assert.equal(transition.sameVideo, true)
+  assert.equal(transition.sameFullscreen, true)
+  assert.equal(transition.hasFileTimeline, false)
+  assert.equal(transition.events.some(([, data]) => data?.session_id === "outgoing"), false,
+    "Outgoing HLS listeners must not emit after the direct source replaces them")
+  assert.equal(transition.events.filter(([name]) => name === "playback_error").length, 1)
+  assert.equal(transition.events.filter(([name]) => name === "playback_ended").length, 1)
+  const afterDestroy = await transitionPage.evaluate(() => {
+    window.hook.destroyed.call(window.context)
+    window.events = []
+    for (const name of ["pause", "play", "error", "ended"]) document.querySelector("video").dispatchEvent(new Event(name))
+    return window.events
+  })
+  assert.deepEqual(afterDestroy, [])
+  await transitionPage.close()
+  console.log("Source lifecycle: HLS to direct retains fullscreen/video identity and removes outgoing listeners; teardown stops events.")
   assert.deepEqual(errors, [])
   await page.evaluate(() => window.hook.destroyed.call(window.context))
   console.log(`Video.js browser checks passed in Chromium ${browser.version()}.`)
