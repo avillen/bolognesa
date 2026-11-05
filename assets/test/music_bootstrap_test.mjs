@@ -1,6 +1,9 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {initializeMusicPlayer} from "../js/music/music_bootstrap.mjs"
+import {initializeMusicPlayer as initialize} from "../js/music/music_bootstrap.mjs"
+import {createMediaCoordinator} from "../js/shared/media_coordinator.mjs"
+const initializeMusicPlayer = (document, options) => initialize(document, {...options, coordinator: createMediaCoordinator()})
+
 
 class Node {
   constructor() { this.children = []; this.hidden = true; this.dataset = {}; this.listeners = new Map(); this.style = {setProperty() {}, removeProperty() {}} }

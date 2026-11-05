@@ -1,3 +1,4 @@
+import {getBrowserRuntime} from "../../browser_runtime.mjs"
 import {createPlayer, videoFeatures, timeFeature, bufferFeature} from "../../../vendor/videojs.min.mjs"
 import {fileTimeFeature, fileBufferFeature} from "./video_player/timeline.mjs"
 import {createPlaybackDiagnostics} from "./video_player/playback_diagnostics.mjs"
@@ -16,7 +17,7 @@ customElements.define("bolognesa-video-player", PlayerElement)
 const VideoPlayer = {
   mounted() {
     this.video = this.el.querySelector("video")
-    this.unregisterMedia = window.bolognesaMusicPlayer?.coordinator.register(this.video)
+    this.unregisterMedia = getBrowserRuntime()?.mediaCoordinator.register(this.video)
     this.frame = createPlayerFrame({el: this.el, video: this.video, pushEvent: (...args) => this.pushEvent(...args)})
     this.recovery = createPlaybackRecovery(this)
     this.scope = this.el.dataset.recoveryScope

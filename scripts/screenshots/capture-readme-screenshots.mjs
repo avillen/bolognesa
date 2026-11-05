@@ -394,10 +394,10 @@ try {
     await page.locator(`#album-${ids.music_album}`).waitFor();
     await page.locator(`#album-${ids.music_album}`).click();
     await page.locator("#play-album").click();
-    await page.waitForFunction(id => window.bolognesaMusicPlayer.session.getSnapshot().selected?.id === id && !document.querySelector("#music-playback").paused, ids.music_track);
+    await page.waitForFunction(id => window.bolognesaRuntime.musicSession.getSnapshot().selected?.id === id && !document.querySelector("#music-playback").paused, ids.music_track);
     await page.waitForFunction(() => Number.isFinite(document.querySelector("#music-playback")?.duration));
     await audio.evaluate(element => { window.albumPlayerUnderTest = element; element.currentTime = element.duration - 0.2; });
-    await page.waitForFunction(id => window.bolognesaMusicPlayer.session.getSnapshot().selected?.id === id && !document.querySelector("#music-playback").paused, ids.music_second_track);
+    await page.waitForFunction(id => window.bolognesaRuntime.musicSession.getSnapshot().selected?.id === id && !document.querySelector("#music-playback").paused, ids.music_second_track);
     await page.setViewportSize({width: 1440, height: 1000});
     await player.locator('[data-player-action="toggle"]').click();
     await page.waitForFunction(() => document.querySelector("#music-playback")?.paused);

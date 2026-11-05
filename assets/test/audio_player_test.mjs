@@ -25,7 +25,7 @@ test("Music screen commands the document session and unmount only detaches it", 
   const originalWindow = globalThis.window
   const originalObserver = globalThis.MutationObserver
   globalThis.MutationObserver = class {constructor() {} observe() {} disconnect() {}}
-  globalThis.window = {bolognesaMusicPlayer: {session}}
+  globalThis.window = {bolognesaRuntime: {musicSession: session}}
   const context = {el}
   const event = {target: {closest: () => button}, preventDefault() {}, stopImmediatePropagation() {}}
   try {
@@ -52,7 +52,7 @@ test("add-to-queue action reports the result", async () => {
   const originalWindow = globalThis.window
   const originalObserver = globalThis.MutationObserver
   globalThis.MutationObserver = class {observe() {} disconnect() {}}
-  globalThis.window = {bolognesaMusicPlayer: {session}}
+  globalThis.window = {bolognesaRuntime: {musicSession: session}}
   const context = {el}
   try {
     hook.mounted.call(context)
@@ -73,7 +73,7 @@ test("a playback action closes a different open track menu", () => {
   const list = {querySelectorAll: () => []}
   const el = {querySelector: () => list, querySelectorAll: () => [menu], contains: () => true, addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener() {}}
   const originalWindow = globalThis.window, originalObserver = globalThis.MutationObserver
-  globalThis.window = {bolognesaMusicPlayer: {session}}
+  globalThis.window = {bolognesaRuntime: {musicSession: session}}
   globalThis.MutationObserver = class {observe() {} disconnect() {}}
   try {
     const context = {el}
@@ -90,7 +90,7 @@ test("refreshes visible track dates after listening activity is saved", () => {
   const list = {querySelectorAll: () => []}
   const el = {querySelector: () => list, addEventListener() {}, removeEventListener() {}}
   const originalWindow = globalThis.window, originalObserver = globalThis.MutationObserver
-  globalThis.window = {bolognesaMusicPlayer: {session}}
+  globalThis.window = {bolognesaRuntime: {musicSession: session}}
   globalThis.MutationObserver = class {observe() {} disconnect() {}}
   const events = []
   try {

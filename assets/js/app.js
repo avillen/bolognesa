@@ -1,25 +1,7 @@
 import AudioPlayer from "./music/hooks/audio_player"
 import {createMusicTransport} from "./music/music_transport.mjs"
-import {initializeMusicPlayer} from "./music/music_bootstrap.mjs"
-// If you want to use Phoenix channels, run `mix help phx.gen.channel`
-// to get started and then uncomment the line below.
-// import "./user_socket.js"
-
-// You can include dependencies in two ways.
-//
-// The simplest option is to put them in assets/vendor and
-// import them using relative paths:
-//
-//     import "../vendor/some-package.js"
-//
-// Alternatively, you can `npm install some-package --prefix assets` and import
-// them using a path starting with the package name:
-//
-//     import "some-package"
-//
-// If you have dependencies that try to import CSS, esbuild will generate a separate `app.css` file.
-// To load it, simply add a second `<link>` to your `root.html.heex` file.
-
+import {initializeBrowserRuntime} from "./browser_runtime.mjs"
+import {connectTransportDiagnostics} from "./shared/transport_diagnostics.mjs"
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
@@ -33,21 +15,14 @@ import NavigationMenu from "./shared/hooks/navigation_menu"
 import BrowsePosition from "./shared/hooks/browse_position"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
-window.bolognesaMusicPlayer = initializeMusicPlayer(document, {transport: createMusicTransport({csrfToken})})
+window.bolognesaRuntime = initializeBrowserRuntime(document, {transport: createMusicTransport({csrfToken})})
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
   hooks: {AudioPlayer, ...colocatedHooks, ImageFallback, VideoPlayer, NavigationMenu, BrowsePosition},
 })
 
-// Pass bounded transport facts to active playback hooks; never forward raw errors/reasons.
-const transportEvent = (diagnostic, extra = {}) => window.dispatchEvent(
-  new CustomEvent("bolognesa:transport", {detail: {diagnostic, ...extra}}))
-liveSocket.getSocket().onOpen(() => transportEvent("socket_open"))
-liveSocket.getSocket().onError(() => transportEvent("socket_error"))
-liveSocket.getSocket().onClose(event => transportEvent("socket_closed", {
-  ws_code: event?.code, ws_clean: event?.wasClean,
-}))
+connectTransportDiagnostics(liveSocket.getSocket())
 
 // Show progress bar on live navigation and form submits
 topbar.config({barColors: {0: "#c26e54"}, shadowColor: "rgba(0, 0, 0, .3)"})

@@ -106,7 +106,7 @@ jobs:
           git diff --exit-code -- assets/vendor/videojs.min.mjs assets/vendor/videojs.LICENSE
 
       - name: Verify browser hook contracts
-        run: node --test assets/test/*.mjs
+        run: npm test
 
       - name: Install video verification tools
         run: |

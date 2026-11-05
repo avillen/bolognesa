@@ -54,6 +54,30 @@ LiveView templates start with `<Layouts.app flash={@flash} ...>`. Follow [Phoeni
 
 The browser owns immediate player state such as position, volume, and fullscreen. Send meaningful actions and progress to the backend; do not send every visual update.
 
+Browser playback modules stay within their context. LiveView hooks adapt lifecycle and
+screen events; sessions own playback use cases; views render snapshots and manage local
+controls. Use named command handlers and guard clauses instead of deeply nested action
+branches. Extract coherent decisions or resource lifecycles, not arbitrary line ranges.
+
+Music has one explicit command API in `assets/js/music/player/session.mjs`.
+`playAlbum({albumId, libraryId, trackId, fileId, startIndex})` is the canonical album-start
+command; do not add speculative aliases or dynamic method fallbacks. The session owns
+selection, queue, retries, and source generations. Audio effects and ordered asynchronous
+operations have separate adapters; position, duration, and pause state come from the media
+element rather than duplicated mutable state.
+
+`assets/js/browser_runtime.mjs` composes document-owned services once. Hooks borrow
+`musicSession` and `mediaCoordinator` through `getBrowserRuntime()` and detach on teardown.
+Media coordination exists without a Music host. Video source controllers receive explicit
+browser/configuration dependencies and expose `update(config)` and `destroy()`; only outer
+hooks implement LiveView lifecycle callbacks. Keep player elements mounted during source
+changes to retain fullscreen and let recovery defer source attachment.
+
+Use native ESM imports in browser tests and inject external dependencies such as HLS at
+the controller boundary. Browser sources declare ESM in `assets/js/package.json`; this
+does not change root-level Node scripts. Keep the existing build target and browser
+fallbacks when introducing syntax or APIs.
+
 Native dialogs and disclosures also own their open state. Preserve their `open` attribute across LiveView patches with `JS.ignore_attributes("open")`. Keep responsive navigation accessible when changing between mobile and desktop.
 
 ## Visual design

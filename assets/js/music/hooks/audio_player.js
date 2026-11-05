@@ -1,3 +1,4 @@
+import {getBrowserRuntime} from "../../browser_runtime.mjs"
 import {connectTrackRows} from "./audio_player/track_list.js"
 
 import {parseMusicAction, executeMusicAction, isQueueAction} from "./audio_player/actions.mjs"
@@ -14,7 +15,7 @@ export default {
         delete feedback.dataset.visible
       }, 3000)
     }
-    this.session = window.bolognesaMusicPlayer?.session
+    this.session = getBrowserRuntime()?.musicSession
     if (!this.session) return
     this.trackRows = connectTrackRows(this.el.querySelector("#music-tracks"), this.session)
     let revision

@@ -4,7 +4,8 @@
     "capture-screenshots": "node scripts/screenshots/capture-readme-screenshots.mjs",
     "vendor-videojs": "node scripts/playback/build-videojs-bundle.mjs",
     "test-video-player": "node scripts/playback/verify-video-player.mjs",
-    "measure-hls": "node scripts/playback/measure-hls-playback.mjs"
+    "measure-hls": "node scripts/playback/measure-hls-playback.mjs",
+    "test": "node --test assets/test/*.mjs"
   },
   "devDependencies": {
     "@videojs/html": "10.1.0",

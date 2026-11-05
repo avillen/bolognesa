@@ -43,8 +43,10 @@ See the [SQL Sandbox ownership guide](https://hexdocs.pm/ecto_sql/Ecto.Adapters.
 
 ## Browser player verification
 
-`node --test assets/test/*.mjs` checks browser hook event contracts and the full-file
-timeline adapter. `npm run test-video-player -- tmp/videojs-fixtures` runs the production
+`npm test` (or `node --test assets/test/*.mjs`) checks browser hook event contracts and the full-file
+timeline adapter. Run it alongside `mix precommit`, which covers Elixir checks and ExUnit
+but does not invoke the Node suite. The screenshots workflow’s `video` job runs `npm test`
+and synthetic video checks in CI. `npm run test-video-player -- tmp/videojs-fixtures` runs the production
 Video.js hook in Playwright against synthetic MP4/HLS fixtures and captures LiveView events
 at the browser boundary. It checks controls, global seeks, pause/resume, fullscreen session
 replacement, drag commit behavior, paused seeks, and Spanish labels. This does not replace
