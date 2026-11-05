@@ -1,10 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {readFile} from "node:fs/promises"
-const code = await readFile(new URL("../js/music/hooks/audio_player.js", import.meta.url), "utf8")
-const rows = `data:text/javascript;base64,${Buffer.from(await readFile(new URL("../js/music/hooks/audio_player/track_list.js", import.meta.url), "utf8")).toString("base64")}`
-const moduleCode = code.replace('"./audio_player/track_list.js"', JSON.stringify(rows))
-const {default: hook} = await import(`data:text/javascript;base64,${Buffer.from(moduleCode).toString("base64")}`)
+import hook from "../js/music/hooks/audio_player.js"
 
 test("Music screen commands the document session and unmount only detaches it", () => {
   const actions = []

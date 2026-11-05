@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {queueGroups} from "../js/music/music_bootstrap/queue_view.mjs"
+import {queueGroups} from "../js/music/player/queue_view.mjs"
 
 test("queue groups only consecutive upcoming entries and retains duplicates", () => {
   const track = (id, album) => ({id, entry_id: id, title: `Track ${id}`, artist: "Artist", album})
@@ -13,7 +13,7 @@ test("a pending queue without a current track shows every entry", () => {
 })
 
 test("rendering shows the current track and upcoming album without interpreting titles as HTML", async () => {
-  const {renderQueue} = await import("../js/music/music_bootstrap/queue_view.mjs")
+  const {renderQueue} = await import("../js/music/player/queue_view.mjs")
   class Element {
     constructor(tag) { this.tag = tag; this.children = []; this.textContent = ""; this.hidden = false; this.dataset = {} }
     append(child) { this.children.push(child) }
