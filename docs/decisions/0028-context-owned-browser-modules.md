@@ -1,6 +1,6 @@
 # 0028. Context-owned browser modules
 
-Status: Implemented locally; integration pending.
+Status: Implemented.
 
 ## Context
 
