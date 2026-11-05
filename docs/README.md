@@ -5,6 +5,5 @@ Start with the repository [README](../README.md). Track work and release scope i
 - [Conventions](conventions/): current backend, frontend, Elixir, Phoenix, testing, observability, documentation, and commit rules.
 - [Architecture decisions](decisions/README.md): accepted choices, rationale, and trade-offs.
 - [HLS playback optimization plan](design/hls-playback-optimization-plan.md): pending incremental work and verification gates from the streaming audit.
-- [Browser JavaScript refactor proposal](design/javascript-refactor-plan.md): proposed boundaries, incremental tasks, and verification for simplifying browser playback code.
 
 For local setup and contribution guidance, see the repository [README](../README.md) and [CONTRIBUTING](../CONTRIBUTING.md).
