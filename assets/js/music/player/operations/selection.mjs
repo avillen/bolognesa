@@ -114,10 +114,10 @@ export function createSelectionOperations({playback, queue, source, activity, co
     return track ? {type: "track", trackId: track.id, fileId: track.file_id,
       queueIndex: index >= 0 ? index : undefined} : null
   }
-  function selectTrack({trackId, fileId}) {
+  async function selectTrack({trackId, fileId}) {
     return replace(null, command => authorizeTrack(trackId, fileId, undefined, command))
   }
-  function playAlbum({albumId, libraryId = null, trackId = null, fileId = null, startIndex = null} = {}) {
+  async function playAlbum({albumId, libraryId = null, trackId = null, fileId = null, startIndex = null} = {}) {
     const operation = {type: "album", albumId, libraryId, trackId, fileId, startIndex}
     return replace(operation, async command => {
       const result = await transport.loadAlbum({albumId, libraryId}, {signal: commands.signal()})

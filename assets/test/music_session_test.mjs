@@ -566,3 +566,13 @@ test("an authorization refusal clears the outgoing source and queue", async () =
   assert.equal(audio.paused, true)
   session.destroy()
 })
+
+test("invalid selection input preserves asynchronous rejection at the public API", async () => {
+  const session = createMusicSession({audio: new FakeAudio(), transport: {}})
+  for (const method of ["selectTrack", "playAlbum"]) {
+    let request
+    assert.doesNotThrow(() => { request = session[method](null) })
+    await assert.rejects(request, TypeError)
+  }
+  session.destroy()
+})
