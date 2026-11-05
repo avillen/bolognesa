@@ -1,9 +1,17 @@
-import { createCommandTracker } from "./session/commands.js";
-import { createMusicQueue } from "./session/queue.js";
-import { createListeningActivity } from "./session/listening_activity.mjs";
-import { listenToMedia } from "./session/media_events.js";
+import {createPendingOperations} from "./pending_operations.mjs";
+import {createAudioSource} from "./audio_source.mjs";
+import { createMusicQueue } from "./queue.mjs";
+import { createListeningActivity } from "./listening_activity.mjs";
+import { listenToMedia } from "./media_events.mjs";
 
 const copyTrack = (track) => (track ? { ...track } : null);
+
+function albumTracksFrom(tracks, {trackId, fileId, startIndex}) {
+  if (Number.isInteger(startIndex) && startIndex >= 0 && startIndex < tracks.length) return tracks.slice(startIndex);
+  if (trackId == null) return tracks;
+  const found = tracks.findIndex(track => track.id === trackId && (fileId == null || track.file_id === fileId));
+  return tracks.slice(Math.max(0, found));
+}
 
 /**
  * Document-owned playback API. Screen subscribers may detach without stopping audio.
@@ -24,22 +32,17 @@ export function createMusicSession({ audio, transport, clock }) {
   });
   let state = {
     selected: null,
-    paused: true,
-    position: 0,
-    duration: null,
     loading: false,
     finished: false,
     error: null,
   };
-  const commands = createCommandTracker();
+  const commands = createPendingOperations();
+  const source = createAudioSource(audio);
   let sourceGeneration = 0;
   let endedGeneration = -1;
   let destroyed = false;
   let lastFailed = null;
-  let sessionGeneration = 0;
-  let appendChain = Promise.resolve();
   let backstack = [];
-  let pendingReplacement = null;
   let deferredEndedGeneration = null;
   const subscribers = new Set();
 
@@ -53,32 +56,17 @@ export function createMusicSession({ audio, transport, clock }) {
       queue: queued.tracks,
       queueIndex: queued.index,
       queueCount: queued.tracks.length,
-      paused: Boolean(audio.paused),
-      position: Number.isFinite(audio.currentTime) ? audio.currentTime : 0,
-      duration:
-        Number.isFinite(audio.duration) && audio.duration > 0
-          ? audio.duration
-          : null,
+      ...source.snapshot(),
     };
   };
   const notify = () => {
-    if (!destroyed) {
-      const value = snapshot();
-      subscribers.forEach((listener) => listener(value));
-    }
+    if (destroyed) return;
+    const value = snapshot();
+    subscribers.forEach((listener) => listener(value));
   };
   const invalidate = () => commands.start();
-  const beginReplacement = () => {
-    let finish;
-    const done = new Promise((resolve) => { finish = resolve; });
-    const token = { done, finish };
-    pendingReplacement = token;
-    return token;
-  };
   const finishReplacement = (token) => {
-    const current = pendingReplacement === token;
-    if (current) pendingReplacement = null;
-    token.finish();
+    const current = commands.finishReplacement(token);
     if (current && deferredEndedGeneration === sourceGeneration && state.selected && !state.loading) {
       deferredEndedGeneration = null;
       handleEnded();
@@ -90,7 +78,6 @@ export function createMusicSession({ audio, transport, clock }) {
     const next = queue.nextIndex();
     if (queue.index >= 0 && next !== null) return moveTo(next);
     state.finished = true;
-    state.paused = true;
     notify();
   }
   const stopListening = listenToMedia(audio, {
@@ -99,7 +86,7 @@ export function createMusicSession({ audio, transport, clock }) {
     isLoading: () => state.loading,
     onEnded: handleEnded,
     onEndedWhileLoading() {
-      if (pendingReplacement) deferredEndedGeneration = sourceGeneration;
+      if (commands.replacing) deferredEndedGeneration = sourceGeneration;
     },
     onError() {
       if (destroyed) return;
@@ -120,12 +107,8 @@ export function createMusicSession({ audio, transport, clock }) {
     const signal = commands.signal();
     if (clearOutgoing) {
       sourceGeneration++;
-      audio.pause();
-      audio.removeAttribute("src");
-      audio.load();
+      source.clear();
       state.selected = null;
-      state.position = 0;
-      state.paused = true;
     }
     state.loading = true;
     state.error = null;
@@ -137,70 +120,17 @@ export function createMusicSession({ audio, transport, clock }) {
         { signal },
       );
       if (!commands.isCurrent(command) || destroyed) return;
-      const previousSourceGeneration = sourceGeneration;
-      if (replacementQueue) {
-        queue.replace(replacementQueue);
-        queue.select(0);
-        backstack = [];
-      }
-      audio.pause();
-      sourceGeneration++;
-      endedGeneration = -1;
-      deferredEndedGeneration = null;
-      audio.src = result.src;
-      audio.load();
-      state.selected = copyTrack(result.track);
-      activity.select(state.selected, state.selected.duration_ms / 1000);
-      state.position = 0;
-      state.duration = null;
-      state.loading = false;
-      state.finished = false;
-      state.error = null;
-      lastFailed = null;
-      if (queueIndex === undefined) { queue.clear(); backstack = []; }
-      notify();
-      try {
-        await audio.play();
-      } catch (error) {
-        if (
-          !commands.isCurrent(command) ||
-          sourceGeneration <= previousSourceGeneration ||
-          error?.name === "AbortError"
-        )
-          return;
-        state.error = {
-          code:
-            error?.name === "NotAllowedError"
-              ? "autoplay_blocked"
-              : "playback_failed",
-          retryable: true,
-        };
-        lastFailed = currentTrackOperation();
-        notify();
-      }
+      acceptSelection(result, {queueIndex, replacementQueue});
+      await playSource(command);
     } catch (error) {
-      if (
-        !commands.isCurrent(command) ||
-        destroyed ||
-        error?.name === "AbortError"
-      )
-        return;
-      if (error?.code === "unauthenticated") {
-        clear();
-        return;
-      }
-      state.loading = false;
-      state.error = { code: error?.code || "unavailable", retryable: true };
-      lastFailed = replacementAlbum || { type: "track", trackId, fileId, queueIndex };
+      if (ignoreFailure(error, command)) return;
+      if (error?.code === "unauthenticated") { clear(); return; }
       if (queueIndex !== undefined && !replacementQueue) {
         state.selected = null;
-        state.paused = true;
         sourceGeneration++;
-        audio.pause();
-        audio.removeAttribute("src");
-        audio.load();
+        source.clear();
       }
-      notify();
+      failSelection(error, replacementAlbum || {type: "track", trackId, fileId, queueIndex});
     } finally {
       if (commands.isCurrent(command)) {
         commands.finish(command);
@@ -208,6 +138,49 @@ export function createMusicSession({ audio, transport, clock }) {
         notify();
       }
     }
+  }
+
+  async function playSource(command) {
+    const generation = sourceGeneration;
+    try {
+      await source.play();
+    } catch (error) {
+      if (destroyed || generation !== sourceGeneration || error?.name === "AbortError") return;
+      if (command !== undefined && !commands.isCurrent(command)) return;
+      state.error = {code: error?.name === "NotAllowedError" ? "autoplay_blocked" : "playback_failed", retryable: true};
+      lastFailed = currentTrackOperation();
+      notify();
+    }
+  }
+
+  function acceptSelection(result, {queueIndex, replacementQueue}) {
+    if (replacementQueue) {
+      queue.replace(replacementQueue);
+      queue.select(0);
+      backstack = [];
+    }
+    source.pause();
+    sourceGeneration++;
+    endedGeneration = -1;
+    deferredEndedGeneration = null;
+    source.load(result.src);
+    state.selected = copyTrack(result.track);
+    activity.select(state.selected, state.selected.duration_ms / 1000);
+    state.loading = false;
+    state.finished = false;
+    state.error = null;
+    lastFailed = null;
+    if (queueIndex === undefined) { queue.clear(); backstack = []; }
+    notify();
+  }
+
+  const ignoreFailure = (error, command) => destroyed || !commands.isCurrent(command) || error?.name === "AbortError";
+  function failSelection(error, operation) {
+    if (error?.code === "unauthenticated") { clear(); return; }
+    state.loading = false;
+    state.error = {code: error?.code || "unavailable", retryable: true};
+    lastFailed = operation;
+    notify();
   }
 
   async function moveTo(index, retry = false, goingBack = false) {
@@ -226,12 +199,8 @@ export function createMusicSession({ audio, transport, clock }) {
       !Number.isSafeInteger(track.file_id)
     ) {
       sourceGeneration++;
-      audio.pause();
-      audio.removeAttribute("src");
-      audio.load();
+      source.clear();
       state.selected = null;
-      state.position = 0;
-      state.paused = true;
       state.loading = false;
       state.error = { code: "unavailable", retryable: true };
       lastFailed = { type: "queue", queueIndex: index };
@@ -243,36 +212,23 @@ export function createMusicSession({ audio, transport, clock }) {
     });
   }
 
-  function appendRequest(request, { next = false } = {}) {
-    const generation = sessionGeneration;
-    const replacement = pendingReplacement;
-    const pending = request.then(
-      (result) => ({ result }),
-      (error) => ({ error }),
-    );
-    const operation = appendChain.then(async () => {
-      if (replacement) await replacement.done;
-      const { result, error } = await pending;
-      if (destroyed || generation !== sessionGeneration) return false;
-      if (error) throw error;
-      if (!result.length) throw new Error("empty_queue");
+  function appendRequest(request, {next = false} = {}) {
+    return commands.append(request, tracks => {
+      if (!tracks.length) throw new Error("empty_queue");
       if (queue.index < 0 && state.selected) {
         queue.replace([state.selected]);
         queue.select(0);
       }
-      result.forEach((track) => next ? queue.insertNext(track) : queue.append(track));
+      tracks.forEach(track => next ? queue.insertNext(track) : queue.append(track));
       notify();
       return true;
     });
-    appendChain = operation.catch(() => {});
-    return operation;
   }
 
   async function playAlbumAt({albumId, libraryId = null, trackId: requestedTrackId = null,
     fileId: requestedFileId = null, startIndex: requestedIndex = null} = {}) {
-    sessionGeneration++;
-    appendChain = Promise.resolve();
-    const replacement = beginReplacement();
+    commands.resetAppends();
+    const replacement = commands.beginReplacement();
     const command = invalidate();
     const signal = commands.signal();
     lastFailed = {
@@ -298,24 +254,7 @@ export function createMusicSession({ audio, transport, clock }) {
         notify();
         return;
       }
-      let start = 0;
-      if (Number.isInteger(requestedIndex) && requestedIndex >= 0 && requestedIndex < result.tracks.length) {
-        start = requestedIndex;
-      } else if (requestedTrackId != null) {
-        const found = result.tracks.findIndex(
-          (track) =>
-            track.id === requestedTrackId &&
-            (requestedFileId == null || track.file_id === requestedFileId),
-        );
-        if (found >= 0) start = found;
-      }
-      const selectedTracks = result.tracks.slice(start);
-      if (!selectedTracks.length) {
-        state.loading = false;
-        state.error = { code: "empty_queue", retryable: true };
-        notify();
-        return;
-      }
+      const selectedTracks = albumTracksFrom(result.tracks, {trackId: requestedTrackId, fileId: requestedFileId, startIndex: requestedIndex});
       const first = selectedTracks[0];
       if (
         !Number.isSafeInteger(first.id) ||
@@ -329,27 +268,9 @@ export function createMusicSession({ audio, transport, clock }) {
         replacementAlbum: { type: "album", albumId, libraryId },
       });
     } catch (error) {
-      if (
-        !commands.isCurrent(command) ||
-        destroyed ||
-        error?.name === "AbortError"
-      )
-        return;
-      if (error?.code === "unauthenticated") {
-        clear();
-        return;
-      }
-      state.loading = false;
-      state.error = { code: error?.code || "unavailable", retryable: true };
-      lastFailed = {
-        type: "album",
-        albumId,
-        libraryId,
-        trackId: requestedTrackId,
-        fileId: requestedFileId,
-        startIndex: requestedIndex,
-      };
-      notify();
+      if (ignoreFailure(error, command)) return;
+      failSelection(error, {type: "album", albumId, libraryId, trackId: requestedTrackId,
+        fileId: requestedFileId, startIndex: requestedIndex});
     } finally {
       finishReplacement(replacement);
       if (commands.isCurrent(command)) {
@@ -369,9 +290,8 @@ export function createMusicSession({ audio, transport, clock }) {
       return () => subscribers.delete(listener);
     },
     async selectTrack({ trackId, fileId }) {
-      sessionGeneration++;
-      appendChain = Promise.resolve();
-      const replacement = beginReplacement();
+      commands.resetAppends();
+      const replacement = commands.beginReplacement();
       const command = invalidate();
       lastFailed = null;
       state.loading = true;
@@ -400,8 +320,7 @@ export function createMusicSession({ audio, transport, clock }) {
       if (queue.removeUpcoming(entryId)) notify();
     },
     clearUpcoming() {
-      sessionGeneration++;
-      appendChain = Promise.resolve();
+      commands.resetAppends();
       if (queue.clearUpcoming()) notify();
     },
     moveUpcoming(entryId, direction) {
@@ -414,7 +333,7 @@ export function createMusicSession({ audio, transport, clock }) {
     previous() {
       if (state.selected && audio.currentTime > 3) {
         activity.select(state.selected, state.selected.duration_ms / 1000);
-        audio.currentTime = 0;
+        source.restart();
         state.finished = false;
         endedGeneration = -1;
         notify();
@@ -432,39 +351,19 @@ export function createMusicSession({ audio, transport, clock }) {
       if (state.finished) {
         const next = queue.nextIndex();
         if (queue.index >= 0 && next !== null) return moveTo(next);
-        audio.currentTime = 0;
+        source.restart();
         activity.select(state.selected, state.selected.duration_ms / 1000);
         state.finished = false;
         endedGeneration = -1;
       }
-      const generation = sourceGeneration;
       state.error = null;
       notify();
-      Promise.resolve(audio.play()).catch((error) => {
-        if (generation === sourceGeneration && error?.name !== "AbortError") {
-          state.error = {
-            code:
-              error?.name === "NotAllowedError"
-                ? "autoplay_blocked"
-                : "playback_failed",
-            retryable: true,
-          };
-          lastFailed = currentTrackOperation();
-          notify();
-        }
-      });
+      void playSource();
     },
     pause() {
-      audio.pause();
+      source.pause();
     },
-    seek(seconds) {
-      if (
-        Number.isFinite(seconds) &&
-        Number.isFinite(audio.duration) &&
-        audio.duration > 0
-      )
-        audio.currentTime = Math.min(audio.duration, Math.max(0, seconds));
-    },
+    seek: seconds => source.seek(seconds),
     async retry() {
       if (!lastFailed) return;
       const failed = lastFailed;
@@ -520,23 +419,15 @@ export function createMusicSession({ audio, transport, clock }) {
   }
 
   function clear() {
-    sessionGeneration++;
+    commands.clear();
     activity.select(null);
-    appendChain = Promise.resolve();
-    pendingReplacement = null;
     deferredEndedGeneration = null;
-    invalidate();
     sourceGeneration++;
-    audio.pause();
-    audio.removeAttribute("src");
-    audio.load();
+    source.clear();
     queue.clear();
     backstack = [];
     state = {
       selected: null,
-      paused: true,
-      position: 0,
-      duration: null,
       loading: false,
       finished: false,
       error: null,

@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createMusicSession} from "../js/music/music_bootstrap/session.mjs"
+import {createMusicSession} from "../js/music/player/session.mjs"
 
 class FakeAudio extends EventTarget {
   constructor() {
@@ -480,4 +480,35 @@ test("album authorization failure currently retries from the album beginning", a
   await session.retry()
   assert.equal(session.getSnapshot().selected.id, 1)
   session.destroy()
+})
+
+test("a late play rejection cannot fail a replacement source", async () => {
+  const audio = new FakeAudio()
+  const session = createMusicSession({audio, transport: {
+    selectTrack: async ({trackId, fileId}) => ({track: {id: trackId, file_id: fileId}, src: `/audio/${trackId}`}),
+  }})
+  let rejectPlay
+  audio.play = () => new Promise((_, reject) => { rejectPlay = reject })
+  const outgoing = session.selectTrack({trackId: 1, fileId: 11})
+  await new Promise(resolve => setImmediate(resolve))
+  audio.play = FakeAudio.prototype.play
+  await session.selectTrack({trackId: 2, fileId: 12})
+  rejectPlay(Object.assign(new Error(), {name: "NotAllowedError"}))
+  await outgoing
+  assert.equal(session.getSnapshot().selected.id, 2)
+  assert.equal(session.getSnapshot().error, null)
+  session.destroy()
+})
+
+test("a late authorization response cannot revive a destroyed session", async () => {
+  const audio = new FakeAudio()
+  let resolveSelection
+  const session = createMusicSession({audio, transport: {selectTrack: () => new Promise(resolve => { resolveSelection = resolve })}})
+  const pending = session.selectTrack({trackId: 1, fileId: 11})
+  session.destroy()
+  resolveSelection({track: {id: 1, file_id: 11}, src: "/audio/1"})
+  await pending
+  assert.equal(audio.src, "")
+  assert.equal(audio.playCalls, 0)
+  assert.equal(session.getSnapshot().selected, null)
 })
