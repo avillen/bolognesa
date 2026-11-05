@@ -1,5 +1,5 @@
-import {createDirectController} from "./direct_controller.mjs"
-import {createHlsController} from "./hls_controller.mjs"
+import {createDirectController} from "./controllers/direct.mjs"
+import {createHlsController} from "./controllers/hls.mjs"
 
 /** Replaces sources within a stable mounted player; recovery may defer attachment. */
 export function createSourceController(hook, {Hls, direct = createDirectController, hls = createHlsController}) {

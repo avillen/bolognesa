@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createHlsController} from "../js/video/hooks/video_player/hls_controller.mjs"
+import {createHlsController} from "../js/video/player/controllers/hls.mjs"
 const Hls = {isSupported: () => false}
 
 function setup() {

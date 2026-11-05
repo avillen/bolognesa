@@ -1,5 +1,5 @@
 import {createMediaCoordinator} from "./shared/media_coordinator.mjs"
-import {initializeMusicPlayer} from "./music/music_bootstrap.mjs"
+import {initializeMusicPlayer} from "./music/bootstrap.mjs"
 
 const runtimeKey = Symbol("bolognesa.browserRuntime")
 

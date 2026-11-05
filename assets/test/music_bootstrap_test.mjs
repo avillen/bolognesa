@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {initializeMusicPlayer as initialize} from "../js/music/music_bootstrap.mjs"
+import {initializeMusicPlayer as initialize} from "../js/music/bootstrap.mjs"
 import {createMediaCoordinator} from "../js/shared/media_coordinator.mjs"
 const initializeMusicPlayer = (document, options) => initialize(document, {...options, coordinator: createMediaCoordinator()})
 

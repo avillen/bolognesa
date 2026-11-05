@@ -1,5 +1,5 @@
-import AudioPlayer from "./music/hooks/audio_player"
-import {createMusicTransport} from "./music/music_transport.mjs"
+import AudioPlayer from "./music/hooks/audio_player.js"
+import {createMusicTransport} from "./music/player/adapters/transport.mjs"
 import {initializeBrowserRuntime} from "./browser_runtime.mjs"
 import {connectTransportDiagnostics} from "./shared/transport_diagnostics.mjs"
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
@@ -8,11 +8,11 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/bolognesa"
-import topbar from "../vendor/topbar"
-import ImageFallback from "./shared/hooks/image_fallback"
-import VideoPlayer from "./video/hooks/video_player"
-import NavigationMenu from "./shared/hooks/navigation_menu"
-import BrowsePosition from "./shared/hooks/browse_position"
+import topbar from "../vendor/topbar.js"
+import ImageFallback from "./shared/hooks/image_fallback.js"
+import VideoPlayer from "./video/hooks/video_player.js"
+import NavigationMenu from "./shared/hooks/navigation_menu.js"
+import BrowsePosition from "./shared/hooks/browse_position.js"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 window.bolognesaRuntime = initializeBrowserRuntime(document, {transport: createMusicTransport({csrfToken})})

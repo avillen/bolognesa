@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {connectPlayerDialog} from "../js/music/player/player_dialog.mjs"
+import {connectPlayerDialog} from "../js/music/player/ui/player_dialog.mjs"
 
 function setup() {
   class Node extends EventTarget {

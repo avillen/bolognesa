@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createDirectController} from "../js/video/hooks/video_player/direct_controller.mjs"
+import {createDirectController} from "../js/video/player/controllers/direct.mjs"
 const mount = context => {
   context.controller = createDirectController({video: context.el, config: context.el.dataset, pushEvent: context.pushEvent})
 }

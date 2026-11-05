@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createPlaybackDiagnostics} from "../js/video/hooks/video_player/playback_diagnostics.mjs"
+import {createPlaybackDiagnostics} from "../js/video/player/playback_diagnostics.mjs"
 
 function setup(createDiagnostics = createPlaybackDiagnostics) {
   const events = []
@@ -48,7 +48,7 @@ test("diagnostics work on HTTP LAN origins without randomUUID or session storage
   Object.defineProperty(globalThis, "crypto", {value: undefined, configurable: true})
   Object.defineProperty(globalThis, "sessionStorage", {get() { throw new Error("storage disabled") }, configurable: true})
   try {
-    const fresh = await import("../js/video/hooks/video_player/playback_diagnostics.mjs?http-fallback")
+    const fresh = await import("../js/video/player/playback_diagnostics.mjs?http-fallback")
     const {events, diagnostics} = setup(fresh.createPlaybackDiagnostics)
     assert.match(events[0][1].tab_id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
     diagnostics.disconnected()

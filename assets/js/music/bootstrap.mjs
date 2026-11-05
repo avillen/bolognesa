@@ -1,7 +1,7 @@
 import "../../vendor/videojs.min.mjs"
 import {createMusicSession} from "./player/session.mjs"
-import {connectMediaSession} from "./player/media_session.mjs"
-import {connectMusicPlayerView} from "./player/player_view.mjs"
+import {connectMediaSession} from "./player/adapters/media_session.mjs"
+import {connectMusicPlayerView} from "./player/ui/player_view.mjs"
 
 const instanceKey = Symbol("bolognesa.musicPlayer")
 

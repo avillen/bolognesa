@@ -1,8 +1,8 @@
-import {createPendingOperations} from "./pending_operations.mjs";
-import {createAudioSource} from "./audio_source.mjs";
-import { createMusicQueue } from "./queue.mjs";
-import { createListeningActivity } from "./listening_activity.mjs";
-import { listenToMedia } from "./media_events.mjs";
+import {createPendingOperations} from "./operations/pending_operations.mjs";
+import {createAudioSource} from "./adapters/audio_source.mjs";
+import { createMusicQueue } from "./model/queue.mjs";
+import { createListeningActivity } from "./operations/listening_activity.mjs";
+import { listenToMedia } from "./adapters/media_events.mjs";
 
 const copyTrack = (track) => (track ? { ...track } : null);
 

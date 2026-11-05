@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {syncTrackRows, connectTrackRows} from "../js/music/hooks/audio_player/track_list.js"
+import {syncTrackRows, connectTrackRows} from "../js/music/hooks/audio_player/track_list.mjs"
 
 test("streamed row indicators match track and file identity from the shared session", () => {
   const button = {dataset: {playLabel: "Play song", pauseLabel: "Pause song"}, setAttribute(name, value) {this[name] = value}}

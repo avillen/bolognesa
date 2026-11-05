@@ -1,5 +1,5 @@
 import {getBrowserRuntime} from "../../browser_runtime.mjs"
-import {connectTrackRows} from "./audio_player/track_list.js"
+import {connectTrackRows} from "./audio_player/track_list.mjs"
 
 import {parseMusicAction, executeMusicAction, isQueueAction} from "./audio_player/actions.mjs"
 

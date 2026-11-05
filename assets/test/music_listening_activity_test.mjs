@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createListeningActivity} from "../js/music/player/listening_activity.mjs"
+import {createListeningActivity} from "../js/music/player/operations/listening_activity.mjs"
 
 test("counts playback time, excluding pauses and seeks, once per selection", () => {
   let now = 0

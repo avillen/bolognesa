@@ -1,11 +1,11 @@
 import {getBrowserRuntime} from "../../browser_runtime.mjs"
 import {createPlayer, videoFeatures, timeFeature, bufferFeature} from "../../../vendor/videojs.min.mjs"
-import {fileTimeFeature, fileBufferFeature} from "./video_player/timeline.mjs"
-import {createPlaybackDiagnostics} from "./video_player/playback_diagnostics.mjs"
-import {createPlaybackRecovery} from "./video_player/playback_recovery.mjs"
+import {fileTimeFeature, fileBufferFeature} from "../player/timeline.mjs"
+import {createPlaybackDiagnostics} from "../player/playback_diagnostics.mjs"
+import {createPlaybackRecovery} from "../player/playback_recovery.mjs"
 import Hls from "../../../vendor/hls.min.mjs"
-import {createSourceController} from "./video_player/source_controller.mjs"
-import {createPlayerFrame} from "./video_player/player_frame.mjs"
+import {createSourceController} from "../player/source_controller.mjs"
+import {createPlayerFrame} from "../player/ui/player_frame.mjs"
 
 const {PlayerElement} = createPlayer({features: videoFeatures.map(feature => {
   if (feature === timeFeature) return fileTimeFeature(feature)

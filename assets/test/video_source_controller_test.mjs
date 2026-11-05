@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createSourceController} from "../js/video/hooks/video_player/source_controller.mjs"
+import {createSourceController} from "../js/video/player/source_controller.mjs"
 
 function setup() {
   const calls = []
