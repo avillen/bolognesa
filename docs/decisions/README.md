@@ -31,3 +31,4 @@
 | [0025](0025-consecutive-episode-parts.md) | Implemented locally | Ordered physical parts sharing one provider episode, part entries and continuation |
 | [0026](0026-dashboard-as-code-publication.md) | Implemented and published | Minimal overview generated from a declarative spec and published explicitly by API |
 | [0027](0027-persistent-music-player.md) | Implemented locally; target-device checks pending | Document-owned playback session and authenticated cross-screen music continuity |
+| [0028](0028-context-owned-browser-modules.md) | Implemented locally; integration pending | Context-owned browser layers, explicit operations and one playback state owner |
