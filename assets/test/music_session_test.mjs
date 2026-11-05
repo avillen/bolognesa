@@ -525,3 +525,44 @@ test("destroyed sessions reject queue additions without reviving their queue", a
   assert.equal(await session.appendAlbum({albumId: 1}), false)
   assert.deepEqual(session.getSnapshot().queue, [])
 })
+
+test("a stale album response cannot replace the later authorized album", async () => {
+  const pending = new Map(), authorized = []
+  const session = createMusicSession({audio: new FakeAudio(), transport: {
+    loadAlbum: ({albumId}) => new Promise(resolve => pending.set(albumId, resolve)),
+    selectTrack: async ({trackId}) => {
+      authorized.push(trackId)
+      return {track: {id: trackId, file_id: trackId + 10}, src: `/audio/${trackId}`}
+    },
+  }})
+  const first = session.playAlbum({albumId: 1})
+  const second = session.playAlbum({albumId: 2})
+  pending.get(2)({tracks: [{id: 2, file_id: 12, state: "ready"}]})
+  await second
+  pending.get(1)({tracks: [{id: 1, file_id: 11, state: "ready"}]})
+  await first
+  assert.deepEqual(authorized, [2])
+  assert.equal(session.getSnapshot().selected.id, 2)
+  assert.deepEqual(session.getSnapshot().queue.map(track => track.id), [2])
+  session.destroy()
+})
+
+test("an authorization refusal clears the outgoing source and queue", async () => {
+  const audio = new FakeAudio()
+  let refused = false
+  const session = createMusicSession({audio, transport: {
+    loadAlbum: async () => ({tracks: [{id: 1, file_id: 11, state: "ready"}]}),
+    selectTrack: async ({trackId, fileId}) => {
+      if (refused) throw Object.assign(new Error(), {code: "unauthenticated"})
+      return {track: {id: trackId, file_id: fileId}, src: `/audio/${trackId}`}
+    },
+  }})
+  await session.playAlbum({albumId: 1})
+  refused = true
+  await session.selectTrack({trackId: 2, fileId: 12})
+  assert.equal(session.getSnapshot().selected, null)
+  assert.deepEqual(session.getSnapshot().queue, [])
+  assert.equal(audio.src, "")
+  assert.equal(audio.paused, true)
+  session.destroy()
+})

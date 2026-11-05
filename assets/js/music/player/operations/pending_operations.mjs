@@ -1,8 +1,5 @@
-import {createCommandTracker} from "../adapters/commands.mjs"
-
 /** Cancellation, replacement barriers and FIFO commits; never owns playback/queue state. */
-export function createPendingOperations() {
-  const commands = createCommandTracker()
+export function createPendingOperations({commands}) {
   let generation = 0
   let appendChain = Promise.resolve()
   let replacement = null

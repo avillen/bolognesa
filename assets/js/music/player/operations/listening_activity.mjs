@@ -1,4 +1,4 @@
-export function createListeningActivity({clock = () => performance.now() / 1000, report}) {
+export function createListeningActivity({clock, report}) {
   let track = null, duration = null, previous = null, elapsed = 0, reported = false
   let generation = 0, retryAt = 0
   return {
