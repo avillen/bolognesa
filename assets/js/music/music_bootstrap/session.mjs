@@ -5,6 +5,12 @@ import { listenToMedia } from "./session/media_events.js";
 
 const copyTrack = (track) => (track ? { ...track } : null);
 
+/**
+ * Document-owned playback API. Screen subscribers may detach without stopping audio.
+ * @param {{audio: HTMLAudioElement, transport: object, clock?: Function}} dependencies
+ * @returns {object} Explicit commands, getSnapshot(), subscribe(listener), and destroy().
+ * Snapshots copy selected/queued track data; media position and pause state come from audio.
+ */
 export function createMusicSession({ audio, transport, clock }) {
   const queue = createMusicQueue();
   let activityRevision = 0;
@@ -262,18 +268,8 @@ export function createMusicSession({ audio, transport, clock }) {
     return operation;
   }
 
-  async function playAlbumAt(input = {}) {
-    const normalized = (typeof input === "object" && input !== null) ? input : { albumId: input };
-    const albumId = normalized.albumId ?? normalized.album ?? normalized.album_id ?? normalized.id;
-    const libraryId =
-      normalized.libraryId ?? normalized.library_id ?? normalized.library ?? null;
-    const requestedTrackId =
-      normalized.trackId ?? normalized.startTrackId ?? normalized.track_id ?? normalized.startTrack ?? null;
-    const requestedFileId =
-      normalized.fileId ?? normalized.startFileId ?? normalized.file_id ?? normalized.startFile ?? null;
-    const requestedIndex =
-      normalized.startIndex ?? normalized.index ?? normalized.start ?? normalized.trackIndex ?? null;
-
+  async function playAlbumAt({albumId, libraryId = null, trackId: requestedTrackId = null,
+    fileId: requestedFileId = null, startIndex: requestedIndex = null} = {}) {
     sessionGeneration++;
     appendChain = Promise.resolve();
     const replacement = beginReplacement();
@@ -387,6 +383,7 @@ export function createMusicSession({ audio, transport, clock }) {
         finishReplacement(replacement);
       }
     },
+    /** Start an album at a track/file or zero-based startIndex. IDs use camelCase. */
     playAlbum(input) {
       return playAlbumAt(input);
     },
@@ -489,19 +486,6 @@ export function createMusicSession({ audio, transport, clock }) {
       );
     },
     clear,
-    playFromHere(input) { return playAlbumAt(input); },
-    playFromTrack(input) { return playAlbumAt(input); },
-    playFrom(input) { return playAlbumAt(input); },
-    playHere(input) { return playAlbumAt(input); },
-    playAlbumFromTrack(input) { return playAlbumAt(input); },
-    playAlbumFrom(input) { return playAlbumAt(input); },
-    playAlbumTrack(input) { return playAlbumAt(input); },
-    playTrackFromAlbum(input) { return playAlbumAt(input); },
-    playAlbumStartingAt(input) { return playAlbumAt(input); },
-    startAlbumFromTrack(input) { return playAlbumAt(input); },
-    startFromTrack(input) { return playAlbumAt(input); },
-    playAlbumFromIndex(input) { return playAlbumAt(input); },
-    playAlbumAt(input) { return playAlbumAt(input); },
     destroy() {
       clear();
       destroyed = true;
@@ -510,16 +494,7 @@ export function createMusicSession({ audio, transport, clock }) {
     },
   };
 
-  return new Proxy(session, {
-    get(target, prop, receiver) {
-      const value = Reflect.get(target, prop, receiver);
-      if (value !== undefined) return value;
-      if (typeof prop === "string" && /play/i.test(prop)) {
-        return (input) => playAlbumAt(input);
-      }
-      return undefined;
-    },
-  });
+  return session;
 
   function currentTrackOperation() {
     const index = queue.index;

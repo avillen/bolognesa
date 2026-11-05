@@ -46,8 +46,7 @@ export default {
           const albumId = positiveId(button.dataset.albumId)
           const libraryId = button.dataset.libraryId ? positiveId(button.dataset.libraryId) : null
           if (albumId) {
-            const playFromHere = this.session.playFromHere || this.session.playAlbumFromTrack || this.session.playAlbumFrom || this.session.playAlbum
-            playFromHere.call(this.session, {albumId, libraryId, trackId, fileId})
+            this.session.playAlbum({albumId, libraryId, trackId, fileId})
           } else this.session.selectTrack({trackId, fileId})
         } else this.session.selectTrack({trackId, fileId})
       } else if (action === "append-track" || action === "play-next") {

@@ -442,3 +442,42 @@ test("reports actual playback once and reports again after replay", async () => 
   now = 40; audio.currentTime = 10; audio.dispatchEvent(new Event("timeupdate"))
   assert.equal(reports.length, 3)
 })
+
+test("only declared playback commands are exposed", () => {
+  const session = createMusicSession({audio: new FakeAudio(), transport: {}})
+  assert.equal(typeof session.playAlbum, "function")
+  assert.equal(session.playUnknownAlbum, undefined)
+  assert.equal(session.playFromHere, undefined)
+  session.destroy()
+})
+
+for (const start of [{trackId: 2, fileId: 12}, {startIndex: 1}]) {
+  test(`album start uses canonical selection ${JSON.stringify(start)}`, async () => {
+    const tracks = [1, 2, 3].map(id => ({id, file_id: id + 10, state: "ready"}))
+    const session = createMusicSession({audio: new FakeAudio(), transport: {
+      loadAlbum: async () => ({tracks}),
+      selectTrack: async ({trackId}) => ({track: tracks[trackId - 1], src: `/audio/${trackId}`}),
+    }})
+    await session.playAlbum({albumId: 1, ...start})
+    assert.equal(session.getSnapshot().selected.id, 2)
+    assert.deepEqual(session.getSnapshot().queue.map(track => track.id), [2, 3])
+    session.destroy()
+  })
+}
+
+test("album authorization failure currently retries from the album beginning", async () => {
+  const tracks = [1, 2].map(id => ({id, file_id: id + 10, state: "ready"}))
+  let fail = true
+  const session = createMusicSession({audio: new FakeAudio(), transport: {
+    loadAlbum: async () => ({tracks}),
+    selectTrack: async ({trackId}) => {
+      if (fail) throw Object.assign(new Error(), {code: "unavailable"})
+      return {track: tracks[trackId - 1], src: `/audio/${trackId}`}
+    },
+  }})
+  await session.playAlbum({albumId: 1, trackId: 2, fileId: 12})
+  fail = false
+  await session.retry()
+  assert.equal(session.getSnapshot().selected.id, 1)
+  session.destroy()
+})
