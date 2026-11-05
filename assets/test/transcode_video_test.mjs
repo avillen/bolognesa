@@ -1,9 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {readFile} from "node:fs/promises"
-const source = (await readFile(new URL("../js/video/hooks/video_player/transcode_video.js", import.meta.url), "utf8"))
-  .replace('import Hls from "../../../../vendor/hls.min.mjs"', 'const Hls = {isSupported: () => false}')
-const {default: hook} = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`)
+import {createHlsController} from "../js/video/hooks/video_player/hls_controller.mjs"
+const Hls = {isSupported: () => false}
 
 function setup() {
   const events = []
@@ -15,7 +13,7 @@ function setup() {
     pause() { this.paused = true; this.dispatchEvent(new Event("pause")) },
   })
   const context = {el, pushEvent: (...args) => events.push(args)}
-  hook.mounted.call(context)
+  context.controller = createHlsController({video: el, config: el.dataset, pushEvent: context.pushEvent, Hls})
   return {context, el, events}
 }
 
@@ -23,11 +21,11 @@ test("a committed seek sends file time once and suppresses errors from the obsol
   const {context, el, events} = setup()
   el.fileTimeline.seek(400)
   el.fileTimeline.seek(450)
-  hook.updated.call(context)
+  context.controller.update(el.dataset)
   el.dispatchEvent(new Event("error"))
   el.dispatchEvent(new Event("pause"))
   assert.deepEqual(events, [["playback_seek", {session_id: "a", position_ms: "400000", playing: "true"}]])
-  hook.destroyed.call(context)
+  context.controller.destroy()
 })
 
 test("pausing and resuming use the file position and cleanup stops further events", () => {
@@ -39,7 +37,7 @@ test("pausing and resuming use the file position and cleanup stops further event
     ["playback_pause", {session_id: "a"}],
     ["playback_resume", {session_id: "a", position_ms: "132345"}],
   ])
-  hook.destroyed.call(context)
+  context.controller.destroy()
   assert.equal(el.fileTimeline, undefined)
   el.dispatchEvent(new Event("error"))
   el.dispatchEvent(new Event("ended"))
@@ -51,29 +49,30 @@ test("seeking while paused does not request autoplay", () => {
   el.paused = true
   el.fileTimeline.seek(20)
   assert.deepEqual(events, [["playback_seek", {session_id: "a", position_ms: "20000", playing: "false"}]])
-  hook.destroyed.call(context)
+  context.controller.destroy()
 })
 
 
-test("fatal HLS failures are diagnosed before the session is stopped", async () => {
-  const raw = await readFile(new URL("../js/video/hooks/video_player/transcode_video.js", import.meta.url), "utf8")
-  const mock = `class Hls {
+test("fatal HLS failures are diagnosed before the session is stopped", () => {
+  let hls
+  class FakeHls {
     static isSupported() { return true }
     static Events = {MANIFEST_PARSED: "ready", ERROR: "error"}
-    constructor(config) { this.listeners = {}; this.config = config }
+    constructor(config) { hls = this; this.listeners = {}; this.config = config }
     on(event, listener) { this.listeners[event] = listener }
     loadSource() {} attachMedia() {} destroy() {}
-  }`
-  const code = raw.replace('import Hls from "../../../../vendor/hls.min.mjs"', mock)
-  const {default: hlsHook} = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`)
+  }
   const calls = []
-  const el = new EventTarget()
-  Object.assign(el, {dataset: {sessionId: "hls", offsetMs: "0", durationMs: "60000"}})
-  const context = {el, pushEvent: (...args) => calls.push(args), reportPlaybackError: () => calls.push(["diagnostic"])}
-  hlsHook.mounted.call(context)
-  assert.equal(context.hls.config.startPosition, 0)
-  assert.equal(context.hls.config.liveSyncDurationCount, 3)
-  context.hls.listeners.error("error", {fatal: true})
+  const video = new EventTarget()
+  Object.assign(video, {dataset: {sessionId: "hls", offsetMs: "0", durationMs: "60000"}})
+  const controller = createHlsController({video, config: video.dataset, Hls: FakeHls,
+    pushEvent: (...args) => calls.push(args), reportPlaybackError: () => calls.push(["diagnostic"])})
+  assert.equal(hls.config.startPosition, 0)
+  assert.equal(hls.config.liveSyncDurationCount, 3)
+  hls.listeners.error("error", {fatal: true})
   assert.deepEqual(calls, [["diagnostic"], ["transcode_error", {session_id: "hls"}]])
-  hlsHook.destroyed.call(context)
+  const lateError = hls.listeners.error
+  controller.destroy()
+  lateError("error", {fatal: true})
+  assert.equal(calls.length, 2)
 })
