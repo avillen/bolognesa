@@ -2108,3 +2108,13 @@ msgstr "Última canción escuchada:"
 
 msgid "Vuelve a lo que te apetezca"
 msgstr "Vuelve a lo que te apetezca"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:70
+#, elixir-autogen, elixir-format
+msgid "Reproducir %{title} de nuevo"
+msgstr "Reproducir %{title} de nuevo"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:75
+#, elixir-autogen, elixir-format
+msgid "Reproducir de nuevo"
+msgstr "Reproducir de nuevo"

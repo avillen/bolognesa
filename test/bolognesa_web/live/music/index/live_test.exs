@@ -103,6 +103,14 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
       live(init_test_session(conn, user_token: token), "/music?library_id=#{fixture.library.id}")
 
     render_async(view)
+    refute has_element?(view, "#refresh-music")
+
+    assert has_element?(
+             view,
+             "#recent-play-#{fixture.track.album_id}[data-music-action=album][data-open-album=true]",
+             "Reproducir de nuevo"
+           )
+
     selector = "#recent-continue-#{fixture.track.album_id}"
 
     assert has_element?(
@@ -259,7 +267,7 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
       [user_id, fixture.track.id, ~U[2026-10-28 14:00:00Z]]
     )
 
-    view |> element("#refresh-music") |> render_click()
+    render_hook(view, "refresh", %{})
     render_async(view)
     assert has_element?(view, "#tracks-#{fixture.file.id}", "28/10/2026")
     refute has_element?(view, "#tracks-#{fixture.file.id}", "UTC")

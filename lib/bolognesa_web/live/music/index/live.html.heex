@@ -24,13 +24,6 @@
           {@library_name || gettext("Música")}
         </h1>
       </div>
-      <button
-        id="refresh-music"
-        type="button"
-        phx-click="refresh"
-        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
-        disabled={@loading?}
-      >{gettext("Actualizar")}</button>
     </header>
     <nav aria-label={gettext("Explorar música")} class="music-tabs">
       <.link

@@ -64,21 +64,35 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
                 {gettext("La última canción ya no está disponible. Abre el álbum para elegir otra.")}
               </p>
             </div>
-            <button
-              id={"recent-continue-#{album.id}"}
-              type="button"
-              data-music-action="resume-album"
-              data-album-id={album.id}
-              data-library-id={@library_id}
-              data-track-id={album.track_id}
-              data-file-id={album.file_id}
-              data-open-album="true"
-              disabled={!album.track_available?}
-              aria-label={gettext("Continuar %{title}", title: album.title)}
-              class="music-recent-play"
-            ><.icon name="hero-play-solid" class="size-5" /><span class="sr-only">{gettext(
-              "Continuar"
-            )}</span></button>
+            <div class="music-recent-actions">
+              <button
+                id={"recent-continue-#{album.id}"}
+                type="button"
+                data-music-action="resume-album"
+                data-album-id={album.id}
+                data-library-id={@library_id}
+                data-track-id={album.track_id}
+                data-file-id={album.file_id}
+                data-open-album="true"
+                disabled={!album.track_available?}
+                aria-label={gettext("Continuar %{title}", title: album.title)}
+                class="music-recent-play"
+              ><.icon name="hero-play-solid" class="size-5" /><span class="sr-only">{gettext(
+                "Continuar"
+              )}</span></button>
+              <button
+                id={"recent-play-#{album.id}"}
+                type="button"
+                data-music-action="album"
+                data-album-id={album.id}
+                data-library-id={@library_id}
+                data-open-album="true"
+                aria-label={gettext("Reproducir %{title} de nuevo", title: album.title)}
+                class="music-recent-replay"
+              ><.icon name="hero-arrow-uturn-left" class="size-5" /><span class="sr-only">{gettext(
+                "Reproducir de nuevo"
+              )}</span></button>
+            </div>
           </div>
         </article>
       </div>
