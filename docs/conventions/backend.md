@@ -71,6 +71,8 @@ Libraries owns sanitized observations; Music accepts them through its transactio
 
 Listening activity belongs to an account and stores at most one latest timestamp per track and account. The browser reports after 30 seconds of observed playback, or half the duration of a shorter track; pauses and seeks do not count. This is a best-effort client observation, not server-verified proof of listening. Transient failures are retried while that selection remains active. Track identity follows the inventory path: refreshes and replacements at the same path retain activity, while a rename creates a new identity. Deleting an account or track deletes its activity.
 
+Album browsing derives `last_played_at` from the account's latest activity across all tracks currently associated with that album, including temporarily missing files. No activity returns `nil`; this date does not mean the album was completed. The value is not stored on the album and is independent of browsing filters and pagination. Albums without available files remain hidden under the existing browsing rules.
+
 Identity keys, import locking and recovery, browsing limits, and album playback contracts are defined in [decision 0018](../decisions/0018-local-music-catalog.md). User-facing listening behavior and limitations belong in the [README](../../README.md#playback-limits); record verification evidence in the relevant issue or pull request.
 
 ### Playback

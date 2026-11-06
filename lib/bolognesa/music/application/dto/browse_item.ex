@@ -5,10 +5,11 @@ defmodule Bolognesa.Music.Application.Dto.BrowseItem do
           id: pos_integer(),
           title: String.t(),
           subtitle: String.t() | nil,
-          year: pos_integer() | nil
+          year: pos_integer() | nil,
+          last_played_at: DateTime.t() | nil
         }
 
-  defstruct [:id, :title, :subtitle, :year]
+  defstruct [:id, :title, :subtitle, :year, :last_played_at]
 
   @spec from_domain(Bolognesa.Music.Domain.ReadModels.BrowseItem.t()) :: t()
   def from_domain(value), do: struct!(__MODULE__, Map.from_struct(value))

@@ -15,7 +15,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
   alias Bolognesa.Repo
 
   @impl true
-  def browse(kind, artist_id, text, page, library_id) do
+  def browse(kind, artist_id, text, page, library_id, user_id) do
     with :ok <- library_scope(library_id),
          {:ok, heading} <- artist_heading(artist_id, library_id) do
       query = collection(kind, artist_id) |> scope(library_id) |> search(text, kind)
@@ -26,6 +26,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
         |> order_by([row], asc: row.id)
         |> limit(50)
         |> offset(^((page - 1) * 50))
+        |> with_activity(kind, user_id)
         |> Repo.all(log: false)
         |> Enum.map(&struct!(BrowseItem, &1))
 
@@ -34,6 +35,22 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp with_activity(query, :artists, _user_id), do: query
+
+  defp with_activity(query, :albums, user_id) do
+    latest =
+      from(track in MusicTrackSchema,
+        join: activity in "music_listening_activity",
+        on: activity.track_id == track.id and activity.user_id == ^user_id,
+        where: track.album_id == parent_as(:album).id,
+        select: max(activity.last_played_at)
+      )
+
+    select_merge(query, [], %{
+      last_played_at: type(fragment("?", subquery(latest)), :utc_datetime_usec)
+    })
   end
 
   defp library_scope(nil), do: :ok

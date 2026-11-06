@@ -5,6 +5,91 @@ defmodule Bolognesa.Music.BrowseTest do
   alias Bolognesa.Music.Application.UseCases.AlbumTracks
   alias Bolognesa.Music.StaleCountTracksReader
 
+  test "album activity is the latest track playback for the authenticated account" do
+    f = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
+    actor = listening_actor()
+    other = listening_actor(:member)
+    {_, [second, _unplayed]} = add_tracks(f, 2)
+
+    record_activity(actor.id, f.track.id, ~U[2026-10-01 10:00:00.000001Z])
+    record_activity(actor.id, second.id, ~U[2026-10-02 10:00:00.123456Z])
+    record_activity(other.id, f.track.id, ~U[2026-10-03 10:00:00.000000Z])
+
+    assert {:ok, %{items: [album], total: 1}} =
+             Music.browse(actor, :albums, nil, "", 1, f.library.id)
+
+    assert album.last_played_at == ~U[2026-10-02 10:00:00.123456Z]
+
+    record_activity(actor.id, f.track.id, ~U[2026-10-04 10:00:00.000000Z])
+
+    assert {:ok, %{items: [updated]}} =
+             Music.browse(actor, :albums, nil, "", 1, f.library.id)
+
+    assert updated.last_played_at == ~U[2026-10-04 10:00:00.000000Z]
+  end
+
+  test "albums without playback by the account and artist entries have no activity date" do
+    f = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
+    actor = listening_actor()
+    other = listening_actor(:member)
+
+    assert {:ok, %{items: [%{last_played_at: nil}]}} =
+             Music.browse(actor, :albums, nil, "", 1, nil)
+
+    record_activity(other.id, f.track.id, ~U[2026-10-03 10:00:00.000000Z])
+
+    assert {:ok, %{items: [album]}} = Music.browse(actor, :albums, nil, "", 1, nil)
+    assert album.last_played_at == nil
+    assert {:error, :forbidden} = Music.browse(other, :albums, nil, "", 1, nil)
+
+    record_activity(actor.id, f.track.id, ~U[2026-10-04 10:00:00.000000Z])
+    assert {:ok, %{items: [artist]}} = Music.browse(actor, :artists, nil, "", 1, nil)
+    assert artist.last_played_at == nil
+  end
+
+  test "album activity includes tracks beyond a page and temporarily missing tracks" do
+    f = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
+    actor = listening_actor()
+    {_, tracks} = add_tracks(f, 50)
+    last = List.last(tracks)
+    record_activity(actor.id, last.id, ~U[2026-10-05 10:00:00.000000Z])
+
+    track = Repo.get!(Bolognesa.Infrastructure.Persistence.MusicTrackSchema, last.id)
+    file = Repo.get!(Bolognesa.Infrastructure.Persistence.MediaFileSchema, track.media_file_id)
+    Repo.update!(change(file, availability: :missing))
+
+    assert {:ok, %{items: [album]}} =
+             Music.browse(actor, :albums, f.track.artist_id, "First", 1, f.library.id)
+
+    assert album.last_played_at == ~U[2026-10-05 10:00:00.000000Z]
+  end
+
+  test "album activity stays within its album and library when browsing all libraries" do
+    f = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
+    actor = listening_actor()
+    record_activity(actor.id, f.track.id, ~U[2026-10-01 10:00:00.000000Z])
+
+    {{:ok, %{items: [_], total: 1}}, initial_queries} =
+      count_queries(fn -> Music.browse(actor, :albums, nil, "", 1, nil) end)
+
+    other = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
+    record_activity(actor.id, other.track.id, ~U[2026-10-06 10:00:00.000000Z])
+
+    {{:ok, %{items: albums, total: 2}}, queries} =
+      count_queries(fn -> Music.browse(actor, :albums, nil, "", 1, nil) end)
+
+    assert queries == initial_queries
+    dates = Map.new(albums, &{&1.id, &1.last_played_at})
+    assert dates[f.track.album_id] == ~U[2026-10-01 10:00:00.000000Z]
+    assert dates[other.track.album_id] == ~U[2026-10-06 10:00:00.000000Z]
+
+    assert {:ok, %{items: [album], total: 1}} =
+             Music.browse(actor, :albums, nil, "", 1, f.library.id)
+
+    assert album.id == f.track.album_id
+    assert album.last_played_at == ~U[2026-10-01 10:00:00.000000Z]
+  end
+
   test "artist and album reads are authorized and scoped to their library" do
     f = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
     other = refresh_fixture(tags: %{"artist" => "Elsewhere", "album" => "Other"})
@@ -162,6 +247,62 @@ defmodule Bolognesa.Music.BrowseTest do
       )
 
     tracks = Enum.map(inserted, &Map.put(track_attrs, :media_file_id, &1.id))
-    Repo.insert_all(Bolognesa.Infrastructure.Persistence.MusicTrackSchema, tracks, log: false)
+
+    Repo.insert_all(Bolognesa.Infrastructure.Persistence.MusicTrackSchema, tracks,
+      returning: [:id],
+      log: false
+    )
+  end
+
+  defp listening_actor(role \\ :admin) do
+    user =
+      Repo.insert!(%Bolognesa.Infrastructure.Persistence.UserSchema{
+        name: "Listener",
+        email: "listener-#{System.unique_integer([:positive])}@example.com",
+        role: Atom.to_string(role),
+        hashed_password: "unused"
+      })
+
+    %Bolognesa.Accounts.Domain.Entities.AuthenticatedUser{id: user.id, role: role}
+  end
+
+  defp record_activity(user_id, track_id, played_at) do
+    Repo.query!(
+      """
+      INSERT INTO music_listening_activity (user_id, track_id, last_played_at)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (user_id, track_id) DO UPDATE SET last_played_at = EXCLUDED.last_played_at
+      """,
+      [user_id, track_id, played_at]
+    )
+  end
+
+  defp count_queries(fun) do
+    reference = make_ref()
+
+    :ok =
+      :telemetry.attach(
+        reference,
+        [:bolognesa, :repo, :query],
+        fn _event, _measurements, _metadata, {owner, tag} ->
+          if self() == owner, do: send(owner, {tag, :query})
+        end,
+        {self(), reference}
+      )
+
+    try do
+      result = fun.()
+      {result, query_count(reference, 0)}
+    after
+      :telemetry.detach(reference)
+    end
+  end
+
+  defp query_count(reference, count) do
+    receive do
+      {^reference, :query} -> query_count(reference, count + 1)
+    after
+      0 -> count
+    end
   end
 end

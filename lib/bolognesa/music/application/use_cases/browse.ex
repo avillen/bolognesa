@@ -23,7 +23,7 @@ defmodule Bolognesa.Music.Application.UseCases.Browse do
            kind in [:artists, :albums] and valid_id?(artist_id) and valid_id?(library_id) and
              is_binary(query) and String.valid?(query) and byte_size(query) <= 256 and
              is_integer(page) and page in 1..100_000,
-         {:ok, result} <- reader.browse(kind, artist_id, query, page, library_id) do
+         {:ok, result} <- reader.browse(kind, artist_id, query, page, library_id, actor.id) do
       {:ok, BrowsePage.from_domain(result)}
     else
       false -> {:error, :invalid_query}
