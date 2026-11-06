@@ -128,8 +128,7 @@ export function createSelectionOperations({playback, queue, source, activity, co
       if (!isReadyTrack(first)) throw Object.assign(new Error(), {code: "unavailable"})
       await authorizeTrack(first.id, first.file_id, 0, command, {
         replacementQueue: tracks,
-        // Preserve the characterized retry behavior tracked separately in #30.
-        replacementAlbum: requireTrack ? operation : {type: "album", albumId, libraryId},
+        replacementAlbum: operation,
       })
     })
   }

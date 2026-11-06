@@ -495,20 +495,32 @@ for (const start of [{trackId: 2, fileId: 12}, {startIndex: 1}]) {
   })
 }
 
-test("album authorization failure currently retries from the album beginning", async () => {
+for (const start of [{trackId: 2, fileId: 12}, {startIndex: 1}]) test(`album authorization retry preserves ${JSON.stringify(start)}`, async () => {
   const tracks = [1, 2].map(id => ({id, file_id: id + 10, state: "ready"}))
+  const audio = new FakeAudio()
   let fail = true
-  const session = createMusicSession({audio: new FakeAudio(), transport: {
+  let finishRetry
+  const session = createMusicSession({audio, transport: {
     loadAlbum: async () => ({tracks}),
     selectTrack: async ({trackId}) => {
+      if (trackId === 3) return {track: {id: 3, file_id: 13, state: "ready"}, src: "/audio/3"}
       if (fail) throw Object.assign(new Error(), {code: "unavailable"})
-      return {track: tracks[trackId - 1], src: `/audio/${trackId}`}
+      return new Promise(resolve => { finishRetry = () => resolve({track: tracks[trackId - 1], src: `/audio/${trackId}`}) })
     },
   }})
-  await session.playAlbum({albumId: 1, trackId: 2, fileId: 12})
+  await session.selectTrack({trackId: 3, fileId: 13})
+  await session.playAlbum({albumId: 1, ...start})
+  assert.equal(audio.src, "/audio/3")
+  assert.equal(audio.paused, false)
   fail = false
-  await session.retry()
-  assert.equal(session.getSnapshot().selected.id, 1)
+  const retry = session.retry()
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(audio.src, "/audio/3")
+  assert.equal(audio.paused, false)
+  finishRetry()
+  await retry
+  assert.equal(session.getSnapshot().selected.id, 2)
+  assert.deepEqual(session.getSnapshot().queue.map(track => track.id), [2])
   session.destroy()
 })
 
