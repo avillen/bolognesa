@@ -68,12 +68,6 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
              "28/10/2026"
            )
 
-    assert has_element?(
-             view,
-             "#recent-album-#{fixture.track.album_id} button[data-music-action=album][data-open-album=true]",
-             "Reproducir de nuevo"
-           )
-
     view
     |> element("#recent-album-#{fixture.track.album_id} .recent-album-open")
     |> render_click()
@@ -110,12 +104,6 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
 
     render_async(view)
     selector = "#recent-continue-#{fixture.track.album_id}"
-
-    assert has_element?(
-             view,
-             "#recent-play-#{fixture.track.album_id}[data-music-action=album]",
-             "Reproducir de nuevo"
-           )
 
     assert has_element?(
              view,

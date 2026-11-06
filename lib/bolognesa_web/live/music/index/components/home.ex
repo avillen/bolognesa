@@ -80,18 +80,6 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
               ><.icon name="hero-play-solid" class="size-5" /><span class="sr-only">{gettext(
                 "Continuar"
               )}</span></button>
-              <button
-                id={"recent-play-#{album.id}"}
-                type="button"
-                data-music-action="album"
-                data-album-id={album.id}
-                data-library-id={@library_id}
-                data-open-album="true"
-                aria-label={gettext("Reproducir %{title} de nuevo", title: album.title)}
-                class="music-recent-replay"
-              ><.icon name="hero-arrow-uturn-left" class="size-5" /><span class="sr-only">{gettext(
-                "Reproducir de nuevo"
-              )}</span></button>
             </div>
           </div>
         </article>
