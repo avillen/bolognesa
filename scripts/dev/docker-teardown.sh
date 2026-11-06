@@ -27,7 +27,7 @@ trap 'rmdir "$lock"' EXIT
 trap 'exit 1' HUP INT TERM
 
 # Unlabelled volumes need a matching container or the owner record written by
-# ensure.sh; compose.sh validates any remaining container's checkout path.
+# docker-ensure.sh; compose.sh validates any remaining container's checkout path.
 if docker volume inspect "${project}_database" >/dev/null 2>&1; then
   owner=$(docker volume inspect "${project}_database" -f '{{index .Labels "bolognesa.worktree"}}')
   if [ -n "$owner" ] && [ "$owner" != '<no value>' ]; then
