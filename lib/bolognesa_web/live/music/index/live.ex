@@ -2,13 +2,20 @@ defmodule BolognesaWeb.Music.Index.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
   alias BolognesaWeb.Music.Index.Forms.Filters
-  alias BolognesaWeb.Music.Index.Reducer.{ApplyPage, Load, RefreshListening, RetryImport}
+
+  alias BolognesaWeb.Music.Index.Reducer.{
+    ApplyPage,
+    LastListened,
+    Load,
+    RefreshListening,
+    RetryImport
+  }
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:browse_kind, :artists)
+     |> assign(:browse_kind, :home)
      |> assign(:artist_id, nil)
      |> assign(:album_id, nil)
      |> assign(:heading, nil)
@@ -44,7 +51,8 @@ defmodule BolognesaWeb.Music.Index.Live do
      |> assign(:artist_id, artist)
      |> assign(:album_id, album)
      |> assign(:browse_params, browse_params)
-     |> Load.call(query, page)}
+     |> Load.call(query, page)
+     |> LastListened.reset()}
   end
 
   @impl true
@@ -57,23 +65,41 @@ defmodule BolognesaWeb.Music.Index.Live do
   def handle_async({:listening_activity, request_id, track_id}, result, socket),
     do: {:noreply, RefreshListening.apply_result(socket, request_id, track_id, result)}
 
+  def handle_async({:last_listened, request}, result, socket),
+    do: {:noreply, LastListened.apply_result(socket, request, result)}
+
   @impl true
   def handle_event("search", %{"search" => %{"query" => query}}, socket) do
     {:noreply,
      push_patch(socket, to: ~p"/music?#{Map.put(socket.assigns.browse_params, :query, query)}")}
   end
 
+  def handle_event("open-album", %{"album_id" => id}, socket)
+      when is_integer(id) and id > 0 and id <= 9_007_199_254_740_991 do
+    {:noreply,
+     push_patch(socket,
+       to: ~p"/music?#{Map.merge(socket.assigns.library_params, %{view: :album, album_id: id})}"
+     )}
+  end
+
+  def handle_event("open-album", _params, socket), do: {:noreply, socket}
+
   def handle_event("retry-import", %{"file_id" => file}, socket),
     do: {:noreply, RetryImport.call(socket, file)}
 
   def handle_event("listening-activity", %{"track_id" => track_id}, socket)
       when is_integer(track_id) and track_id > 0 and track_id <= 9_007_199_254_740_991,
-      do: {:noreply, RefreshListening.call(socket, track_id)}
+      do: {:noreply, socket |> RefreshListening.call(track_id) |> LastListened.load()}
 
   def handle_event("listening-activity", _params, socket), do: {:noreply, socket}
 
   def handle_event("refresh", _params, socket),
-    do: {:noreply, Load.call(socket, socket.assigns.query, socket.assigns.page)}
+    do:
+      {:noreply,
+       socket |> Load.call(socket.assigns.query, socket.assigns.page) |> LastListened.load()}
+
+  def handle_event("retry-last-listened", _params, socket),
+    do: {:noreply, LastListened.load(socket)}
 
   defp optional(params, _key, nil), do: params
   defp optional(params, key, id), do: Map.put(params, key, id)

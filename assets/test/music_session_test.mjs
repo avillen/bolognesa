@@ -18,6 +18,36 @@ class FakeAudio extends EventTarget {
   removeAttribute(name) { if (name === "src") this.src = "" }
 }
 
+test("recent album continuation refuses a vanished track instead of starting at the beginning", async () => {
+  const selections = []
+  const session = createMusicSession({audio: new FakeAudio(), transport: {
+    loadAlbum: async () => ({tracks: [{id: 1, file_id: 11, state: "ready"}]}),
+    selectTrack: async value => { selections.push(value); return {track: {id: 1}, src: "/audio/1"} },
+  }})
+  await session.playAlbum({albumId: 1, trackId: 2, fileId: 12, requireTrack: true})
+  assert.equal(session.getSnapshot().error?.code, "unavailable")
+  assert.deepEqual(selections, [])
+  session.destroy()
+})
+
+test("retrying recent album continuation retains its track after an authorization failure", async () => {
+  const tracks = [1, 2, 3].map(id => ({id, file_id: id + 10, state: "ready"}))
+  const selections = []
+  const session = createMusicSession({audio: new FakeAudio(), transport: {
+    loadAlbum: async () => ({tracks}),
+    selectTrack: async ({trackId}) => {
+      selections.push(trackId)
+      if (selections.length === 1) throw {code: "unavailable"}
+      return {track: tracks[trackId - 1], src: `/audio/${trackId}`}
+    },
+  }})
+  await session.playAlbum({albumId: 1, trackId: 2, fileId: 12, requireTrack: true})
+  await session.retry()
+  assert.deepEqual(selections, [2, 2])
+  assert.equal(session.getSnapshot().selected.id, 2)
+  session.destroy()
+})
+
 test("screen subscribers can detach and reattach without changing the document audio", async () => {
   const audio = new FakeAudio()
   const transport = {

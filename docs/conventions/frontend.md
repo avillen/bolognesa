@@ -79,8 +79,8 @@ operations share that record rather than introducing their own selection, retry 
 store. Model transitions return updated display state without mutating their input.
 
 Music has one explicit command API in `assets/js/music/player/session.mjs`.
-`playAlbum({albumId, libraryId, trackId, fileId, startIndex})` is the canonical album-start
-command; do not add speculative aliases or dynamic method fallbacks. The session owns
+`playAlbum({albumId, libraryId, trackId, fileId, startIndex, requireTrack})` is the canonical album-start
+command; recent-album continuation sets `requireTrack: true` to reject a vanished selection and preserve it on retry. Do not add speculative aliases or dynamic method fallbacks. The session owns
 selection, queue, retries, and source generations. Audio effects and ordered asynchronous
 operations have separate adapters; position, duration, and pause state come from the media
 element rather than duplicated mutable state.

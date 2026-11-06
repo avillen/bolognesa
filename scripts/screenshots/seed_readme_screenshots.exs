@@ -120,7 +120,7 @@ movie_path = System.fetch_env!("BOLOGNESA_SCREENSHOT_VIDEO")
 movie_name = "After the Signal.webm"
 File.cp!(movie_path, Path.join(movie_directory, movie_name))
 
-{:ok, _actor} =
+{:ok, actor} =
   Accounts.install_admin(%{
     name: "Demo Administrator",
     email: "demo@example.test",
@@ -280,6 +280,16 @@ music_tracks =
     :ok = Music.refresh_track(file.id, 1)
     Repo.get_by!(Bolognesa.Infrastructure.Persistence.MusicTrackSchema, media_file_id: file.id)
   end
+
+# Fixed activity makes Home captures useful and independent of the current date.
+# The persistent-player regression starts unplayed to verify its activity update.
+if System.get_env("BOLOGNESA_VERIFY_PERSISTENT_MUSIC") != "1" do
+  Repo.query!(
+    "INSERT INTO music_listening_activity (user_id, track_id, last_played_at) VALUES ($1, $2, $3)",
+    [actor.id, hd(music_tracks).id, ~U[2026-01-15 12:00:00.000000Z]],
+    log: false
+  )
+end
 
 queue_middle_track =
   if System.get_env("BOLOGNESA_VERIFY_PERSISTENT_MUSIC") == "1" do

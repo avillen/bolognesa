@@ -5,6 +5,7 @@ import {parseMusicAction, executeMusicAction, isQueueAction} from "./audio_playe
 
 export default {
   mounted() {
+    this.musicConnected = true
     this.showQueueFeedback = (feedback, message) => {
       if (!feedback) return
       feedback.textContent = message
@@ -35,9 +36,19 @@ export default {
       if (menu) { menu.open = false; menu.querySelector("summary")?.focus() }
       event.preventDefault()
       event.stopImmediatePropagation()
-      const operation = executeMusicAction(this.session, command)
-      if (!isQueueAction(command)) return
+      const opensAlbum = button.dataset.openAlbum === "true" && command.albumId
       const feedback = this.el.querySelector("#music-queue-feedback")
+      if (opensAlbum && !this.musicConnected) {
+        if (feedback) this.showQueueFeedback(feedback, feedback.dataset.openFailed)
+        return
+      }
+      const operation = executeMusicAction(this.session, command)
+      if (opensAlbum) {
+        this.pushEvent("open-album", {album_id: command.albumId}).catch(() => {
+          if (feedback) this.showQueueFeedback(feedback, feedback.dataset.openFailed)
+        })
+      }
+      if (!isQueueAction(command)) return
       operation.then(added => {
         if (added && feedback) this.showQueueFeedback(feedback, feedback.dataset.added)
       }).catch(() => {
@@ -59,6 +70,8 @@ export default {
   updated() {
     this.trackRows?.sync()
   },
+  disconnected() { this.musicConnected = false },
+  reconnected() { this.musicConnected = true },
   destroyed() {
     clearTimeout(this.feedbackTimer)
     this.el.ownerDocument?.removeEventListener("click", this.onMenuDismiss)

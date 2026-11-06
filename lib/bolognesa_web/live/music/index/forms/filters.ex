@@ -4,14 +4,16 @@ defmodule BolognesaWeb.Music.Index.Forms.Filters do
   def from_params(params), do: {Map.get(params, "query", ""), page(Map.get(params, "page", "1"))}
 
   @spec browse(map()) ::
-          {:tracks | :artists | :albums | :album, pos_integer() | nil, pos_integer() | nil}
+          {:home | :tracks | :artists | :albums | :album, pos_integer() | nil,
+           pos_integer() | nil}
   def browse(params) do
     kind =
       case Map.get(params, "view") do
+        "home" -> :home
         "artists" -> :artists
         "albums" -> :albums
         "album" -> :album
-        nil -> :artists
+        nil -> :home
         _ -> :tracks
       end
 

@@ -6,6 +6,7 @@ defmodule Bolognesa.Music do
     AlbumTracks,
     Browse,
     FetchTrack,
+    ListRecentAlbums,
     ListTracks,
     RecordListening,
     RefreshTrack,
@@ -57,6 +58,17 @@ defmodule Bolognesa.Music do
 
   @spec fetch_track(AuthenticatedUser.t() | nil, integer()) :: FetchTrack.result()
   def fetch_track(actor, track_id), do: FetchTrack.call(actor, track_id, EctoTracksReader)
+
+  @doc "Lists up to three recently heard albums within the selected library, or all libraries."
+  @spec list_recent_albums(AuthenticatedUser.t() | nil, pos_integer() | nil) ::
+          ListRecentAlbums.result()
+  def list_recent_albums(actor, library_id),
+    do:
+      ListRecentAlbums.call(
+        actor,
+        library_id,
+        Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader
+      )
 
   @spec list_tracks(AuthenticatedUser.t() | nil, String.t(), pos_integer(), pos_integer() | nil) ::
           ListTracks.result()

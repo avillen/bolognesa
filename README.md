@@ -12,6 +12,7 @@ Boloñesa is a self-hosted media center for movies, TV series, and local music, 
 - Identify movies and series with TMDb, review matches, and correct mistakes.
 - Play movies and episodes, choose file versions, and continue to the next episode or numbered part.
 - Browse local tracks, artists, and albums. Play individual songs or an album in order, add tracks or albums to the current queue, and see what comes next in the expanded player.
+- Open Music home to revisit up to three recently heard albums or explore artists, albums, and songs. Continue starts at the beginning of the latest qualifying track and follows the album queue; Replay starts from the beginning when that track is the last available one. These account-specific actions are inferred from listening dates, not proof of album completion.
 
 ## Screenshots
 
@@ -44,9 +45,9 @@ Boloñesa is a self-hosted media center for movies, TV series, and local music, 
 
   **Music**
 
-  | Music library | Music player |
-  | --- | --- |
-  | [<img src="docs/screenshots/music.png" alt="Local music library" width="260">](docs/screenshots/music.png) | [<img src="docs/screenshots/music-player.png" alt="Audio player" width="260">](docs/screenshots/music-player.png) |
+  | Music home | Music library | Music player |
+  | --- | --- | --- |
+  | [<img src="docs/screenshots/music-home.png" alt="Music home with recent albums" width="260">](docs/screenshots/music-home.png) | [<img src="docs/screenshots/music.png" alt="Local music library" width="260">](docs/screenshots/music.png) | [<img src="docs/screenshots/music-player.png" alt="Audio player" width="260">](docs/screenshots/music-player.png) |
 
   **Account**
 

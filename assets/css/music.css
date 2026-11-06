@@ -4,7 +4,13 @@
 .music-eyebrow { color: var(--color-accent-soft); font-size: 11px; font-weight: 650; letter-spacing: .15em; text-transform: uppercase; }
 .music-title { margin-top: 10px; font-size: clamp(32px, 5vw, 56px); font-weight: 650; line-height: 1.1; overflow-wrap: anywhere; }
 .music-header button { display: inline-flex; align-items: center; flex-shrink: 0; color: var(--color-muted); font-size: 13px; }
-.music-tabs { display: flex; gap: 28px; border-bottom: 1px solid var(--color-border); }
+.music-tabs { display: flex; gap: 28px; overflow-x: auto; border-bottom: 1px solid var(--color-border); }
+.music-recent-grid, .music-explore-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; }
+.music-recent-card { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 20px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
+.music-recent-heading { display: flex; align-items: center; gap: 16px; }
+.music-recent-heading .music-detail-art { width: 64px; flex-shrink: 0; }
+.music-recent-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: auto; padding-top: 4px; }
+.music-recent-actions > button, .music-recent-actions > a { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; font-size: 14px; line-height: 1.4; }
 .music-tab { position: relative; display: inline-flex; align-items: center; min-height: 48px; padding: 0 0 16px; font-size: 14px; font-weight: 550; color: var(--color-muted); }
 .music-tab:hover { color: var(--color-ink); }
 .music-tab[aria-current="page"] { color: var(--color-accent-soft); }

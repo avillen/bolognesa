@@ -17,7 +17,158 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     %{token: token}
   end
 
-  test "opens the artist tab by default and allows switching to songs", %{
+  test "last listened entry updates from account activity and opens the scoped album", %{
+    conn: conn,
+    token: token
+  } do
+    fixture = refresh_fixture(tags: %{"album" => "Record", "artist" => "Ensemble"})
+
+    %{rows: [[user_id]]} =
+      Repo.query!("SELECT id FROM accounts_users WHERE email = $1", ["music@example.com"])
+
+    {:ok, view, _} =
+      live(init_test_session(conn, user_token: token), "/music?library_id=#{fixture.library.id}")
+
+    render_async(view)
+
+    assert has_element?(
+             view,
+             "#music-last-listened-empty",
+             "Todavía no has escuchado ningún álbum."
+           )
+
+    Repo.query!(
+      "INSERT INTO music_listening_activity (user_id, track_id, last_played_at) VALUES ($1, $2, $3)",
+      [user_id, fixture.track.id, ~U[2026-10-28 14:00:00Z]]
+    )
+
+    view
+    |> element("#music-screen")
+    |> render_hook("listening-activity", %{"track_id" => fixture.track.id})
+
+    refute has_element?(view, "#music-loading")
+    render_async(view)
+    assert has_element?(view, "#music-last-listened", "Últimos discos escuchados")
+
+    assert has_element?(
+             view,
+             "#recent-album-#{fixture.track.album_id}",
+             "Record"
+           )
+
+    assert has_element?(
+             view,
+             "#recent-album-#{fixture.track.album_id}",
+             "Ensemble"
+           )
+
+    assert has_element?(
+             view,
+             "#music-last-listened time[datetime='2026-10-28T14:00:00.000000Z']",
+             "28/10/2026"
+           )
+
+    assert has_element?(
+             view,
+             "#recent-album-#{fixture.track.album_id} button[data-music-action=album][data-open-album=true]",
+             "Reproducir de nuevo"
+           )
+
+    view
+    |> element("#recent-album-#{fixture.track.album_id} .recent-album-open")
+    |> render_click()
+
+    assert_patch(
+      view,
+      "/music?album_id=#{fixture.track.album_id}&library_id=#{fixture.library.id}&view=album"
+    )
+
+    render_async(view)
+    assert has_element?(view, "#music-heading", "Record")
+    refute has_element?(view, "#music-last-listened")
+  end
+
+  test "continuation targets the last heard track and navigates within the library", %{
+    conn: conn,
+    token: token
+  } do
+    fixture = refresh_fixture(tags: %{"album" => "Record", "track" => "1"})
+
+    second =
+      music_fixture(
+        relative_path: "album/second.mp3",
+        tags: %{"album" => "Record", "track" => "2"}
+      )
+
+    Repo.update!(Ecto.Changeset.change(second.file, library_id: fixture.library.id))
+    :ok = Bolognesa.Music.refresh_track(second.file.id, 1)
+    {:ok, actor} = Accounts.fetch_authenticated_admin()
+    :ok = Bolognesa.Music.record_listening(actor, fixture.track.id, fixture.file.id)
+
+    {:ok, view, _} =
+      live(init_test_session(conn, user_token: token), "/music?library_id=#{fixture.library.id}")
+
+    render_async(view)
+    selector = "#recent-play-#{fixture.track.album_id}"
+
+    assert has_element?(
+             view,
+             "#{selector}[data-music-action=resume-album][data-track-id='#{fixture.track.id}'][data-file-id='#{fixture.file.id}']",
+             "Continuar"
+           )
+
+    view
+    |> element("#music-screen")
+    |> render_hook("open-album", %{"album_id" => fixture.track.album_id})
+
+    assert_patch(
+      view,
+      "/music?album_id=#{fixture.track.album_id}&library_id=#{fixture.library.id}&view=album"
+    )
+
+    render_async(view)
+    assert has_element?(view, "#music-heading", "Record")
+    refute has_element?(view, "#music-last-listened")
+    Repo.update!(Ecto.Changeset.change(fixture.file, availability: :missing))
+    view |> element("#music-home-link") |> render_click()
+    render_async(view)
+    assert has_element?(view, "#{selector}[disabled]")
+    assert has_element?(view, "#recent-album-#{fixture.track.album_id}", "ya no está disponible")
+  end
+
+  test "last listened is translated and hidden while searching or browsing an artist", %{
+    conn: conn,
+    token: token
+  } do
+    fixture = refresh_fixture(tags: %{"album" => "Record", "artist" => "Ensemble"})
+    Repo.query!("UPDATE accounts_users SET locale = 'en' WHERE email = $1", ["music@example.com"])
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), "/music")
+    render_async(view)
+    assert has_element?(view, "#music-last-listened", "Recently listened albums")
+
+    assert has_element?(
+             view,
+             "#music-last-listened-empty",
+             "You haven't listened to any albums yet."
+           )
+
+    view |> element("#music-artists-link") |> render_click()
+    render_async(view)
+    refute has_element?(view, "#music-last-listened")
+    view |> form("#music-search", search: %{query: "Ensemble"}) |> render_change()
+    render_async(view)
+    refute has_element?(view, "#music-last-listened")
+    view |> form("#music-search", search: %{query: ""}) |> render_change()
+    render_async(view)
+    view |> element("#artist-#{fixture.track.artist_id}") |> render_click()
+    render_async(view)
+    refute has_element?(view, "#music-last-listened")
+    view |> element("#music-home-link") |> render_click()
+    render_async(view)
+    assert has_element?(view, "#music-last-listened")
+  end
+
+  test "opens Music home by default and allows switching to songs", %{
     conn: conn,
     token: token
   } do
@@ -27,8 +178,9 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
       live(init_test_session(conn, user_token: token), "/music?library_id=#{fixture.library.id}")
 
     render_async(view)
-    assert has_element?(view, "#music-artists-link[aria-current=page]")
-    assert has_element?(view, "#music-browse", "Sample Artist")
+    assert has_element?(view, "#music-home-link[aria-current=page]")
+    assert has_element?(view, "#music-explore")
+    refute has_element?(view, "#music-search")
     view |> element("#music-songs-link") |> render_click()
     render_async(view)
     assert has_element?(view, "#music-songs-link[aria-current=page]")
@@ -255,7 +407,10 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     fixture = music_fixture(availability: :missing)
 
     {:ok, view, _} =
-      live(init_test_session(conn, user_token: token), "/music?library_id=#{fixture.library.id}")
+      live(
+        init_test_session(conn, user_token: token),
+        "/music?library_id=#{fixture.library.id}&view=artists"
+      )
 
     render_async(view)
     assert has_element?(view, "#music-empty")

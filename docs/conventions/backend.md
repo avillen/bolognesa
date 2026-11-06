@@ -73,6 +73,8 @@ Listening activity belongs to an account and stores at most one latest timestamp
 
 Album browsing derives `last_played_at` from the account's latest activity across all tracks currently associated with that album, including temporarily missing files. No activity returns `nil`; this date does not mean the album was completed. The value is not stored on the album and is independent of browsing filters and pagination. Albums without available files remain hidden under the existing browsing rules.
 
+Recent listening returns up to three distinct available albums within the selected library, or across libraries when none is selected. Order by latest account activity descending and album ID ascending for ties; choose the latest heard track by date descending and track ID ascending for ties. Empty activity returns an empty list, distinct from a failed read. Continue selects that exact track from the current authorized album queue; missing selections must not silently fall back to another track. If it is the last available track in album order (disc, track, path, ID; missing numbers last), Replay starts at the beginning. This is an inferred action, not an album-completion state; no additional activity fields are stored.
+
 Identity keys, import locking and recovery, browsing limits, and album playback contracts are defined in [decision 0018](../decisions/0018-local-music-catalog.md). User-facing listening behavior and limitations belong in the [README](../../README.md#playback-limits); record verification evidence in the relevant issue or pull request.
 
 ### Playback

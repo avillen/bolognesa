@@ -1,11 +1,25 @@
 defmodule BolognesaWeb.Music.Index.Reducer.Load do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3, to_form: 2]
-  import Phoenix.LiveView, only: [start_async: 3]
+  import Phoenix.LiveView, only: [start_async: 3, stream: 4]
   alias Bolognesa.Music
 
   @spec call(Phoenix.LiveView.Socket.t(), String.t(), pos_integer()) ::
           Phoenix.LiveView.Socket.t()
+  def call(%{assigns: %{browse_kind: :home}} = socket, _query, _page) do
+    socket
+    |> assign(:query, "")
+    |> assign(:page, 1)
+    |> assign(:total, 0)
+    |> assign(:loading?, false)
+    |> assign(:error, nil)
+    |> assign(:request_id, nil)
+    |> assign(:visible_track_ids, MapSet.new())
+    |> assign(:pending_listening, MapSet.new())
+    |> stream(:groups, [], reset: true)
+    |> stream(:tracks, [], reset: true)
+  end
+
   def call(socket, query, page) do
     actor = socket.assigns.current_scope.actor
     library_id = socket.assigns.active_library_id

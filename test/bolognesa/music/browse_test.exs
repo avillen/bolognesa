@@ -5,6 +5,109 @@ defmodule Bolognesa.Music.BrowseTest do
   alias Bolognesa.Music.Application.UseCases.AlbumTracks
   alias Bolognesa.Music.StaleCountTracksReader
 
+  test "last listened album is account scoped and distinguishes no activity from failure" do
+    f = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
+    actor = listening_actor()
+    other = listening_actor(:member)
+    assert {:ok, []} = Music.list_recent_albums(actor, nil)
+    record_activity(other.id, f.track.id, ~U[2026-10-06 10:00:00.000000Z])
+    assert {:ok, []} = Music.list_recent_albums(actor, nil)
+    assert {:error, :forbidden} = Music.list_recent_albums(nil, nil)
+    assert {:error, :invalid_query} = Music.list_recent_albums(actor, "1")
+    assert {:error, :not_found} = Music.list_recent_albums(actor, 9_999_999)
+
+    record_activity(actor.id, f.track.id, ~U[2026-10-01 10:00:00.123456Z])
+    assert {:ok, [album]} = Music.list_recent_albums(actor, nil)
+    assert album.id == f.track.album_id
+    assert album.title == "First"
+    assert album.last_played_at == ~U[2026-10-01 10:00:00.123456Z]
+  end
+
+  test "last listened album respects library scope and deterministic ties" do
+    actor = listening_actor()
+    first = refresh_fixture(tags: %{"album" => "First"})
+    second = refresh_fixture(tags: %{"album" => "Second"})
+    record_activity(actor.id, first.track.id, ~U[2026-10-01 10:00:00.000000Z])
+    record_activity(actor.id, second.track.id, ~U[2026-10-02 10:00:00.000000Z])
+
+    assert {:ok, [latest, _]} = Music.list_recent_albums(actor, nil)
+    assert latest.id == second.track.album_id
+    assert {:ok, [scoped]} = Music.list_recent_albums(actor, first.library.id)
+    assert scoped.id == first.track.album_id
+
+    record_activity(actor.id, first.track.id, ~U[2026-10-02 10:00:00.000000Z])
+    assert {:ok, [tied, _]} = Music.list_recent_albums(actor, nil)
+    assert tied.id == min(first.track.album_id, second.track.album_id)
+  end
+
+  test "last listened considers missing tracks but excludes albums with no available files" do
+    actor = listening_actor()
+    f = refresh_fixture(tags: %{"album" => "First"})
+    {_, [second]} = add_tracks(f, 1)
+    record_activity(actor.id, second.id, ~U[2026-10-05 10:00:00.000000Z])
+    track = Repo.get!(Bolognesa.Infrastructure.Persistence.MusicTrackSchema, second.id)
+    file = Repo.get!(Bolognesa.Infrastructure.Persistence.MediaFileSchema, track.media_file_id)
+    Repo.update!(change(file, availability: :missing))
+    assert {:ok, [album]} = Music.list_recent_albums(actor, nil)
+    assert album.last_played_at == ~U[2026-10-05 10:00:00.000000Z]
+    refute album.track_available?
+    Repo.update!(change(f.file, availability: :missing))
+    assert {:ok, []} = Music.list_recent_albums(actor, nil)
+  end
+
+  test "last listened lookup reaches beyond the first album page without per-album queries" do
+    actor = listening_actor()
+    first = refresh_fixture(tags: %{"album" => "A"})
+    record_activity(actor.id, first.track.id, ~U[2026-10-01 10:00:00.000000Z])
+
+    {{:ok, _}, initial_queries} =
+      count_queries(fn -> Music.list_recent_albums(actor, nil) end)
+
+    for _ <- 1..50, do: refresh_fixture(tags: %{"album" => "B"})
+    last = refresh_fixture(tags: %{"album" => "Z"})
+    record_activity(actor.id, last.track.id, ~U[2026-10-06 10:00:00.000000Z])
+    {{:ok, [album, _]}, queries} = count_queries(fn -> Music.list_recent_albums(actor, nil) end)
+    assert album.id == last.track.album_id
+    assert queries == initial_queries
+  end
+
+  test "recent albums are limited to three distinct albums in latest activity order" do
+    actor = listening_actor()
+    fixtures = for i <- 1..5, do: refresh_fixture(tags: %{"album" => "Record #{i}"})
+
+    Enum.with_index(fixtures, 1)
+    |> Enum.each(fn {f, day} ->
+      record_activity(
+        actor.id,
+        f.track.id,
+        DateTime.add(~U[2026-10-01 00:00:00.000000Z], day, :day)
+      )
+    end)
+
+    assert {:ok, albums} = Music.list_recent_albums(actor, nil)
+
+    assert Enum.map(albums, & &1.id) ==
+             Enum.map(Enum.reverse(fixtures) |> Enum.take(3), & &1.track.album_id)
+  end
+
+  test "recent album continuation uses latest heard track and replays when it is last in album order" do
+    actor = listening_actor()
+    f = refresh_fixture(tags: %{"album" => "First", "disc" => "1", "track" => "1"})
+    {_, [second]} = add_tracks(f, 1)
+    track = Repo.get!(Bolognesa.Infrastructure.Persistence.MusicTrackSchema, second.id)
+    Repo.update!(change(track, disc_number: 2, track_number: 1))
+    record_activity(actor.id, f.track.id, ~U[2026-10-01 00:00:00.000000Z])
+    assert {:ok, [album]} = Music.list_recent_albums(actor, nil)
+    assert album.track_id == f.track.id
+    assert album.file_id == f.file.id
+    refute album.restart?
+    assert album.track_available?
+    record_activity(actor.id, second.id, ~U[2026-10-02 00:00:00.000000Z])
+    assert {:ok, [album]} = Music.list_recent_albums(actor, nil)
+    assert album.track_id == second.id
+    assert album.restart?
+  end
+
   test "album activity is the latest track playback for the authenticated account" do
     f = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
     actor = listening_actor()

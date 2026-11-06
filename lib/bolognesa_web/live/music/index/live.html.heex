@@ -13,6 +13,9 @@
       class="text-sm text-muted"
       data-added={gettext("Añadida a la cola")}
       data-failed={gettext("No se pudo añadir a la cola")}
+      data-open-failed={
+        gettext("No se pudo abrir el álbum. Reintenta cuando vuelva la conexión.")
+      }
     >
     </p>
     <header class="music-header">
@@ -30,6 +33,12 @@
       >{gettext("Actualizar")}</button>
     </header>
     <nav aria-label={gettext("Explorar música")} class="music-tabs">
+      <.link
+        id="music-home-link"
+        patch={~p"/music?#{@library_params}"}
+        aria-current={@browse_kind == :home && "page"}
+        class="music-tab"
+      >{gettext("Inicio")}</.link>
       <.link
         id="music-artists-link"
         patch={~p"/music?#{Map.put(@library_params, :view, :artists)}"}
@@ -49,6 +58,13 @@
         class="music-tab"
       >{gettext("Canciones")}</.link>
     </nav>
+    <BolognesaWeb.Music.Index.Components.Home.home
+      :if={@last_listened_visible?}
+      albums={@recent_albums}
+      status={@last_listened_status}
+      library_params={@library_params}
+      library_id={@active_library_id}
+    />
     <div
       :if={@browse_kind == :album || (@browse_kind == :albums && @artist_id)}
       class="music-album-heading"
@@ -93,6 +109,7 @@
       </div>
     </div>
     <.form
+      :if={@browse_kind != :home}
       for={@form}
       id="music-search"
       phx-change="search"
@@ -126,7 +143,11 @@
         class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
       >{gettext("Reintentar")}</button>
     </div>
-    <p :if={!@loading? && !@error && @total == 0} id="music-empty" class="music-feedback">
+    <p
+      :if={@browse_kind != :home && !@loading? && !@error && @total == 0}
+      id="music-empty"
+      class="music-feedback"
+    >
       {gettext("No hay resultados. Prueba otra búsqueda o escanea tu biblioteca de música.")}
     </p>
     <div
@@ -168,7 +189,7 @@
       id="music-tracks"
       phx-update="stream"
       class="music-track-list"
-      hidden={@browse_kind in [:artists, :albums] || @loading? || @error != nil}
+      hidden={@browse_kind in [:home, :artists, :albums] || @loading? || @error != nil}
     >
       <article
         :for={{dom_id, track} <- @streams.tracks}

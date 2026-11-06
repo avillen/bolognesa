@@ -4,6 +4,7 @@ import hook from "../js/music/hooks/audio_player.js"
 
 test("Music screen commands the document session and unmount only detaches it", () => {
   const actions = []
+  const navigation = []
   const listeners = new Map()
   const selected = {id: 3, file_id: 8}
   const session = {
@@ -17,7 +18,7 @@ test("Music screen commands the document session and unmount only detaches it", 
   const list = {querySelectorAll: () => []}
   const button = {dataset: {musicAction: "track", trackId: "3", fileId: "8"}}
   const el = {
-    querySelector: () => list,
+    querySelector: selector => selector === "#music-queue-feedback" ? null : list,
     addEventListener: (name, fn) => listeners.set(name, fn),
     removeEventListener: name => listeners.delete(name),
     contains: () => true,
@@ -26,7 +27,7 @@ test("Music screen commands the document session and unmount only detaches it", 
   const originalObserver = globalThis.MutationObserver
   globalThis.MutationObserver = class {constructor() {} observe() {} disconnect() {}}
   globalThis.window = {bolognesaRuntime: {musicSession: session}}
-  const context = {el}
+  const context = {el, pushEvent: (...args) => { navigation.push(args); return Promise.resolve() }}
   const event = {target: {closest: () => button}, preventDefault() {}, stopImmediatePropagation() {}}
   try {
     hook.mounted.call(context)
@@ -35,6 +36,14 @@ test("Music screen commands the document session and unmount only detaches it", 
     button.dataset = {musicAction: "track", trackId: "4", fileId: "9"}
     listeners.get("click")(event)
     assert.deepEqual(actions[1], ["select", {trackId: 4, fileId: 9}])
+    button.dataset = {musicAction: "resume-album", albumId: "2", trackId: "4", fileId: "9", openAlbum: "true"}
+    listeners.get("click")(event)
+    assert.deepEqual(actions[2], ["album", {albumId: 2, libraryId: null, trackId: 4, fileId: 9, requireTrack: true}])
+    assert.deepEqual(navigation, [["open-album", {album_id: 2}]])
+    hook.disconnected.call(context)
+    listeners.get("click")(event)
+    assert.equal(actions.length, 3)
+    assert.equal(navigation.length, 1)
     hook.destroyed.call(context)
     assert.equal(listeners.size, 0)
     assert.ok(context.session === null)

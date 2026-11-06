@@ -16,7 +16,7 @@ msgid_plural "%{count} archivos registrados antes del fallo. El escaneo no ha te
 msgstr[0] "%{count} archivo registrado antes del fallo. El escaneo no ha terminado de recorrer la carpeta."
 msgstr[1] "%{count} archivos registrados antes del fallo. El escaneo no ha terminado de recorrer la carpeta."
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:93
+#: lib/bolognesa_web/live/movie/index/live.html.heex:100
 #, elixir-autogen, elixir-format
 msgid "%{count} disponible"
 msgid_plural "%{count} disponibles"
@@ -30,14 +30,14 @@ msgid_plural "%{count} episodios identificados"
 msgstr[0] "%{count} episodio identificado"
 msgstr[1] "%{count} episodios identificados"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:40
+#: lib/bolognesa_web/live/movie/index/live.html.heex:47
 #, elixir-autogen, elixir-format
 msgid "%{count} película"
 msgid_plural "%{count} películas"
 msgstr[0] "%{count} película"
 msgstr[1] "%{count} películas"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:86
+#: lib/bolognesa_web/live/movie/index/live.html.heex:93
 #, elixir-autogen, elixir-format
 msgid "%{count} versión"
 msgid_plural "%{count} versiones"
@@ -82,10 +82,10 @@ msgstr "Almacenamiento no disponible"
 #: lib/bolognesa_web/components/music_player.ex:30
 #: lib/bolognesa_web/components/music_player.ex:31
 #: lib/bolognesa_web/live/episode/show/live.html.heex:134
-#: lib/bolognesa_web/live/movie/index/live.html.heex:118
-#: lib/bolognesa_web/live/movie/review/live.html.heex:161
-#: lib/bolognesa_web/live/music/index/live.html.heex:277
-#: lib/bolognesa_web/live/series/index/live.html.heex:122
+#: lib/bolognesa_web/live/movie/index/live.html.heex:125
+#: lib/bolognesa_web/live/movie/review/live.html.heex:168
+#: lib/bolognesa_web/live/music/index/live.html.heex:298
+#: lib/bolognesa_web/live/series/index/live.html.heex:129
 #: lib/bolognesa_web/live/series/review/live.html.heex:57
 #: lib/bolognesa_web/live/series/season/live.html.heex:135
 #, elixir-autogen, elixir-format
@@ -118,15 +118,15 @@ msgstr "Intentando reconectar"
 msgid "Ausente"
 msgstr "Ausente"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:81
+#: lib/bolognesa_web/live/movie/index/live.html.heex:88
 #: lib/bolognesa_web/live/movie/show/live.html.heex:30
-#: lib/bolognesa_web/live/series/index/live.html.heex:103
+#: lib/bolognesa_web/live/series/index/live.html.heex:110
 #: lib/bolognesa_web/live/series/show/live.html.heex:59
 #, elixir-autogen, elixir-format
 msgid "Año desconocido"
 msgstr "Año desconocido"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:104
+#: lib/bolognesa_web/live/movie/index/live.html.heex:111
 #, elixir-autogen, elixir-format
 msgid "Aún no hay películas con ese nombre. Escanea una biblioteca o revisa las identificaciones."
 msgstr "Aún no hay películas con ese nombre. Escanea una biblioteca o revisa las identificaciones."
@@ -164,42 +164,42 @@ msgstr "Bienvenido de nuevo"
 msgid "Bolognesa"
 msgstr "Bolognesa"
 
-#: lib/bolognesa_web/live/series/review/live.html.heex:100
+#: lib/bolognesa_web/live/series/review/live.html.heex:102
 #, elixir-autogen, elixir-format
 msgid "Buscando series…"
 msgstr "Buscando series…"
 
-#: lib/bolognesa_web/live/movie/review/live.html.heex:106
+#: lib/bolognesa_web/live/movie/review/live.html.heex:113
 #, elixir-autogen, elixir-format
 msgid "Buscando…"
 msgstr "Buscando…"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:35
-#: lib/bolognesa_web/live/movie/review/live.html.heex:106
-#: lib/bolognesa_web/live/music/index/live.html.heex:110
-#: lib/bolognesa_web/live/series/index/live.html.heex:49
-#: lib/bolognesa_web/live/series/review/live.html.heex:98
+#: lib/bolognesa_web/live/movie/index/live.html.heex:42
+#: lib/bolognesa_web/live/movie/review/live.html.heex:113
+#: lib/bolognesa_web/live/music/index/live.html.heex:127
+#: lib/bolognesa_web/live/series/index/live.html.heex:56
+#: lib/bolognesa_web/live/series/review/live.html.heex:100
 #, elixir-autogen, elixir-format
 msgid "Buscar"
 msgstr "Buscar"
 
-#: lib/bolognesa_web/live/movie/review/live.html.heex:98
+#: lib/bolognesa_web/live/movie/review/live.html.heex:105
 #, elixir-autogen, elixir-format
 msgid "Buscar en TMDb"
 msgstr "Buscar en TMDb"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:30
+#: lib/bolognesa_web/live/movie/index/live.html.heex:37
 #, elixir-autogen, elixir-format
 msgid "Buscar película"
 msgstr "Buscar película"
 
-#: lib/bolognesa_web/live/series/review/live.html.heex:92
+#: lib/bolognesa_web/live/series/review/live.html.heex:94
 #, elixir-autogen, elixir-format
 msgid "Buscar serie en TMDb"
 msgstr "Buscar serie en TMDb"
 
-#: lib/bolognesa_web/live/series/index/live.html.heex:38
-#: lib/bolognesa_web/live/series/index/live.html.heex:46
+#: lib/bolognesa_web/live/series/index/live.html.heex:45
+#: lib/bolognesa_web/live/series/index/live.html.heex:53
 #, elixir-autogen, elixir-format
 msgid "Buscar series"
 msgstr "Buscar series"
@@ -232,12 +232,12 @@ msgstr "Cargando episodios…"
 msgid "Cargando ficha…"
 msgstr "Cargando ficha…"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:45
+#: lib/bolognesa_web/live/movie/index/live.html.heex:52
 #, elixir-autogen, elixir-format
 msgid "Cargando películas…"
 msgstr "Cargando películas…"
 
-#: lib/bolognesa_web/live/series/index/live.html.heex:57
+#: lib/bolognesa_web/live/series/index/live.html.heex:64
 #, elixir-autogen, elixir-format
 msgid "Cargando series…"
 msgstr "Cargando series…"
@@ -247,12 +247,12 @@ msgstr "Cargando series…"
 msgid "Cargando serie…"
 msgstr "Cargando serie…"
 
-#: lib/bolognesa_web/live/series/review/live.html.heex:131
+#: lib/bolognesa_web/live/series/review/live.html.heex:133
 #, elixir-autogen, elixir-format
 msgid "Cargando temporada…"
 msgstr "Cargando temporada…"
 
-#: lib/bolognesa_web/live/series/review/live.html.heex:129
+#: lib/bolognesa_web/live/series/review/live.html.heex:131
 #, elixir-autogen, elixir-format
 msgid "Cargar episodios"
 msgstr "Cargar episodios"
@@ -263,8 +263,8 @@ msgstr "Cargar episodios"
 msgid "Carpeta de origen"
 msgstr "Carpeta de origen"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:77
-#: lib/bolognesa_web/live/series/index/live.html.heex:99
+#: lib/bolognesa_web/live/movie/index/live.html.heex:84
+#: lib/bolognesa_web/live/series/index/live.html.heex:106
 #: lib/bolognesa_web/live/series/show/live.html.heex:49
 #, elixir-autogen, elixir-format
 msgid "Cartel de %{value0}"
@@ -295,7 +295,7 @@ msgstr "Confirmar"
 msgid "Confirmar nuevo análisis"
 msgstr "Confirmar nuevo análisis"
 
-#: lib/bolognesa_web/live/movie/review/live.html.heex:133
+#: lib/bolognesa_web/live/movie/review/live.html.heex:140
 #, elixir-autogen, elixir-format
 msgid "Confirmar película"
 msgstr "Confirmar película"
@@ -366,7 +366,7 @@ msgstr "Crear cuenta"
 msgid "Datos de películas"
 msgstr "Datos de películas"
 
-#: lib/bolognesa_web/live/movie/review/live.html.heex:141
+#: lib/bolognesa_web/live/movie/review/live.html.heex:148
 #, elixir-autogen, elixir-format
 msgid "Dejar sin identificar"
 msgstr "Dejar sin identificar"
@@ -497,8 +497,8 @@ msgid "Guardando corrección…"
 msgstr "Guardando corrección…"
 
 #: lib/bolognesa_web/live/library/index/components/library_form.ex:109
-#: lib/bolognesa_web/live/movie/review/live.html.heex:131
-#: lib/bolognesa_web/live/series/review/live.html.heex:158
+#: lib/bolognesa_web/live/movie/review/live.html.heex:138
+#: lib/bolognesa_web/live/series/review/live.html.heex:160
 #: lib/bolognesa_web/live/settings/live.html.heex:37
 #, elixir-autogen, elixir-format
 msgid "Guardando…"
@@ -514,7 +514,7 @@ msgstr "Guardar"
 msgid "Guardar biblioteca"
 msgstr "Guardar biblioteca"
 
-#: lib/bolognesa_web/live/series/review/live.html.heex:158
+#: lib/bolognesa_web/live/series/review/live.html.heex:160
 #, elixir-autogen, elixir-format
 msgid "Guardar selección completa"
 msgstr "Guardar selección completa"
@@ -529,7 +529,7 @@ msgstr "Herramienta de análisis no disponible"
 msgid "Hola, %{name}"
 msgstr "Hola, %{name}"
 
-#: lib/bolognesa_web/live/movie/review/live.html.heex:123
+#: lib/bolognesa_web/live/movie/review/live.html.heex:130
 #, elixir-autogen, elixir-format
 msgid "ID de TMDb"
 msgstr "ID de TMDb"
@@ -590,6 +590,7 @@ msgstr "Imagen de %{value0}"
 #: lib/bolognesa_web/components/layouts.ex:88
 #: lib/bolognesa_web/live/home/live.html.heex:12
 #: lib/bolognesa_web/live/home/reducers/initialize.ex:11
+#: lib/bolognesa_web/live/music/index/live.html.heex:39
 #, elixir-autogen, elixir-format
 msgid "Inicio"
 msgstr "Inicio"
@@ -659,7 +660,7 @@ msgstr "Los archivos con varios episodios se reproducen desde el principio del a
 msgid "Los metadatos de películas se obtienen de TMDB cuando la identificación está configurada."
 msgstr "Los metadatos de películas se obtienen de TMDB cuando la identificación está configurada."
 
-#: lib/bolognesa_web/live/series/review/live.html.heex:165
+#: lib/bolognesa_web/live/series/review/live.html.heex:167
 #, elixir-autogen, elixir-format
 msgid "Marcar sin identificar"
 msgstr "Marcar sin identificar"
@@ -683,7 +684,7 @@ msgstr "No disponible"
 msgid "No hay archivos pendientes de revisión."
 msgstr "No hay archivos pendientes de revisión."
 
-#: lib/bolognesa_web/live/movie/review/live.html.heex:149
+#: lib/bolognesa_web/live/movie/review/live.html.heex:156
 #, elixir-autogen, elixir-format
 msgid "No hay archivos que revisar."
 msgstr "No hay archivos que revisar."
@@ -693,7 +694,7 @@ msgstr "No hay archivos que revisar."
 msgid "No hay episodios identificados."
 msgstr "No hay episodios identificados."
 
-#: lib/bolognesa_web/live/series/index/live.html.heex:70
+#: lib/bolognesa_web/live/series/index/live.html.heex:77
 #, elixir-autogen, elixir-format
 msgid "No hay series para esta búsqueda. Añade una biblioteca de series y escanéala para empezar."
 msgstr "No hay series para esta búsqueda. Añade una biblioteca de series y escanéala para empezar."
@@ -900,9 +901,9 @@ msgstr "Prepara tu biblioteca"
 msgid "Primer acceso"
 msgstr "Primer acceso"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:119
-#: lib/bolognesa_web/live/movie/review/live.html.heex:162
-#: lib/bolognesa_web/live/music/index/live.html.heex:278
+#: lib/bolognesa_web/live/movie/index/live.html.heex:126
+#: lib/bolognesa_web/live/movie/review/live.html.heex:169
+#: lib/bolognesa_web/live/music/index/live.html.heex:299
 #: lib/bolognesa_web/live/series/review/live.html.heex:58
 #, elixir-autogen, elixir-format
 msgid "Página %{page}"
@@ -913,17 +914,17 @@ msgstr "Página %{page}"
 msgid "Páginas de episodios"
 msgstr "Páginas de episodios"
 
-#: lib/bolognesa_web/live/movie/review/live.html.heex:154
+#: lib/bolognesa_web/live/movie/review/live.html.heex:161
 #, elixir-autogen, elixir-format
 msgid "Páginas de revisión"
 msgstr "Páginas de revisión"
 
-#: lib/bolognesa_web/live/series/index/live.html.heex:116
+#: lib/bolognesa_web/live/series/index/live.html.heex:123
 #, elixir-autogen, elixir-format
 msgid "Páginas de series"
 msgstr "Páginas de series"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:111
+#: lib/bolognesa_web/live/movie/index/live.html.heex:118
 #, elixir-autogen, elixir-format
 msgid "Páginas del catálogo"
 msgstr "Páginas del catálogo"
@@ -937,8 +938,9 @@ msgstr "Reanalizar"
 #: lib/bolognesa_web/components/music_player.ex:68
 #: lib/bolognesa_web/live/library/index/state/library.ex:79
 #: lib/bolognesa_web/live/movie/review/live.html.heex:82
-#: lib/bolognesa_web/live/music/index/live.html.heex:125
-#: lib/bolognesa_web/live/series/index/live.html.heex:61
+#: lib/bolognesa_web/live/music/index/components/home.ex:31
+#: lib/bolognesa_web/live/music/index/live.html.heex:142
+#: lib/bolognesa_web/live/series/index/live.html.heex:68
 #: lib/bolognesa_web/live/series/review/live.html.heex:22
 #: lib/bolognesa_web/live/series/season/live.html.heex:34
 #: lib/bolognesa_web/live/series/show/live.html.heex:24
@@ -1049,7 +1051,7 @@ msgstr "Selecciona una serie, una temporada y al menos un episodio válido."
 msgid "Selecciona una serie."
 msgstr "Selecciona una serie."
 
-#: lib/bolognesa_web/live/series/review/live.html.heex:112
+#: lib/bolognesa_web/live/series/review/live.html.heex:114
 #, elixir-autogen, elixir-format
 msgid "Serie seleccionada:"
 msgstr "Serie seleccionada:"
@@ -1088,10 +1090,10 @@ msgstr "Sesión iniciada como %{email}"
 #: lib/bolognesa_web/components/music_player.ex:49
 #: lib/bolognesa_web/components/music_player.ex:50
 #: lib/bolognesa_web/live/episode/show/live.html.heex:147
-#: lib/bolognesa_web/live/movie/index/live.html.heex:124
-#: lib/bolognesa_web/live/movie/review/live.html.heex:167
-#: lib/bolognesa_web/live/music/index/live.html.heex:283
-#: lib/bolognesa_web/live/series/index/live.html.heex:128
+#: lib/bolognesa_web/live/movie/index/live.html.heex:131
+#: lib/bolognesa_web/live/movie/review/live.html.heex:174
+#: lib/bolognesa_web/live/music/index/live.html.heex:304
+#: lib/bolognesa_web/live/series/index/live.html.heex:135
 #: lib/bolognesa_web/live/series/review/live.html.heex:59
 #: lib/bolognesa_web/live/series/season/live.html.heex:142
 #, elixir-autogen, elixir-format
@@ -1147,7 +1149,7 @@ msgstr "TMDb sin configurar"
 msgid "TMDb sin configurar. Añade TMDB_READ_TOKEN al servidor."
 msgstr "TMDb sin configurar. Añade TMDB_READ_TOKEN al servidor."
 
-#: lib/bolognesa_web/live/series/review/live.html.heex:122
+#: lib/bolognesa_web/live/series/review/live.html.heex:124
 #, elixir-autogen, elixir-format
 msgid "Temporada"
 msgstr "Temporada"
@@ -1349,7 +1351,7 @@ msgstr "Pendiente"
 msgid "Mi cuenta"
 msgstr "Mi cuenta"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:30
+#: lib/bolognesa_web/live/music/index/live.html.heex:31
 #, elixir-autogen, elixir-format
 msgid "Actualizar"
 msgstr "Actualizar"
@@ -1359,17 +1361,17 @@ msgstr "Actualizar"
 msgid "Artista desconocido"
 msgstr "Artista desconocido"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:20
+#: lib/bolognesa_web/live/music/index/live.html.heex:21
 #, elixir-autogen, elixir-format
 msgid "Biblioteca local"
 msgstr "Biblioteca local"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:104
+#: lib/bolognesa_web/live/music/index/live.html.heex:121
 #, elixir-autogen, elixir-format
 msgid "Buscar canciones, artistas o álbumes"
 msgstr "Buscar canciones, artistas o álbumes"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:113
+#: lib/bolognesa_web/live/music/index/live.html.heex:130
 #, elixir-autogen, elixir-format
 msgid "Cargando música…"
 msgstr "Cargando música…"
@@ -1391,12 +1393,12 @@ msgstr "Importación de audio en cola."
 
 #: lib/bolognesa_web/live/library/index/components/library_form.ex:73
 #: lib/bolognesa_web/live/library/index/state/library.ex:85
-#: lib/bolognesa_web/live/music/index/live.html.heex:21
+#: lib/bolognesa_web/live/music/index/live.html.heex:22
 #, elixir-autogen, elixir-format
 msgid "Música"
 msgstr "Música"
 
-#: lib/bolognesa_web/live/music/index/reducer/apply_page.ex:40
+#: lib/bolognesa_web/live/music/index/reducer/apply_page.ex:42
 #, elixir-autogen, elixir-format
 msgid "No se pudo cargar la música. Puedes reintentar."
 msgstr "No se pudo cargar la música. Puedes reintentar."
@@ -1406,7 +1408,7 @@ msgstr "No se pudo cargar la música. Puedes reintentar."
 msgid "No se pudo reintentar la importación."
 msgstr "No se pudo reintentar la importación."
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:270
+#: lib/bolognesa_web/live/music/index/live.html.heex:291
 #, elixir-autogen, elixir-format
 msgid "Paginación de música"
 msgstr "Paginación de música"
@@ -1416,19 +1418,19 @@ msgstr "Paginación de música"
 msgid "Procesando audio"
 msgstr "Procesando audio"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:265
+#: lib/bolognesa_web/live/music/index/live.html.heex:286
 #, elixir-autogen, elixir-format
 msgid "Reanalizar en bibliotecas"
 msgstr "Reanalizar en bibliotecas"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:260
+#: lib/bolognesa_web/live/music/index/live.html.heex:281
 #, elixir-autogen, elixir-format
 msgid "Reintentar importación"
 msgstr "Reintentar importación"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:246
-#: lib/bolognesa_web/live/music/index/live.html.heex:247
-#: lib/bolognesa_web/live/music/index/live.html.heex:248
+#: lib/bolognesa_web/live/music/index/live.html.heex:267
+#: lib/bolognesa_web/live/music/index/live.html.heex:268
+#: lib/bolognesa_web/live/music/index/live.html.heex:269
 #: lib/bolognesa_web/live/series/season/live.html.heex:111
 #, elixir-autogen, elixir-format
 msgid "Reproducir %{title}"
@@ -1445,43 +1447,46 @@ msgstr "Reproductor de música"
 msgid "Sin álbum"
 msgstr "Sin álbum"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:38
+#: lib/bolognesa_web/live/music/index/components/home.ex:94
+#: lib/bolognesa_web/live/music/index/live.html.heex:45
 #, elixir-autogen, elixir-format
 msgid "Artistas"
 msgstr "Artistas"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:50
+#: lib/bolognesa_web/live/music/index/components/home.ex:96
+#: lib/bolognesa_web/live/music/index/live.html.heex:57
 #, elixir-autogen, elixir-format
 msgid "Canciones"
 msgstr "Canciones"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:32
+#: lib/bolognesa_web/live/music/index/live.html.heex:33
 #, elixir-autogen, elixir-format
 msgid "Explorar música"
 msgstr "Explorar música"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:128
+#: lib/bolognesa_web/live/music/index/live.html.heex:149
 #, elixir-autogen, elixir-format
 msgid "No hay resultados. Prueba otra búsqueda o escanea tu biblioteca de música."
 msgstr "No hay resultados. Prueba otra búsqueda o escanea tu biblioteca de música."
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:84
-#: lib/bolognesa_web/live/music/index/live.html.heex:85
+#: lib/bolognesa_web/live/music/index/live.html.heex:98
+#: lib/bolognesa_web/live/music/index/live.html.heex:99
 #, elixir-autogen, elixir-format
 msgid "Reproducir álbum"
 msgstr "Reproducir álbum"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:60
+#: lib/bolognesa_web/live/music/index/live.html.heex:74
 #, elixir-autogen, elixir-format
 msgid "Volver a artistas"
 msgstr "Volver a artistas"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:67
+#: lib/bolognesa_web/live/music/index/live.html.heex:81
 #, elixir-autogen, elixir-format
 msgid "Volver a álbumes"
 msgstr "Volver a álbumes"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:44
+#: lib/bolognesa_web/live/music/index/components/home.ex:95
+#: lib/bolognesa_web/live/music/index/live.html.heex:51
 #, elixir-autogen, elixir-format
 msgid "Álbumes"
 msgstr "Álbumes"
@@ -1493,15 +1498,15 @@ msgstr "Álbumes"
 msgid "Esta ficha supera el límite de 100 elementos."
 msgstr "Esta ficha supera el límite de 100 elementos."
 
-#: lib/bolognesa_web/live/series/index/live.html.heex:53
+#: lib/bolognesa_web/live/series/index/live.html.heex:60
 #, elixir-autogen, elixir-format
 msgid "%{count} serie"
 msgid_plural "%{count} series"
 msgstr[0] "%{count} serie"
 msgstr[1] "%{count} series"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:31
-#: lib/bolognesa_web/live/series/index/live.html.heex:39
+#: lib/bolognesa_web/live/movie/index/live.html.heex:38
+#: lib/bolognesa_web/live/series/index/live.html.heex:46
 #, elixir-autogen, elixir-format
 msgid "Buscar por título…"
 msgstr "Buscar por título…"
@@ -1513,23 +1518,23 @@ msgstr "Buscar por título…"
 msgid "Tu biblioteca"
 msgstr "Tu biblioteca"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:193
+#: lib/bolognesa_web/live/music/index/live.html.heex:214
 #, elixir-autogen, elixir-format
 msgid "En pausa"
 msgstr "En pausa"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:249
+#: lib/bolognesa_web/live/music/index/live.html.heex:270
 #, elixir-autogen, elixir-format
 msgid "Pausar %{title}"
 msgstr "Pausar %{title}"
 
 #: lib/bolognesa_web/components/music_player.ex:108
-#: lib/bolognesa_web/live/music/index/live.html.heex:192
+#: lib/bolognesa_web/live/music/index/live.html.heex:213
 #, elixir-autogen, elixir-format
 msgid "Sonando"
 msgstr "Sonando"
 
-#: lib/bolognesa_web/live/series/index/live.html.heex:108
+#: lib/bolognesa_web/live/series/index/live.html.heex:115
 #, elixir-autogen, elixir-format
 msgid "%{count} episodio disponible"
 msgid_plural "%{count} episodios disponibles"
@@ -1603,12 +1608,12 @@ msgstr "Leer menos"
 msgid "Leer más"
 msgstr "Leer más"
 
-#: lib/bolognesa_web/live/series/index/live.html.heex:79
+#: lib/bolognesa_web/live/series/index/live.html.heex:86
 #, elixir-autogen, elixir-format
 msgid "Limpiar búsqueda"
 msgstr "Limpiar búsqueda"
 
-#: lib/bolognesa_web/live/series/index/live.html.heex:73
+#: lib/bolognesa_web/live/series/index/live.html.heex:80
 #, elixir-autogen, elixir-format
 msgid "No hay series que coincidan con tu búsqueda."
 msgstr "No hay series que coincidan con tu búsqueda."
@@ -1903,13 +1908,13 @@ msgstr "Preparando reproducción…"
 msgid "Añadida a la cola"
 msgstr "Se ha añadido a la cola"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:204
+#: lib/bolognesa_web/live/music/index/live.html.heex:225
 #, elixir-autogen, elixir-format
 msgid "Añadir %{title} a la cola"
 msgstr "Añadir %{title} a la cola"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:92
-#: lib/bolognesa_web/live/music/index/live.html.heex:205
+#: lib/bolognesa_web/live/music/index/live.html.heex:106
+#: lib/bolognesa_web/live/music/index/live.html.heex:226
 #, elixir-autogen, elixir-format
 msgid "Añadir a la cola"
 msgstr "Añadir a la cola"
@@ -1924,7 +1929,7 @@ msgstr "No se pudo añadir a la cola"
 msgid "Sesión terminada"
 msgstr "Sesión terminada"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:91
+#: lib/bolognesa_web/live/music/index/live.html.heex:105
 #, elixir-autogen, elixir-format
 msgid "Añadir álbum a la cola"
 msgstr "Añadir álbum a la cola"
@@ -1972,43 +1977,43 @@ msgstr "Bajar"
 msgid "Subir"
 msgstr "Subir"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:222
+#: lib/bolognesa_web/live/music/index/live.html.heex:243
 #, elixir-autogen, elixir-format
 msgid "Reproducir %{title} a continuación"
 msgstr "Reproducir %{title} a continuación"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:223
-#: lib/bolognesa_web/live/music/index/live.html.heex:224
+#: lib/bolognesa_web/live/music/index/live.html.heex:244
+#: lib/bolognesa_web/live/music/index/live.html.heex:245
 #, elixir-autogen, elixir-format
 msgid "Reproducir a continuación"
 msgstr "Reproducir a continuación"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:74
+#: lib/bolognesa_web/live/music/index/live.html.heex:88
 #, elixir-autogen, elixir-format
 msgid "%{count} canción"
 msgid_plural "%{count} canciones"
 msgstr[0] "%{count} canción"
 msgstr[1] "%{count} canciones"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:105
+#: lib/bolognesa_web/live/music/index/live.html.heex:122
 #, elixir-autogen, elixir-format
 msgid "Buscar música"
 msgstr "Buscar música"
 
 #: lib/bolognesa_web/components/music_player.ex:99
-#: lib/bolognesa_web/live/music/index/live.html.heex:212
-#: lib/bolognesa_web/live/music/index/live.html.heex:212
+#: lib/bolognesa_web/live/music/index/live.html.heex:233
+#: lib/bolognesa_web/live/music/index/live.html.heex:233
 #, elixir-autogen, elixir-format
 msgid "Más opciones"
 msgstr "Más opciones"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:232
+#: lib/bolognesa_web/live/music/index/live.html.heex:253
 #, elixir-autogen, elixir-format
 msgid "Reproducir solo %{title}"
 msgstr "Reproducir solo %{title}"
 
-#: lib/bolognesa_web/live/music/index/live.html.heex:233
-#: lib/bolognesa_web/live/music/index/live.html.heex:234
+#: lib/bolognesa_web/live/music/index/live.html.heex:254
+#: lib/bolognesa_web/live/music/index/live.html.heex:255
 #, elixir-autogen, elixir-format
 msgid "Reproducir solo esta canción"
 msgstr "Reproducir solo esta canción"
@@ -2032,3 +2037,78 @@ msgstr "Nunca reproducida"
 #, elixir-autogen, elixir-format
 msgid "Última reproducción: %{date}"
 msgstr "Última reproducción: %{date}"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:21
+#, elixir-autogen, elixir-format
+msgid "Todavía no has escuchado ningún álbum."
+msgstr "Todavía no has escuchado ningún álbum."
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:18
+#, elixir-autogen, elixir-format
+msgid "Cargando últimas escuchas…"
+msgstr "Cargando últimas escuchas…"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:76
+#, elixir-autogen, elixir-format
+msgid "Continuar"
+msgstr "Continuar"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:71
+#, elixir-autogen, elixir-format
+msgid "Continuar %{title}"
+msgstr "Continuar %{title}"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:88
+#, elixir-autogen, elixir-format
+msgid "Explorar tu música"
+msgstr "Explorar tu música"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:55
+#, elixir-autogen, elixir-format
+msgid "La última canción ya no está disponible. Abre el álbum para elegir otra."
+msgstr "La última canción ya no está disponible. Abre el álbum para elegir otra."
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:29
+#, elixir-autogen, elixir-format
+msgid "No se pudieron cargar las últimas escuchas."
+msgstr "No se pudieron cargar las últimas escuchas."
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:70
+#, elixir-autogen, elixir-format
+msgid "Reproducir %{title} de nuevo"
+msgstr "Reproducir %{title} de nuevo"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:75
+#, elixir-autogen, elixir-format
+msgid "Reproducir de nuevo"
+msgstr "Reproducir de nuevo"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:80
+#, elixir-autogen, elixir-format
+msgid "Ver %{title}"
+msgstr "Ver %{title}"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:81
+#, elixir-autogen, elixir-format
+msgid "Ver álbum"
+msgstr "Ver álbum"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:46
+#, elixir-autogen, elixir-format
+msgid "Última canción escuchada: %{title}"
+msgstr "Última canción escuchada: %{title}"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:49
+#, elixir-autogen, elixir-format
+msgid "Última reproducción:"
+msgstr "Última reproducción:"
+
+#: lib/bolognesa_web/live/music/index/components/home.ex:15
+#, elixir-autogen, elixir-format
+msgid "Últimos discos escuchados"
+msgstr "Últimos discos escuchados"
+
+#: lib/bolognesa_web/live/music/index/live.html.heex:16
+#, elixir-autogen, elixir-format
+msgid "No se pudo abrir el álbum. Reintenta cuando vuelva la conexión."
+msgstr "No se pudo abrir el álbum. Reintenta cuando vuelva la conexión."

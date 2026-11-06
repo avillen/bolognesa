@@ -3,6 +3,15 @@ import assert from "node:assert/strict"
 import {parseMusicAction, executeMusicAction} from "../js/music/hooks/audio_player/actions.mjs"
 
 const command = dataset => parseMusicAction({dataset})
+test("recent album continuation always selects the saved track with strict matching", () => {
+  const calls = []
+  const session = {playAlbum: value => calls.push(value)}
+  const action = command({musicAction: "resume-album", albumId: "4", libraryId: "3", trackId: "2", fileId: "12"})
+  assert.ok(action)
+  executeMusicAction(session, action)
+  assert.deepEqual(calls, [{albumId: 4, libraryId: 3, trackId: 2, fileId: 12, requireTrack: true}])
+  assert.equal(command({musicAction: "resume-album", albumId: "4"}), null)
+})
 test("screen commands reject invalid identifiers and unknown actions", () => {
   for (const trackId of ["", "-1", "1.5", "1e2", "9007199254740992"]) {
     assert.equal(command({musicAction: "track", trackId, fileId: "2"}), null)

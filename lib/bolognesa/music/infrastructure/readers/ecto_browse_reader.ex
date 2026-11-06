@@ -11,8 +11,75 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
     MusicTrackSchema
   }
 
-  alias Bolognesa.Music.Domain.ReadModels.{BrowseItem, BrowsePage}
+  alias Bolognesa.Music.Domain.ReadModels.{BrowseItem, BrowsePage, RecentAlbum}
   alias Bolognesa.Repo
+
+  @impl true
+  def list_recent_albums(library_id, user_id) do
+    with :ok <- library_scope(library_id) do
+      latest =
+        from(track in MusicTrackSchema,
+          join: activity in "music_listening_activity",
+          on: activity.track_id == track.id and activity.user_id == ^user_id,
+          join: file in MediaFileSchema,
+          on: file.id == track.media_file_id,
+          where: track.album_id == parent_as(:album).id,
+          order_by: [desc: activity.last_played_at, asc: track.id],
+          limit: 1,
+          select: %{
+            track_id: track.id,
+            file_id: file.id,
+            track_title: track.title,
+            track_available?: file.availability == :available,
+            last_played_at: type(activity.last_played_at, :utc_datetime_usec)
+          }
+        )
+
+      final =
+        from(track in MusicTrackSchema,
+          join: file in MediaFileSchema,
+          on: file.id == track.media_file_id,
+          where: track.album_id == parent_as(:album).id and file.availability == :available,
+          order_by: [
+            desc_nulls_first: track.disc_number,
+            desc_nulls_first: track.track_number,
+            desc: file.relative_path,
+            desc: track.id
+          ],
+          limit: 1,
+          select: %{id: track.id}
+        )
+
+      albums =
+        collection(:albums, nil) |> scope(library_id) |> exclude(:order_by) |> exclude(:select)
+
+      query =
+        from([album, artist] in albums,
+          inner_lateral_join: latest in subquery(latest),
+          on: true,
+          inner_lateral_join: final in subquery(final),
+          on: true,
+          order_by: [desc: latest.last_played_at, asc: album.id],
+          limit: 3,
+          select: %{
+            id: album.id,
+            title: album.title,
+            artist: artist.name,
+            last_played_at: latest.last_played_at,
+            track_id: latest.track_id,
+            file_id: latest.file_id,
+            track_title: latest.track_title,
+            track_available?: latest.track_available?,
+            final_track_id: final.id
+          }
+        )
+
+      {:ok, query |> Repo.all(log: false) |> Enum.map(&struct!(RecentAlbum, &1))}
+    end
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
 
   @impl true
   def browse(kind, artist_id, text, page, library_id, user_id) do

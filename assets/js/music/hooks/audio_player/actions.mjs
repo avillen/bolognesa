@@ -3,7 +3,7 @@ const positiveId = value => {
   const id = Number(value)
   return Number.isSafeInteger(id) ? id : null
 }
-const trackActions = new Set(["track", "track-only", "album-track", "play-from-here", "append-track", "play-next"])
+const trackActions = new Set(["track", "track-only", "album-track", "play-from-here", "append-track", "play-next", "resume-album"])
 const albumActions = new Set(["album", "append-album"])
 
 /** Parse only declared screen actions; DOM strings stop at this boundary. */
@@ -18,6 +18,7 @@ export function parseMusicAction({dataset}) {
   }
   const trackId = positiveId(dataset.trackId), fileId = positiveId(dataset.fileId)
   if (!trackId || !fileId) return null
+  if (type === "resume-album" && (!albumId || (dataset.libraryId && !libraryId))) return null
   return {type, trackId, fileId, albumId, libraryId}
 }
 
@@ -34,6 +35,8 @@ const handlers = {
   "track-only": playTrack,
   "album-track": playTrack,
   "play-from-here": playTrack,
+  "resume-album": (session, {albumId, libraryId, trackId, fileId}) =>
+    session.playAlbum({albumId, libraryId, trackId, fileId, requireTrack: true}),
   "append-track": (session, {trackId, fileId}) => session.appendTrack({trackId, fileId}),
   "play-next": (session, {trackId, fileId}) => session.playNext({trackId, fileId}),
   album: (session, {albumId, libraryId}) => session.playAlbum({albumId, libraryId}),

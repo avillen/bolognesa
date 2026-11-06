@@ -36,7 +36,7 @@ try {
   assert.ok(login.ok())
   await page.goto(`${base}/music?library_id=${ids.music_library}`)
   await waitConnected(page)
-  assert.equal(await page.locator('#music-artists-link[aria-current="page"]').count(), 1)
+  assert.equal(await page.locator('#music-home-link[aria-current="page"]').count(), 1)
   await page.locator("#music-songs-link").click()
   await page.waitForURL(url => url.searchParams.get("view") === "tracks")
   assert.equal(await page.locator("#music-player-host").count(), 1)
