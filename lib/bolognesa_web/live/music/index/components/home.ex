@@ -66,6 +66,7 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
             </div>
             <div class="music-recent-actions">
               <button
+                :if={!album.restart?}
                 id={"recent-continue-#{album.id}"}
                 type="button"
                 data-music-action="resume-album"
@@ -88,10 +89,11 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
                 data-library-id={@library_id}
                 data-open-album="true"
                 aria-label={gettext("Reproducir %{title} de nuevo", title: album.title)}
-                class="music-recent-replay"
-              ><.icon name="hero-arrow-uturn-left" class="size-5" /><span class="sr-only">{gettext(
-                "Reproducir de nuevo"
-              )}</span></button>
+                class={if album.restart?, do: "music-recent-play", else: "music-recent-replay"}
+              ><.icon
+                name={if album.restart?, do: "hero-play-solid", else: "hero-arrow-uturn-left"}
+                class="size-5"
+              /><span class="sr-only">{gettext("Reproducir de nuevo")}</span></button>
             </div>
           </div>
         </article>
