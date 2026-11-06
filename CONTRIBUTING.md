@@ -19,21 +19,28 @@ Use the CI/Docker versions: Elixir 1.20.3, Erlang/OTP 28.3.3, PostgreSQL 17, and
 Configure PostgreSQL as in `config/dev.exs`, then run:
 
 ```sh
-mix setup
-mix phx.server
+sh scripts/dev/local.sh setup
+sh scripts/dev/local.sh server
 ```
 
 Set `TMDB_READ_TOKEN` in the environment for identification. Set `BOLOGNESA_LIBRARY_ROOTS` to a colon-separated list of media folders; its development default is a temporary directory.
 
+Each worktree uses its own development database, test database and local port.
+Run `sh scripts/dev/local.sh info` to see their names and address, and
+`sh scripts/dev/local.sh test` for project checks. Tidewave's MCP proxy targets
+the port shown by `info`. Phoenix starts only when requested; stopping it does
+not delete the databases. If another process occupies the selected port, stop
+that process or use a different checkout.
+
 ## Development with Docker
 
-This separate Compose project runs Phoenix in development with Tidewave, FFmpeg,
+This optional Compose project runs Phoenix in development with Tidewave, FFmpeg,
 and its own PostgreSQL volume. Docker and Compose are required; Elixir and media
 tools do not need to be installed on the host.
 
 ```sh
 mkdir -p media
-sh scripts/dev/ensure.sh
+sh scripts/dev/docker-ensure.sh
 ```
 
 Find the local address with `sh scripts/dev/compose.sh port app 4001`. The
@@ -50,12 +57,12 @@ can use port `4000` inside this checkout's app container. Tidewave can execute
 code and access the development database and mounted files, so keep it local.
 The helper also makes Git metadata available for Git worktrees. After changing
 `Dockerfile.dev`, rebuild with `sh scripts/dev/compose.sh build` and then run
-`sh scripts/dev/ensure.sh` again.
+`sh scripts/dev/docker-ensure.sh` again.
 Stop the containers with `sh scripts/dev/compose.sh down`; the database
 volume is retained. To run checks, use
 `sh scripts/dev/compose.sh exec app mix precommit`.
 
-If your Worktrunk setup runs `scripts/dev/teardown.sh` before removing a linked
+If your Worktrunk setup runs `scripts/dev/docker-teardown.sh` before removing a linked
 worktree, that command removes its development containers, image and volumes,
 including the development database. It refuses to remove the primary checkout's data.
 

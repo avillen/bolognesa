@@ -20,7 +20,8 @@ config :bolognesa, Bolognesa.Repo,
   username: "postgres",
   password: "postgres",
   hostname: System.get_env("BOLOGNESA_DB_HOST", "localhost"),
-  database: "bolognesa_test#{System.get_env("MIX_TEST_PARTITION")}",
+  database:
+    "#{System.get_env("BOLOGNESA_TEST_DB_NAME", "bolognesa_test")}#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   # Committed concurrency tests hold a sandbox owner, a coordinator and three workers.
   # Keep five connections available even on runners with one or two schedulers.

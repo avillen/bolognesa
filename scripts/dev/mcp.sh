@@ -3,7 +3,5 @@ set -eu
 
 cd "$(dirname "$0")/../.."
 
-# MCP uses stdout as its protocol channel. Startup messages belong on stderr.
-sh scripts/dev/ensure.sh </dev/null >&2
-
-exec sh scripts/dev/compose.sh exec -T app mix tidewave.proxy
+# The proxy does not start Phoenix. Its tools target the port from local.sh info.
+exec sh scripts/dev/local.sh mcp

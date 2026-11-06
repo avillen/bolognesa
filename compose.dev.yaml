@@ -37,7 +37,7 @@ services:
       - deps:/app/deps
       - build:/app/_build
       - ${MEDIA_PATH:-./media}:/media:ro
-    command: ["sh", "scripts/dev/start.sh"]
+    command: ["sh", "scripts/dev/docker-start.sh"]
 
 volumes:
   database:

@@ -68,7 +68,7 @@ class ComposeWorktreeTest(unittest.TestCase):
         root = self.base / "checkout"
         target = root / "scripts/dev"
         target.mkdir(parents=True, exist_ok=True)
-        for script in ("compose.sh", "teardown.sh"):
+        for script in ("compose.sh", "docker-teardown.sh"):
             shutil.copy(ROOT / "scripts/dev" / script, target / script)
         main = root if primary else self.base / "primary"
         main.mkdir(exist_ok=True)
@@ -81,7 +81,7 @@ class ComposeWorktreeTest(unittest.TestCase):
             env.update(FAKE_VOLUME="1", FAKE_OWNER=owner)
         if image is not None:
             env["FAKE_IMAGE"] = image
-        return subprocess.run(["sh", str(target / "teardown.sh")],
+        return subprocess.run(["sh", str(target / "docker-teardown.sh")],
                               env=env, text=True, capture_output=True)
 
     def test_teardown_removes_only_linked_worktree_project(self):

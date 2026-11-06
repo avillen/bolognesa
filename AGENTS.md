@@ -12,9 +12,9 @@ A Phoenix web application for learning and home use. Bolognesa's decisions and c
 
 ## Local development
 
-- For development that needs a running application, use the Docker development environment described in [CONTRIBUTING](CONTRIBUTING.md#development-with-docker): `sh scripts/dev/ensure.sh`. Each worktree has its own PostgreSQL volume and does not use the deployment database.
-- When investigating the running application, use the configured `bolognesa_tidewave` MCP server when available for runtime, log, database, and source information. The local proxy is started for the current worktree and its tools require port `4000` (inside that worktree's app container). Confirm it points to this development instance before relying on its results. If MCP tools are unavailable, continue with other project tools and report the limitation.
-- Run project checks in the development container with `sh scripts/dev/compose.sh exec -T app mix precommit`. Preserve existing volumes and do not enable Tidewave in production.
+- For development that needs a running application, use the native setup described in [CONTRIBUTING](CONTRIBUTING.md#native-development). Run `sh scripts/dev/local.sh setup` once per worktree and `sh scripts/dev/local.sh server` when needed. Each worktree uses its own development and test databases and port. Do not start Docker automatically.
+- When investigating the running application, use the configured `bolognesa_tidewave` MCP server when available for runtime, log, database, and source information. Its tools require the port reported by `sh scripts/dev/local.sh info`. Confirm it points to this development instance before relying on its results. A new worktree needs `setup` before its MCP proxy can load; reconnect or start a new session after setup if necessary. If MCP tools are unavailable, continue with other project tools and report the limitation.
+- Run project checks with `sh scripts/dev/local.sh test`. Preserve existing Docker volumes and do not enable Tidewave in production.
 
 ## Documentation organization
 
