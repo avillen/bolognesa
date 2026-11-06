@@ -29,11 +29,18 @@
       </details>
     </header>
     <div class="media-toolbar">
-      <.form for={@form} id="series-search" phx-submit="search" class="media-search-form">
+      <.form
+        for={@form}
+        id="series-search"
+        phx-change="search"
+        phx-submit="search"
+        class="media-search-form"
+      >
         <div class="media-search-field">
           <.icon name="hero-magnifying-glass" class="size-5 text-muted" />
           <.input
             field={@form[:query]}
+            phx-debounce="300"
             type="search"
             label={gettext("Buscar series")}
             placeholder={gettext("Buscar por título…")}

@@ -13,7 +13,7 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
     assert {:ok, view, _} = live(ctx.conn, "/series")
     render_async(view)
     assert has_element?(view, "#series-list a[href='/series/#{ctx.series_id}']", "Serie")
-    view |> form("#series-search", search: %{query: "Unknown"}) |> render_submit()
+    view |> form("#series-search", search: %{query: "Unknown"}) |> render_change()
     render_async(view)
     assert has_element?(view, "#series-empty")
   end

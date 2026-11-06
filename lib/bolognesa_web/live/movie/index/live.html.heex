@@ -20,11 +20,18 @@
       </.link>
     </header>
     <div class="media-toolbar">
-      <.form for={@form} id="movie-search-form" phx-submit="search" class="media-search-form">
+      <.form
+        for={@form}
+        id="movie-search-form"
+        phx-change="search"
+        phx-submit="search"
+        class="media-search-form"
+      >
         <div class="media-search-field">
           <.icon name="hero-magnifying-glass" class="size-5 text-muted" />
           <.input
             field={@form[:query]}
+            phx-debounce="300"
             id="movie-search-query"
             type="search"
             label={gettext("Buscar película")}

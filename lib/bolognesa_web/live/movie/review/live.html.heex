@@ -90,9 +90,16 @@
             do: gettext("Archivo seleccionado: %{value0}", value0: @selected_file_id),
             else: gettext("Selecciona un archivo de la lista.")}
         </p>
-        <.form for={@form} id="correction-form" phx-submit="search" class="mt-5 space-y-4">
+        <.form
+          for={@form}
+          id="correction-form"
+          phx-change="search"
+          phx-submit="search"
+          class="mt-5 space-y-4"
+        >
           <.input
             field={@form[:query]}
+            phx-debounce="300"
             id="correction-query"
             type="search"
             label={gettext("Buscar en TMDb")}

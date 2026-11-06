@@ -84,11 +84,13 @@
       <.form
         for={@search_form}
         id="series-search"
+        phx-change="search"
         phx-submit="search"
         class="flex flex-wrap gap-2 items-end"
       >
         <.input
           field={@search_form[:query]}
+          phx-debounce="300"
           label={gettext("Buscar serie en TMDb")}
           disabled={@saving?}
         />

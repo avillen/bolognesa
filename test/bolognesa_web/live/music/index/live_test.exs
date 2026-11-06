@@ -35,6 +35,30 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     assert has_element?(view, "#music-tracks", "Sample Song")
   end
 
+  test "typing filters songs and clearing restores them within the selected library", %{
+    conn: conn,
+    token: token
+  } do
+    fixture = refresh_fixture(tags: %{"title" => "Sample Song"})
+    route = "/music?library_id=#{fixture.library.id}&view=tracks"
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), route)
+    render_async(view)
+
+    view |> form("#music-search", search: %{query: "Unknown"}) |> render_change()
+    assert_patch(view, "/music?library_id=#{fixture.library.id}&query=Unknown&view=tracks")
+    render_async(view)
+    assert has_element?(view, "#music-empty")
+    refute has_element?(view, "#tracks-#{fixture.file.id}")
+
+    view |> form("#music-search", search: %{query: "S"}) |> render_change()
+    render_async(view)
+    assert has_element?(view, "#tracks-#{fixture.file.id}", "Sample Song")
+
+    view |> form("#music-search", search: %{query: ""}) |> render_change()
+    render_async(view)
+    assert has_element?(view, "#tracks-#{fixture.file.id}", "Sample Song")
+  end
+
   test "lists tagged tracks with authorized client actions", %{conn: conn, token: token} do
     fixture = refresh_fixture(tags: %{"title" => "Sample Song", "artist" => "Sample Artist"})
 

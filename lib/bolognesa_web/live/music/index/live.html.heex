@@ -95,11 +95,13 @@
     <.form
       for={@form}
       id="music-search"
+      phx-change="search"
       phx-submit="search"
       class="music-search"
     >
       <.input
         field={@form[:query]}
+        phx-debounce="300"
         type="search"
         label={gettext("Buscar canciones, artistas o álbumes")}
         placeholder={gettext("Buscar música")}

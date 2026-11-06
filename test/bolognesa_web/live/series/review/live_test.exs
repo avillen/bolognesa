@@ -26,7 +26,7 @@ defmodule BolognesaWeb.Series.Review.LiveTest do
   test "searches a series selects a season and corrects the whole set", ctx do
     {:ok, view, _} = live(ctx.conn, "/series/review?file_id=#{ctx.media_file.id}")
     render_async(view)
-    view |> form("#series-search", search: %{query: "Serie"}) |> render_submit()
+    view |> form("#series-search", search: %{query: "Serie"}) |> render_change()
     render_async(view)
     view |> element("#series-candidate-201") |> render_click()
     view |> form("#series-season-form", season: %{number: "0"}) |> render_submit()
@@ -57,10 +57,10 @@ defmodule BolognesaWeb.Series.Review.LiveTest do
     on_exit(fn -> Application.delete_env(:bolognesa, :series_search_test_owner) end)
     {:ok, view, _} = live(ctx.conn, "/series/review?file_id=#{ctx.media_file.id}")
     render_async(view)
-    view |> form("#series-search", search: %{query: "Slow"}) |> render_submit()
+    view |> form("#series-search", search: %{query: "Slow"}) |> render_change()
     assert_receive {:search_started, pid}
     monitor = Process.monitor(pid)
-    view |> form("#series-search", search: %{query: "Sin coincidencia"}) |> render_submit()
+    view |> form("#series-search", search: %{query: "Sin coincidencia"}) |> render_change()
     assert_receive {:DOWN, ^monitor, :process, ^pid, _}
     render_async(view)
     assert has_element?(view, "#series-review-feedback", "No se encontraron")

@@ -112,7 +112,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
     render_async(view)
     assert has_element?(view, "#review-failure-#{file.id}", "TMDb sin configurar")
     view |> element("#review-select-#{file.id}") |> render_click()
-    view |> form("#correction-form", correction: %{query: "Film"}) |> render_submit()
+    view |> form("#correction-form", correction: %{query: "Film"}) |> render_change()
     render_async(view)
     assert has_element?(view, "#review-feedback", "TMDb sin configurar")
   end
