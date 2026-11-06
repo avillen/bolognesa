@@ -108,6 +108,38 @@ defmodule Bolognesa.Music.BrowseTest do
     assert album.restart?
   end
 
+  test "the final recent track follows the available album queue order with missing numbers" do
+    actor = listening_actor()
+    f = refresh_fixture(tags: %{"album" => "First", "disc" => "1", "track" => "1"})
+    {_, [second, third]} = add_tracks(f, 2)
+    schema = Bolognesa.Infrastructure.Persistence.MusicTrackSchema
+    Repo.update!(change(Repo.get!(schema, second.id), disc_number: 1, track_number: nil))
+    Repo.update!(change(Repo.get!(schema, third.id), disc_number: nil, track_number: 1))
+
+    assert {:ok, queue} = Music.album_queue(actor, f.track.album_id, f.library.id)
+    assert Enum.map(queue, & &1.id) == [f.track.id, second.id, third.id]
+
+    record_activity(actor.id, second.id, ~U[2026-10-01 00:00:00.000000Z])
+    assert {:ok, [album]} = Music.list_recent_albums(actor, f.library.id)
+    refute album.restart?
+
+    record_activity(actor.id, third.id, ~U[2026-10-02 00:00:00.000000Z])
+    assert {:ok, [album]} = Music.list_recent_albums(actor, f.library.id)
+    assert album.restart?
+
+    third_track = Repo.get!(schema, third.id)
+
+    file =
+      Repo.get!(Bolognesa.Infrastructure.Persistence.MediaFileSchema, third_track.media_file_id)
+
+    Repo.update!(change(file, availability: :missing))
+    record_activity(actor.id, second.id, ~U[2026-10-03 00:00:00.000000Z])
+    assert {:ok, queue} = Music.album_queue(actor, f.track.album_id, f.library.id)
+    assert List.last(queue).id == second.id
+    assert {:ok, [album]} = Music.list_recent_albums(actor, f.library.id)
+    assert album.restart?
+  end
+
   test "album activity is the latest track playback for the authenticated account" do
     f = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
     actor = listening_actor()

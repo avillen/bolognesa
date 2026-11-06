@@ -2091,11 +2091,6 @@ msgstr ""
 msgid "Ver álbum"
 msgstr ""
 
-#: lib/bolognesa_web/live/music/index/components/home.ex:46
-#, elixir-autogen, elixir-format
-msgid "Última canción escuchada: %{title}"
-msgstr ""
-
 #: lib/bolognesa_web/live/music/index/components/home.ex:49
 #, elixir-autogen, elixir-format
 msgid "Última reproducción:"
