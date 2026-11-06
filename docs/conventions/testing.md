@@ -38,6 +38,7 @@ Run focused tests during development and broaden checks when risk or project req
 - Use distinct fixture values for unique constraints. For race/locking tests, use independent connections and deterministic coordination; keep the configured minimum pool size of five. Do not hide pool exhaustion with longer timeouts.
 - Start processes with `start_supervised!/1` so they are cleaned up between tests.
 - Synchronize on messages, monitors, or explicit acknowledgements instead of sleeping or polling `Process.alive?/1`. A synchronous call such as `:sys.get_state/1` can flush earlier messages sent by the same sender; it does not prove completion of work delegated to another process.
+- The suite uses a one-second `assert_receive_timeout`, including LiveView's `render_async/1` completion wait. Cold module loading and database round trips can exceed ExUnit's 100ms default. This is a bounded wait for a result, not a performance assertion; use explicit measurements for latency requirements. Do not retry failed tests or bypass token verification to hide environment failures such as a clock moving backwards.
 
 See the [SQL Sandbox ownership guide](https://hexdocs.pm/ecto_sql/Ecto.Adapters.SQL.Sandbox.html) for allowances, shared mode, and process cleanup.
 
