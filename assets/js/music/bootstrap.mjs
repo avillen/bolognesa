@@ -1,8 +1,7 @@
 import "../../vendor/videojs.min.mjs"
-import {createMusicSession} from "./music_bootstrap/session.mjs"
-import {createMediaCoordinator} from "./music_bootstrap/media_coordinator.mjs"
-import {connectMediaSession} from "./music_bootstrap/media_session.mjs"
-import {connectMusicPlayerView} from "./music_bootstrap/player_view.mjs"
+import {createMusicSession} from "./player/session.mjs"
+import {connectMediaSession} from "./player/adapters/media_session.mjs"
+import {connectMusicPlayerView} from "./player/ui/player_view.mjs"
 
 const instanceKey = Symbol("bolognesa.musicPlayer")
 
@@ -16,20 +15,20 @@ function installAudioSkin(document, audio) {
   audio.controls = false
 }
 
-export function initializeMusicPlayer(document, {transport} = {}) {
+export function initializeMusicPlayer(document, {transport, coordinator} = {}) {
   const host = document.querySelector("#music-player-host")
   if (!host) return null
   if (host[instanceKey]) return host[instanceKey]
   const audio = host.querySelector("#music-playback")
-  if (!audio || !transport) return null
+  if (!audio || !transport || !coordinator) return null
   installAudioSkin(document, audio)
   const session = createMusicSession({audio, transport})
   const mediaSession = connectMediaSession(document.defaultView, audio, session)
-  const coordinator = createMediaCoordinator({onActiveChange: active => mediaSession.setActive(active === audio)})
+  const unsubscribeActive = coordinator.subscribe(active => mediaSession.setActive(active === audio))
   const unregisterMusic = coordinator.register(audio)
   const view = connectMusicPlayerView(host, session)
   const instance = {audio, session, coordinator, destroy() {
-    unregisterMusic(); view.destroy(); session.destroy(); mediaSession.destroy()
+    unregisterMusic(); unsubscribeActive(); view.destroy(); session.destroy(); mediaSession.destroy()
     delete host[instanceKey]
   }}
   Object.defineProperty(host, instanceKey, {value: instance, configurable: true})

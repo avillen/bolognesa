@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createMusicQueue } from "../js/music/music_bootstrap/session/queue.js";
+import { createMusicQueue } from "../js/music/player/model/queue.mjs";
 
 test("an album queue navigates in order and stops at its boundaries", () => {
   const queue = createMusicQueue();

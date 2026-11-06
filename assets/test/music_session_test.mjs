@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createMusicSession} from "../js/music/music_bootstrap/session.mjs"
+import {createMusicSession} from "../js/music/player/session.mjs"
 
 class FakeAudio extends EventTarget {
   constructor() {
@@ -416,4 +416,163 @@ test("an old track ending during a failed replacement is handled once", async ()
   rejectReplacement(Object.assign(new Error("unavailable"), {code: "unavailable"}))
   await replacement
   assert.equal(session.getSnapshot().finished, true)
+})
+
+test("reports actual playback once and reports again after replay", async () => {
+  let now = 0
+  const audio = new FakeAudio()
+  const reports = []
+  const session = createMusicSession({audio, clock: () => now, transport: {
+    async selectTrack() { return {track: {id: 1, file_id: 11, title: "Track", duration_ms: 20_000, state: "ready"}, src: "/music/tracks/1/media/11"} },
+    async recordActivity(track) { reports.push(track) },
+  }})
+  await session.selectTrack({trackId: 1, fileId: 11})
+  now = 9; audio.currentTime = 9; audio.dispatchEvent(new Event("timeupdate"))
+  assert.equal(reports.length, 0)
+  now = 10; audio.currentTime = 10; audio.dispatchEvent(new Event("timeupdate"))
+  assert.deepEqual(reports, [{trackId: 1, fileId: 11}])
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(session.getSnapshot().activityRevision, 1)
+  now = 20; audio.currentTime = 20; audio.dispatchEvent(new Event("ended"))
+  session.play()
+  now = 30; audio.currentTime = 10; audio.dispatchEvent(new Event("timeupdate"))
+  assert.equal(reports.length, 2)
+  session.previous()
+  audio.dispatchEvent(new Event("seeked"))
+  now = 40; audio.currentTime = 10; audio.dispatchEvent(new Event("timeupdate"))
+  assert.equal(reports.length, 3)
+})
+
+test("only declared playback commands are exposed", () => {
+  const session = createMusicSession({audio: new FakeAudio(), transport: {}})
+  assert.equal(typeof session.playAlbum, "function")
+  assert.equal(session.playUnknownAlbum, undefined)
+  assert.equal(session.playFromHere, undefined)
+  session.destroy()
+})
+
+for (const start of [{trackId: 2, fileId: 12}, {startIndex: 1}]) {
+  test(`album start uses canonical selection ${JSON.stringify(start)}`, async () => {
+    const tracks = [1, 2, 3].map(id => ({id, file_id: id + 10, state: "ready"}))
+    const session = createMusicSession({audio: new FakeAudio(), transport: {
+      loadAlbum: async () => ({tracks}),
+      selectTrack: async ({trackId}) => ({track: tracks[trackId - 1], src: `/audio/${trackId}`}),
+    }})
+    await session.playAlbum({albumId: 1, ...start})
+    assert.equal(session.getSnapshot().selected.id, 2)
+    assert.deepEqual(session.getSnapshot().queue.map(track => track.id), [2, 3])
+    session.destroy()
+  })
+}
+
+test("album authorization failure currently retries from the album beginning", async () => {
+  const tracks = [1, 2].map(id => ({id, file_id: id + 10, state: "ready"}))
+  let fail = true
+  const session = createMusicSession({audio: new FakeAudio(), transport: {
+    loadAlbum: async () => ({tracks}),
+    selectTrack: async ({trackId}) => {
+      if (fail) throw Object.assign(new Error(), {code: "unavailable"})
+      return {track: tracks[trackId - 1], src: `/audio/${trackId}`}
+    },
+  }})
+  await session.playAlbum({albumId: 1, trackId: 2, fileId: 12})
+  fail = false
+  await session.retry()
+  assert.equal(session.getSnapshot().selected.id, 1)
+  session.destroy()
+})
+
+test("a late play rejection cannot fail a replacement source", async () => {
+  const audio = new FakeAudio()
+  const session = createMusicSession({audio, transport: {
+    selectTrack: async ({trackId, fileId}) => ({track: {id: trackId, file_id: fileId}, src: `/audio/${trackId}`}),
+  }})
+  let rejectPlay
+  audio.play = () => new Promise((_, reject) => { rejectPlay = reject })
+  const outgoing = session.selectTrack({trackId: 1, fileId: 11})
+  await new Promise(resolve => setImmediate(resolve))
+  audio.play = FakeAudio.prototype.play
+  await session.selectTrack({trackId: 2, fileId: 12})
+  rejectPlay(Object.assign(new Error(), {name: "NotAllowedError"}))
+  await outgoing
+  assert.equal(session.getSnapshot().selected.id, 2)
+  assert.equal(session.getSnapshot().error, null)
+  session.destroy()
+})
+
+test("a late authorization response cannot revive a destroyed session", async () => {
+  const audio = new FakeAudio()
+  let resolveSelection
+  const session = createMusicSession({audio, transport: {selectTrack: () => new Promise(resolve => { resolveSelection = resolve })}})
+  const pending = session.selectTrack({trackId: 1, fileId: 11})
+  session.destroy()
+  resolveSelection({track: {id: 1, file_id: 11}, src: "/audio/1"})
+  await pending
+  assert.equal(audio.src, "")
+  assert.equal(audio.playCalls, 0)
+  assert.equal(session.getSnapshot().selected, null)
+})
+
+test("destroyed sessions reject queue additions without reviving their queue", async () => {
+  const track = {id: 1, file_id: 11, state: "ready"}
+  const session = createMusicSession({audio: new FakeAudio(), transport: {
+    selectTrack: async () => ({track, src: "/audio/1"}),
+    loadAlbum: async () => ({tracks: [track]}),
+  }})
+  session.destroy()
+  assert.equal(await session.appendTrack({trackId: 1, fileId: 11}), false)
+  assert.equal(await session.playNext({trackId: 1, fileId: 11}), false)
+  assert.equal(await session.appendAlbum({albumId: 1}), false)
+  assert.deepEqual(session.getSnapshot().queue, [])
+})
+
+test("a stale album response cannot replace the later authorized album", async () => {
+  const pending = new Map(), authorized = []
+  const session = createMusicSession({audio: new FakeAudio(), transport: {
+    loadAlbum: ({albumId}) => new Promise(resolve => pending.set(albumId, resolve)),
+    selectTrack: async ({trackId}) => {
+      authorized.push(trackId)
+      return {track: {id: trackId, file_id: trackId + 10}, src: `/audio/${trackId}`}
+    },
+  }})
+  const first = session.playAlbum({albumId: 1})
+  const second = session.playAlbum({albumId: 2})
+  pending.get(2)({tracks: [{id: 2, file_id: 12, state: "ready"}]})
+  await second
+  pending.get(1)({tracks: [{id: 1, file_id: 11, state: "ready"}]})
+  await first
+  assert.deepEqual(authorized, [2])
+  assert.equal(session.getSnapshot().selected.id, 2)
+  assert.deepEqual(session.getSnapshot().queue.map(track => track.id), [2])
+  session.destroy()
+})
+
+test("an authorization refusal clears the outgoing source and queue", async () => {
+  const audio = new FakeAudio()
+  let refused = false
+  const session = createMusicSession({audio, transport: {
+    loadAlbum: async () => ({tracks: [{id: 1, file_id: 11, state: "ready"}]}),
+    selectTrack: async ({trackId, fileId}) => {
+      if (refused) throw Object.assign(new Error(), {code: "unauthenticated"})
+      return {track: {id: trackId, file_id: fileId}, src: `/audio/${trackId}`}
+    },
+  }})
+  await session.playAlbum({albumId: 1})
+  refused = true
+  await session.selectTrack({trackId: 2, fileId: 12})
+  assert.equal(session.getSnapshot().selected, null)
+  assert.deepEqual(session.getSnapshot().queue, [])
+  assert.equal(audio.src, "")
+  assert.equal(audio.paused, true)
+  session.destroy()
+})
+
+test("invalid selection input preserves asynchronous rejection at the public API", async () => {
+  const session = createMusicSession({audio: new FakeAudio(), transport: {}})
+  for (const method of ["selectTrack", "playAlbum"]) {
+    let request
+    assert.doesNotThrow(() => { request = session[method](null) })
+    await assert.rejects(request, TypeError)
+  }
+  session.destroy()
 })

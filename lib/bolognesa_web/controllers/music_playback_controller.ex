@@ -39,6 +39,19 @@ defmodule BolognesaWeb.MusicPlaybackController do
 
   def track(conn, _params), do: error(conn, :invalid_request)
 
+  def activity(conn, %{"track_id" => track_id, "file_id" => file_id}) do
+    with {:ok, actor} <- actor(conn),
+         :ok <- validate_ids(track_id, file_id),
+         {:ok, _source} <- Playback.start_track(actor, track_id, file_id),
+         :ok <- Music.record_listening(actor, track_id, file_id) do
+      json(conn, %{ok: true})
+    else
+      {:error, reason} -> error(conn, reason)
+    end
+  end
+
+  def activity(conn, _params), do: error(conn, :invalid_request)
+
   def album(conn, %{"album_id" => album_id} = params) do
     library_id = Map.get(params, "library_id")
 

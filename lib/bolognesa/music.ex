@@ -7,6 +7,7 @@ defmodule Bolognesa.Music do
     Browse,
     FetchTrack,
     ListTracks,
+    RecordListening,
     RefreshTrack,
     RetryImport
   }
@@ -37,6 +38,18 @@ defmodule Bolognesa.Music do
         EctoMusicRepository,
         token,
         correlation
+      )
+
+  @spec record_listening(AuthenticatedUser.t() | nil, integer(), integer()) ::
+          RecordListening.result()
+  def record_listening(actor, track_id, file_id),
+    do:
+      RecordListening.call(
+        actor,
+        track_id,
+        file_id,
+        EctoTracksReader,
+        Bolognesa.Music.Infrastructure.Repositories.EctoListeningActivityRepository
       )
 
   @spec retry_import(AuthenticatedUser.t() | nil, pos_integer()) :: RetryImport.result()

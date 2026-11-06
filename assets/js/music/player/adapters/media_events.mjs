@@ -2,6 +2,8 @@ const events = [
   "loadedmetadata",
   "durationchange",
   "timeupdate",
+  "seeking",
+  "seeked",
   "play",
   "playing",
   "pause",
@@ -21,9 +23,10 @@ const stateEvents = new Set([
 
 export function listenToMedia(
   audio,
-  { hasSelection, isLoading, onEnded, onEndedWhileLoading, onError, onChange },
+  { hasSelection, isLoading, onEnded, onEndedWhileLoading, onError, onChange, onEvent },
 ) {
   const listener = (event) => {
+    onEvent?.(event);
     if (event.type === "ended") {
       if (hasSelection()) {
         if (isLoading()) onEndedWhileLoading?.();

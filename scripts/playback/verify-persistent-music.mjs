@@ -91,8 +91,62 @@ try {
   await page.waitForURL(url => url.searchParams.get("view") === "albums")
   await page.locator(`#album-${ids.music_album}`).click()
   await page.waitForURL(url => url.searchParams.get("view") === "album")
+  await page.setViewportSize({width: 320, height: 568})
+  await page.locator(`#play-track-${ids.music_second_track}`).click()
+  await page.waitForFunction(id => window.bolognesaRuntime.musicSession.getSnapshot().selected?.id === id && !document.getElementById("music-playback").paused, ids.music_second_track)
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  const initialList = await page.evaluate(() => {
+    const list = document.getElementById("music-tracks")
+    window.listeningUpdateProbe = {list, rows: [...list.children], scrollY: window.scrollY}
+    return {order: [...list.children].map(row => row.id), scrollY: window.scrollY}
+  })
+  assert.ok(initialList.scrollY > 0, "album view must be scrolled to test stability")
+  await page.waitForFunction(id => {
+    const row = document.querySelector(`#play-track-${id}`)?.closest("article")
+    return row?.querySelector(".music-track-last-played")?.textContent.includes("Última reproducción:")
+  }, ids.music_second_track, {timeout: 10000})
+  const afterListening = await page.evaluate(() => ({
+    listConnected: window.listeningUpdateProbe.list.isConnected,
+    rowsConnected: window.listeningUpdateProbe.rows.every(row => row.isConnected),
+    order: [...document.getElementById("music-tracks").children].map(row => row.id),
+    scrollY: window.scrollY,
+  }))
+  assert.equal(afterListening.listConnected, true, "list must stay mounted")
+  assert.equal(afterListening.rowsConnected, true, "track rows must stay mounted")
+  assert.deepEqual(afterListening.order, initialList.order, "track order must remain stable")
+  assert.ok(Math.abs(afterListening.scrollY - initialList.scrollY) <= 2, "scroll position must remain stable")
+  await page.locator("#music-tracks article[data-state=ready] h2").first().evaluate(title => {
+    title.dataset.originalTitle = title.textContent
+    title.textContent = "A deliberately long track title that tests wrapping and alignment across narrow and wide screens"
+  })
+  for (const width of [320, 375, 640, 641, 1440]) {
+    await page.setViewportSize({width, height: 900})
+    const layout = await page.locator("#music-tracks article[data-state=ready]").evaluateAll(rows => rows.map(row => {
+      const rect = element => element.getBoundingClientRect()
+      const center = box => (box.top + box.bottom) / 2
+      const copy = rect(row.querySelector(".music-track-copy"))
+      const meta = rect(row.querySelector(".music-track-meta"))
+      const play = rect(row.querySelector(".music-track-play"))
+      const queue = rect(row.querySelector('[data-music-action="append-track"]'))
+      const menu = rect(row.querySelector(".music-action-menu summary"))
+      return {copyLeft: copy.left, metaLeft: meta.left, metaCenter: center(meta), playCenter: center(play), queueCenter: center(queue), menuCenter: center(menu), rowRight: rect(row).right, scrollWidth: row.scrollWidth, clientWidth: row.clientWidth}
+    }))
+    assert.ok(layout.length >= 2, "track alignment needs multiple rows")
+    for (const row of layout) {
+      assert.ok(Math.abs(row.playCenter - row.queueCenter) < 2 && Math.abs(row.playCenter - row.menuCenter) < 2, `track controls must align at ${width}px`)
+      assert.ok(row.scrollWidth <= row.clientWidth, `track row must not overflow at ${width}px`)
+      if (width <= 640) assert.ok(Math.abs(row.metaLeft - row.copyLeft) < 2, `metadata must align with title at ${width}px`)
+      else assert.ok(Math.abs(row.metaCenter - row.playCenter) < 2, `metadata and controls must be vertically aligned at ${width}px`)
+    }
+  }
+  await page.locator("#music-tracks article[data-state=ready] h2").first().evaluate(title => {
+    title.textContent = title.dataset.originalTitle
+    delete title.dataset.originalTitle
+  })
+  await page.setViewportSize({width: 320, height: 568})
   await page.locator("#play-album").click()
-  await page.waitForFunction(id => window.bolognesaMusicPlayer.session.getSnapshot().selected?.id === id && !document.getElementById("music-playback").paused, ids.music_track)
+  await page.waitForFunction(id => window.bolognesaRuntime.musicSession.getSnapshot().selected?.id === id && !document.getElementById("music-playback").paused, ids.music_track)
+  await audio.evaluate(node => { node.playbackRate = 0.25 })
   await page.setViewportSize({width: 320, height: 568})
   const mobileSearchBounds = await search.boundingBox()
   assert.ok(mobileSearchBounds && mobileSearchBounds.width >= 100 && mobileSearchBounds.height >= 44, "music search must be visible on mobile")
@@ -149,9 +203,10 @@ try {
   assert.equal(await queueMenu.evaluate(node => node.open), false)
   assert.equal(await page.locator("#music-player").getAttribute("aria-modal"), "true")
   await page.keyboard.press("Escape")
+  await audio.evaluate(node => { node.playbackRate = 1 })
   await navigate(page, "/movies", "/movies")
-  await page.waitForFunction(id => window.bolognesaMusicPlayer.session.getSnapshot().selected?.id === id, ids.music_second_track, {timeout: 15_000})
-  assert.equal(await page.evaluate(() => window.bolognesaMusicPlayer.session.getSnapshot().queueIndex), 1)
+  await page.waitForFunction(id => window.bolognesaRuntime.musicSession.getSnapshot().selected?.id === id, ids.music_second_track, {timeout: 15_000})
+  assert.equal(await page.evaluate(() => window.bolognesaRuntime.musicSession.getSnapshot().queueIndex), 1)
   await navigate(page, "/music?", "/music")
   await page.waitForFunction(id => document.querySelector(`#tracks-${id}[data-playback="playing"]`), ids.music_second_file)
 
@@ -178,13 +233,13 @@ try {
   })
   await page.locator('#music-player [data-player-action="next"]').click()
   await page.waitForFunction(() => document.querySelector("#audio-error:not([hidden])")?.textContent.length > 0)
-  assert.equal(await page.evaluate(() => window.bolognesaMusicPlayer.session.getSnapshot().queueIndex), 2)
+  assert.equal(await page.evaluate(() => window.bolognesaRuntime.musicSession.getSnapshot().queueIndex), 2)
   await page.unroute(`${base}/music/playback/track`)
   await page.locator('#music-player [data-player-action="retry"]').click()
-  await page.waitForFunction(id => window.bolognesaMusicPlayer.session.getSnapshot().selected?.id === id, ids.music_middle_track)
+  await page.waitForFunction(id => window.bolognesaRuntime.musicSession.getSnapshot().selected?.id === id, ids.music_middle_track)
   await page.locator('#music-player [data-player-action="next"]').click()
-  await page.waitForFunction(() => window.bolognesaMusicPlayer.session.getSnapshot().error?.code === "unavailable")
-  assert.equal(await page.evaluate(() => window.bolognesaMusicPlayer.session.getSnapshot().queueIndex), 3)
+  await page.waitForFunction(() => window.bolognesaRuntime.musicSession.getSnapshot().error?.code === "unavailable")
+  assert.equal(await page.evaluate(() => window.bolognesaRuntime.musicSession.getSnapshot().queueIndex), 3)
   assert.equal(await page.locator('#music-player [data-player-action="next"]').isDisabled(), true)
 
   await page.setViewportSize({width: 375, height: 812})

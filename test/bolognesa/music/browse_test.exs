@@ -79,6 +79,42 @@ defmodule Bolognesa.Music.BrowseTest do
     assert {:ok, %{total: 0}} = Music.browse(f.actor, :albums, nil, "", 1, f.library.id)
   end
 
+  test "artist browsing prefers the album credit and hides unavailable files" do
+    f =
+      refresh_fixture(
+        tags: %{"artist" => "Solo", "album_artist" => "Ensemble", "album" => "First"}
+      )
+
+    assert {:ok, %{items: artists, total: 1}} =
+             Music.browse(f.actor, :artists, nil, "", 1, f.library.id)
+
+    assert Enum.map(artists, & &1.title) == ["Ensemble"]
+
+    assert {:ok, %{items: [album]}} =
+             Music.browse(f.actor, :albums, hd(artists).id, "", 1, f.library.id)
+
+    assert album.id == f.track.album_id
+
+    assert {:ok, %{items: [track]}} =
+             Music.list_album_tracks(f.actor, album.id, "", 1, f.library.id)
+
+    assert track.artist == "Solo"
+
+    Repo.update!(change(f.file, availability: :missing))
+
+    assert {:ok, %{items: [], total: 0}} =
+             Music.browse(f.actor, :artists, nil, "", 1, f.library.id)
+  end
+
+  test "tracks without an album remain browsable by their artist" do
+    f = refresh_fixture(tags: %{"artist" => "Solo"})
+
+    assert {:ok, %{items: [artist], total: 1}} =
+             Music.browse(f.actor, :artists, nil, "", 1, f.library.id)
+
+    assert artist.title == "Solo"
+  end
+
   test "album playback spans list pages and refuses oversized queues" do
     f = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
     add_tracks(f, 50)

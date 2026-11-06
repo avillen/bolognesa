@@ -18,6 +18,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
     |> assign(:error, nil)
     |> assign(:total, page.total)
     |> assign(:heading, page.heading)
+    |> assign(:visible_track_ids, MapSet.new())
     |> stream(:groups, page.items, reset: true)
     |> stream(:tracks, [], reset: true)
   end
@@ -29,6 +30,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
     |> assign(:total, page.total)
     |> assign(:page_size, page.page_size)
     |> assign(:heading, page.heading)
+    |> assign(:visible_track_ids, page.items |> Enum.map(& &1.id) |> MapSet.new())
     |> stream(:groups, [], reset: true)
     |> stream(:tracks, Enum.map(page.items, &Track.from_dto/1), reset: true)
   end

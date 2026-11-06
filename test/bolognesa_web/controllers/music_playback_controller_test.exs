@@ -2,6 +2,7 @@ defmodule BolognesaWeb.MusicPlaybackControllerTest do
   use BolognesaWeb.ConnCase, async: false
   import Bolognesa.MusicFixtures
   alias Bolognesa.Accounts
+  alias Bolognesa.Music.Infrastructure.Repositories.EctoListeningActivityRepository
 
   setup %{conn: conn} do
     {:ok, _} =
@@ -75,6 +76,85 @@ defmodule BolognesaWeb.MusicPlaybackControllerTest do
 
     assert mismatched.status == 404
     refute mismatched.resp_body =~ "src"
+  end
+
+  test "qualifying playback records one latest value for the account and track", %{
+    conn: conn,
+    token: token
+  } do
+    fixture = refresh_fixture()
+    conn = authenticated_with_csrf(conn, token)
+
+    for _ <- 1..2 do
+      response =
+        json_post(conn, "/music/playback/activity", %{
+          track_id: fixture.track.id,
+          file_id: fixture.file.id
+        })
+
+      assert response.status == 200
+    end
+
+    assert %{rows: [[played_at]]} =
+             Bolognesa.Repo.query!(
+               "SELECT last_played_at FROM music_listening_activity WHERE track_id = $1",
+               [fixture.track.id]
+             )
+
+    assert :ok = Bolognesa.Music.refresh_track(fixture.file.id, fixture.file.revision)
+
+    assert %{rows: [[^played_at]]} =
+             Bolognesa.Repo.query!(
+               "SELECT last_played_at FROM music_listening_activity WHERE track_id = $1",
+               [fixture.track.id]
+             )
+  end
+
+  test "activity rejects an unrelated file", %{conn: conn, token: token} do
+    fixture = refresh_fixture()
+    conn = authenticated_with_csrf(conn, token)
+
+    response =
+      json_post(conn, "/music/playback/activity", %{
+        track_id: fixture.track.id,
+        file_id: fixture.file.id + 1
+      })
+
+    assert response.status == 404
+  end
+
+  test "listening rows are independent across accounts", %{conn: conn, token: token} do
+    fixture = refresh_fixture()
+    conn = authenticated_with_csrf(conn, token)
+
+    assert json_post(conn, "/music/playback/activity", %{
+             track_id: fixture.track.id,
+             file_id: fixture.file.id
+           }).status == 200
+
+    %{rows: [[other_id]]} =
+      Bolognesa.Repo.query!("""
+      INSERT INTO accounts_users (name, email, role, hashed_password, locale, inserted_at, updated_at)
+      VALUES ('Other', 'other@example.com', 'member', 'unused', 'en', now(), now()) RETURNING id
+      """)
+
+    assert :ok =
+             EctoListeningActivityRepository.record(
+               other_id,
+               fixture.track.id
+             )
+
+    assert :ok =
+             EctoListeningActivityRepository.record(
+               other_id,
+               fixture.track.id
+             )
+
+    assert %{rows: [[2]]} =
+             Bolognesa.Repo.query!(
+               "SELECT count(*) FROM music_listening_activity WHERE track_id = $1",
+               [fixture.track.id]
+             )
   end
 
   defp authenticated_with_csrf(conn, token) do

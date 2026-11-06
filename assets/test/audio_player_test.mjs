@@ -1,10 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {readFile} from "node:fs/promises"
-const code = await readFile(new URL("../js/music/hooks/audio_player.js", import.meta.url), "utf8")
-const rows = `data:text/javascript;base64,${Buffer.from(await readFile(new URL("../js/music/hooks/audio_player/track_list.js", import.meta.url), "utf8")).toString("base64")}`
-const moduleCode = code.replace('"./audio_player/track_list.js"', JSON.stringify(rows))
-const {default: hook} = await import(`data:text/javascript;base64,${Buffer.from(moduleCode).toString("base64")}`)
+import hook from "../js/music/hooks/audio_player.js"
 
 test("Music screen commands the document session and unmount only detaches it", () => {
   const actions = []
@@ -29,7 +25,7 @@ test("Music screen commands the document session and unmount only detaches it", 
   const originalWindow = globalThis.window
   const originalObserver = globalThis.MutationObserver
   globalThis.MutationObserver = class {constructor() {} observe() {} disconnect() {}}
-  globalThis.window = {bolognesaMusicPlayer: {session}}
+  globalThis.window = {bolognesaRuntime: {musicSession: session}}
   const context = {el}
   const event = {target: {closest: () => button}, preventDefault() {}, stopImmediatePropagation() {}}
   try {
@@ -56,7 +52,7 @@ test("add-to-queue action reports the result", async () => {
   const originalWindow = globalThis.window
   const originalObserver = globalThis.MutationObserver
   globalThis.MutationObserver = class {observe() {} disconnect() {}}
-  globalThis.window = {bolognesaMusicPlayer: {session}}
+  globalThis.window = {bolognesaRuntime: {musicSession: session}}
   const context = {el}
   try {
     hook.mounted.call(context)
@@ -77,13 +73,31 @@ test("a playback action closes a different open track menu", () => {
   const list = {querySelectorAll: () => []}
   const el = {querySelector: () => list, querySelectorAll: () => [menu], contains: () => true, addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener() {}}
   const originalWindow = globalThis.window, originalObserver = globalThis.MutationObserver
-  globalThis.window = {bolognesaMusicPlayer: {session}}
+  globalThis.window = {bolognesaRuntime: {musicSession: session}}
   globalThis.MutationObserver = class {observe() {} disconnect() {}}
   try {
     const context = {el}
     hook.mounted.call(context)
     listeners.get("click")({target: {closest: () => button}, preventDefault() {}, stopImmediatePropagation() {}})
     assert.equal(menu.open, false)
+    hook.destroyed.call(context)
+  } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
+})
+
+test("refreshes visible track dates after listening activity is saved", () => {
+  const listeners = []
+  const session = {subscribe(fn) { listeners.push(fn); fn({activityRevision: 0}); return () => {} }}
+  const list = {querySelectorAll: () => []}
+  const el = {querySelector: () => list, addEventListener() {}, removeEventListener() {}}
+  const originalWindow = globalThis.window, originalObserver = globalThis.MutationObserver
+  globalThis.window = {bolognesaRuntime: {musicSession: session}}
+  globalThis.MutationObserver = class {observe() {} disconnect() {}}
+  const events = []
+  try {
+    const context = {el, pushEvent: (...args) => events.push(args)}
+    hook.mounted.call(context)
+    for (const listener of listeners) listener({activityRevision: 1, activityTrackId: 3})
+    assert.deepEqual(events, [["listening-activity", {track_id: 3}]])
     hook.destroyed.call(context)
   } finally { globalThis.window = originalWindow; globalThis.MutationObserver = originalObserver }
 })

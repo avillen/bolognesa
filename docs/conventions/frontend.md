@@ -54,6 +54,54 @@ LiveView templates start with `<Layouts.app flash={@flash} ...>`. Follow [Phoeni
 
 The browser owns immediate player state such as position, volume, and fullscreen. Send meaningful actions and progress to the backend; do not send every visual update.
 
+Browser playback modules stay within their context. LiveView hooks adapt lifecycle and
+screen events; sessions own playback use cases; views render snapshots and manage local
+controls. Use named command handlers and guard clauses instead of deeply nested action
+branches. Extract coherent decisions or resource lifecycles, not arbitrary line ranges.
+
+Within Music, `player/model/` owns browser-independent rules and state transitions,
+`player/operations/` coordinates use cases, `player/adapters/` wraps browser/HTTP effects,
+and `player/ui/` renders snapshots and manages local controls. Keep screen action parsing
+beside its hook. `bootstrap.mjs` wires the persistent host; `player/session.mjs` composes
+its internal collaborators and provides the public playback facade.
+
+| Module area | Allowed internal dependencies |
+| --- | --- |
+| `model/` | Other model modules only; no DOM, HTTP, clock, or browser APIs |
+| `operations/` | Operations and models; receive effects, cancellation, clock, and callbacks as dependencies |
+| `adapters/` | Adapters and models; no session, operations, hooks, or UI |
+| `ui/` | UI and models; receive snapshots and commands without importing the session or transport |
+| Session/bootstrap/runtime | Compose the concrete collaborators and own their lifetime |
+
+`assets/test/browser_architecture_test.mjs` verifies these Music dependency boundaries
+using the actual bundled import graph. A session owns one playback/lifecycle record;
+operations share that record rather than introducing their own selection, retry or queue
+store. Model transitions return updated display state without mutating their input.
+
+Music has one explicit command API in `assets/js/music/player/session.mjs`.
+`playAlbum({albumId, libraryId, trackId, fileId, startIndex})` is the canonical album-start
+command; do not add speculative aliases or dynamic method fallbacks. The session owns
+selection, queue, retries, and source generations. Audio effects and ordered asynchronous
+operations have separate adapters; position, duration, and pause state come from the media
+element rather than duplicated mutable state.
+
+`assets/js/browser_runtime.mjs` composes document-owned services once. Hooks borrow
+`musicSession` and `mediaCoordinator` through `getBrowserRuntime()` and detach on teardown.
+Media coordination exists without a Music host. Video source controllers receive explicit
+browser/configuration dependencies and expose `update(config)` and `destroy()`; only outer
+hooks implement LiveView lifecycle callbacks. Keep player elements mounted during source
+changes to retain fullscreen and let recovery defer source attachment.
+
+Video implementation lives under `video/player/`: source controllers in `controllers/`,
+the mounted frame in `ui/`, and recovery, diagnostics and timeline beside the source
+coordinator. The hook stays in `video/hooks/`. Create layers where the context has those
+responsibilities; see [decision 0028](../decisions/0028-context-owned-browser-modules.md).
+
+Use native ESM imports in browser tests and inject external dependencies such as HLS at
+the controller boundary. Browser sources declare ESM in `assets/js/package.json`; this
+does not change root-level Node scripts. Keep the existing build target and browser
+fallbacks when introducing syntax or APIs.
+
 Native dialogs and disclosures also own their open state. Preserve their `open` attribute across LiveView patches with `JS.ignore_attributes("open")`. Keep responsive navigation accessible when changing between mobile and desktop.
 
 ## Visual design

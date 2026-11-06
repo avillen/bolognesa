@@ -5,9 +5,9 @@ defmodule Bolognesa.Music.StaleCountTracksReader do
   @impl true
   def fetch_track(_), do: {:error, :not_found}
   @impl true
-  def list_tracks(_, _, _), do: {:error, :unavailable}
+  def list_tracks(_, _, _, _), do: {:error, :unavailable}
   @impl true
-  def list_album_tracks(_, _, _, _, _) do
+  def list_album_tracks(_, _, _, _, _, _) do
     items =
       for id <- 1..501,
           do: %TrackRow{

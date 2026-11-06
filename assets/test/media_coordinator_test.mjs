@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createMediaCoordinator} from "../js/music/music_bootstrap/media_coordinator.mjs"
+import {createMediaCoordinator} from "../js/shared/media_coordinator.mjs"
 
 class Media extends EventTarget {
   constructor() { super(); this.paused = true; this.pauses = 0 }

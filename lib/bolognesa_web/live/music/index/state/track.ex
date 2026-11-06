@@ -10,6 +10,7 @@ defmodule BolognesaWeb.Music.Index.State.Track do
           artist: String.t(),
           album: String.t(),
           duration: String.t(),
+          last_played: String.t(),
           state: atom(),
           state_label: String.t(),
           disc_number: pos_integer() | nil,
@@ -23,6 +24,7 @@ defmodule BolognesaWeb.Music.Index.State.Track do
     :artist,
     :album,
     :duration,
+    :last_played,
     :state,
     :state_label,
     :disc_number,
@@ -38,11 +40,19 @@ defmodule BolognesaWeb.Music.Index.State.Track do
       artist: track.artist || gettext("Artista desconocido"),
       album: track.album || gettext("Sin álbum"),
       duration: duration(track.duration_ms),
+      last_played: last_played(track.last_played_at),
       state: track.state,
       state_label: label(track.state),
       disc_number: track.disc_number,
       track_number: track.track_number
     }
+
+  defp last_played(nil), do: gettext("Nunca reproducida")
+
+  defp last_played(date) do
+    formatted = Calendar.strftime(date, "%d/%m/%Y")
+    gettext("Última reproducción: %{date}", date: formatted)
+  end
 
   defp duration(nil), do: "—"
 

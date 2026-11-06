@@ -18,12 +18,13 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   @impl true
   def fetch_track(track_id) do
     row =
-      base_query(nil)
+      base_query(nil, 0)
       |> where([_file, _library, _inspection, track], track.id == ^track_id)
       |> limit(1)
       |> select(
-        [file, _library, inspection, track, artist, album, import_state],
-        {file, inspection, track, artist.name, album.title, import_state}
+        [file, _library, inspection, track, artist, album, import_state, activity],
+        {file, inspection, track, artist.name, album.title, import_state,
+         type(activity.last_played_at, :utc_datetime_usec)}
       )
       |> Repo.one(log: false)
 
@@ -37,9 +38,9 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   end
 
   @impl true
-  def list_tracks(query, page, library_id) do
+  def list_tracks(query, page, library_id, user_id) do
     with :ok <- library_scope(library_id) do
-      base = base_query(library_id) |> search(query)
+      base = base_query(library_id, user_id) |> search(query)
       {:ok, read_page(base, page, 50, :title)}
     end
   rescue
@@ -48,11 +49,11 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   end
 
   @impl true
-  def list_album_tracks(album_id, query, page, library_id, limit) do
+  def list_album_tracks(album_id, query, page, library_id, limit, user_id) do
     with :ok <- library_scope(library_id),
          :ok <- album_scope(album_id, library_id) do
       base =
-        base_query(library_id)
+        base_query(library_id, user_id)
         |> where([_file, _library, _inspection, track], track.album_id == ^album_id)
         |> search(query)
 
@@ -81,8 +82,9 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
       |> limit(^limit)
       |> offset(^((page - 1) * limit))
       |> select(
-        [file, _library, inspection, track, artist, album, import_state],
-        {file, inspection, track, artist.name, album.title, import_state}
+        [file, _library, inspection, track, artist, album, import_state, activity],
+        {file, inspection, track, artist.name, album.title, import_state,
+         type(activity.last_played_at, :utc_datetime_usec)}
       )
       |> Repo.all(log: false)
 
@@ -119,7 +121,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
     end
   end
 
-  defp base_query(library_id) do
+  defp base_query(library_id, user_id) do
     query =
       from(file in MediaFileSchema,
         join: library in LibrarySchema,
@@ -134,6 +136,8 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
         on: album.id == track.album_id,
         left_join: import_state in MusicImportSchema,
         on: import_state.media_file_id == file.id,
+        left_join: activity in "music_listening_activity",
+        on: activity.track_id == track.id and activity.user_id == ^user_id,
         where: library.content_type == :music and file.availability == :available
       )
 
@@ -158,7 +162,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
     )
   end
 
-  defp row({file, inspection, track, artist, album, import_state}) do
+  defp row({file, inspection, track, artist, album, import_state, last_played_at}) do
     state = state(file, inspection, track, import_state)
 
     title =
@@ -180,7 +184,8 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
       state: state,
       failure_reason: failure(state, inspection, import_state),
       disc_number: track && track.disc_number,
-      track_number: track && track.track_number
+      track_number: track && track.track_number,
+      last_played_at: last_played_at
     }
   end
 

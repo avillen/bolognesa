@@ -27,6 +27,10 @@ export function createMusicTransport({fetch: fetcher = globalThis.fetch, csrfTok
     return data
   }
   return {
+    async recordActivity({trackId, fileId}) {
+      if (!validId(trackId) || !validId(fileId)) throw failure("invalid_request")
+      await post("/music/playback/activity", {track_id: trackId, file_id: fileId})
+    },
     async selectTrack({trackId, fileId}, {signal} = {}) {
       if (!validId(trackId) || !validId(fileId)) throw failure("invalid_request")
       const data = await post("/music/playback/track", {track_id: trackId, file_id: fileId}, signal)

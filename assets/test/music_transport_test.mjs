@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createMusicTransport} from "../js/music/music_transport.mjs"
+import {createMusicTransport} from "../js/music/player/adapters/transport.mjs"
 
 test("transport posts authorized track selection with CSRF and same-origin credentials", async () => {
   let captured

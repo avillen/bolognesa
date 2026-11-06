@@ -1,9 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {readFile} from "node:fs/promises"
-
-const code = await readFile(new URL("../js/shared/hooks/browse_position.js", import.meta.url), "utf8")
-const {default: hook} = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`)
+import hook from "../js/shared/hooks/browse_position.js"
 
 test("browse positions wait for asynchronous results and save under the outgoing page", () => {
   const previous = Object.fromEntries(["window", "sessionStorage", "requestAnimationFrame", "cancelAnimationFrame"].map(key => [key, globalThis[key]]))
