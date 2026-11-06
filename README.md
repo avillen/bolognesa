@@ -91,6 +91,8 @@ This quick start uses development credentials and binds to your own machine. For
 
 Playback depends on browser codec support and server hardware. Limited FFmpeg/HLS conversion supports one shared conversion session. Files containing several episodes play in full.
 
+Music listening dates follow a track's library and relative path. Rescanning, changing metadata, or restoring a missing file at the same path preserves them. Replacing a file at that path also retains the previous dates; moving or renaming it creates a new track without those dates.
+
 Video position and pause state can recover in the same tab for up to 12 hours, on a best-effort basis; progress is not saved across tabs or devices. Music plays without conversion and continues during authenticated navigation and temporary LiveView disconnection in the same tab. A full document reload, language change, or logout ends playback. Music queues stay in memory for that tab. Starting video pauses music and starting music pauses video; neither resumes automatically.
 
 The video player stays mounted when changing episodes or parts and when retrying playback errors, preserving element fullscreen in supported browsers. A full page reload or browser crash exits fullscreen; entering it again requires a user action. Native mobile fullscreen behavior needs separate device verification.
