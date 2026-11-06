@@ -16,9 +16,16 @@ defmodule BolognesaWeb.MusicPlayer do
       <audio id="music-playback" preload="metadata"></audio>
       <section id="music-player" class="music-player" aria-label={gettext("Reproductor de música")}>
         <p class="music-player-heading">{gettext("Reproductor")}</p>
-        <div class="music-player-art" aria-hidden="true">
+        <button
+          type="button"
+          class="music-player-art"
+          data-player-action="expand"
+          aria-label={gettext("Ampliar")}
+          title={gettext("Ampliar")}
+          aria-expanded="false"
+        >
           <img src={~p"/images/bolognesa-cat.svg"} alt="" />
-        </div>
+        </button>
         <div class="music-player-track">
           <p id="now-playing" class="music-player-title">{gettext("Nada en reproducción")}</p>
           <p data-player-artist class="music-player-artist"></p>
@@ -70,11 +77,12 @@ defmodule BolognesaWeb.MusicPlayer do
         )}</button>
         <button
           type="button"
-          data-player-action="expand"
-          aria-label={gettext("Ampliar")}
-          title={gettext("Ampliar")}
-          aria-expanded="false"
-        ><.icon name="hero-arrows-pointing-out" class="size-5" /></button>
+          data-player-action="close"
+          aria-label={gettext("Cerrar")}
+          title={gettext("Cerrar")}
+        >
+          <.icon name="hero-x-mark" class="size-5" />
+        </button>
         <button
           type="button"
           data-player-action="collapse"

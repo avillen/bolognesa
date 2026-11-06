@@ -223,7 +223,7 @@
   .music-player:not([data-expanded="true"]) { display: grid; grid-template-columns: 52px minmax(120px, 1fr) 44px 48px 44px minmax(140px, 1fr) auto 44px; gap: 4px 12px; }
   .music-player:not([data-expanded="true"]) #music-player-seek { grid-column: 6; grid-row: 1; }
   .music-player:not([data-expanded="true"]) [data-player-time] { grid-column: 7; grid-row: 1; }
-  .music-player:not([data-expanded="true"]) [data-player-action="expand"] { grid-column: 8; grid-row: 1; }
+  .music-player:not([data-expanded="true"]) [data-player-action="close"] { grid-column: 8; grid-row: 1; }
   .music-player:not([data-expanded="true"]) #queue-position { display: none; }
   .music-player[data-expanded="true"] { display: grid; grid-template-columns: minmax(180px, 300px) minmax(200px, 360px); align-content: center; justify-content: center; justify-items: start; gap: 20px 36px; }
   .music-player[data-expanded="true"] .music-player-art { grid-column: 1; grid-row: 1 / span 2; width: 100%; height: auto; margin: 0; }
@@ -328,7 +328,7 @@
  .music-player:not([data-expanded="true"]) { grid-template-columns: 48px minmax(0, 1fr) 44px 48px 44px 44px; }
  .music-player:not([data-expanded="true"]) #music-player-seek { grid-column: 1 / -1; grid-row: 2; }
  .music-player:not([data-expanded="true"]) [data-player-time] { display: none; }
- .music-player:not([data-expanded="true"]) [data-player-action="expand"] { grid-column: 6; }
+ .music-player:not([data-expanded="true"]) [data-player-action="close"] { grid-column: 6; }
 }
 @media (max-width: 1079px) {
  .music-player[data-expanded="true"] { display: flex; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; align-items: center; gap: 12px; padding: max(64px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); }
@@ -461,3 +461,6 @@
 @media (max-width: 1079px) {
  .music-player[data-expanded="true"][data-queue-open="true"] .music-queue-toggle { grid-area: auto; }
 }
+
+.music-player button.music-player-art { padding: 0; }
+.music-player[data-expanded="true"] [data-player-action="close"] { display: none; }

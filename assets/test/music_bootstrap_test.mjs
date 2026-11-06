@@ -162,3 +162,22 @@ test("external track controls follow the album queue and update metadata", async
   assert.equal(handlers.nexttrack, null)
   instance.destroy()
 })
+
+
+test("closing the player stops playback and clears its session", async () => {
+  const host = new Node(), audio = new Node(), player = new Node()
+  audio.paused = true
+  host.nodes = {"#music-playback": audio, "#music-player": player, "#now-playing": new Node(), "[data-player-artist]": new Node(), "#audio-error": new Node(), "[data-player-loading]": new Node(), "#music-player-seek": new Node(), "#queue-position": new Node(), "#queue-finished": new Node(), "[data-player-time]": new Node()}
+  for (const action of ["toggle", "seek", "previous", "next", "retry", "expand", "collapse"]) host.nodes[`[data-player-action="${action}"]`] = new Node()
+  player.nodes = host.nodes
+  const document = {body: new Node(), addEventListener() {}, removeEventListener() {}, querySelector: () => host, createElement: () => new Node(), defaultView: {addEventListener() {}, removeEventListener() {}}}
+  player.ownerDocument = host.ownerDocument = document
+  const instance = initializeMusicPlayer(document, {transport: {selectTrack: async () => ({track: {id: 1, file_id: 1}, src: "/audio"})}})
+  await instance.session.selectTrack({trackId: 1, fileId: 1})
+  const close = {dataset: {playerAction: "close"}, closest: () => null}
+  for (const callback of player.listeners.get("click")) callback({target: {closest: () => close}})
+  assert.equal(audio.paused, true)
+  assert.equal(instance.session.getSnapshot().selected, null)
+  assert.equal(host.hidden, true)
+  instance.destroy()
+})

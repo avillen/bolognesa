@@ -45,6 +45,7 @@ export function connectMusicPlayerView(host, session) {
     if (action === "retry") session.retry()
     if (action === "expand") dialog.expand()
     if (action === "collapse") dialog.collapse(true)
+    if (action === "close") session.clear()
     if (action === "queue") setQueueOpen(!queueOpen)
     if (action === "remove-upcoming") {
       session.removeUpcoming(Number(button.dataset.entryId))

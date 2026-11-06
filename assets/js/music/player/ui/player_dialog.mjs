@@ -7,7 +7,6 @@ export function connectPlayerDialog(host, {onCollapse = () => {}} = {}) {
   const expandButton = host.querySelector('[data-player-action="expand"]')
   const collapseButton = host.querySelector('[data-player-action="collapse"]')
   const syncExpandedButtons = () => {
-    expandButton.hidden = expanded
     collapseButton.hidden = !expanded
     expandButton.setAttribute("aria-expanded", String(expanded))
   }
