@@ -2120,3 +2120,9 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "No se pudo abrir el álbum. Reintenta cuando vuelva la conexión."
 msgstr ""
+
+msgid "Última canción escuchada:"
+msgstr ""
+
+msgid "Vuelve a lo que te apetezca"
+msgstr ""

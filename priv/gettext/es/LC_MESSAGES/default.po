@@ -2112,3 +2112,9 @@ msgstr "Últimos discos escuchados"
 #, elixir-autogen, elixir-format
 msgid "No se pudo abrir el álbum. Reintenta cuando vuelva la conexión."
 msgstr "No se pudo abrir el álbum. Reintenta cuando vuelva la conexión."
+
+msgid "Última canción escuchada:"
+msgstr "Última canción escuchada:"
+
+msgid "Vuelve a lo que te apetezca"
+msgstr "Vuelve a lo que te apetezca"

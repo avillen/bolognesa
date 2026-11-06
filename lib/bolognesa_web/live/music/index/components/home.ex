@@ -11,9 +11,12 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
   def home(assigns) do
     ~H"""
     <section id="music-last-listened" aria-labelledby="music-last-listened-title">
-      <h2 id="music-last-listened-title" class="mb-4 text-xl font-semibold">
-        {gettext("Últimos discos escuchados")}
-      </h2>
+      <div class="music-recent-section-heading">
+        <h2 id="music-last-listened-title" class="text-xl font-semibold">
+          {gettext("Últimos discos escuchados")}
+        </h2>
+        <p>{gettext("Vuelve a lo que te apetezca")}</p>
+      </div>
       <p :if={@status == :loading} role="status" class="music-feedback">
         {gettext("Cargando últimas escuchas…")}
       </p>
@@ -33,7 +36,11 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
       </div>
       <div :if={@status == :ready} class="music-recent-grid">
         <article :for={album <- @albums} id={"recent-album-#{album.id}"} class="music-recent-card">
-          <div class="music-recent-heading">
+          <.link
+            class="music-recent-heading recent-album-open"
+            patch={~p"/music?#{Map.merge(@library_params, %{view: :album, album_id: album.id})}"}
+            aria-label={gettext("Ver %{title}", title: album.title)}
+          >
             <div class="music-detail-art" aria-hidden="true">
               <.icon name="hero-musical-note" class="size-8" />
             </div>
@@ -41,44 +48,51 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
               <h3 class="text-lg font-semibold break-words">{album.title}</h3>
               <p :if={album.artist} class="text-sm text-muted break-words">{album.artist}</p>
             </div>
-          </div>
-          <p class="text-sm text-muted break-words">
-            {gettext("Última canción escuchada: %{title}", title: album.track_title)}
-          </p>
-          <p class="text-sm text-muted">
-            {gettext("Última reproducción:")}
-            <time datetime={DateTime.to_iso8601(album.last_played_at)}>
-              {Calendar.strftime(album.last_played_at, "%d/%m/%Y")}
-            </time>
-          </p>
-          <p :if={!album.track_available?} class="text-sm text-muted">
-            {gettext("La última canción ya no está disponible. Abre el álbum para elegir otra.")}
-          </p>
-          <div class="music-recent-actions">
-            <button
-              id={"recent-play-#{album.id}"}
-              type="button"
-              data-music-action={if album.restart?, do: "album", else: "resume-album"}
-              data-album-id={album.id}
-              data-library-id={@library_id}
-              data-track-id={album.track_id}
-              data-file-id={album.file_id}
-              data-open-album="true"
-              disabled={!album.track_available?}
-              aria-label={
-                if album.restart?,
-                  do: gettext("Reproducir %{title} de nuevo", title: album.title),
-                  else: gettext("Continuar %{title}", title: album.title)
-              }
-              class="min-h-11 rounded-lg bg-accent px-4 py-2 font-semibold text-canvas hover:bg-accent-hover disabled:opacity-50"
-            ><.icon name="hero-play-solid" class="mr-1 size-4" />{if album.restart?,
-              do: gettext("Reproducir de nuevo"),
-              else: gettext("Continuar")}</button>
-            <.link
-              class="recent-album-open min-h-11 rounded-lg border border-border-strong px-4 py-2 text-center text-ink hover:bg-raised"
-              patch={~p"/music?#{Map.merge(@library_params, %{view: :album, album_id: album.id})}"}
-              aria-label={gettext("Ver %{title}", title: album.title)}
-            >{gettext("Ver álbum")}</.link>
+          </.link>
+          <div class="music-recent-footer">
+            <div class="music-recent-meta">
+              <p class="music-recent-track">
+                {gettext("Última canción escuchada:")} <strong>{album.track_title}</strong>
+              </p>
+              <p class="music-recent-date">
+                {gettext("Última reproducción:")}
+                <time datetime={DateTime.to_iso8601(album.last_played_at)}>
+                  {Calendar.strftime(album.last_played_at, "%d/%m/%Y")}
+                </time>
+              </p>
+              <p :if={!album.track_available?} class="text-sm text-muted">
+                {gettext("La última canción ya no está disponible. Abre el álbum para elegir otra.")}
+              </p>
+            </div>
+            <div class="music-recent-actions">
+              <button
+                id={"recent-continue-#{album.id}"}
+                type="button"
+                data-music-action="resume-album"
+                data-album-id={album.id}
+                data-library-id={@library_id}
+                data-track-id={album.track_id}
+                data-file-id={album.file_id}
+                data-open-album="true"
+                disabled={!album.track_available?}
+                aria-label={gettext("Continuar %{title}", title: album.title)}
+                class="music-recent-play"
+              ><.icon name="hero-play-solid" class="size-5" /><span class="sr-only">{gettext(
+                "Continuar"
+              )}</span></button>
+              <button
+                id={"recent-play-#{album.id}"}
+                type="button"
+                data-music-action="album"
+                data-album-id={album.id}
+                data-library-id={@library_id}
+                data-open-album="true"
+                aria-label={gettext("Reproducir %{title} de nuevo", title: album.title)}
+                class="music-recent-replay"
+              ><.icon name="hero-arrow-uturn-left" class="size-5" /><span class="sr-only">{gettext(
+                "Reproducir de nuevo"
+              )}</span></button>
+            </div>
           </div>
         </article>
       </div>

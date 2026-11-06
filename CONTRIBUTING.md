@@ -32,6 +32,19 @@ the port shown by `info`. Phoenix starts only when requested; stopping it does
 not delete the databases. If another process occupies the selected port, stop
 that process or use a different checkout.
 
+## Local demo data
+
+To try the interface with generated audio, a video, and sample catalog entries, prepare a separate demo database. Choose a disposable email and password (12–72 characters):
+
+```sh
+export BOLOGNESA_DEMO_EMAIL=demo@example.test
+read -rs BOLOGNESA_DEMO_PASSWORD; export BOLOGNESA_DEMO_PASSWORD
+sh scripts/dev/local.sh demo-setup
+sh scripts/dev/local.sh demo-server
+```
+
+This requires `ffmpeg` with VP8 and Vorbis encoders. The demo server prints its local address. Its database and generated media are separate from the worktree's normal development and test databases. The sample includes an album with listening activity, a film and an episode. Repeating setup leaves existing demo data and credentials unchanged. The regular test suite keeps its own isolated fixtures. Do not use a real password for the demo.
+
 ## Development with Docker
 
 This optional Compose project runs Phoenix in development with Tidewave, FFmpeg,

@@ -5,12 +5,29 @@
 .music-title { margin-top: 10px; font-size: clamp(32px, 5vw, 56px); font-weight: 650; line-height: 1.1; overflow-wrap: anywhere; }
 .music-header button { display: inline-flex; align-items: center; flex-shrink: 0; color: var(--color-muted); font-size: 13px; }
 .music-tabs { display: flex; gap: 28px; overflow-x: auto; border-bottom: 1px solid var(--color-border); }
+.music-recent-section-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; margin-bottom: 16px; }
+.music-recent-section-heading p { color: var(--color-muted); font-size: 13px; }
 .music-recent-grid, .music-explore-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; }
-.music-recent-card { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 20px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
-.music-recent-heading { display: flex; align-items: center; gap: 16px; }
-.music-recent-heading .music-detail-art { width: 64px; flex-shrink: 0; }
-.music-recent-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: auto; padding-top: 4px; }
-.music-recent-actions > button, .music-recent-actions > a { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; font-size: 14px; line-height: 1.4; }
+.music-recent-card { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 34px; min-width: 0; min-height: 225px; padding: 20px; border: 1px solid var(--color-border-strong); border-radius: 16px; background: var(--color-surface); }
+.music-recent-heading { display: flex; align-items: center; gap: 16px; border-radius: 8px; }
+.music-recent-heading::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
+.music-recent-card:hover { background: var(--color-raised); }
+.music-recent-card:hover .music-recent-heading h3 { color: var(--color-accent-soft); }
+.music-recent-heading:focus-visible::after { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.music-recent-heading .music-detail-art { width: 88px; flex-shrink: 0; }
+.music-recent-heading h3 { font-size: 18px; line-height: 1.25; }
+.music-recent-heading p { margin-top: 8px; font-size: 14px; }
+.music-recent-footer { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.music-recent-meta { min-width: 0; color: var(--color-muted); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.music-recent-track strong { color: var(--color-ink); font-weight: 600; }
+.music-recent-date { margin-top: 10px; }
+.music-recent-actions { position: relative; z-index: 1; display: flex; flex: none; gap: 8px; }
+.music-recent-actions button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; }
+.music-recent-play { color: var(--color-canvas); background: var(--color-accent); }
+.music-recent-play:hover { background: var(--color-accent-hover); }
+.music-recent-play:disabled { opacity: .5; }
+.music-recent-replay { color: var(--color-ink); border: 1px solid var(--color-border-strong); background: var(--color-raised); }
+.music-recent-replay:hover { border-color: var(--color-ink); }
 .music-tab { position: relative; display: inline-flex; align-items: center; min-height: 48px; padding: 0 0 16px; font-size: 14px; font-weight: 550; color: var(--color-muted); }
 .music-tab:hover { color: var(--color-ink); }
 .music-tab[aria-current="page"] { color: var(--color-accent-soft); }

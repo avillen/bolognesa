@@ -123,8 +123,8 @@ File.cp!(movie_path, Path.join(movie_directory, movie_name))
 {:ok, actor} =
   Accounts.install_admin(%{
     name: "Demo Administrator",
-    email: "demo@example.test",
-    password: "demo-password-only-for-screenshots"
+    email: if(System.get_env("BOLOGNESA_LOCAL_DEMO") == "1", do: System.fetch_env!("BOLOGNESA_DEMO_EMAIL"), else: "demo@example.test"),
+    password: if(System.get_env("BOLOGNESA_LOCAL_DEMO") == "1", do: System.fetch_env!("BOLOGNESA_DEMO_PASSWORD"), else: "demo-password-only-for-screenshots")
   })
 
 movie_library =

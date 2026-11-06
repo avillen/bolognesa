@@ -19,6 +19,16 @@ case "${1:-}" in
   setup) exec mix setup ;;
   server) exec mix phx.server ;;
   test) exec mix precommit ;;
+  demo-setup|demo-server)
+    BOLOGNESA_DB_NAME="bolognesa_demo_$checksum"
+    BOLOGNESA_LIBRARY_ROOTS="${TMPDIR:-/tmp}/bolognesa-demo-$checksum/library"
+    PORT=$((PORT + 1))
+    export BOLOGNESA_DB_NAME BOLOGNESA_LIBRARY_ROOTS PORT
+    if [ "$1" = demo-server ]; then
+      exec mix phx.server
+    fi
+    exec sh scripts/dev/demo-setup.sh
+    ;;
   mcp)
     if [ ! -f _build/dev/lib/tidewave/ebin/Elixir.Mix.Tasks.Tidewave.Proxy.beam ]; then
       echo 'Run sh scripts/dev/local.sh setup before starting the Tidewave proxy.' >&2
@@ -26,5 +36,5 @@ case "${1:-}" in
     fi
     exec mix run --no-compile --no-start -e 'Mix.Tasks.Tidewave.Proxy.run([])'
     ;;
-  *) echo 'Usage: sh scripts/dev/local.sh {info|setup|server|test|mcp}' >&2; exit 2 ;;
+  *) echo 'Usage: sh scripts/dev/local.sh {info|setup|server|test|mcp|demo-setup|demo-server}' >&2; exit 2 ;;
 esac
