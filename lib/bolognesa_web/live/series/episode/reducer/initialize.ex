@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Episode.Show.Reducer.Initialize do
+defmodule BolognesaWeb.Series.Episode.Reducer.Initialize do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [start_async: 3]

@@ -1,10 +1,10 @@
-defmodule BolognesaWeb.Episode.Show.ReducersTest do
+defmodule BolognesaWeb.Series.Episode.ReducersTest do
   use ExUnit.Case, async: true
   alias Bolognesa.Series.Domain.ReadModels.Episode
-  alias BolognesaWeb.Episode.Show.Live
-  alias BolognesaWeb.Episode.Show.Reducer.Advance
-  alias BolognesaWeb.Episode.Show.Reducer.ApplyResult
-  alias BolognesaWeb.Episode.Show.Reducer.SelectPart
+  alias BolognesaWeb.Series.Episode.Live
+  alias BolognesaWeb.Series.Episode.Reducer.Advance
+  alias BolognesaWeb.Series.Episode.Reducer.ApplyResult
+  alias BolognesaWeb.Series.Episode.Reducer.SelectPart
 
   test "selecting another part discards an outstanding continuation" do
     request = make_ref()

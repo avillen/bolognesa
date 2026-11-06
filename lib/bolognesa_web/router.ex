@@ -69,7 +69,7 @@ defmodule BolognesaWeb.Router do
       live "/series/review", Series.Review.Live, :index
       live "/series/seasons/:id", Series.Season.Live, :show
       live "/series/:id", Series.Show.Live, :show
-      live "/episodes/:id", Episode.Show.Live, :show
+      live "/episodes/:id", Series.Episode.Live, :show
       live "/movies/:id", Movie.Show.Live, :show
       live "/settings", Settings.Live, :index
       live "/about", About.Live, :index

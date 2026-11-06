@@ -1,10 +1,10 @@
-defmodule BolognesaWeb.Episode.Show.Reducer.ApplyResult do
+defmodule BolognesaWeb.Series.Episode.Reducer.ApplyResult do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
-  alias BolognesaWeb.Episode.Show.Reducer.SelectPart
   alias BolognesaWeb.LiveSupport.PlaybackControl
   alias BolognesaWeb.LiveSupport.PlaybackState
+  alias BolognesaWeb.Series.Episode.Reducer.SelectPart
 
   @spec call(Phoenix.LiveView.Socket.t(), reference(), term()) :: Phoenix.LiveView.Socket.t()
   def call(socket, request_id, result) do

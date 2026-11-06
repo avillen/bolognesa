@@ -17,7 +17,7 @@ defmodule Bolognesa.Infrastructure.Observability.LiveViewMetrics do
     BolognesaWeb.Series.Review.Live => "series",
     BolognesaWeb.Series.Season.Live => "series",
     BolognesaWeb.Series.Show.Live => "series",
-    BolognesaWeb.Episode.Show.Live => "series",
+    BolognesaWeb.Series.Episode.Live => "series",
     BolognesaWeb.Music.Index.Live => "music",
     BolognesaWeb.Home.Live => "global",
     BolognesaWeb.About.Live => "global"

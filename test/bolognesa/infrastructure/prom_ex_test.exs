@@ -105,7 +105,7 @@ defmodule Bolognesa.Infrastructure.PromExTest do
 
     for {view, context} <- [
           {BolognesaWeb.Movie.Index.Live, "movies"},
-          {BolognesaWeb.Episode.Show.Live, "series"},
+          {BolognesaWeb.Series.Episode.Live, "series"},
           {Phoenix.LiveDashboard.PageLive, "global"}
         ],
         operation <- [:mount, :handle_params, :handle_event, :render] do

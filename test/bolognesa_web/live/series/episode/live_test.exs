@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Episode.Show.LiveTest do
+defmodule BolognesaWeb.Series.Episode.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
   alias Bolognesa.Playback.Infrastructure.TranscodeManager

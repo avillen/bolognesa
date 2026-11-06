@@ -69,7 +69,7 @@ remain pending; do not mark those checkboxes complete from the synthetic run.
 
 **Modify:** `assets/js/video/player/controllers/hls.mjs`, `assets/js/video/hooks/video_player.js`, and only if necessary `assets/js/video/player/playback_recovery.mjs`, `lib/bolognesa_web/live_support/playback_events.ex` and `playback_state.ex`.
 
-**Tests:** `assets/test/transcode_video_test.mjs`, `assets/test/playback_recovery_test.mjs`, the browser harness, and `test/bolognesa_web/live/movie/show/` / `episode/show/`.
+**Tests:** `assets/test/transcode_video_test.mjs`, `assets/test/playback_recovery_test.mjs`, the browser harness, and `test/bolognesa_web/live/movie/show/` / `series/episode/`.
 
 **Interfaces:** preserve `playback_pause`, `playback_resume`, `playback_seek`, `playback_restore` and session identity checks. hls.js `stopLoad()`/`startLoad()` own network loading; native media pause/play owns decoding. Read initial `data-paused-server` rather than inventing an unpaused state. A failed or expired session must use the existing authorized replacement flow, never resurrect a destroyed controller.
 

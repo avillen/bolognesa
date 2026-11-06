@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Episode.Show.Reducer.SelectPart do
+defmodule BolognesaWeb.Series.Episode.Reducer.SelectPart do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2]

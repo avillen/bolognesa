@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Episode.Show.Reducer.Advance do
+defmodule BolognesaWeb.Series.Episode.Reducer.Advance do
   @moduledoc false
   use BolognesaWeb, :verified_routes
   use Gettext, backend: BolognesaWeb.Gettext
