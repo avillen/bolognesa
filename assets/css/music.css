@@ -21,9 +21,7 @@
 .music-recent-meta { min-width: 0; color: var(--color-muted); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
 .music-recent-track strong { color: var(--color-ink); font-weight: 600; }
 .music-recent-date { margin-top: 10px; }
-.music-recent-actions { position: relative; z-index: 1; display: flex; flex: none; gap: 8px; }
-.music-recent-actions button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; }
-.music-recent-play { color: var(--color-canvas); background: var(--color-accent); }
+.music-recent-play { position: relative; z-index: 1; display: grid; flex: none; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--color-canvas); background: var(--color-accent); }
 .music-recent-play:hover { background: var(--color-accent-hover); }
 .music-recent-play:disabled { opacity: .5; }
 .music-tab { position: relative; display: inline-flex; align-items: center; min-height: 48px; padding: 0 0 16px; font-size: 14px; font-weight: 550; color: var(--color-muted); }

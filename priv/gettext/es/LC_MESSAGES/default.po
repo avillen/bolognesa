@@ -2073,16 +2073,6 @@ msgstr "La última canción ya no está disponible. Abre el álbum para elegir o
 msgid "No se pudieron cargar las últimas escuchas."
 msgstr "No se pudieron cargar las últimas escuchas."
 
-#: lib/bolognesa_web/live/music/index/components/home.ex:70
-#, elixir-autogen, elixir-format
-msgid "Reproducir %{title} de nuevo"
-msgstr "Reproducir %{title} de nuevo"
-
-#: lib/bolognesa_web/live/music/index/components/home.ex:75
-#, elixir-autogen, elixir-format
-msgid "Reproducir de nuevo"
-msgstr "Reproducir de nuevo"
-
 #: lib/bolognesa_web/live/music/index/components/home.ex:80
 #, elixir-autogen, elixir-format
 msgid "Ver %{title}"
