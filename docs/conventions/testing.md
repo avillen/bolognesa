@@ -93,3 +93,16 @@ An existing Playwright server can be selected with `BOLOGNESA_SCREENSHOT_BROWSER
 Its browser must support H.264. The pinned screenshot Chromium verifies synthetic WebM
 playback and Video.js controls through the actual LiveView; it does not establish H.264
 or HLS decoding support.
+
+### Negotiated delivery acceptance
+
+`scripts/playback/verify-negotiated-output.exs` generates disposable synthetic sources and executes source-derived FFmpeg plans. Run `mix run --no-start scripts/playback/verify-negotiated-output.exs tmp/negotiation-check`. It checks actual profile/pixel format/AVC configuration, independent stream actions and copied payload equivalence, reporting any leading AAC priming-packet trim. Its matched remux/full-conversion timing is a local synthetic observation, not target-server capacity.
+
+For the real LiveView path, configure a disposable native demo following [CONTRIBUTING](../../CONTRIBUTING.md#local-demo-data). Run `scripts/playback/seed-negotiation-check.exs` through `mix run`, passing the generated fixture directory and that demo's `sample-ids.json`, with the same `BOLOGNESA_DB_NAME` and `BOLOGNESA_LIBRARY_ROOTS` as the demo server. The seeder refuses ordinary databases and adds only its synthetic fixture rows; it does not reset an installation. Start the matching native server, then run:
+
+```sh
+BOLOGNESA_TEST_BROWSER_CHANNEL=chrome node scripts/playback/verify-negotiated-liveview.mjs \
+  http://localhost:4010 tmp/negotiation-check/browser-ids.json tmp/demo-credentials.json
+```
+
+Use the actual isolated server URL. The local credentials JSON contains `email` and `password` for that disposable account; never commit it or reuse a personal password. Stabilize assets before running and avoid source edits/hot reload during the check. The script exercises actual generated media, controls, seeks, fullscreen feedback, one decode recovery, a real aborted original download and natural EOF through parts/episodes. It labels controlled negative original capability results and injected native error codes explicitly; these do not prove a natural decoder failure or universal original-container support. Native HLS and physical Chrome on iPhone require separate device checks.

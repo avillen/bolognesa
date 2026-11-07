@@ -127,19 +127,9 @@ remain pending; do not mark those checkboxes complete from the synthetic run.
 
 **Acceptance:** rate and latency are independently visible for both resources; active session/producer counts survive transitions correctly; routine HLS log volume falls while failure visibility remains; metric series and event counts remain bounded. Run the existing Grafana test script and relevant ExUnit tests; regenerate the dashboard from its generator.
 
-## Task 6 — Prove and introduce narrowly scoped remux, if useful
+## Task 6 — Remux delivered through capability negotiation
 
-**Files:** `lib/bolognesa/playback/domain/policies/transcode_strategy.ex`, `infrastructure/ffmpeg_args.ex`, `playback.ex`, strategy/session read-model types, `lib/bolognesa_web/components/player.ex`, observability strategy allowlists and translations; corresponding strategy/FFmpeg/manager/controller/browser tests. Search all `:audio_only | :full_transcode` contracts before introducing another value.
-
-**Proposed interface, conditional on the experiment:** `:remux` as an additional delivery strategy; FFmpeg copies both streams into HLS. Direct-compatible MP4 stays direct. Initially consider only inspected MKV H.264/AAC sources; unknown or unsupported profiles keep current conservative behavior.
-
-- [ ] Build anonymous synthetic and representative cases: H.264/AAC MKV, compatible MP4, H.264/AC3, unsupported video, no audio, stale/unknown inspection and long/irregular GOPs. Compare current fallback, remux and audio-only where applicable using actual FFmpeg/ffprobe.
-- [ ] Gate implementation on correct audio/video, start/seek timing, segment publication, target-browser decoding and a repeatable CPU improvement over full conversion. A failed experiment ends with a recorded no-change decision, not forced remux support.
-- [ ] If the gate passes, add failing strategy/argument tests: supported MKV selects `:remux`; MP4 remains direct; arguments copy audio/video and omit encoders; unsupported combinations retain existing behavior.
-- [ ] Extend every strategy type, telemetry allowlist and translated mode label together. Preserve offset replacement, cleanup and retry limits. A remux failure may fall back once to the established compatible conversion; it must not cycle between direct/remux/transcode.
-- [ ] Verify with real output streams and a complete short playback, including seek near EOF and consecutive episode parts. Update decision 0011 only after the behavior exists.
-
-**Acceptance:** proven CPU benefit and passing target compatibility for the enabled profile, or an explicit evidence-based decision not to enable remux. No new default conversion based solely on a codec name.
+[Issue #10](https://github.com/avillen/bolognesa/issues/10) implements the bounded client-report/typed-plan path, including copy/copy, independent audio/video conversion and one compatible recovery. It replaces this task's proposed source-only strategy. The durable contract and copied-stream restrictions are in [decision 0011](../decisions/0011-live-transcoding.md); output/browser/CPU evidence and remaining physical/native-HLS acceptance belong in the issue. Do not add a second source-only remux policy. The other optimization tasks below remain independent.
 
 ## Task 7 — Avoid session replacement for safely buffered seeks
 
