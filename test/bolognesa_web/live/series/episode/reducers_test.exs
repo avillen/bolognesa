@@ -86,6 +86,7 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
         advance_request: request,
         current_scope: %{actor: nil},
         selected_file_id: 1,
+        playback_phase: :ready,
         delivery_plan: nil,
         content_ref: {:episode, 1},
         transcode_session: %{

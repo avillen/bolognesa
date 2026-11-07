@@ -104,13 +104,15 @@ Add an explicit `:checking` playback phase separate from selected-file identity.
 
 **Contract:** correlated current decode/media errors may transition once to an eligible positively tested compatible output at validated position. Network/autoplay/authorization/source/server failures do not trigger conversion. Seek, temporary reconnect and same-attempt restoration preserve budget; explicit Play/Retry or new LiveView process creates a new attempt.
 
-- [ ] Add failing tests for duplicate/stale errors, failed compatible output, HDR direct failure, negative/oversize positions, network failures, autoplay rejection and recovery followed by seek/reconnect.
-- [ ] Implement attempt generation, budget, source-safety recheck and terminal feedback; never cycle back to a failed cheaper plan.
-- [ ] Run relevant ExUnit and Node tests plus the production-hook recovery harness; review and commit `fix(playback): bound capability recovery to one attempt`.
+- [x] Add failing tests for duplicate/stale errors, failed compatible output, HDR direct failure, negative/oversize positions, network failures, autoplay rejection and recovery followed by seek/reconnect.
+- [x] Implement attempt generation, budget, source-safety recheck and terminal feedback; never cycle back to a failed cheaper plan.
+- [x] Run relevant ExUnit and Node tests plus the production-hook recovery harness; review and commit `fix(playback): bound capability recovery to one attempt`.
 
 ## Task 7 — Real output and browser acceptance
 
 **Modify:** existing scripts under `scripts/playback/` and browser fixtures/tests; temporary media and reports belong under `tmp/`.
+
+- [ ] Expose the approved explicit compatible-playback action when a compatible candidate has positive support; verify it with the real UI. Native source-not-supported errors (code 4) are ambiguous with network failures and must remain terminal without an explicit action.
 
 - [ ] Generate synthetic direct MP4, H.264/AAC MKV, H.264/AC-3, incompatible video/AAC, both-stream conversion, silent and false-report fixtures with actual FFmpeg.
 - [ ] Inspect actual output codecs/profile/pixel format/mappings with ffprobe; verify copied stream packet equivalence where practical and compare matched remux/full-conversion CPU observations.

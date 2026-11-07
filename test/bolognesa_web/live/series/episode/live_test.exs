@@ -42,7 +42,9 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
 
     render_hook(view, "playback_error", %{
       file_id: Integer.to_string(ctx.media_file.id),
-      position_ms: "invalid"
+      position_ms: "0",
+      attempt_id: playback_attempt(view),
+      error_kind: "media"
     })
 
     assert has_element?(view, "#episode-playback-preparing")
@@ -146,7 +148,14 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     render_async(view)
     if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     File.rm!(Path.join(ctx.directory, ctx.media_file.relative_path))
-    render_hook(view, "playback_error", %{file_id: to_string(ctx.media_file.id)})
+
+    render_hook(view, "playback_error", %{
+      file_id: to_string(ctx.media_file.id),
+      position_ms: "0",
+      attempt_id: playback_attempt(view),
+      error_kind: "media"
+    })
+
     assert has_element?(view, "#episode-playback-error")
     assert has_element?(view, "#episode-video-frame[phx-hook='VideoPlayer'][data-playback-error]")
     refute has_element?(view, "#episode-video-frame[data-src]")
@@ -557,5 +566,13 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     file
     |> Ecto.Changeset.change(availability: :missing)
     |> Bolognesa.Repo.update!()
+  end
+
+  defp playback_attempt(view) do
+    render(view)
+    |> LazyHTML.from_document()
+    |> LazyHTML.query("#episode-video-frame")
+    |> LazyHTML.attribute("data-attempt-id")
+    |> List.first()
   end
 end

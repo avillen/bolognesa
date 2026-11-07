@@ -1,3 +1,11 @@
+/** Source-not-supported (4) also occurs for failed downloads; only decode (3) is conclusive. */
+export function mediaErrorKind(error) {
+  if (error?.code === 3) return "media"
+  if (error?.code === 2) return "network"
+  if (error?.code === 1) return "aborted"
+  return "unknown"
+}
+
 /** Direct-file source lifecycle; emits the existing LiveView media contract. */
 export function createDirectController({video, config, pushEvent, onReady}) {
   let reported = false
@@ -6,7 +14,8 @@ export function createDirectController({video, config, pushEvent, onReady}) {
     reported = true
     const seconds = video.currentTime
     const position = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds * 1000)) : 0
-    pushEvent("playback_error", {file_id: config.fileId, position_ms: String(position)})
+    pushEvent("playback_error", {file_id: config.fileId, attempt_id: config.attemptId,
+      error_kind: mediaErrorKind(video.error), position_ms: String(position)})
   }
   const onEnded = () => pushEvent("playback_ended", {file_id: config.fileId})
   video.addEventListener("ended", onEnded)

@@ -16,7 +16,7 @@ export function createSourceController(hook, {Hls, direct = createDirectControll
   function update() {
     const config = {...el.dataset}
     config.src = config.playbackError ? "" : config.src || ""
-    const nextSignature = `${config.recoveryScope}:${config.videoId}:${config.src}:${config.playbackError || ""}:${config.playbackPhase || ""}:${config.transport || ""}`
+    const nextSignature = `${config.attemptId || ""}:${config.recoveryScope}:${config.videoId}:${config.src}:${config.playbackError || ""}:${config.playbackPhase || ""}:${config.transport || ""}`
     if (signature === nextSignature) {
       video.dataset.pausedServer = config.pausedServer
       controller?.update(config)

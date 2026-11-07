@@ -8,6 +8,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
   @spec initialize(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def initialize(socket) do
     socket
+    |> assign(:playback_attempt_id, nil)
+    |> assign(:playback_duration_ms, nil)
     |> assign(:capability_report, nil)
     |> assign(:recovery_used?, false)
     |> assign(:playback_phase, :idle)
@@ -65,7 +67,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
     message =
       case stage do
         :preparation -> gettext("No se pudo preparar esta versión. Vuelve a intentarlo.")
-        :interrupted -> gettext("La conversión se ha interrumpido. Vuelve a intentarlo.")
+        :interrupted -> gettext("La reproducción se ha interrumpido. Vuelve a intentarlo.")
       end
 
     fail(socket, message, "transcode_failed")

@@ -7,6 +7,7 @@ defmodule BolognesaWeb.Player do
   attr :viewer_id, :integer, required: true
   attr :selected_file_id, :integer, default: nil
   attr :playback_phase, :atom, default: :idle
+  attr :playback_attempt_id, :string, default: nil
   attr :playback_probe, :map, default: nil
   attr :delivery_plan, :any, default: nil
   attr :inspection_refresh_used?, :boolean, default: false
@@ -37,6 +38,7 @@ defmodule BolognesaWeb.Player do
       <div
         id={"#{@prefix}-video-frame"}
         phx-hook="VideoPlayer"
+        data-attempt-id={@playback_attempt_id}
         data-playback-phase={@playback_phase}
         data-playback-probe={@playback_probe && Jason.encode!(@playback_probe)}
         data-transport={@delivery_plan && @delivery_plan.transport}

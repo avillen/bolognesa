@@ -53,6 +53,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
 
           {:noreply,
            socket
+           |> Phoenix.Component.assign(:playback_attempt_id, Ecto.UUID.generate())
            |> Phoenix.Component.assign(:capability_report, nil)
            |> Phoenix.Component.assign(:recovery_used?, true)
            |> Phoenix.Component.assign(:delivery_plan, nil)
@@ -94,14 +95,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
 
   def handle_event("playback_error", %{"file_id" => id} = params, socket) do
     if socket.assigns.selected_file_id && to_string(socket.assigns.selected_file_id) == id &&
-         socket.assigns.playback_phase == :ready && is_nil(socket.assigns.transcode_session) do
-      offset =
-        case parse_position(params["position_ms"]) do
-          {value, ""} when value >= 0 -> value
-          _ -> 0
-        end
-
-      {:noreply, PlaybackControl.recover(socket, offset)}
+         is_nil(socket.assigns.transcode_session) do
+      client_failure(socket, params)
     else
       {:noreply, socket}
     end
@@ -118,7 +113,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
 
     case parse_position(position) do
       {offset, ""}
-      when not is_nil(session) and session.id == id and offset >= 0 and
+      when not is_nil(session) and session.id == id and
+             socket.assigns.playback_phase == :ready and offset >= 0 and offset <= 2_147_483_647 and
              (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
         next =
           PlaybackControl.deliver(socket, offset, :seek)
@@ -165,17 +161,14 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
     end
   end
 
-  def handle_event("transcode_error", %{"session_id" => id}, socket) do
+  def handle_event("transcode_error", %{"session_id" => id} = params, socket) do
     case socket.assigns.transcode_session do
-      %{id: ^id} ->
-        PlaybackControl.stop_transcode(socket, :client_error)
-
-        {:noreply, PlaybackState.transcode_failed(socket, :interrupted)}
-
-      _ ->
-        {:noreply, socket}
+      %{id: ^id} -> client_failure(socket, params)
+      _ -> {:noreply, socket}
     end
   end
+
+  def handle_event("transcode_error", _params, socket), do: {:noreply, socket}
 
   @spec handle_info(
           {:transcode_poll | :capability_timeout, binary()},
@@ -192,8 +185,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   end
 
   def handle_info({:transcode_poll, id}, socket) do
-    case {socket.assigns.transcode_session, socket.assigns.transcode_ready?} do
-      {%{id: ^id}, false} -> poll_transcode(socket, id)
+    case {socket.assigns.transcode_session, socket.assigns.transcode_ready?,
+          socket.assigns.playback_phase} do
+      {%{id: ^id}, false, :preparing} -> poll_transcode(socket, id)
       _ -> {:noreply, socket}
     end
   end
@@ -243,6 +237,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
     end
   end
 
+  defp resume_session(%{assigns: %{playback_phase: phase}} = socket, _session, _position)
+       when phase != :ready, do: {:noreply, socket}
+
   defp resume_session(socket, session, position) do
     case Playback.resume_video_transcode(socket.assigns.current_scope.actor, session.id) do
       :ok -> {:noreply, PlaybackState.paused(socket, false)}
@@ -253,12 +250,43 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   defp resume_expired(socket, session, position) do
     case parse_position(position) do
       {offset, ""}
-      when offset >= 0 and (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
+      when offset >= 0 and offset <= 2_147_483_647 and
+             (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
         {:noreply, PlaybackControl.deliver(socket, offset, :session_replaced)}
 
       _ ->
         {:noreply, socket}
     end
+  end
+
+  defp client_failure(socket, params) do
+    with true <- socket.assigns.playback_phase == :ready and !socket.assigns[:loading?],
+         attempt when is_binary(attempt) <- socket.assigns[:playback_attempt_id],
+         ^attempt <- params["attempt_id"],
+         {offset, ""} when offset >= 0 and offset <= 2_147_483_647 <-
+           parse_position(params["position_ms"]),
+         true <- valid_position?(socket, offset) do
+      handle_client_failure(socket, params["error_kind"], offset)
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  defp handle_client_failure(socket, "media", offset) do
+    {:noreply, PlaybackControl.recover(socket, offset)}
+  end
+
+  defp handle_client_failure(socket, kind, _offset)
+       when kind in ["network", "aborted", "unknown"] do
+    PlaybackControl.stop_transcode(socket, :client_error)
+    {:noreply, PlaybackState.transcode_failed(socket, :interrupted)}
+  end
+
+  defp handle_client_failure(socket, _kind, _offset), do: {:noreply, socket}
+
+  defp valid_position?(socket, offset) do
+    duration = socket.assigns[:playback_duration_ms]
+    is_nil(duration) or offset <= duration
   end
 
   defp parse_position(value) when is_binary(value), do: Integer.parse(value)

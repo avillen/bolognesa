@@ -272,7 +272,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
       assert has_element?(view, "#movie-selected-#{second.id}", "Seleccionada")
       refute has_element?(view, "#movie-selected-#{first.id}")
-      render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
+      playback_error(view, %{"file_id" => Integer.to_string(first.id)})
 
       assert has_element?(
                view,
@@ -328,7 +328,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       render_click(element(view, "#movie-play-#{first.id}"))
       if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
 
-      render_hook(view, "playback_error", %{
+      playback_error(view, %{
         "file_id" => Integer.to_string(first.id),
         "position_ms" => "12000"
       })
@@ -338,7 +338,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       assert has_element?(view, "#playback-mode", "Transcodificación de vídeo y audio")
       assert session.offset_ms == 12_000
       refute has_element?(view, "#movie-playback-error")
-      render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
+      playback_error(view, %{"file_id" => Integer.to_string(first.id)})
       assert has_element?(view, "#movie-playback-preparing")
     end
 
@@ -471,6 +471,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
     test "tab recovery uses an authorized whole-file offset and preserves pause", ctx do
       session = start_inspected_version(ctx)
+      make_ready(ctx.view, session)
 
       render_hook(ctx.view, "playback_restore", %{
         "session_id" => session.id,
@@ -510,22 +511,191 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     end
 
+    test "rejects stale attempts and invalid recovery positions", ctx do
+      %{view: view, first: first} = ctx
+      old = playback_attempt(view)
+      render_click(element(view, "#movie-play-#{first.id}"))
+      negotiate(view)
+      attempt = playback_attempt(view)
+      refute attempt == old
+
+      for {generation, position} <- [
+            {old, "1000"},
+            {attempt, "-1"},
+            {attempt, "60001"},
+            {attempt, "2147483648"}
+          ] do
+        playback_error(view, %{
+          "file_id" => to_string(first.id),
+          "attempt_id" => generation,
+          "error_kind" => "media",
+          "position_ms" => position
+        })
+
+        assert has_element?(view, "#movie-video-frame[data-playback-phase='ready']")
+        refute has_element?(view, "#movie-playback-preparing")
+      end
+    end
+
+    test "HDR original failure never starts an unsafe conversion", ctx do
+      inspection = inspect!(ctx.first)
+
+      tracks =
+        update_in(inspection.tracks, ["items"], fn tracks ->
+          Enum.map(tracks, fn
+            %{"kind" => "video"} = video -> Map.put(video, "color_transfer", "smpte2084")
+            track -> track
+          end)
+        end)
+
+      Repo.update!(Ecto.Changeset.change(inspection, tracks: tracks))
+      render_click(element(ctx.view, "#movie-play-#{ctx.first.id}"))
+      negotiate(ctx.view)
+      assert has_element?(ctx.view, "#movie-video-frame[data-playback-phase='ready']")
+      playback_error(ctx.view, %{"file_id" => to_string(ctx.first.id)})
+      assert has_element?(ctx.view, "#movie-playback-error")
+      refute has_element?(ctx.view, "#movie-playback-preparing")
+    end
+
+    test "unknown compatible capability never triggers automatic conversion", ctx do
+      render_click(element(ctx.view, "#movie-play-#{ctx.first.id}"))
+      capability = report(ctx.view)
+
+      results =
+        Enum.map(capability["results"], fn result ->
+          if result["candidate_id"] == "c0",
+            do: result,
+            else: Map.put(result, "support", "unknown")
+        end)
+
+      render_hook(ctx.view, "playback_capabilities", Map.put(capability, "results", results))
+      playback_error(ctx.view, %{"file_id" => to_string(ctx.first.id)})
+      assert has_element?(ctx.view, "#movie-playback-error")
+      refute has_element?(ctx.view, "#movie-playback-preparing")
+    end
+
+    test "explicit original delivery ignores errors from its previous source", ctx do
+      old = playback_attempt(ctx.view)
+      render_hook(ctx.view, "playback_original", %{})
+      refute playback_attempt(ctx.view) == old
+      playback_error(ctx.view, %{"file_id" => to_string(ctx.first.id), "attempt_id" => old})
+      refute has_element?(ctx.view, "#movie-playback-error")
+      assert has_element?(ctx.view, "#movie-video-frame[data-playback-phase='ready']")
+    end
+
+    test "best-effort original does not inherit another version's duration", ctx do
+      inspection =
+        Repo.get_by!(Bolognesa.Infrastructure.Persistence.InspectionSchema,
+          media_file_id: ctx.second.id
+        )
+
+      Repo.delete!(inspection)
+      render_click(element(ctx.view, "#movie-play-#{ctx.second.id}"))
+      assert has_element?(ctx.view, "#movie-playback-error")
+      render_hook(ctx.view, "playback_original", %{})
+      playback_error(ctx.view, %{"file_id" => to_string(ctx.second.id), "position_ms" => "60001"})
+      assert has_element?(ctx.view, "#movie-playback-error")
+      refute has_element?(ctx.view, "#movie-playback-preparing")
+    end
+
+    test "network failure never starts compatible conversion", ctx do
+      playback_error(ctx.view, %{
+        "file_id" => to_string(ctx.first.id),
+        "attempt_id" => playback_attempt(ctx.view),
+        "error_kind" => "network",
+        "position_ms" => "1000"
+      })
+
+      assert has_element?(ctx.view, "#movie-playback-error")
+      refute has_element?(ctx.view, "#movie-playback-preparing")
+    end
+
+    test "recovery budget survives seek and expired-session resume", ctx do
+      %{view: view, first: first} = ctx
+      attempt = playback_attempt(view)
+      playback_error(view, %{"file_id" => to_string(first.id), "position_ms" => "1000"})
+      recovered = preparing_session(view)
+      make_ready(view, recovered)
+      render_hook(view, "playback_seek", %{"session_id" => recovered.id, "position_ms" => "2000"})
+      sought = preparing_session(view)
+      make_ready(view, sought)
+      assert playback_attempt(view) == attempt
+      assert :ok = TranscodeManager.stop(sought.id, :client_error)
+      render_hook(view, "playback_resume", %{"session_id" => sought.id, "position_ms" => "3000"})
+      resumed = preparing_session(view)
+      make_ready(view, resumed)
+      assert playback_attempt(view) == attempt
+      # Errors from the replaced session cannot spend or reset the budget.
+      render_hook(view, "transcode_error", %{
+        "session_id" => sought.id,
+        "attempt_id" => attempt,
+        "error_kind" => "media",
+        "position_ms" => "3000"
+      })
+
+      refute has_element?(view, "#movie-playback-error")
+
+      render_hook(view, "transcode_error", %{
+        "session_id" => resumed.id,
+        "attempt_id" => attempt,
+        "error_kind" => "media",
+        "position_ms" => "3000"
+      })
+
+      assert has_element?(view, "#movie-playback-error")
+      refute has_element?(view, "#movie-playback-preparing")
+      assert {:error, :not_found} = TranscodeManager.lookup(resumed.id)
+    end
+
+    test "failed compatible output never cycles to the original", ctx do
+      render_click(element(ctx.view, "#movie-play-#{ctx.first.id}"))
+      capability = report(ctx.view)
+
+      render_hook(
+        ctx.view,
+        "playback_capabilities",
+        Map.put(capability, "preference", "compatible")
+      )
+
+      session = preparing_session(ctx.view)
+      make_ready(ctx.view, session)
+
+      render_hook(ctx.view, "transcode_error", %{
+        "session_id" => session.id,
+        "attempt_id" => playback_attempt(ctx.view),
+        "error_kind" => "media",
+        "position_ms" => "0"
+      })
+
+      assert has_element?(ctx.view, "#movie-playback-error")
+      refute has_element?(ctx.view, "#movie-video-frame[data-src]")
+      assert {:error, :not_found} = TranscodeManager.lookup(session.id)
+    end
+
     test "conversion failure stays visible until an explicit retry", ctx do
       %{view: view, first: first} = ctx
       render_click(element(view, "#movie-play-#{first.id}"))
       if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
-      render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
+      playback_error(view, %{"file_id" => Integer.to_string(first.id)})
       session = preparing_session(view)
-      render_hook(view, "transcode_error", %{"session_id" => session.id})
+      make_ready(view, session)
+
+      render_hook(view, "transcode_error", %{
+        "session_id" => session.id,
+        "attempt_id" => playback_attempt(view),
+        "error_kind" => "media",
+        "position_ms" => "1000"
+      })
+
       assert has_element?(view, "#movie-playback-error[data-reason='transcode_failed']")
-      render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
+      playback_error(view, %{"file_id" => Integer.to_string(first.id)})
       assert has_element?(view, "#movie-playback-error[data-reason='transcode_failed']")
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
       render_hook(view, "playback_seek", %{"session_id" => session.id, "position_ms" => "1000"})
-      next = preparing_session(view)
-      assert next.strategy == :full_conversion
-      assert next.offset_ms == 1_000
-      refute has_element?(view, "#movie-playback-error")
+      assert has_element?(view, "#movie-playback-error[data-reason='transcode_failed']")
+      refute has_element?(view, "#movie-playback-preparing")
+      render_click(element(view, "#movie-retry-playback"))
+      assert has_element?(view, "#movie-playback-checking")
     end
 
     test "failed fallback preparation keeps the player for retry and does not loop", ctx do
@@ -533,10 +703,10 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       render_click(element(view, "#movie-play-#{first.id}"))
       if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
       File.rm!(Path.join(ctx.directory, "first.mp4"))
-      render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
+      playback_error(view, %{"file_id" => Integer.to_string(first.id)})
       assert has_element?(view, "#movie-playback-error[data-reason='file_unavailable']")
       assert has_element?(view, "#movie-retry-playback")
-      render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
+      playback_error(view, %{"file_id" => Integer.to_string(first.id)})
       assert has_element?(view, "#movie-playback-error[data-reason='file_unavailable']")
       refute has_element?(view, "#movie-playback-preparing")
       assert has_element?(view, "#movie-video-frame[data-playback-error]")
@@ -560,6 +730,25 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       assert has_element?(ctx.view, "#movie-video-frame[data-playback-error]")
       refute has_element?(ctx.view, "#movie-video-frame[data-src]")
     end
+  end
+
+  defp playback_attempt(view) do
+    render(view)
+    |> LazyHTML.from_document()
+    |> LazyHTML.query("#movie-video-frame")
+    |> LazyHTML.attribute("data-attempt-id")
+    |> List.first()
+  end
+
+  defp playback_error(view, params) do
+    render_hook(
+      view,
+      "playback_error",
+      Map.merge(
+        %{"attempt_id" => playback_attempt(view), "error_kind" => "media", "position_ms" => "0"},
+        params
+      )
+    )
   end
 
   defp start_inspected_version(ctx) do

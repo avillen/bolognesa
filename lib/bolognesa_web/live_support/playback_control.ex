@@ -21,6 +21,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
 
     socket =
       socket
+      |> assign(:playback_attempt_id, Ecto.UUID.generate())
+      |> assign(:playback_duration_ms, nil)
       |> assign(:capability_report, nil)
       |> assign(:recovery_used?, false)
       |> assign(:inspection_refresh_used?, false)
@@ -29,12 +31,13 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
     actor = socket.assigns.current_scope.actor
 
     case Playback.video_candidates(actor, socket.assigns.content_ref, file_id) do
-      {:ok, _source, candidates} ->
+      {:ok, source, candidates} ->
         generation = Ecto.UUID.generate()
         Process.send_after(self(), {:capability_timeout, generation}, 5_000)
         probe = %{generation: generation, candidates: Enum.map(candidates, &probe_candidate/1)}
 
         socket
+        |> assign(:playback_duration_ms, source.duration_ms)
         |> assign(:playback_phase, :checking)
         |> assign(:playback_candidates, candidates)
         |> assign(:playback_probe, probe)
@@ -115,14 +118,22 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
              Map.put(raw, "preference", "compatible"),
              raw["generation"]
            ) do
-        {:ok, plan} when plan != socket.assigns.delivery_plan ->
+        {:ok, plan}
+        when plan.mode != :direct and plan != socket.assigns.delivery_plan ->
+          stop_transcode(socket, :client_error)
           socket |> assign(:delivery_plan, plan) |> deliver(offset, :session_replaced)
 
+        {:error, reason} ->
+          stop_transcode(socket, :client_error)
+          PlaybackState.preparation_failed(socket, reason)
+
         _ ->
+          stop_transcode(socket, :client_error)
           PlaybackState.preparation_failed(socket, :unsupported)
       end
     else
-      socket
+      stop_transcode(socket, :client_error)
+      PlaybackState.transcode_failed(socket, :interrupted)
     end
   end
 

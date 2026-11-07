@@ -3,8 +3,8 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/bolognesa_web/live/movie/show/live.html.heex:105
-#: lib/bolognesa_web/live/series/episode/live.html.heex:249
+#: lib/bolognesa_web/live/movie/show/live.html.heex:107
+#: lib/bolognesa_web/live/series/episode/live.html.heex:251
 #, elixir-autogen, elixir-format
 msgid " · Revisar"
 msgstr " · Review"
@@ -84,7 +84,7 @@ msgstr "Storage unavailable"
 #: lib/bolognesa_web/live/movie/index/live.html.heex:125
 #: lib/bolognesa_web/live/movie/review/live.html.heex:168
 #: lib/bolognesa_web/live/music/index/live.html.heex:293
-#: lib/bolognesa_web/live/series/episode/live.html.heex:138
+#: lib/bolognesa_web/live/series/episode/live.html.heex:140
 #: lib/bolognesa_web/live/series/index/live.html.heex:129
 #: lib/bolognesa_web/live/series/review/live.html.heex:57
 #: lib/bolognesa_web/live/series/season/live.html.heex:135
@@ -305,7 +305,7 @@ msgstr "Confirm movie"
 msgid "Contenido"
 msgstr "Content"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:243
+#: lib/bolognesa_web/live/series/episode/live.html.heex:245
 #, elixir-autogen, elixir-format
 msgid "Contiene episodios"
 msgstr "Contains episodes"
@@ -327,7 +327,7 @@ msgid "Corrección manual"
 msgstr "Manual correction"
 
 #: lib/bolognesa_web/live/movie/review/live.html.heex:74
-#: lib/bolognesa_web/live/movie/show/live.html.heex:132
+#: lib/bolognesa_web/live/movie/show/live.html.heex:134
 #: lib/bolognesa_web/live/series/review/live.html.heex:47
 #: lib/bolognesa_web/live/series/review/live.html.heex:69
 #, elixir-autogen, elixir-format
@@ -372,13 +372,13 @@ msgid "Dejar sin identificar"
 msgstr "Leave unidentified"
 
 #: lib/bolognesa_web/live/movie/review/live.html.heex:56
-#: lib/bolognesa_web/live/movie/show/live.html.heex:115
+#: lib/bolognesa_web/live/movie/show/live.html.heex:117
 #: lib/bolognesa_web/live/music/index/state/track.ex:65
 #, elixir-autogen, elixir-format
 msgid "Disponible"
 msgstr "Available"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:240
+#: lib/bolognesa_web/live/series/episode/live.html.heex:242
 #, elixir-autogen, elixir-format
 msgid "Duración:"
 msgstr "Duration:"
@@ -408,7 +408,7 @@ msgstr "The file changed since the scan"
 msgid "El archivo ha cambiado. Recarga antes de corregirlo."
 msgstr "The file has changed. Reload before correcting it."
 
-#: lib/bolognesa_web/live_support/playback_state.ex:97
+#: lib/bolognesa_web/live_support/playback_state.ex:103
 #, elixir-autogen, elixir-format
 msgid "El archivo ya no está disponible. Revisa la biblioteca y vuelve a escanear."
 msgstr "The file is no longer available. Check the library and scan again."
@@ -534,8 +534,8 @@ msgstr "Hello, %{name}"
 msgid "ID de TMDb"
 msgstr "TMDb ID"
 
-#: lib/bolognesa_web/live/movie/show/live.html.heex:104
-#: lib/bolognesa_web/live/series/episode/live.html.heex:248
+#: lib/bolognesa_web/live/movie/show/live.html.heex:106
+#: lib/bolognesa_web/live/series/episode/live.html.heex:250
 #, elixir-autogen, elixir-format
 msgid "Identificación automática"
 msgstr "Automatic identification"
@@ -545,8 +545,8 @@ msgstr "Automatic identification"
 msgid "Identificación guardada."
 msgstr "Identification saved."
 
-#: lib/bolognesa_web/live/movie/show/live.html.heex:103
-#: lib/bolognesa_web/live/series/episode/live.html.heex:247
+#: lib/bolognesa_web/live/movie/show/live.html.heex:105
+#: lib/bolognesa_web/live/series/episode/live.html.heex:249
 #, elixir-autogen, elixir-format
 msgid "Identificación manual"
 msgstr "Manual identification"
@@ -620,10 +620,10 @@ msgstr "The folder contains a link or entry that cannot be scanned."
 msgid "La carpeta está fuera de las ubicaciones permitidas."
 msgstr "The folder is outside the allowed locations."
 
-#: lib/bolognesa_web/live_support/playback_state.ex:64
+#: lib/bolognesa_web/live_support/playback_state.ex:70
 #, elixir-autogen, elixir-format
-msgid "La conversión se ha interrumpido. Vuelve a intentarlo."
-msgstr "Conversion was interrupted. Try again."
+msgid "La reproducción se ha interrumpido. Vuelve a intentarlo."
+msgstr "Playback was interrupted. Try again."
 
 #: lib/bolognesa_web/live/library/index/state/library.ex:121
 #, elixir-autogen, elixir-format
@@ -650,7 +650,7 @@ msgstr "The season has no episodes."
 msgid "Logotipo de TMDB"
 msgstr "TMDB logo"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:166
+#: lib/bolognesa_web/live/series/episode/live.html.heex:168
 #, elixir-autogen, elixir-format
 msgid "Los archivos con varios episodios se reproducen desde el principio del archivo completo."
 msgstr "Files containing multiple episodes play from the beginning of the complete file."
@@ -671,9 +671,9 @@ msgstr "Mark as unidentified"
 msgid "Navegación principal"
 msgstr "Main navigation"
 
-#: lib/bolognesa_web/live/movie/show/live.html.heex:116
-#: lib/bolognesa_web/live/series/episode/live.html.heex:163
-#: lib/bolognesa_web/live/series/episode/live.html.heex:228
+#: lib/bolognesa_web/live/movie/show/live.html.heex:118
+#: lib/bolognesa_web/live/series/episode/live.html.heex:165
+#: lib/bolognesa_web/live/series/episode/live.html.heex:230
 #: lib/bolognesa_web/live/series/season/live.html.heex:99
 #, elixir-autogen, elixir-format
 msgid "No disponible"
@@ -704,8 +704,8 @@ msgstr "No series match this search. Add a series library and scan it to get sta
 msgid "No hay temporadas identificadas."
 msgstr "No identified seasons."
 
-#: lib/bolognesa_web/live/movie/show/live.html.heex:137
-#: lib/bolognesa_web/live/series/episode/live.html.heex:273
+#: lib/bolognesa_web/live/movie/show/live.html.heex:139
+#: lib/bolognesa_web/live/series/episode/live.html.heex:275
 #, elixir-autogen, elixir-format
 msgid "No hay versiones vinculadas."
 msgstr "No linked versions."
@@ -715,7 +715,7 @@ msgstr "No linked versions."
 msgid "No se encontraron series."
 msgstr "No series found."
 
-#: lib/bolognesa_web/live/series/episode/reducer/advance.ex:79
+#: lib/bolognesa_web/live/series/episode/reducer/advance.ex:80
 #: lib/bolognesa_web/live/series/episode/reducer/apply_result.ex:31
 #, elixir-autogen, elixir-format
 msgid "No se encontró el episodio."
@@ -825,8 +825,8 @@ msgstr "The file could not be read"
 msgid "No se pudo leer todo el contenido de la carpeta. Comprueba los permisos de lectura y pulsa Reintentar."
 msgstr "Not all folder contents could be read. Check read permissions and select Retry."
 
-#: lib/bolognesa_web/live_support/playback_state.ex:63
-#: lib/bolognesa_web/live_support/playback_state.ex:108
+#: lib/bolognesa_web/live_support/playback_state.ex:69
+#: lib/bolognesa_web/live_support/playback_state.ex:114
 #, elixir-autogen, elixir-format
 msgid "No se pudo preparar esta versión. Vuelve a intentarlo."
 msgstr "This version could not be prepared. Try again."
@@ -960,14 +960,14 @@ msgstr "Repeat password"
 
 #: lib/bolognesa_web/components/music_player.ex:46
 #: lib/bolognesa_web/components/music_player.ex:48
-#: lib/bolognesa_web/live/movie/show/live.html.heex:126
+#: lib/bolognesa_web/live/movie/show/live.html.heex:128
 #: lib/bolognesa_web/live/series/season/live.html.heex:124
 #, elixir-autogen, elixir-format
 msgid "Reproducir"
 msgstr "Play"
 
 #: lib/bolognesa_web/components/music_player.ex:18
-#: lib/bolognesa_web/components/player.ex:34
+#: lib/bolognesa_web/components/player.ex:36
 #, elixir-autogen, elixir-format
 msgid "Reproductor"
 msgstr "Player"
@@ -1092,7 +1092,7 @@ msgstr "Signed in as %{email}"
 #: lib/bolognesa_web/live/movie/index/live.html.heex:131
 #: lib/bolognesa_web/live/movie/review/live.html.heex:174
 #: lib/bolognesa_web/live/music/index/live.html.heex:299
-#: lib/bolognesa_web/live/series/episode/live.html.heex:151
+#: lib/bolognesa_web/live/series/episode/live.html.heex:153
 #: lib/bolognesa_web/live/series/index/live.html.heex:135
 #: lib/bolognesa_web/live/series/review/live.html.heex:59
 #: lib/bolognesa_web/live/series/season/live.html.heex:142
@@ -1182,8 +1182,8 @@ msgstr "This product uses the TMDB API but is not endorsed or certified by TMDB.
 msgid "Todavía no hay bibliotecas."
 msgstr "No libraries yet."
 
-#: lib/bolognesa_web/live/movie/show/live.html.heex:65
-#: lib/bolognesa_web/live/series/episode/live.html.heex:178
+#: lib/bolognesa_web/live/movie/show/live.html.heex:67
+#: lib/bolognesa_web/live/series/episode/live.html.heex:180
 #, elixir-autogen, elixir-format
 msgid "Todavía no hay sinopsis."
 msgstr "No synopsis yet."
@@ -1213,7 +1213,7 @@ msgstr "Your cinema, at home."
 msgid "Tu elección se guarda en tu cuenta y se aplica en todos tus dispositivos al abrir o recargar la web."
 msgstr "Your choice is saved to your account and applies on all your devices when you open or reload the website."
 
-#: lib/bolognesa_web/components/player.ex:70
+#: lib/bolognesa_web/components/player.ex:76
 #, elixir-autogen, elixir-format
 msgid "Tu navegador no admite la reproducción de vídeo."
 msgstr "Your browser does not support video playback."
@@ -1233,12 +1233,12 @@ msgstr "View movies"
 msgid "Ver series"
 msgstr "View series"
 
-#: lib/bolognesa_web/live/movie/show/live.html.heex:81
+#: lib/bolognesa_web/live/movie/show/live.html.heex:83
 #, elixir-autogen, elixir-format
 msgid "Versiones en tu biblioteca"
 msgstr "Versions in your library"
 
-#: lib/bolognesa_web/live/movie/show/live.html.heex:95
+#: lib/bolognesa_web/live/movie/show/live.html.heex:97
 #, elixir-autogen, elixir-format
 msgid "Versión"
 msgstr "Version"
@@ -1553,7 +1553,7 @@ msgstr "%{minutes} min"
 msgid "Abrir navegación"
 msgstr "Open navigation"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:218
+#: lib/bolognesa_web/live/series/episode/live.html.heex:220
 #, elixir-autogen, elixir-format
 msgid "Archivo de vídeo"
 msgstr "Video file"
@@ -1563,17 +1563,17 @@ msgstr "Video file"
 msgid "Cerrar navegación"
 msgstr "Close navigation"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:257
+#: lib/bolognesa_web/live/series/episode/live.html.heex:259
 #, elixir-autogen, elixir-format
 msgid "Corregir identificación"
 msgstr "Correct identification"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:237
+#: lib/bolognesa_web/live/series/episode/live.html.heex:239
 #, elixir-autogen, elixir-format
 msgid "Detalles del archivo"
 msgstr "File details"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:268
+#: lib/bolognesa_web/live/series/episode/live.html.heex:270
 #, elixir-autogen, elixir-format
 msgid "Elegir esta versión"
 msgstr "Choose this version"
@@ -1588,7 +1588,7 @@ msgstr "Episode %{number}"
 msgid "Episodios identificados en tu biblioteca. La numeración puede tener saltos."
 msgstr "Episodes identified in your library. Episode numbers may have gaps."
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:201
+#: lib/bolognesa_web/live/series/episode/live.html.heex:203
 #, elixir-autogen, elixir-format
 msgid "Las versiones pueden proceder de otras bibliotecas."
 msgstr "Versions may come from other libraries."
@@ -1613,7 +1613,7 @@ msgstr "Clear search"
 msgid "No hay series que coincidan con tu búsqueda."
 msgstr "No series match your search."
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:163
+#: lib/bolognesa_web/live/series/episode/live.html.heex:165
 #, elixir-autogen, elixir-format
 msgid "No hay versiones disponibles para este episodio."
 msgstr "No versions are available for this episode."
@@ -1623,14 +1623,14 @@ msgstr "No versions are available for this episode."
 msgid "Opciones de biblioteca"
 msgstr "Library options"
 
-#: lib/bolognesa_web/live/movie/show/live.html.heex:73
-#: lib/bolognesa_web/live/series/episode/live.html.heex:199
+#: lib/bolognesa_web/live/movie/show/live.html.heex:75
+#: lib/bolognesa_web/live/series/episode/live.html.heex:201
 #, elixir-autogen, elixir-format
 msgid "Opciones de reproducción"
 msgstr "Playback options"
 
-#: lib/bolognesa_web/components/player.ex:55
-#: lib/bolognesa_web/components/player.ex:114
+#: lib/bolognesa_web/components/player.ex:61
+#: lib/bolognesa_web/components/player.ex:120
 #, elixir-autogen, elixir-format
 msgid "Reintentar reproducción"
 msgstr "Retry playback"
@@ -1642,14 +1642,14 @@ msgstr "Retry playback"
 msgid "Ruta de navegación"
 msgstr "Breadcrumb"
 
-#: lib/bolognesa_web/live/movie/show/live.html.heex:100
-#: lib/bolognesa_web/live/series/episode/live.html.heex:227
+#: lib/bolognesa_web/live/movie/show/live.html.heex:102
+#: lib/bolognesa_web/live/series/episode/live.html.heex:229
 #, elixir-autogen, elixir-format
 msgid "Seleccionada"
 msgstr "Selected"
 
-#: lib/bolognesa_web/live/movie/show/live.html.heex:58
-#: lib/bolognesa_web/live/series/episode/live.html.heex:171
+#: lib/bolognesa_web/live/movie/show/live.html.heex:60
+#: lib/bolognesa_web/live/series/episode/live.html.heex:173
 #, elixir-autogen, elixir-format
 msgid "Sinopsis"
 msgstr "Synopsis"
@@ -1669,44 +1669,44 @@ msgstr "← Specials"
 msgid "← Temporada %{number}"
 msgstr "← Season %{number}"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:135
-#: lib/bolognesa_web/live/series/episode/live.html.heex:138
+#: lib/bolognesa_web/live/series/episode/live.html.heex:137
+#: lib/bolognesa_web/live/series/episode/live.html.heex:140
 #, elixir-autogen, elixir-format
 msgid "Anterior episodio"
 msgstr "Previous episode"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:187
+#: lib/bolognesa_web/live/series/episode/live.html.heex:189
 #, elixir-autogen, elixir-format
 msgid "Emisión original:"
 msgstr "Originally aired:"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:126
+#: lib/bolognesa_web/live/series/episode/live.html.heex:128
 #, elixir-autogen, elixir-format
 msgid "Navegación entre episodios"
 msgstr "Episode navigation"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:149
 #: lib/bolognesa_web/live/series/episode/live.html.heex:151
+#: lib/bolognesa_web/live/series/episode/live.html.heex:153
 #, elixir-autogen, elixir-format
 msgid "Siguiente episodio"
 msgstr "Next episode"
 
-#: lib/bolognesa_web/components/player.ex:131
+#: lib/bolognesa_web/components/player.ex:137
 #, elixir-autogen, elixir-format
 msgid "Modo de reproducción:"
 msgstr "Playback mode:"
 
-#: lib/bolognesa_web/components/player.ex:132
+#: lib/bolognesa_web/components/player.ex:138
 #, elixir-autogen, elixir-format
 msgid "Reproducción directa"
 msgstr "Direct playback"
 
-#: lib/bolognesa_web/components/player.ex:140
+#: lib/bolognesa_web/components/player.ex:146
 #, elixir-autogen, elixir-format
 msgid "Transcodificación de audio"
 msgstr "Audio transcoding"
 
-#: lib/bolognesa_web/components/player.ex:143
+#: lib/bolognesa_web/components/player.ex:149
 #, elixir-autogen, elixir-format
 msgid "Transcodificación de vídeo y audio"
 msgstr "Video and audio transcoding"
@@ -1718,12 +1718,12 @@ msgstr "Video and audio transcoding"
 msgid "%{title} (Parte %{number})"
 msgstr "%{title} (Part %{number})"
 
-#: lib/bolognesa_web/live/series/episode/live.html.heex:217
+#: lib/bolognesa_web/live/series/episode/live.html.heex:219
 #, elixir-autogen, elixir-format
 msgid "Episodio completo"
 msgstr "Full episode"
 
-#: lib/bolognesa_web/live/series/episode/reducer/advance.ex:71
+#: lib/bolognesa_web/live/series/episode/reducer/advance.ex:72
 #, elixir-autogen, elixir-format
 msgid "La siguiente parte no está disponible."
 msgstr "The next part is unavailable."
@@ -2110,52 +2110,52 @@ msgstr "Replay %{title}"
 msgid "Reproducir de nuevo"
 msgstr "Replay"
 
-#: lib/bolognesa_web/components/player.ex:89
+#: lib/bolognesa_web/components/player.ex:95
 #, elixir-autogen, elixir-format
 msgid "Actualizar análisis"
 msgstr "Refresh analysis"
 
-#: lib/bolognesa_web/components/player.ex:94
+#: lib/bolognesa_web/components/player.ex:100
 #, elixir-autogen, elixir-format
 msgid "Análisis solicitado. Reintenta cuando termine."
 msgstr "Analysis requested. Retry when it finishes."
 
-#: lib/bolognesa_web/components/player.ex:77
+#: lib/bolognesa_web/components/player.ex:83
 #, elixir-autogen, elixir-format
 msgid "Comprobando compatibilidad del navegador…"
 msgstr "Checking browser compatibility…"
 
-#: lib/bolognesa_web/live_support/playback_state.ex:106
+#: lib/bolognesa_web/live_support/playback_state.ex:112
 #, elixir-autogen, elixir-format
 msgid "Este navegador no admite una versión segura de este vídeo."
 msgstr "This browser does not support a safe version of this video."
 
-#: lib/bolognesa_web/live_support/playback_state.ex:100
+#: lib/bolognesa_web/live_support/playback_state.ex:106
 #, elixir-autogen, elixir-format
 msgid "Faltan datos técnicos. Actualiza el análisis o prueba el archivo original."
 msgstr "Technical details are missing. Refresh the analysis or try the original file."
 
-#: lib/bolognesa_web/live_support/playback_state.ex:103
+#: lib/bolognesa_web/live_support/playback_state.ex:109
 #, elixir-autogen, elixir-format
 msgid "No se pudo detectar la compatibilidad de este navegador."
 msgstr "Browser compatibility could not be detected."
 
-#: lib/bolognesa_web/components/player.ex:80
+#: lib/bolognesa_web/components/player.ex:86
 #, elixir-autogen, elixir-format
 msgid "Preparando vídeo…"
 msgstr "Preparing video…"
 
-#: lib/bolognesa_web/components/player.ex:92
+#: lib/bolognesa_web/components/player.ex:98
 #, elixir-autogen, elixir-format
 msgid "Probar archivo original"
 msgstr "Try original file"
 
-#: lib/bolognesa_web/components/player.ex:133
+#: lib/bolognesa_web/components/player.ex:139
 #, elixir-autogen, elixir-format
 msgid "Remultiplexado sin conversión"
 msgstr "Remuxing without conversion"
 
-#: lib/bolognesa_web/components/player.ex:136
+#: lib/bolognesa_web/components/player.ex:142
 #, elixir-autogen, elixir-format
 msgid "Transcodificación de vídeo"
 msgstr "Video transcoding"

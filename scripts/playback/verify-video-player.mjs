@@ -31,7 +31,7 @@ window.hook = hook;
 hook.mounted.call(window.context);`, resolveDir: process.cwd()}, bundle: true, target, format: "esm", outfile: bundle})
 const playerStyles = (await readFile("assets/css/app.css", "utf8")).split("/* Video.js owns")[1]
 const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><style>/* Video.js owns${playerStyles}</style></head><body>
-<div id="frame" data-video-id="video-1" data-file-id="1" data-src="/sample.mp4" data-autoplay="true" data-paused-server="false" class="bolognesa-video-frame" style="width:800px">
+<div id="frame" data-video-id="video-1" data-attempt-id="fixture-attempt" data-file-id="1" data-src="/sample.mp4" data-autoplay="true" data-paused-server="false" class="bolognesa-video-frame" style="width:800px">
 <media-i18n lang="en"><video muted playsinline style="width:100%;aspect-ratio:16/9"></video></media-i18n>
 </div><script type="module" src="/player.js"></script></body></html>`
 const server = createServer(async (request, response) => {
@@ -315,7 +315,7 @@ try {
   await page.waitForFunction(() => document.querySelector("video").readyState >= 2)
   assert.equal(await page.locator("video-skin").getAttribute("data-initial-loading"), null)
   console.log("Opening logo: initial load, later buffering, session replacement and new-file preparation passed.")
-  // The diagnostic must precede fallback, which changes the server's session identity.
+  // Diagnostics precede the correlated failure report; the server decides whether recovery is eligible.
   const failurePage = await browser.newPage()
   await failurePage.route("**/sample.mp4", route => route.abort("failed"))
   await failurePage.goto(`http://127.0.0.1:${server.address().port}`, {waitUntil: "domcontentloaded"})
@@ -323,9 +323,13 @@ try {
   const errorOrder = await failurePage.evaluate(() => window.events.map(([name, data]) =>
     name === "playback_diagnostic" ? data.diagnostic : name))
   assert.ok(errorOrder.indexOf("error") >= 0 && errorOrder.indexOf("error") < errorOrder.indexOf("playback_error"),
-    `Expected error diagnostic before playback fallback: ${JSON.stringify(errorOrder)}`)
+    `Expected error diagnostic before playback failure: ${JSON.stringify(errorOrder)}`)
+  const failure = await failurePage.evaluate(() => window.events.find(([name]) => name === "playback_error")[1])
+  assert.equal(failure.attempt_id, "fixture-attempt")
+  assert.ok(["network", "unknown"].includes(failure.error_kind),
+    "An aborted download must never qualify for automatic conversion")
   await failurePage.close()
-  console.log("Diagnostics: direct media error is observed before session-changing fallback.")
+  console.log("Diagnostics: aborted download reports a correlated non-decode error after its diagnostic.")
   const recoveryPage = await browser.newPage()
   recoveryPage.on("pageerror", error => errors.push(error.message))
   const recoveryUrl = `http://127.0.0.1:${server.address().port}/?recovery=direct`
@@ -459,6 +463,9 @@ try {
   assert.equal(transition.events.some(([, data]) => data?.session_id === "outgoing"), false,
     "Outgoing HLS listeners must not emit after the direct source replaces them")
   assert.equal(transition.events.filter(([name]) => name === "playback_error").length, 1)
+  assert.equal(transition.events.find(([name]) => name === "playback_error")[1].attempt_id, "fixture-attempt")
+  assert.equal(transition.events.find(([name]) => name === "playback_error")[1].error_kind, "unknown",
+    "A synthetic error without MediaError evidence must not qualify for conversion")
   assert.equal(transition.events.filter(([name]) => name === "playback_ended").length, 1)
   const afterDestroy = await transitionPage.evaluate(() => {
     window.hook.destroyed.call(window.context)
