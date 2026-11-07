@@ -332,7 +332,12 @@ try {
     await capture("movie-review.png", "/movies/review");
     await capture("movie.png", `/movies/${ids.movie}?library_id=${ids.movie_library}`);
     await page.locator("#movie-playback-options > summary").click();
+    const previousAttempt = await page.locator("#movie-video-frame").getAttribute("data-attempt-id");
     await page.locator('[id^="movie-play-"]').first().click();
+    await page.waitForFunction(previous => {
+      const frame = document.querySelector("#movie-video-frame");
+      return frame?.dataset.attemptId && frame.dataset.attemptId !== previous;
+    }, previousAttempt);
     const video = page.locator("video[id^='movie-video-']");
     try {
       await video.waitFor({ state: "attached" });
@@ -341,17 +346,25 @@ try {
       throw new Error(`The player did not open: ${message}`, { cause: error });
     }
     await playDemoOriginal("movie");
-    await video.evaluate((element) => element.play());
+    await page.waitForFunction(() => {
+      const element = document.querySelector("#movie-player video");
+      return element.readyState >= 2 && !element.seeking;
+    });
+    await video.evaluate(element => new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("Demo video play did not settle.")), 15_000);
+      element.play().then(() => { clearTimeout(timeout); resolve(); },
+        error => { clearTimeout(timeout); reject(error); });
+    }));
     await page.waitForFunction(() => {
       const element = document.querySelector("video[id^='movie-video-']");
       return element && element.readyState >= 2 && !element.paused;
     });
-    await video.evaluate(async (element) => {
-      const seeked = new Promise((resolve) => element.addEventListener("seeked", resolve, { once: true }));
-      element.currentTime = 2;
-      await seeked;
-      element.pause();
+    await video.evaluate(element => { element.currentTime = 2; });
+    await page.waitForFunction(() => {
+      const element = document.querySelector("#movie-player video");
+      return !element.seeking && Math.abs(element.currentTime - 2) < 0.1;
     });
+    await video.evaluate(element => element.pause());
     const playButton = page.locator("#movie-player media-play-button");
     await playButton.click();
     await page.waitForFunction(() => !document.querySelector("#movie-player video").paused);
@@ -362,10 +375,10 @@ try {
     await page.keyboard.press("Home");
     await page.keyboard.press("ArrowRight");
     await page.waitForFunction(() => document.querySelector("#movie-player video").currentTime > 0);
-    await video.evaluate(async element => {
-      const seeked = new Promise(resolve => element.addEventListener("seeked", resolve, {once: true}));
-      element.currentTime = 2;
-      await seeked;
+    await video.evaluate(element => { element.currentTime = 2; });
+    await page.waitForFunction(() => {
+      const element = document.querySelector("#movie-player video");
+      return !element.seeking && Math.abs(element.currentTime - 2) < 0.1;
     });
     await page.waitForTimeout(500);
     await normalizeDemoDetails();
