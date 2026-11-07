@@ -10,7 +10,9 @@
 
 ## Global constraints
 
-Preserve per-request authorization/revision/source checks, read-only originals, one FFmpeg session, five-minute idle expiry, 512 MiB storage bound, 12-second preparation and four-second segment target. Reports allow six results, 8 KiB, 64-byte tokens and a three-second detection deadline. Generated video is SDR H.264 High 4.1, 8-bit 4:2:0, at most 1920x1080/30 fps, CRF 25, ultrafast, two threads, 8 Mbps VBV maximum/16 Mbit buffer. Generated AAC-LC is 128 kbps, 48 kHz, at most stereo. No HDR tone mapping, HEVC HLS, dependency upgrade or deployment.
+Preserve per-request authorization/revision/source checks, read-only originals, one FFmpeg session, five-minute idle expiry, 512 MiB storage bound, 12-second preparation and four-second segment target. Reports allow six results, 8 KiB, 64-byte tokens and a three-second detection deadline. Generated video targets SDR H.264 Constrained Baseline level 4.1, 8-bit 4:2:0, at most 1920x1080/30 fps, CRF 25, ultrafast, two threads, 8 Mbps VBV maximum/16 Mbit buffer. Task 0 must verify its actual SPS/codec identifier before candidate contracts are implemented; `-profile:v high` with ultrafast does not establish a High-profile bitstream. Generated AAC-LC is 128 kbps, 48 kHz, at most stereo. No HDR tone mapping, HEVC HLS, dependency upgrade or deployment.
+
+Run `sh scripts/dev/local.sh setup` once per implementation worktree. Run focused Mix commands with that worktree's environment from `scripts/dev/local.sh`; run `sh scripts/dev/local.sh test` after each significant implementation task, not only at final acceptance. Keep old public playback callers working until task 5 switches them: task 4 introduces plan-based execution alongside the old entry points, with an explicit temporary adapter removed in task 5 and existing LiveView tests passing at both commits.
 
 ## Review focus
 
@@ -18,7 +20,19 @@ Preserve per-request authorization/revision/source checks, read-only originals, 
 - Default versus explicitly mapped tracks must agree with the probed configuration (tasks 1–4).
 - Late browser reports and errors must not replace a newer selection (task 5).
 - Seek/reconnect/checkpoint restoration must retain the current attempt's fallback budget (task 6).
-- Native HLS and silent media must work without assuming desktop Chrome proves iPhone support (tasks 4, 7).
+- Native HLS and silent media must work without assuming desktop Chrome proves iPhone support (tasks 0, 4, 7).
+
+## Task 0 — Verify the output envelope before locking probes
+
+**Files:** extend `scripts/playback/verify-video-player.mjs` only where needed for repeatable hook checks. Keep generated fixtures, codec records and measurement reports under `tmp/`; record sanitized outcomes in #10.
+
+**Dependency:** tasks 1–2 may proceed independently. Tasks 3–6 require this gate's local FFmpeg/browser results before fixing encoded candidate identifiers and transport eligibility. Physical iPhone acceptance remains separate and pending if no device is available.
+
+- [ ] Generate short, explicitly SDR H.264/AAC and silent fixtures using the proposed ultrafast encoder settings with `-profile:v baseline -level:v 4.1`. Include ordinary and long-GOP inputs and a nonzero seek offset.
+- [ ] Inspect SPS/configuration bytes, profile, level, pixel format, actual dimensions/frame rate and AAC configuration with ffprobe. Pin the RFC 6381 identifier from the real output; do not derive it from the requested profile name. Repeat at the 1920x1080/30 fps bound and assert the same advertised codec constraints.
+- [ ] Remux a synthetic H.264/AAC MKV with absolute stream maps and copy/copy into the existing sliding MPEG-TS layout. Verify the encoded and remuxed fixtures through the production hook in an available actual desktop browser, including startup, seek and EOF; compare matched remux/full-encode CPU observations.
+- [ ] Exercise native HLS on an available native-HLS browser with the same fixtures. If unavailable, document this limitation and keep native transport eligibility explicitly inferred; desktop HLS.js success must not be presented as native/iPhone proof.
+- [ ] Record the verified codec identifier, commands, browser versions, remux outcome and measurement method. Stop dependent contract work if local output or HLS.js consumption fails; revise the output envelope before proceeding. Do not enable a broader remux profile based solely on codec names or assumed savings.
 
 ## Task 1 — Persist bounded negotiation facts
 
@@ -33,14 +47,18 @@ Preserve per-request authorization/revision/source checks, read-only originals, 
 
 ## Task 2 — Exact codec identifiers and metadata refresh
 
-**Create:** Libraries inspection codec-configuration parser beside `ffprobe_json.ex`; Playback domain candidate and delivery-plan value objects. **Modify:** Libraries inspection request use cases/facade and the modules from task 1.
+**Create:** Libraries inspection codec-configuration parser beside `ffprobe_json.ex`; Playback domain candidate and delivery-plan value objects; `lib/bolognesa/libraries/application/use_cases/request_inspection_refresh.ex`; `lib/bolognesa/libraries/infrastructure/repositories/ecto_inspection_repository/inspection_request.ex`; `test/bolognesa/libraries/request_inspection_refresh_test.exs`. **Modify:** Libraries facade, `application/ports/repositories/inspection_repository.ex`, `infrastructure/repositories/ecto_inspection_repository.ex`, `ecto_scan_repository.ex` and the modules from task 1.
 
 **Contract:** codec parser returns a validated RFC 6381 identifier or unknown. Playback plan carries selected absolute stream indexes, delivery, independent stream actions, output envelope, transport and bounded reason. Select first non-picture video and first audio by index, with optional audio. An authorized explicit metadata refresh schedules existing durable inspection once per action without changing file identity.
 
-- [ ] Add failing AVC/HEVC configuration-record tests, truncated/oversize data tests, default-track mismatch and duplicate-refresh tests.
+**Refresh API:** `Libraries.request_inspection_refresh(actor, file_id, expected_revision)` delegates to `RequestInspectionRefresh.call(actor, file_id, expected_revision, repository)`. Return `{:ok, :enqueued | :already_pending}` or `{:error, :forbidden | :not_found | :missing | :source_changed | :refresh_limited | :unavailable}`. The use case authorizes the administrator before calling the port's `request_refresh(file_id, expected_revision, now)` operation. Inside one transaction, lock the media file before its inspection, require an available movie/series file at the expected revision, and coalesce an existing pending/running request for that revision without replacing its token/job. Music requests return `:not_found`.
+
+Extract the scan repository's private inspection scheduling into the shared `InspectionRequest` collaborator; retain inventory/inspection/job transaction atomicity in scans. For an eligible explicit refresh, create a fresh token, reset inspection state and insert/link its Oban job in the same transaction. Roll back both on enqueue failure. Use a 30-second per-file cooldown based on the persisted inspection `updated_at` for terminal requests; completion/failure restarts that conservative cooldown. A successful enqueue always invalidates the previous token. This needs no migration and must not schedule identification or change file revision/identity. Duplicate browser events during an active request return `:already_pending`; repeated completed requests inside the cooldown return `:refresh_limited`.
+
+- [ ] Add failing AVC/HEVC configuration-record tests, truncated/oversize data tests and default-track mismatch tests. Add refresh tests for unauthorized/missing/music files, stale revisions, cooldown, atomic enqueue rollback and concurrent duplicate requests yielding exactly one current token/job. Exercise the race with independent database connections and deterministic synchronization.
 - [ ] Run focused tests and confirm failures before implementation.
 - [ ] Implement bounded configuration parsing and discard raw extradata before persistence. Add the explicit refresh entry point through the existing inspection lifecycle; preserve current revision/token protection.
-- [ ] Verify old inspection records and refreshed facts through PostgreSQL tests; review and commit `feat(playback): define exact source configurations`.
+- [ ] Verify old inspection records, refreshed facts, stale worker completion rejection and unchanged scan atomicity through PostgreSQL tests, including `mix test test/bolognesa/libraries/request_inspection_refresh_test.exs`; review and commit `feat(playback): define exact source configurations`.
 
 ## Task 3 — Pure candidates, reports and selection
 
@@ -66,12 +84,15 @@ Preserve per-request authorization/revision/source checks, read-only originals, 
 
 ## Task 5 — Browser and LiveView capability exchange
 
-**Create:** `assets/js/video/player/playback_capabilities.mjs` and its Node tests. **Modify:** `video/hooks/video_player.js`, `player/source_controller.mjs`, `controllers/hls.mjs`, LiveSupport playback modules and movie/episode playback reducers/templates.
+**Create:** `assets/js/video/player/playback_capabilities.mjs` and its Node tests. **Modify:** `video/hooks/video_player.js`, `player/source_controller.mjs`, `controllers/hls.mjs`, `lib/bolognesa_web/components/player.ex`, LiveSupport playback modules and movie/episode playback reducers/templates.
 
 **Contract:** a mounted stable frame receives generation/candidate configurations without a source URL. Browser reports the version-1 contract within three seconds. Server ignores stale/duplicate resolved generations and starts delivery only after fresh authorization/selection. The HLS controller honors the chosen native/HLS.js transport.
 
+Add an explicit `:checking` playback phase separate from selected-file identity. In `Player.player/1`, render the frame/video during checking, omit both `data-src` and native `video src`, and suppress autoplay until an accepted plan supplies a source. `Player.video_src/1` must no longer infer direct delivery solely from `transcode_session == nil`. SourceController must skip attachment and source-recovery effects while checking. Keep the frame and ignored UI ancestors mounted across checking, preparing, ready and error states; clearing a previous source must not recreate the elements. Remove task 4's temporary source-only adapter when all movie/episode/part callers use negotiation.
+
 - [ ] Add failing Node tests for exact file probes, `maybe`, rejected/missing Media Capabilities, deadline, missing dimensions, MSE support and inferred native HLS support.
-- [ ] Add failing LiveView tests for no premature media/FFmpeg attachment, stale reports after version/episode changes, malformed reports and duplicate accepted reports.
+- [ ] Add failing shared-component/LiveView tests that checking renders a mounted hook with neither `src` nor `data-src`, no autoplay and no FFmpeg session; include initial render and version/part changes. Cover stale reports after version/episode changes, malformed reports and duplicate accepted reports.
+- [ ] Add a real-browser request assertion: hold the capability response, assert zero media/playlist/segment requests while checking and unchanged frame/video identity, then release the report and assert delivery begins only for the accepted selection. Test the three-second timeout without silently attaching the original.
 - [ ] Implement video-owned probing and lifecycle wiring; expose localized checking, metadata-required, unsupported and preparing states plus explicit refresh/original actions. Wire every automatic continuation through negotiation.
 - [ ] Run Node and affected movie/episode LiveView tests; verify stable player ancestors. Review and commit `feat(playback): report browser capabilities before delivery`.
 
@@ -104,4 +125,4 @@ Preserve per-request authorization/revision/source checks, read-only originals, 
 - [ ] Run required checks after any review fixes; record actual commands/results, branch and pending device verification in #10 or the PR.
 - [ ] Remove completed temporary design/plan notes or distill durable contracts. Keep #10 open if acceptance evidence remains missing. No deployment.
 
-Self-review: every approved design section maps to tasks 1–8. Candidate/report/plan types are defined before consumers; legacy records, metadata safety, lifecycle races and native transport have explicit test ownership. No task assumes automated tests establish iPhone compatibility.
+Self-review: every approved design section maps to tasks 0–8. Real output verification precedes the encoded probe contract; candidate/report/plan types precede consumers; metadata refresh has an authorized atomic API; the shared player owns the no-source checking phase. Legacy records, metadata safety, lifecycle races and native transport have explicit test ownership. No task assumes automated tests establish iPhone compatibility.

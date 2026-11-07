@@ -1,6 +1,6 @@
 # Capability-based video playback negotiation
 
-Status: proposed design for [issue #10](https://github.com/avillen/bolognesa/issues/10), awaiting owner review. No playback behavior has changed.
+Status: design approved for [issue #10](https://github.com/avillen/bolognesa/issues/10); implementation pending. The implementation-plan review corrected the requested versus actual encoder-profile assumption below. No playback behavior has changed.
 
 ## Intent and scope
 
@@ -94,7 +94,7 @@ Apply this order only to eligible, positively supported candidates:
 
 Video conversion is more expensive than audio conversion; choose copying supported audio before encoding it. A supported codec outside the current output envelope cannot automatically be copied into MPEG-TS. Return a bounded reason distinguishing client rejection, missing metadata and output-envelope restrictions. Unsupported sources do not create arbitrary additional candidates.
 
-Generated video uses the existing ultrafast/CRF-25/two-thread encoder settings, SDR 8-bit 4:2:0 output, H.264 High level 4.1, and at most 1920x1080 and 30 fps without upscaling. Add an 8 Mbps VBV maximum and 16 Mbit buffer; probe the planned dimensions/frame rate with 8 Mbps as the conservative video bitrate. Candidate tests describe that actual planned configuration, not a fictional baseline stream. Keep AAC-LC output at 128 kbps, 48 kHz and at most stereo. Copy AAC only when its profile, channel and sample-rate constraints fit the tested output. Keep original dimensions/frame rate when copied. Reject conversion when the output candidate is unsupported.
+Generated video uses the existing ultrafast/CRF-25/two-thread encoder settings, SDR 8-bit 4:2:0 output, and at most 1920x1080 and 30 fps without upscaling. Target H.264 Constrained Baseline level 4.1, with an explicit baseline restriction; verify the actual SPS and codec identifier in an initial real-output experiment before fixing capability probes. A review encode using ultrafast and even an explicit High request produced Constrained Baseline, so the requested profile name cannot establish the advertised stream configuration. Add an 8 Mbps VBV maximum and 16 Mbit buffer; probe the planned dimensions/frame rate with 8 Mbps as the conservative video bitrate. Candidate tests describe that actual verified configuration. Keep AAC-LC output at 128 kbps, 48 kHz and at most stereo. Copy AAC only when its profile, channel and sample-rate constraints fit the tested output. Keep original dimensions/frame rate when copied. Reject conversion when the output candidate is unsupported.
 
 Extend `FfmpegArgs` to take the validated plan, not raw client input. Add pure copy/copy and H.264/copy arguments, codec-specific bitstream filters only where required, and silent-video handling. Verify actual codecs with ffprobe, including packet equivalence for copied streams where practical. Keep sliding MPEG-TS, seek offsets, session ownership, temporary cleanup, 12-second preparation, four-second segment target, five-minute idle expiry, 512 MiB storage cap and single global session. Longer copied GOPs still require explicit playback/startup verification.
 
