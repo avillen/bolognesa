@@ -177,3 +177,19 @@ test("same-file retry restores the checkpoint without remounting the player", ()
     first.recovery.destroy()
   }
 })
+
+test("checking suspends checkpoints so clearing the element cannot save startup zero", () => {
+  const first = setup()
+  first.recovery.source(); first.recovery.ready()
+  first.video.currentTime = 400
+  first.video.pause()
+  first.recovery.suspend()
+  first.video.currentTime = 0
+  first.video.dispatchEvent(new Event("pause"))
+  first.recovery.beforeSourceChange()
+  first.recovery.destroy()
+  const next = setup(first.storage)
+  next.recovery.source(); next.recovery.ready()
+  assert.equal(next.video.currentTime, 400)
+  next.recovery.destroy()
+})

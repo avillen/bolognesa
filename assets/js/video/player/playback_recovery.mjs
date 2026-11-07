@@ -38,6 +38,7 @@ export function createPlaybackRecovery(hook, storage = browserStorage()) {
   for (const [name, handler] of Object.entries(listeners)) video.addEventListener(name, handler)
 
   return {
+    suspend() { clearTimeout(restoreTimer); active = false },
     beforeSourceChange() { clearTimeout(restoreTimer); save(); active = false },
     source({retry = false} = {}) {
       if (retry || fileId !== el.dataset.fileId || scope !== el.dataset.recoveryScope) {

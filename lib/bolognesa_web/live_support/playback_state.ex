@@ -8,6 +8,14 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
   @spec initialize(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def initialize(socket) do
     socket
+    |> assign(:capability_report, nil)
+    |> assign(:recovery_used?, false)
+    |> assign(:playback_phase, :idle)
+    |> assign(:playback_probe, nil)
+    |> assign(:playback_candidates, [])
+    |> assign(:delivery_plan, nil)
+    |> assign(:inspection_refresh_used?, false)
+    |> assign(:inspection_refresh_requested?, false)
     |> assign(:selected_file_id, nil)
     |> reset()
   end
@@ -16,6 +24,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
   def direct(socket, file_id) do
     socket
     |> reset()
+    |> assign(:playback_phase, :ready)
     |> assign(:selected_file_id, file_id)
   end
 
@@ -25,6 +34,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
     socket
     |> reset()
     |> assign(:selected_file_id, session.file_id)
+    |> assign(:playback_phase, :preparing)
+    |> assign(:preparation_deadline, System.monotonic_time(:millisecond) + 12_000)
     |> assign(:transcode_session, session)
     |> assign(:transcode_autoplay?, true)
   end
@@ -32,6 +43,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
   @spec ready(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def ready(socket) do
     socket
+    |> assign(:playback_phase, :ready)
     |> assign(:transcode_ready?, true)
     |> paused(true)
   end
@@ -39,7 +51,10 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
   @spec paused(Phoenix.LiveView.Socket.t(), boolean()) :: Phoenix.LiveView.Socket.t()
   def paused(socket, paused?), do: assign(socket, :transcode_paused?, paused?)
 
-  @spec preparation_failed(Phoenix.LiveView.Socket.t(), Playback.transcode_reason()) ::
+  @spec preparation_failed(
+          Phoenix.LiveView.Socket.t(),
+          Playback.transcode_reason() | Playback.negotiation_reason() | :refresh_limited
+        ) ::
           Phoenix.LiveView.Socket.t()
   def preparation_failed(socket, reason),
     do: fail(socket, message(reason), error_reason(reason))
@@ -69,6 +84,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
 
   defp fail(socket, message, reason) do
     socket
+    |> assign(:playback_phase, :error)
+    |> assign(:playback_probe, nil)
     |> assign(:playback_error, message)
     |> assign(:playback_error_reason, reason)
   end
@@ -82,6 +99,15 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
               :unsafe_entry
             ],
        do: gettext("El archivo ya no está disponible. Revisa la biblioteca y vuelve a escanear.")
+
+  defp message(:metadata_required),
+    do: gettext("Faltan datos técnicos. Actualiza el análisis o prueba el archivo original.")
+
+  defp message(:detection_unknown),
+    do: gettext("No se pudo detectar la compatibilidad de este navegador.")
+
+  defp message(reason) when reason in [:unsupported, :unsupported_conversion],
+    do: gettext("Este navegador no admite una versión segura de este vídeo.")
 
   defp message(_), do: gettext("No se pudo preparar esta versión. Vuelve a intentarlo.")
 

@@ -92,11 +92,11 @@ Extract the scan repository's private inspection scheduling into the shared `Ins
 
 Add an explicit `:checking` playback phase separate from selected-file identity. In `Player.player/1`, render the frame/video during checking, omit both `data-src` and native `video src`, and suppress autoplay until an accepted plan supplies a source. `Player.video_src/1` must no longer infer direct delivery solely from `transcode_session == nil`. SourceController must skip attachment and source-recovery effects while checking. Keep the frame and ignored UI ancestors mounted across checking, preparing, ready and error states; clearing a previous source must not recreate the elements. Remove task 4's temporary source-only adapter when all movie/episode/part callers use negotiation.
 
-- [ ] Add failing Node tests for exact file probes, `maybe`, rejected/missing Media Capabilities, deadline, missing dimensions, MSE support and inferred native HLS support.
-- [ ] Add failing shared-component/LiveView tests that checking renders a mounted hook with neither `src` nor `data-src`, no autoplay and no FFmpeg session; include initial render and version/part changes. Cover stale reports after version/episode changes, malformed reports and duplicate accepted reports.
-- [ ] Add a real-browser request assertion: hold the capability response, assert zero media/playlist/segment requests while checking and unchanged frame/video identity, then release the report and assert delivery begins only for the accepted selection. Test the three-second timeout without silently attaching the original.
-- [ ] Implement video-owned probing and lifecycle wiring; expose localized checking, metadata-required, unsupported and preparing states plus explicit refresh/original actions. Wire every automatic continuation through negotiation.
-- [ ] Run Node and affected movie/episode LiveView tests; verify stable player ancestors. Review and commit `feat(playback): report browser capabilities before delivery`.
+- [x] Add failing Node tests for exact file probes, `maybe`, rejected/missing Media Capabilities, deadline, missing dimensions, MSE support and inferred native HLS support.
+- [x] Add failing shared-component/LiveView tests that checking renders a mounted hook with neither `src` nor `data-src`, no autoplay and no FFmpeg session; include initial render and version/part changes. Cover stale reports after version/episode changes, malformed reports and duplicate accepted reports.
+- [x] Add a real-browser request assertion: hold the capability response, assert zero media/playlist/segment requests while checking and unchanged frame/video identity, then release the report and assert delivery begins only for the accepted selection. Test the three-second timeout without silently attaching the original.
+- [x] Implement video-owned probing and lifecycle wiring; expose localized checking, metadata-required, unsupported and preparing states plus explicit refresh/original actions. Wire every automatic continuation through negotiation.
+- [x] Run Node and affected movie/episode LiveView tests; verify stable player ancestors. Review and commit `feat(playback): report browser capabilities before delivery`.
 
 ## Task 6 — One recovery per attempt
 

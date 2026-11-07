@@ -18,9 +18,9 @@ defmodule Bolognesa.Playback.Application.Ports.Services.DeliveryExecutor do
           | :unsupported
   @type result :: {:ok, :direct} | {:ok, :transcode, TranscodeSession.t()} | {:error, error()}
   @callback prepare(
-              pos_integer(),
+              actor_id :: pos_integer(),
               ContentRef.t(),
-              pos_integer(),
+              file_id :: pos_integer(),
               Source.t(),
               DeliveryPlan.t(),
               non_neg_integer(),

@@ -6,6 +6,11 @@ defmodule BolognesaWeb.Player do
   attr :entry_id, :integer, required: true
   attr :viewer_id, :integer, required: true
   attr :selected_file_id, :integer, default: nil
+  attr :playback_phase, :atom, default: :idle
+  attr :playback_probe, :map, default: nil
+  attr :delivery_plan, :any, default: nil
+  attr :inspection_refresh_used?, :boolean, default: false
+  attr :inspection_refresh_requested?, :boolean, default: false
   attr :transcode_session, :any, default: nil
   attr :transcode_ready?, :boolean, required: true
   attr :transcode_paused?, :boolean, required: true
@@ -32,12 +37,20 @@ defmodule BolognesaWeb.Player do
       <div
         id={"#{@prefix}-video-frame"}
         phx-hook="VideoPlayer"
+        data-playback-phase={@playback_phase}
+        data-playback-probe={@playback_probe && Jason.encode!(@playback_probe)}
+        data-transport={@delivery_plan && @delivery_plan.transport}
+        data-support-evidence={
+          if @delivery_plan && @delivery_plan.transport == :native_hls, do: "inferred"
+        }
         data-video-id={@video_id}
         data-file-id={@selected_file_id}
         data-recovery-scope={"#{@viewer_id}:#{@kind}:#{@entry_id}"}
         data-session-id={@transcode_session && @transcode_session.id}
         data-paused-server={to_string(@transcode_paused?)}
-        data-autoplay={to_string(!@transcode_session || @transcode_autoplay?)}
+        data-autoplay={
+          to_string(@playback_phase == :ready && (!@transcode_session || @transcode_autoplay?))
+        }
         data-offset-ms={@transcode_session && @transcode_session.offset_ms}
         data-duration-ms={@transcode_session && @transcode_session.duration_ms}
         data-src={!@playback_error && @video_src}
@@ -50,7 +63,7 @@ defmodule BolognesaWeb.Player do
           <media-i18n lang={Gettext.get_locale(BolognesaWeb.Gettext)}>
             <video
               id={@video_id}
-              autoplay={!@transcode_session}
+              autoplay={@playback_phase == :ready && !@transcode_session}
               controls
               playsinline
               preload="metadata"
@@ -64,6 +77,28 @@ defmodule BolognesaWeb.Player do
         </div>
       </div>
     </section>
+    <p :if={@playback_phase == :checking} role="status" id={"#{@prefix}-playback-checking"}>
+      {gettext("Comprobando compatibilidad del navegador…")}
+    </p>
+    <p :if={@playback_phase == :preparing} role="status" id={"#{@prefix}-playback-preparing"}>
+      {gettext("Preparando vídeo…")}
+    </p>
+    <div :if={@playback_error && @selected_file_id} class="mt-3 flex flex-wrap gap-3">
+      <button
+        :if={!@inspection_refresh_used?}
+        type="button"
+        phx-click="playback_refresh"
+        class="series-episode-play"
+      >
+        {gettext("Actualizar análisis")}
+      </button>
+      <button type="button" phx-click="playback_original" class="series-episode-play">
+        {gettext("Probar archivo original")}
+      </button>
+      <span :if={@inspection_refresh_requested?} role="status">{gettext(
+        "Análisis solicitado. Reintenta cuando termine."
+      )}</span>
+    </div>
     <p
       :if={@playback_error}
       id={"#{@prefix}-playback-error"}
@@ -84,6 +119,7 @@ defmodule BolognesaWeb.Player do
     """
   end
 
+  attr :playback_phase, :atom, default: :idle
   attr :selected_file_id, :integer, default: nil
   attr :transcode_session, :any, default: nil
   attr :playback_error, :string, default: nil
@@ -92,16 +128,22 @@ defmodule BolognesaWeb.Player do
   def playback_mode(assigns) do
     ~H"""
     <p
-      :if={@selected_file_id && !@playback_error}
+      :if={@selected_file_id && @playback_phase in [:ready, :preparing] && !@playback_error}
       id="playback-mode"
       class="text-xs leading-6 text-muted"
     >
       <span class="font-medium text-ink">{gettext("Modo de reproducción:")}</span>
       <span :if={!@transcode_session}>{gettext("Reproducción directa")}</span>
-      <span :if={@transcode_session && @transcode_session.strategy == :audio_only}>
+      <span :if={@transcode_session && @transcode_session.strategy == :remux}>{gettext(
+        "Remultiplexado sin conversión"
+      )}</span>
+      <span :if={@transcode_session && @transcode_session.strategy == :video_conversion}>{gettext(
+        "Transcodificación de vídeo"
+      )}</span>
+      <span :if={@transcode_session && @transcode_session.strategy == :audio_conversion}>
         {gettext("Transcodificación de audio")}
       </span>
-      <span :if={@transcode_session && @transcode_session.strategy == :full_transcode}>
+      <span :if={@transcode_session && @transcode_session.strategy == :full_conversion}>
         {gettext("Transcodificación de vídeo y audio")}
       </span>
     </p>
@@ -112,6 +154,8 @@ defmodule BolognesaWeb.Player do
     do: "#{prefix}-video-#{id}"
 
   defp video_id(assigns), do: "#{assigns.prefix}-video-#{assigns.selected_file_id}"
+
+  defp video_src(%{playback_phase: phase}) when phase != :ready, do: nil
 
   defp video_src(%{selected_file_id: nil}), do: nil
 

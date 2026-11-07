@@ -1,11 +1,16 @@
 defmodule BolognesaWeb.Series.Episode.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
+
+  import Bolognesa.PlaybackNegotiationFixtures,
+    only: [inspect!: 1, negotiate: 1, negotiate: 2, report: 1]
+
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias BolognesaWeb.SeriesFixtures
 
   setup %{conn: conn} do
     ctx = SeriesFixtures.setup(conn)
+    inspect!(ctx.media_file)
     on_exit(fn -> File.rm_rf!(ctx.directory) end)
     ctx
   end
@@ -13,6 +18,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
   test "automatically loads the first version and shows the multi episode warning", ctx do
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert has_element?(view, "#multi-episode-notice", "principio del archivo")
 
     assert has_element?(
@@ -39,7 +45,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
       position_ms: "invalid"
     })
 
-    refute has_element?(view, "#episode-playback-preparing")
+    assert has_element?(view, "#episode-playback-preparing")
     refute has_element?(view, "#episode-video-frame[data-src]")
     refute has_element?(view, "#episode-playback-error")
   end
@@ -49,6 +55,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     second = add_part(ctx, 2)
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=1&season_page=3")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert has_element?(view, "#episode-title", "Uno (Parte 1)")
     assert has_element?(view, "#episode-video-frame[data-video-id='episode-video-#{first.id}']")
 
@@ -60,6 +67,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     refute has_element?(view, "#episode-play-#{second.id}")
     render_hook(view, "playback_ended", %{file_id: to_string(first.id)})
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert_patch(view, "/episodes/#{ctx.episode_id}?part=2&season_page=3")
 
     second_view = view
@@ -82,18 +90,22 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     mark_unavailable(second)
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=1")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     render_hook(view, "playback_ended", %{file_id: to_string(first.id)})
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert has_element?(view, "[role='alert']", "parte")
 
     {:ok, missing, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=2")
     render_async(missing)
+    if has_element?(missing, "[data-playback-probe]"), do: negotiate(missing)
     refute has_element?(missing, "#episode-video-frame[data-src]")
     assert has_element?(missing, "#episode-unavailable")
 
     for query <- ["part=99", "part=bad", "part[]=1"] do
       {:ok, invalid, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?#{query}")
       render_async(invalid)
+      if has_element?(invalid, "[data-playback-probe]"), do: negotiate(invalid)
       assert has_element?(invalid, "#episode-error")
       refute has_element?(invalid, "#episode-video-frame[data-src]")
     end
@@ -118,10 +130,13 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
 
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=1")
     render_async(view)
-    html = render_hook(view, "playback_error", %{file_id: to_string(first.id)})
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
+    render_hook(view, "play", %{"file_id" => to_string(first.id)})
+    html = negotiate(view, "c4")
     [_, session] = Regex.run(~r/data-session-id="([^"]+)"/, html)
     render_hook(view, "playback_ended", %{session_id: session})
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert_patch(view, "/episodes/#{ctx.episode_id}?part=2")
     assert :not_found = Bolognesa.Playback.video_transcode_status(session)
   end
@@ -129,6 +144,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
   test "a playback error keeps the player mounted for retry", ctx do
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     File.rm!(Path.join(ctx.directory, ctx.media_file.relative_path))
     render_hook(view, "playback_error", %{file_id: to_string(ctx.media_file.id)})
     assert has_element?(view, "#episode-playback-error")
@@ -155,10 +171,13 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
 
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
-    html = render_hook(view, "playback_error", %{file_id: to_string(ctx.media_file.id)})
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
+    render_hook(view, "play", %{"file_id" => to_string(ctx.media_file.id)})
+    html = negotiate(view, "c4")
     [_, session] = Regex.run(~r/data-session-id="([^"]+)"/, html)
     render_patch(view, "/episodes/0")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert has_element?(view, "#episode-error")
     refute has_element?(view, "#episode-title")
     assert :not_found = Bolognesa.Playback.video_transcode_status(session)
@@ -176,6 +195,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
 
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert has_element?(view, "#episode-breadcrumb #episode-series")
     assert has_element?(view, "#episode-breadcrumb #episode-season", "Especiales")
 
@@ -203,6 +223,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
 
     {:ok, view, _} = live(ctx.conn, "/episodes/#{first}?season_page=3")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     refute has_element?(view, "#episode-previous")
 
     assert has_element?(
@@ -214,6 +235,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
 
     view |> element("#episode-next") |> render_click()
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     next_view = view
     assert has_element?(next_view, "#episode-previous[href='/episodes/#{first}?season_page=3']")
     refute has_element?(next_view, "#episode-next")
@@ -243,6 +265,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     second = add_version(ctx)
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
 
     assert has_element?(
              view,
@@ -261,6 +284,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     mark_unavailable(ctx.media_file)
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
 
     assert has_element?(view, "#episode-video-frame[data-video-id='episode-video-#{second.id}']")
     refute has_element?(view, "#episode-playback-error")
@@ -270,6 +294,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     mark_unavailable(ctx.media_file)
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
 
     assert has_element?(view, "#episode-title")
     refute has_element?(view, "#episode-player")
@@ -280,6 +305,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
   test "playback precedes the synopsis and technical options start collapsed", ctx do
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert has_element?(view, "#episode-player ~ #episode-synopsis")
     assert has_element?(view, "details#episode-playback-options:not([open]) #episode-versions")
     refute has_element?(view, "#episode-player h2", "versión")
@@ -295,6 +321,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
       )
 
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
 
     assert has_element?(
              view,
@@ -315,6 +342,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
       )
 
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert has_element?(view, "#episode-back[href='/series/seasons/#{ctx.season_id}']")
     assert has_element?(view, "#episode-series[href='/series/#{ctx.series_id}']")
   end
@@ -327,10 +355,13 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
 
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     render_hook(view, "playback_ended", %{file_id: to_string(ctx.media_file.id)})
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert_patch(view, "/episodes/#{next}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
 
     assert has_element?(
              view,
@@ -344,8 +375,10 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     next = Bolognesa.SeriesFixtures.identify(file, 0, [2]) |> Map.fetch!(:episode_ids) |> hd()
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?season_page=3")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     render_hook(view, "playback_ended", %{file_id: to_string(ctx.media_file.id)})
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert_patch(view, "/episodes/#{next}?season_page=3")
   end
 
@@ -354,6 +387,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     File.rm!(Path.join(ctx.directory, ctx.media_file.relative_path))
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert has_element?(view, "#episode-playback-error")
     refute has_element?(view, "#episode-unavailable")
     assert has_element?(view, "#episode-retry-playback[phx-value-file_id='#{ctx.media_file.id}']")
@@ -374,11 +408,13 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
 
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert has_element?(view, "#episode-video-frame")
 
     File.rm!(Path.join(ctx.directory, next_file.relative_path))
     render_patch(view, "/episodes/#{next_episode}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
 
     assert has_element?(
              view,
@@ -410,12 +446,16 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
 
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
-    html = render_hook(view, "playback_error", %{file_id: to_string(ctx.media_file.id)})
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
+    render_hook(view, "play", %{"file_id" => to_string(ctx.media_file.id)})
+    html = negotiate(view, "c4")
     [_, session] = Regex.run(~r/data-session-id="([^"]+)"/, html)
     render_hook(view, "playback_ended", %{session_id: session})
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert_patch(view, "/episodes/#{next}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
 
     assert has_element?(
              view,
@@ -428,11 +468,42 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
   test "stale completion and the final episode do not navigate", ctx do
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     render_hook(view, "playback_ended", %{file_id: "0"})
     render_hook(view, "playback_ended", %{session_id: "stale"})
     render_hook(view, "playback_ended", %{file_id: to_string(ctx.media_file.id)})
     render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert has_element?(view, "#episode-title")
+  end
+
+  test "changing parts discards old capability reports without opening either source early",
+       ctx do
+    add_part(ctx, 1)
+    second = add_part(ctx, 2)
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=1")
+    render_async(view)
+    stale = report(view)
+
+    assert has_element?(
+             view,
+             "#episode-video-frame[data-playback-phase='checking']:not([data-src])"
+           )
+
+    render_patch(view, "/episodes/#{ctx.episode_id}?part=2")
+    render_hook(view, "playback_capabilities", stale)
+
+    assert has_element?(
+             view,
+             "#episode-video-frame[data-file-id='#{second.id}'][data-playback-phase='checking']:not([data-src])"
+           )
+
+    negotiate(view)
+
+    assert has_element?(
+             view,
+             "#episode-video-frame[data-src='/episodes/#{ctx.episode_id}/media/#{second.id}']"
+           )
   end
 
   defp add_version(ctx) do
@@ -455,6 +526,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
       |> Bolognesa.Repo.insert!()
 
     Bolognesa.SeriesFixtures.identify(file, 0, [1, 2])
+    inspect!(file)
     file
   end
 
@@ -475,6 +547,10 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
       modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond)
     )
     |> Bolognesa.Repo.update!()
+    |> then(fn file ->
+      inspect!(file)
+      file
+    end)
   end
 
   defp mark_unavailable(file) do

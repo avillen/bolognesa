@@ -47,7 +47,7 @@ export function createHlsController({video, config, pushEvent, reportPlaybackErr
   attachSource()
 
   function attachSource() {
-    if (Hls.isSupported()) {
+    if (config.transport === "hls_js" && Hls.isSupported()) {
       hls = new Hls({lowLatencyMode: false, liveSyncDurationCount: 3, startPosition: 0})
       hls.on(Hls.Events.MANIFEST_PARSED, ready)
       hls.on(Hls.Events.ERROR, (_event, data) => { if (data.fatal) onError(true) })
@@ -55,7 +55,7 @@ export function createHlsController({video, config, pushEvent, reportPlaybackErr
       hls.attachMedia(video)
       return
     }
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+    if (config.transport === "native_hls" && video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = config.src
       video.addEventListener("loadedmetadata", ready, {once: true})
       return

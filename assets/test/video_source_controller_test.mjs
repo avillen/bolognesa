@@ -7,7 +7,7 @@ function setup() {
   const video = {dataset: {}, pause() {}, load() {}, removeAttribute() {}}
   const el = {dataset: {fileId: "1", recoveryScope: "scope", videoId: "v1", src: "/direct"}}
   let allowed = true
-  const recovery = {beforeSourceChange() {calls.push("checkpoint")}, source(options) {calls.push(options); return allowed}, ready() {calls.push("ready")}}
+  const recovery = {suspend() {}, beforeSourceChange() {calls.push("checkpoint")}, source(options) {calls.push(options); return allowed}, ready() {calls.push("ready")}}
   const factory = type => ({video: element}) => {
     assert.equal(element, video)
     calls.push(type)
@@ -62,4 +62,23 @@ test("deferred recovery attaches only after explicit source retry", () => {
   f.source.retry()
   assert.equal(f.calls.at(-1), "direct")
   f.source.destroy()
+})
+
+test("checking clears the previous source without attachment or recovery effects", () => {
+  const {source, el, video, calls} = setup()
+  source.update()
+  const mounted = video
+  calls.length = 0
+  el.dataset.playbackPhase = "checking"
+  delete el.dataset.src
+  source.update()
+  assert.deepEqual(calls, ["destroy"])
+  assert.equal(video, mounted)
+  source.update()
+  assert.deepEqual(calls, ["destroy"])
+  el.dataset.playbackPhase = "ready"
+  el.dataset.src = "/accepted"
+  source.update()
+  assert.equal(calls.at(-1), "direct")
+  source.destroy()
 })

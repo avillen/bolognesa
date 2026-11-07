@@ -21,7 +21,7 @@ window.context = {el: document.querySelector('#frame'), pushEvent: (...event) =>
   if (new URLSearchParams(location.search).get('recovery') === 'hls' && event[0] === 'playback_restore') {
     const data = event[1];
     setTimeout(() => {
-      Object.assign(window.context.el.dataset, {sessionId: 'restored', videoId: 'restored',
+      Object.assign(window.context.el.dataset, {transport: "hls_js", sessionId: 'restored', videoId: 'restored',
         offsetMs: data.position_ms, src: '/index.m3u8?restored', autoplay: data.playing});
       hook.updated.call(window.context);
     }, 0);
@@ -48,11 +48,20 @@ const server = createServer(async (request, response) => {
     const recovery = new URL(request.url, "http://localhost").searchParams.get("recovery")
     if (recovery) document = document.replace('data-file-id="1"', 'data-file-id="1" data-recovery-scope="1:movie:1"')
     if (recovery === "hls") document = document.replace('data-src="/sample.mp4"',
-      'data-src="/index.m3u8" data-session-id="initial" data-offset-ms="0" data-duration-ms="600000"')
+      'data-src="/index.m3u8" data-transport="hls_js" data-session-id="initial" data-offset-ms="0" data-duration-ms="600000"')
     const parts = new URL(request.url, "http://localhost").searchParams.get("parts")
     if (parts) document = document.replace('data-file-id="1"', 'data-file-id="1" data-recovery-scope="1:episode:123"')
     if (parts === "hls") document = document.replace('data-src="/sample.mp4"',
-      'data-src="/index.m3u8" data-session-id="part-1" data-offset-ms="0"')
+      'data-src="/index.m3u8" data-transport="hls_js" data-session-id="part-1" data-offset-ms="0"')
+    const checking = new URL(request.url, "http://localhost").searchParams.get("checking")
+    if (checking) {
+      const probe = {generation: "browser-gate", candidates: [{id: "c0", transports: ["file"],
+        configuration: {mime: "video/mp4", video: {codec_string: "avc1.42C029", width: 1920,
+          height: 1080, frame_rate: 30, bit_rate: 8000000}, audio: {codec_string: "mp4a.40.2",
+          sample_rate: 48000, channels: 2, bit_rate: 128000}}}]}
+      document = document.replace('data-src="/sample.mp4" data-autoplay="true"',
+        `data-playback-phase="checking" data-autoplay="false" data-playback-probe="${JSON.stringify(probe).replaceAll('"', '&quot;')}"`)
+    }
     const content = name ? await readFile(path) : Buffer.from(document)
     const headers = {"Content-Type": types[name.split(".").pop()] ?? "text/html", "Accept-Ranges": "bytes"}
     const range = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range || "")
@@ -72,6 +81,42 @@ const browser = process.env.BOLOGNESA_SCREENSHOT_BROWSER_WS
   ? await chromium.connect(process.env.BOLOGNESA_SCREENSHOT_BROWSER_WS, {exposeNetwork: "<loopback>"})
   : await chromium.launch({headless: true, channel: process.env.BOLOGNESA_TEST_BROWSER_CHANNEL})
 try {
+  for (const mode of ["hold", "timeout"]) {
+    const gate = await browser.newPage()
+    const requests = []
+    gate.on("request", request => {
+      if (/\.(mp4|m3u8|ts)(\?|$)/.test(request.url())) requests.push(request.url())
+    })
+    if (mode === "timeout") await gate.addInitScript(() => {
+      Object.defineProperty(navigator, "mediaCapabilities", {value: {decodingInfo: () => new Promise(() => {})}})
+    })
+    await gate.goto(`http://127.0.0.1:${server.address().port}/?checking=${mode}`)
+    await gate.waitForFunction(() => window.events?.some(([name]) => name === "playback_capabilities"))
+    const report = await gate.evaluate(() => {
+      window.mountedFrame = document.querySelector("#frame")
+      window.mountedVideo = document.querySelector("video")
+      return window.events.find(([name]) => name === "playback_capabilities")[1]
+    })
+    assert.deepEqual(requests, [], "Checking must not request any media")
+    assert.equal(await gate.locator("video").getAttribute("src"), null)
+    if (mode === "hold") {
+      assert.equal(report.results[0].support, "supported")
+      await gate.evaluate(() => {
+        Object.assign(window.context.el.dataset, {playbackPhase: "ready", src: "/sample.mp4", autoplay: "true"})
+        delete window.context.el.dataset.playbackProbe
+        window.hook.updated.call(window.context)
+      })
+      await gate.waitForFunction(() => document.querySelector("video").currentTime > 0.1)
+      assert.ok(requests.length > 0, "Accepted delivery must begin")
+    } else {
+      assert.equal(report.results[0].support, "unknown", "Deadline must not infer support")
+      assert.deepEqual(requests, [], "Timeout must not attach the original")
+    }
+    assert.equal(await gate.evaluate(() => window.mountedFrame === document.querySelector("#frame") &&
+      window.mountedVideo === document.querySelector("video")), true)
+    await gate.close()
+  }
+  console.log("Negotiation: held reports and the three-second deadline request no media; acceptance preserves frame/video identity.")
   const legacyPage = await browser.newPage({viewport: {width: 1000, height: 800}})
   legacyPage.setDefaultTimeout(15000)
   const legacyErrors = []
@@ -106,7 +151,7 @@ try {
   await legacyPage.locator("media-i18n").evaluate(element => { element.lang = "es" })
   await legacyPage.waitForFunction(() => document.querySelector("video-skin").shadowRoot.querySelector("media-time").getAttribute("aria-label")?.includes("Tiempo reproducido"))
   await legacyPage.evaluate(() => {
-    Object.assign(window.context.el.dataset, {videoId: "legacy-hls", sessionId: "legacy", src: "/index.m3u8", offsetMs: "120000", durationMs: "600000"})
+    Object.assign(window.context.el.dataset, {videoId: "legacy-hls", transport: "hls_js", sessionId: "legacy", src: "/index.m3u8", offsetMs: "120000", durationMs: "600000"})
     window.hook.updated.call(window.context)
   })
   await legacyPage.waitForFunction(() => document.querySelector("bolognesa-video-player").store.state.duration === 600)
@@ -174,7 +219,7 @@ try {
   console.log("Direct: Video.js play/pause and keyboard seeking passed.")
 
   await page.evaluate(() => {
-    Object.assign(window.context.el.dataset, {videoId: "video-a", sessionId: "a", src: "/index.m3u8", offsetMs: "120000", durationMs: "600000"})
+    Object.assign(window.context.el.dataset, {videoId: "video-a", transport: "hls_js", sessionId: "a", src: "/index.m3u8", offsetMs: "120000", durationMs: "600000"})
     window.hook.updated.call(window.context)
   })
   await page.waitForFunction(() => document.querySelector("video").currentTime > 0.1)
@@ -198,7 +243,7 @@ try {
   await page.waitForFunction(() => document.fullscreenElement)
   await page.evaluate(() => {
     window.originalPlayer = document.querySelector("bolognesa-video-player")
-    Object.assign(window.context.el.dataset, {videoId: "video-b", sessionId: "b", src: "/index.m3u8?session=b", offsetMs: "400000"})
+    Object.assign(window.context.el.dataset, {videoId: "video-b", transport: "hls_js", sessionId: "b", src: "/index.m3u8?session=b", offsetMs: "400000"})
     window.hook.updated.call(window.context)
   })
   await page.waitForFunction(() => document.querySelector("video").currentTime > 0.1 && document.querySelector("video").id === "video-b")
@@ -241,7 +286,7 @@ try {
   assert.ok(Number(lastSeek.position_ms) > 440000 && Number(lastSeek.position_ms) < 460000)
   assert.equal(lastSeek.playing, "false")
   await page.evaluate(offset => {
-    Object.assign(window.context.el.dataset, {videoId: "video-c", sessionId: "c", src: "", offsetMs: offset, autoplay: "false"})
+    Object.assign(window.context.el.dataset, {videoId: "video-c", transport: "hls_js", sessionId: "c", src: "", offsetMs: offset, autoplay: "false"})
     window.hook.updated.call(window.context)
   }, lastSeek.position_ms)
   await page.waitForFunction(() => document.querySelector("video").readyState === 0)
@@ -331,7 +376,7 @@ try {
           Object.assign(window.context.el.dataset, {
             fileId: String(file), videoId: `part-${file}`, autoplay: "true",
             src: delivery === "hls" ? `/index.m3u8?part=${file}` : `/sample.mp4?part=${file}`,
-            ...(delivery === "hls" ? {sessionId: `part-${file}`, offsetMs: "0"} : {})
+            ...(delivery === "hls" ? {transport: "hls_js", sessionId: `part-${file}`, offsetMs: "0"} : {})
           })
           window.hook.updated.call(window.context)
         }, {file, delivery})
@@ -387,7 +432,7 @@ try {
   await transitionPage.waitForFunction(() => document.querySelector("video").readyState >= 2)
   await transitionPage.evaluate(() => {
     window.originalVideo = document.querySelector("video")
-    Object.assign(window.context.el.dataset, {videoId: "outgoing-hls", sessionId: "outgoing", src: "/index.m3u8", offsetMs: "120000", durationMs: "600000"})
+    Object.assign(window.context.el.dataset, {videoId: "outgoing-hls", transport: "hls_js", sessionId: "outgoing", src: "/index.m3u8", offsetMs: "120000", durationMs: "600000"})
     window.hook.updated.call(window.context)
   })
   await transitionPage.waitForFunction(() => document.querySelector("video").currentTime > 0.1 && !!document.querySelector("video").fileTimeline)

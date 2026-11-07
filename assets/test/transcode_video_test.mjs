@@ -7,7 +7,7 @@ function setup() {
   const events = []
   const el = new EventTarget()
   Object.assign(el, {
-    dataset: {sessionId: "a", offsetMs: "120000", durationMs: "600000", autoplay: "false"},
+    dataset: {transport: "native_hls", sessionId: "a", offsetMs: "120000", durationMs: "600000", autoplay: "false"},
     currentTime: 12.345, paused: false, ended: false,
     canPlayType: () => "probably",
     pause() { this.paused = true; this.dispatchEvent(new Event("pause")) },
@@ -64,7 +64,7 @@ test("fatal HLS failures are diagnosed before the session is stopped", () => {
   }
   const calls = []
   const video = new EventTarget()
-  Object.assign(video, {dataset: {sessionId: "hls", offsetMs: "0", durationMs: "60000"}})
+  Object.assign(video, {dataset: {transport: "hls_js", sessionId: "hls", offsetMs: "0", durationMs: "60000"}})
   const controller = createHlsController({video, config: video.dataset, Hls: FakeHls,
     pushEvent: (...args) => calls.push(args), reportPlaybackError: () => calls.push(["diagnostic"])})
   assert.equal(hls.config.startPosition, 0)
@@ -79,7 +79,7 @@ test("fatal HLS failures are diagnosed before the session is stopped", () => {
 
 test("native HLS readiness runs once and teardown detaches the ready listener", () => {
   const video = new EventTarget()
-  const config = {sessionId: "native", offsetMs: "0", durationMs: "60000", src: "/native.m3u8"}
+  const config = {sessionId: "native", offsetMs: "0", durationMs: "60000", transport: "native_hls", src: "/native.m3u8"}
   Object.assign(video, {canPlayType: () => "probably", dataset: config})
   let ready = 0
   const create = () => createHlsController({video, config, Hls, pushEvent() {}, onReady: () => ready++})
@@ -94,4 +94,17 @@ test("native HLS readiness runs once and teardown detaches the ready listener", 
   video.dispatchEvent(new Event("loadedmetadata"))
   assert.equal(ready, 1)
   assert.equal(video.fileTimeline, undefined)
+})
+
+test("an accepted native transport stays native even when HLS.js is available", () => {
+  const video = new EventTarget()
+  Object.assign(video, {canPlayType: () => "probably"})
+  class AvailableHls {
+    static isSupported() { return true }
+    constructor() { throw Error("must honor selected native transport") }
+  }
+  const config = {transport: "native_hls", sessionId: "selected", src: "/selected.m3u8", offsetMs: "0"}
+  const controller = createHlsController({video, config, Hls: AvailableHls, pushEvent() {}})
+  assert.equal(video.src, "/selected.m3u8")
+  controller.destroy()
 })

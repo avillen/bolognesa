@@ -85,11 +85,13 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
         __changed__: %{},
         advance_request: request,
         current_scope: %{actor: nil},
+        selected_file_id: 1,
+        delivery_plan: nil,
         content_ref: {:episode, 1},
         transcode_session: %{
           id: "current",
           duration_ms: nil,
-          strategy: :full_transcode,
+          strategy: :full_conversion,
           file_id: 1
         }
       }

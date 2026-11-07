@@ -104,15 +104,14 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
     assert Map.get(hd(source.tracks), :frame_rate) == "24/1"
     assert Map.get(hd(source.tracks), :color_transfer) == "bt709"
 
-    assert {:ok, :full_transcode, %{duration_ms: 60_000}} =
-             Playback.video_delivery(actor, {:movie, movie.id}, file.id)
+    assert {:error, :metadata_required} = Negotiation.candidates(source)
 
     inspection
     |> InspectionSchema.changeset(%{state: :failed})
     |> Repo.update!()
 
-    assert {:ok, :direct, %{duration_ms: nil, tracks: []}} =
-             Playback.video_delivery(actor, {:movie, movie.id}, file.id)
+    assert {:ok, %{duration_ms: nil, tracks: []}} =
+             Playback.start_video(actor, {:movie, movie.id}, file.id)
   end
 
   test "preparing an accepted plan reauthorizes and checks revision, mappings and physical source" do

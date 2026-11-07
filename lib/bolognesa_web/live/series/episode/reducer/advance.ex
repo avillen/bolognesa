@@ -34,7 +34,8 @@ defmodule BolognesaWeb.Series.Episode.Reducer.Advance do
 
   defp current_playback?(socket, %{"file_id" => id}),
     do:
-      is_nil(socket.assigns.transcode_session) and
+      socket.assigns.playback_phase == :ready and
+        is_nil(socket.assigns.transcode_session) and
         not is_nil(socket.assigns.selected_file_id) and
         is_nil(socket.assigns.playback_error) and to_string(socket.assigns.selected_file_id) == id
 

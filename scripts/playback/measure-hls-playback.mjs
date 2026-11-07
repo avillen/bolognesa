@@ -69,7 +69,7 @@ const server = createServer(async (request, response) => {
     if (!file) {
       response.setHeader("Content-Type", "text/html")
       return response.end(`<!DOCTYPE html><html><body>
-<div id="frame" data-video-id="synthetic" data-file-id="1" data-session-id="synthetic"
+<div id="frame" data-video-id="synthetic" data-file-id="1" data-transport="hls_js" data-session-id="synthetic"
 data-offset-ms="0" data-duration-ms="86400000" data-autoplay="${name !== "initially-paused"}"
 data-paused-server="true" data-src="/${name}/index.m3u8">
 <video muted playsinline></video></div><script type="module" src="/${name}/player.js"></script></body></html>`)

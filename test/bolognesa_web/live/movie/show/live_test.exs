@@ -2,9 +2,11 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
+  import Bolognesa.PlaybackNegotiationFixtures,
+    only: [inspect!: 1, inspect!: 3, negotiate: 1, report: 1]
+
   alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.LocalSourcePath
-  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
@@ -101,7 +103,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
   end
 
   describe "video playback" do
-    setup %{conn: conn} do
+    setup %{conn: conn} = context do
       {:ok, _} =
         Accounts.install_admin(%{
           name: "Ada",
@@ -134,6 +136,8 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
       first = insert_version(library.id, movie.id, physical, "first.mp4", :available)
       second = insert_version(library.id, movie.id, physical, "second.mkv", :available)
+      inspect!(first)
+      inspect!(second)
       missing = insert_version(library.id, movie.id, physical, "missing.mp4", :missing)
 
       executable = Path.join(physical, "fake-ffmpeg")
@@ -153,6 +157,8 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies/#{movie.id}")
       render_async(view)
 
+      unless context[:checking], do: negotiate(view)
+
       %{
         conn: init_test_session(conn, user_token: token),
         view: view,
@@ -162,6 +168,89 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         missing: missing,
         directory: physical
       }
+    end
+
+    @tag :checking
+    test "checking withholds delivery and rejects stale malformed and duplicate reports", ctx do
+      view = ctx.view
+
+      assert has_element?(
+               view,
+               "#movie-video-frame[data-playback-phase='checking']:not([data-src]) video:not([src]):not([autoplay])"
+             )
+
+      assert has_element?(view, "#movie-playback-checking")
+      old = report(view)
+      render_hook(view, "playback_capabilities", Map.put(old, "version", 99))
+      assert has_element?(view, "#movie-playback-checking")
+      render_click(element(view, "#movie-play-#{ctx.second.id}"))
+      render_hook(view, "playback_capabilities", old)
+      assert has_element?(view, "#movie-playback-checking")
+      fresh = report(view)
+      render_hook(view, "playback_capabilities", fresh)
+
+      assert has_element?(
+               view,
+               "#movie-video-frame[data-src='/movies/#{ctx.movie.id}/media/#{ctx.second.id}']"
+             )
+
+      render_hook(view, "playback_capabilities", fresh)
+      refute has_element?(view, "#movie-video-frame[data-session-id]")
+    end
+
+    @tag :checking
+    test "unknown detection stays terminal until explicit original playback", ctx do
+      raw = report(ctx.view)
+
+      raw =
+        Map.update!(
+          raw,
+          "results",
+          &Enum.map(&1, fn result -> Map.put(result, "support", "unknown") end)
+        )
+
+      render_hook(ctx.view, "playback_capabilities", raw)
+      assert has_element?(ctx.view, "#movie-playback-error")
+      refute has_element?(ctx.view, "#movie-video-frame[data-src]")
+      refute has_element?(ctx.view, "#movie-video-frame[data-session-id]")
+      render_hook(ctx.view, "playback_original", %{})
+
+      assert has_element?(
+               ctx.view,
+               "#movie-video-frame[data-src='/movies/#{ctx.movie.id}/media/#{ctx.first.id}']"
+             )
+    end
+
+    @tag :checking
+    test "a missing capability report times out without opening the original", ctx do
+      send(ctx.view.pid, {:capability_timeout, report(ctx.view)["generation"]})
+      assert has_element?(ctx.view, "#movie-playback-error")
+      refute has_element?(ctx.view, "#movie-video-frame[data-src]")
+    end
+
+    @tag :checking
+    test "explicit inspection refresh is authorized and can be requested once per action", ctx do
+      inspection =
+        Repo.get_by!(Bolognesa.Infrastructure.Persistence.InspectionSchema,
+          media_file_id: ctx.first.id
+        )
+
+      inspection
+      |> Ecto.Changeset.change(updated_at: DateTime.add(DateTime.utc_now(), -31, :second))
+      |> Repo.update!()
+
+      send(ctx.view.pid, {:capability_timeout, report(ctx.view)["generation"]})
+      assert has_element?(ctx.view, "#movie-playback-error")
+      render_hook(ctx.view, "playback_refresh", %{})
+      requested = Repo.get!(Bolognesa.Infrastructure.Persistence.InspectionSchema, inspection.id)
+      assert requested.state == :pending
+      assert has_element?(ctx.view, "[role='status']", "Análisis solicitado")
+      render_hook(ctx.view, "playback_refresh", %{})
+
+      assert Repo.get!(Bolognesa.Infrastructure.Persistence.InspectionSchema, inspection.id).token ==
+               requested.token
+
+      refute has_element?(ctx.view, "#movie-video-frame[data-src]")
     end
 
     test "loads the first available version and allows switching while ignoring stale errors",
@@ -180,6 +269,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
       assert has_element?(view, "#movie-selected-#{first.id}", "Seleccionada")
       render_click(element(view, "#movie-play-#{second.id}"))
+      if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
       assert has_element?(view, "#movie-selected-#{second.id}", "Seleccionada")
       refute has_element?(view, "#movie-selected-#{first.id}")
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
@@ -222,6 +312,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       insert_incompatible_inspection(ctx.first)
       {:ok, view, _} = live(ctx.conn, ~p"/movies/#{ctx.movie.id}")
       render_async(view)
+      negotiate(view)
       session = preparing_session(view)
       make_ready(view, session)
 
@@ -235,6 +326,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
          ctx do
       %{view: view, first: first} = ctx
       render_click(element(view, "#movie-play-#{first.id}"))
+      if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
 
       render_hook(view, "playback_error", %{
         "file_id" => Integer.to_string(first.id),
@@ -242,15 +334,15 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       })
 
       session = preparing_session(view)
-      assert session.strategy == :full_transcode
+      assert session.strategy == :full_conversion
       assert has_element?(view, "#playback-mode", "Transcodificación de vídeo y audio")
       assert session.offset_ms == 12_000
       refute has_element?(view, "#movie-playback-error")
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
-      refute has_element?(view, "#movie-playback-preparing")
+      assert has_element?(view, "#movie-playback-preparing")
     end
 
-    test "version preparation selects its source once for direct and transcode playback", ctx do
+    test "negotiation authorizes issuance and reauthorizes selection and delivery", ctx do
       insert_incompatible_inspection(ctx.second)
       handler = {__MODULE__, make_ref()}
       caller = self()
@@ -272,17 +364,21 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
       for file <- [ctx.first, ctx.second] do
         render_click(element(ctx.view, "#movie-play-#{file.id}"))
+        if has_element?(ctx.view, "[data-playback-probe]"), do: negotiate(ctx.view)
+        assert_receive :playback_source_selected
+        assert_receive :playback_source_selected
         assert_receive :playback_source_selected
         refute_receive :playback_source_selected
       end
 
-      refute has_element?(ctx.view, "#movie-playback-preparing")
+      assert has_element?(ctx.view, "#movie-playback-preparing")
     end
 
     test "selecting a direct version releases the previous conversion", ctx do
       watch_closures()
       session = start_inspected_version(ctx)
       render_click(element(ctx.view, "#movie-play-#{ctx.first.id}"))
+      if has_element?(ctx.view, "[data-playback-probe]"), do: negotiate(ctx.view)
       assert_receive {:session_closed, %{session_id: closed_id, reason: :version_selected}}
       assert closed_id == session.id
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
@@ -297,8 +393,8 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
     test "prepares inspected incompatible media and displays its HLS controls when ready", ctx do
       session = start_inspected_version(ctx)
-      assert session.strategy == :audio_only
-      refute has_element?(ctx.view, "#movie-playback-preparing")
+      assert session.strategy == :audio_conversion
+      assert has_element?(ctx.view, "#movie-playback-preparing")
       refute has_element?(ctx.view, "#movie-video-frame[data-src]")
       make_ready(ctx.view, session)
 
@@ -363,7 +459,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       assert closed_id == session.id
       assert next.id != session.id
       assert next.offset_ms == 10_000
-      assert next.strategy == :audio_only
+      assert next.strategy == :audio_conversion
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
       make_ready(ctx.view, next)
 
@@ -417,6 +513,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     test "conversion failure stays visible until an explicit retry", ctx do
       %{view: view, first: first} = ctx
       render_click(element(view, "#movie-play-#{first.id}"))
+      if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
       session = preparing_session(view)
       render_hook(view, "transcode_error", %{"session_id" => session.id})
@@ -426,7 +523,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
       render_hook(view, "playback_seek", %{"session_id" => session.id, "position_ms" => "1000"})
       next = preparing_session(view)
-      assert next.strategy == :full_transcode
+      assert next.strategy == :full_conversion
       assert next.offset_ms == 1_000
       refute has_element?(view, "#movie-playback-error")
     end
@@ -434,6 +531,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     test "failed fallback preparation keeps the player for retry and does not loop", ctx do
       %{view: view, first: first} = ctx
       render_click(element(view, "#movie-play-#{first.id}"))
+      if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
       File.rm!(Path.join(ctx.directory, "first.mp4"))
       render_hook(view, "playback_error", %{"file_id" => Integer.to_string(first.id)})
       assert has_element?(view, "#movie-playback-error[data-reason='file_unavailable']")
@@ -444,6 +542,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       assert has_element?(view, "#movie-video-frame[data-playback-error]")
       refute has_element?(view, "#movie-video-frame[data-src]")
       render_click(element(view, "#movie-play-#{ctx.second.id}"))
+      if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
 
       assert has_element?(
                view,
@@ -456,6 +555,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     test "shows the first selection error when the file has disappeared", ctx do
       File.rm!(Path.join(ctx.directory, "first.mp4"))
       render_click(element(ctx.view, "#movie-play-#{ctx.first.id}"))
+      if has_element?(ctx.view, "[data-playback-probe]"), do: negotiate(ctx.view)
       assert has_element?(ctx.view, "#movie-playback-error[data-reason='file_unavailable']")
       assert has_element?(ctx.view, "#movie-video-frame[data-playback-error]")
       refute has_element?(ctx.view, "#movie-video-frame[data-src]")
@@ -465,27 +565,11 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
   defp start_inspected_version(ctx) do
     insert_incompatible_inspection(ctx.second)
     render_click(element(ctx.view, "#movie-play-#{ctx.second.id}"))
+    if has_element?(ctx.view, "[data-playback-probe]"), do: negotiate(ctx.view)
     preparing_session(ctx.view)
   end
 
-  defp insert_incompatible_inspection(file) do
-    Repo.insert!(
-      InspectionSchema.changeset(%InspectionSchema{}, %{
-        media_file_id: file.id,
-        token: Ecto.UUID.generate(),
-        observed_revision: file.revision,
-        state: :succeeded,
-        format: "matroska,webm",
-        duration_ms: 60_000,
-        tracks: %{
-          "items" => [
-            %{"kind" => "video", "codec" => "h264"},
-            %{"kind" => "audio", "codec" => "ac3"}
-          ]
-        }
-      })
-    )
-  end
+  defp insert_incompatible_inspection(file), do: inspect!(file, "matroska,webm", "ac3")
 
   defp preparing_session(view) do
     [_, id] =
