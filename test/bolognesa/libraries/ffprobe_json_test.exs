@@ -3,6 +3,85 @@ defmodule Bolognesa.Libraries.FfprobeJsonTest do
 
   alias Bolognesa.Libraries.Infrastructure.Services.FfprobeJson
 
+  test "retains bounded negotiation facts and original stream indexes" do
+    json =
+      Jason.encode!(%{
+        "format" => %{},
+        "streams" => [
+          %{
+            "index" => 3,
+            "codec_type" => "video",
+            "codec_name" => "h264",
+            "profile" => "High",
+            "level" => 41,
+            "pix_fmt" => "yuv420p",
+            "bits_per_raw_sample" => "8",
+            "r_frame_rate" => "30000/1001",
+            "bit_rate" => "8000000",
+            "color_transfer" => "bt709",
+            "color_primaries" => "bt709",
+            "color_space" => "bt709",
+            "disposition" => %{"default" => 1, "attached_pic" => 0}
+          },
+          %{
+            "index" => 7,
+            "codec_type" => "audio",
+            "codec_name" => "aac",
+            "sample_rate" => "48000",
+            "channels" => 2
+          }
+        ]
+      })
+
+    assert {:ok, %{tracks: [video, audio]}} = FfprobeJson.parse(json)
+    assert Map.get(video, :index) == 3
+    assert Map.get(video, :profile) == "High"
+    assert Map.get(video, :level) == 41
+    assert Map.get(video, :pixel_format) == "yuv420p"
+    assert Map.get(video, :bit_depth) == 8
+    assert Map.get(video, :frame_rate) == "30000/1001"
+    assert Map.get(video, :bit_rate) == 8_000_000
+    assert Map.get(video, :color_transfer) == "bt709"
+    assert Map.get(video, :color_primaries) == "bt709"
+    assert Map.get(video, :color_space) == "bt709"
+    assert Map.get(video, :default?) == true
+    assert Map.get(video, :attached_picture?) == false
+    assert Map.get(audio, :index) == 7
+    assert Map.get(audio, :sample_rate) == 48_000
+  end
+
+  test "malformed optional negotiation facts stay unknown without rejecting a legacy track" do
+    json =
+      Jason.encode!(%{
+        "format" => %{},
+        "streams" => [
+          %{
+            "codec_type" => "video",
+            "codec_name" => "h264",
+            "index" => -1,
+            "profile" => String.duplicate("x", 129),
+            "level" => -99,
+            "r_frame_rate" => "30/0",
+            "bit_rate" => "999999999999999999999",
+            "pix_fmt" => %{},
+            "color_transfer" => "unknown",
+            "disposition" => %{"default" => "yes", "attached_pic" => 2}
+          }
+        ]
+      })
+
+    assert {:ok, %{tracks: [video]}} = FfprobeJson.parse(json)
+    assert Map.get(video, :index) == nil
+    assert Map.get(video, :profile) == nil
+    assert Map.get(video, :level) == nil
+    assert Map.get(video, :frame_rate) == nil
+    assert Map.get(video, :bit_rate) == nil
+    assert Map.get(video, :pixel_format) == nil
+    assert Map.get(video, :color_transfer) == nil
+    assert Map.get(video, :default?) == nil
+    assert Map.get(video, :attached_picture?) == nil
+  end
+
   test "music ignores attached artwork with unknown dimensions while validating audio" do
     artwork = %{
       "codec_type" => "video",

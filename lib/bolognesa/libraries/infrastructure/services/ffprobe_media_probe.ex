@@ -14,7 +14,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
     "-show_format",
     "-show_streams",
     "-show_entries",
-    "format=format_name,duration:stream=index,codec_type,codec_name,width,height,channels:stream_tags=language",
+    "format=format_name,duration:stream=index,codec_type,codec_name,width,height,channels,profile,level,pix_fmt,bits_per_raw_sample,r_frame_rate,bit_rate,sample_rate,color_transfer,color_primaries,color_space:stream_disposition=attached_pic,default:stream_tags=language",
     "-of",
     "json"
   ]
@@ -131,7 +131,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
         String.replace(
           entries,
           "stream_tags=language",
-          "stream_disposition=attached_pic:stream_tags=language,title,artist,album_artist,albumartist,album,disc,discnumber,track,tracknumber,date,year"
+          "stream_tags=language,title,artist,album_artist,albumartist,album,disc,discnumber,track,tracknumber,date,year"
         ) <>
           ":format_tags=title,artist,album_artist,albumartist,album,disc,discnumber,track,tracknumber,date,year"
 

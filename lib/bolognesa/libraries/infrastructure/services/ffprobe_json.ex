@@ -94,7 +94,20 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
          width: Map.get(stream, "width"),
          height: Map.get(stream, "height"),
          channels: Map.get(stream, "channels"),
-         language: Map.get(tags, "language")
+         language: Map.get(tags, "language"),
+         index: Map.get(stream, "index"),
+         profile: Map.get(stream, "profile"),
+         level: Map.get(stream, "level"),
+         pixel_format: Map.get(stream, "pix_fmt"),
+         bit_depth: integer_field(stream["bits_per_raw_sample"]),
+         frame_rate: Map.get(stream, "r_frame_rate"),
+         bit_rate: integer_field(stream["bit_rate"]),
+         sample_rate: integer_field(stream["sample_rate"]),
+         default?: disposition(stream, "default"),
+         attached_picture?: disposition(stream, "attached_pic"),
+         color_transfer: stream["color_transfer"],
+         color_primaries: stream["color_primaries"],
+         color_space: stream["color_space"]
        }}
     else
       {:error, :invalid_output}
@@ -103,6 +116,30 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
 
   defp track(%{"codec_type" => _other}), do: {:ok, nil}
   defp track(_), do: {:error, :invalid_output}
+
+  defp integer_field(value) when is_binary(value) and byte_size(value) <= 16 do
+    case Integer.parse(value) do
+      {number, ""} -> number
+      _ -> nil
+    end
+  end
+
+  defp integer_field(value) when is_integer(value), do: value
+  defp integer_field(_), do: nil
+
+  defp disposition(stream, key) do
+    case Map.get(stream, "disposition") do
+      flags when is_map(flags) ->
+        case Map.get(flags, key) do
+          1 -> true
+          0 -> false
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
 
   defp kind("video"), do: :video
   defp kind("audio"), do: :audio

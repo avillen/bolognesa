@@ -81,12 +81,25 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
           duration_ms: 60_000,
           tracks: %{
             "items" => [
-              %{"kind" => "video", "codec" => "mpeg4"},
+              %{
+                "kind" => "video",
+                "codec" => "mpeg4",
+                "index" => 3,
+                "profile" => "Simple Profile",
+                "frame_rate" => "24/1",
+                "color_transfer" => "bt709"
+              },
               %{"kind" => "audio", "codec" => "ac3"}
             ]
           }
         })
       )
+
+    assert {:ok, source} = Playback.start_video(actor, {:movie, movie.id}, file.id)
+    assert Map.get(hd(source.tracks), :index) == 3
+    assert Map.get(hd(source.tracks), :profile) == "Simple Profile"
+    assert Map.get(hd(source.tracks), :frame_rate) == "24/1"
+    assert Map.get(hd(source.tracks), :color_transfer) == "bt709"
 
     assert {:ok, :full_transcode, %{duration_ms: 60_000}} =
              Playback.video_delivery(actor, {:movie, movie.id}, file.id)

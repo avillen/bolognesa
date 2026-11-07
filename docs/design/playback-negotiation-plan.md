@@ -28,11 +28,13 @@ Run `sh scripts/dev/local.sh setup` once per implementation worktree. Run focuse
 
 **Dependency:** tasks 1–2 may proceed independently. Tasks 3–6 require this gate's local FFmpeg/browser results before fixing encoded candidate identifiers and transport eligibility. Physical iPhone acceptance remains separate and pending if no device is available.
 
-- [ ] Generate short, explicitly SDR H.264/AAC and silent fixtures using the proposed ultrafast encoder settings with `-profile:v baseline -level:v 4.1`. Include ordinary and long-GOP inputs and a nonzero seek offset.
-- [ ] Inspect SPS/configuration bytes, profile, level, pixel format, actual dimensions/frame rate and AAC configuration with ffprobe. Pin the RFC 6381 identifier from the real output; do not derive it from the requested profile name. Repeat at the 1920x1080/30 fps bound and assert the same advertised codec constraints.
-- [ ] Remux a synthetic H.264/AAC MKV with absolute stream maps and copy/copy into the existing sliding MPEG-TS layout. Verify the encoded and remuxed fixtures through the production hook in an available actual desktop browser, including startup, seek and EOF; compare matched remux/full-encode CPU observations.
+- [x] Generate short, explicitly SDR H.264/AAC and silent fixtures using the proposed ultrafast encoder settings with `-profile:v baseline -level:v 4.1`. Include ordinary and long-GOP inputs and a nonzero seek offset.
+- [x] Inspect SPS/configuration bytes, profile, level, pixel format, actual dimensions/frame rate and AAC configuration with ffprobe. Pin the RFC 6381 identifier from the real output; do not derive it from the requested profile name. Repeat at the 1920x1080/30 fps bound and assert the same advertised codec constraints.
+- [x] Remux a synthetic H.264/AAC MKV with absolute stream maps and copy/copy into the existing sliding MPEG-TS layout. Verify the encoded and remuxed fixtures through the production hook in an available actual desktop browser, including startup, seek and EOF; compare matched remux/full-encode CPU observations.
 - [ ] Exercise native HLS on an available native-HLS browser with the same fixtures. If unavailable, document this limitation and keep native transport eligibility explicitly inferred; desktop HLS.js success must not be presented as native/iPhone proof.
-- [ ] Record the verified codec identifier, commands, browser versions, remux outcome and measurement method. Stop dependent contract work if local output or HLS.js consumption fails; revise the output envelope before proceeding. Do not enable a broader remux profile based solely on codec names or assumed savings.
+- [x] Record the verified codec identifier, commands, browser versions, remux outcome and measurement method. Stop dependent contract work if local output or HLS.js consumption fails; revise the output envelope before proceeding. Do not enable a broader remux profile based solely on codec names or assumed savings.
+
+Local output/browser gate passed with `avc1.42C029` at both 320x180/24 fps and 1920x1080/30 fps. Native HLS and physical iPhone verification remain unrun; native eligibility remains inferred. Actual commands/results and synthetic CPU observations are recorded in #10.
 
 ## Task 1 — Persist bounded negotiation facts
 
@@ -40,10 +42,10 @@ Run `sh scripts/dev/local.sh setup` once per implementation worktree. Run focuse
 
 **Contract:** additive optional fields for original stream index, default/attached-picture dispositions, profile/level, pixel format/bit depth, dimensions, rational frame rate, bitrate, sample rate/channels and color facts. Legacy JSON loads with unknown values. Retain normalized fields only; raw probe output never becomes diagnostics.
 
-- [ ] Add failing parser/mapper/projection tests for legacy JSON, malformed optional facts, attached pictures, original indexes and unknown color metadata.
-- [ ] Run `mix test test/bolognesa/libraries/ffprobe_json_test.exs test/bolognesa/libraries/ffprobe_media_probe_test.exs` in the native worktree environment; confirm the new assertions fail.
-- [ ] Extend validation, ffprobe entries and both context-owned projections; preserve the 256 KiB/128-stream limits.
-- [ ] Run the focused tests and repository round-trip tests; require zero failures. Review and commit `feat(playback): retain bounded negotiation facts`.
+- [x] Add failing parser/mapper/projection tests for legacy JSON, malformed optional facts, attached pictures, original indexes and unknown color metadata.
+- [x] Run `mix test test/bolognesa/libraries/ffprobe_json_test.exs test/bolognesa/libraries/ffprobe_media_probe_test.exs` in the native worktree environment; confirm the new assertions fail.
+- [x] Extend validation, ffprobe entries and both context-owned projections; preserve the 256 KiB/128-stream limits.
+- [x] Run the focused tests and repository round-trip tests; require zero failures. Review and commit `feat(playback): retain bounded negotiation facts`.
 
 ## Task 2 — Exact codec identifiers and metadata refresh
 
