@@ -48,6 +48,25 @@ defmodule Bolognesa.Playback.Domain.Policies.Negotiation do
     end
   end
 
+  @spec validate_plan(Source.t(), DeliveryPlan.t()) ::
+          :ok | {:error, :source_changed | :unsupported}
+  def validate_plan(%Source{revision: revision}, %DeliveryPlan{revision: expected})
+      when revision != expected,
+      do: {:error, :source_changed}
+
+  def validate_plan(source, %DeliveryPlan{} = plan) do
+    with {:ok, candidates} <- candidates(source),
+         true <-
+           Enum.any?(
+             candidates,
+             &(&1.plan == %{plan | transport: nil} and plan.transport in &1.transports)
+           ) do
+      :ok
+    else
+      _ -> {:error, :unsupported}
+    end
+  end
+
   defp selected_tracks(tracks) do
     media_tracks = Enum.filter(tracks, &(&1.kind in [:video, :audio]))
 

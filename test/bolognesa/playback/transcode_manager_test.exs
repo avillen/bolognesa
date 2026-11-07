@@ -1,7 +1,9 @@
 defmodule Bolognesa.Playback.TranscodeManagerTest do
   use ExUnit.Case, async: false
   alias Bolognesa.Infrastructure.LocalSourcePath
+  alias Bolognesa.Playback.Domain.Policies.Negotiation
   alias Bolognesa.Playback.Domain.ReadModels.Source
+  alias Bolognesa.Playback.Domain.ReadModels.TechnicalTrack
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias BolognesaWeb.LiveSupport.PlaybackEvents
 
@@ -339,4 +341,88 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
 
   defp restore(key, nil), do: Application.delete_env(:bolognesa, key)
   defp restore(key, value), do: Application.put_env(:bolognesa, key, value)
+
+  test "negotiated sessions retain the selected actions across a seek", %{source: original} do
+    {source, plan} = negotiated_source(original)
+    attach_lifecycle()
+    assert {:ok, first} = TranscodeManager.start(1, {:movie, 2}, 3, source, plan, 0)
+
+    assert_receive {[:bolognesa, :playback, :session, :started], _,
+                    %{strategy: :remux, transport: :hls_js, delivery_reason: :remux_supported}}
+
+    assert first.plan == plan
+    assert first.strategy == :remux
+    assert {:error, :busy} = TranscodeManager.start(2, {:movie, 2}, 3, source, plan, 0)
+    assert {:ok, next} = TranscodeManager.start(1, {:movie, 2}, 3, source, plan, 10_000, :seek)
+    assert next.plan == plan
+    assert next.offset_ms == 10_000
+    refute next.id == first.id
+    refute File.exists?(first.directory)
+  end
+
+  test "stale or forged plans are rejected before creating a session directory", %{
+    source: original
+  } do
+    {source, plan} = negotiated_source(original)
+    root = Application.fetch_env!(:bolognesa, :transcode_root)
+    refute File.exists?(root)
+
+    assert {:error, :source_changed} =
+             TranscodeManager.start(1, {:movie, 2}, 3, source, %{plan | revision: 2}, 0)
+
+    for invalid <- [
+          %{plan | video_index: 99},
+          %{plan | transport: :file},
+          %{plan | video_action: :h264},
+          %{plan | reason: :full_conversion_required}
+        ] do
+      assert {:error, :unsupported} =
+               TranscodeManager.start(1, {:movie, 2}, 3, source, invalid, 0)
+    end
+
+    refute File.exists?(root)
+  end
+
+  defp negotiated_source(source) do
+    source = %{
+      source
+      | format: "matroska",
+        tracks: [
+          %TechnicalTrack{
+            kind: :video,
+            index: 3,
+            codec: "h264",
+            codec_string: "avc1.42C029",
+            profile: "Constrained Baseline",
+            level: 41,
+            width: 320,
+            height: 180,
+            frame_rate: "24/1",
+            bit_rate: 1_000_000,
+            pixel_format: "yuv420p",
+            bit_depth: 8,
+            color_transfer: "bt709",
+            color_primaries: "bt709",
+            color_space: "bt709",
+            attached_picture?: false,
+            default?: true
+          },
+          %TechnicalTrack{
+            kind: :audio,
+            index: 7,
+            codec: "aac",
+            codec_string: "mp4a.40.2",
+            profile: "LC",
+            channels: 2,
+            sample_rate: 48_000,
+            bit_rate: 128_000,
+            default?: true
+          }
+        ]
+    }
+
+    {:ok, candidates} = Negotiation.candidates(source)
+    candidate = Enum.find(candidates, &(&1.plan.mode == :remux))
+    {source, %{candidate.plan | transport: :hls_js}}
+  end
 end

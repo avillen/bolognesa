@@ -2,12 +2,15 @@ defmodule Bolognesa.Playback do
   @moduledoc "Authorize audio and video sources for direct or transcode playback."
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
+  alias Bolognesa.Playback.Application.UseCases.PrepareVideoDelivery
   alias Bolognesa.Playback.Application.UseCases.StartTrackPlayback
   alias Bolognesa.Playback.Application.UseCases.StartVideoPlayback
   alias Bolognesa.Playback.Domain.Policies.TranscodeStrategy
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
   alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
+  alias Bolognesa.Playback.Infrastructure.LocalDeliveryExecutor
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   alias Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
@@ -26,6 +29,36 @@ defmodule Bolognesa.Playback do
   def start_track(actor, track_id, file_id),
     do: StartTrackPlayback.call(actor, track_id, file_id, EctoPlaybackRepository)
 
+  @spec prepare_video(
+          AuthenticatedUser.t() | nil,
+          ContentRef.t(),
+          pos_integer(),
+          DeliveryPlan.t(),
+          non_neg_integer(),
+          TranscodeSession.stop_reason() | :session_replaced
+        ) ::
+          {:ok, :direct} | {:ok, :transcode, TranscodeSession.t()} | {:error, transcode_reason()}
+  def prepare_video(
+        actor,
+        content_ref,
+        file_id,
+        plan,
+        offset_ms \\ 0,
+        replace_reason \\ :version_selected
+      ),
+      do:
+        PrepareVideoDelivery.call(
+          actor,
+          content_ref,
+          file_id,
+          plan,
+          offset_ms,
+          replace_reason,
+          EctoPlaybackRepository,
+          LocalDeliveryExecutor
+        )
+
+  # Temporary source-only adapter removed when the LiveViews negotiate in Task 5.
   @spec prepare_video(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
           {:ok, :direct}
           | {:ok, :transcode, TranscodeSession.t()}

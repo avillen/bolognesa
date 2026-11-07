@@ -37,6 +37,32 @@ defmodule Bolognesa.Infrastructure.ObservabilityTest do
     refute log =~ "secret"
   end
 
+  test "negotiated transport and reason are logged with closed values" do
+    previous = Logger.level()
+    Logger.configure(level: :info)
+    on_exit(fn -> Logger.configure(level: previous) end)
+
+    log =
+      capture_log([level: :info, format: "$metadata$message\n", metadata: :all], fn ->
+        :telemetry.execute([:bolognesa, :playback, :session, :started], %{count: 1}, %{
+          strategy: :remux,
+          transport: :hls_js,
+          delivery_reason: :remux_supported
+        })
+
+        :telemetry.execute([:bolognesa, :playback, :session, :started], %{count: 1}, %{
+          strategy: "private-strategy",
+          transport: "private-uri",
+          delivery_reason: "private-reason"
+        })
+      end)
+
+    assert log =~ "strategy=remux"
+    assert log =~ "transport=hls_js"
+    assert log =~ "delivery_reason=remux_supported"
+    refute log =~ "private"
+  end
+
   test "process exits are reduced to bounded reasons without exception payloads" do
     assert Observability.exit_reason(:normal) == :normal
     assert Observability.exit_reason({:shutdown, :closed}) == :closed

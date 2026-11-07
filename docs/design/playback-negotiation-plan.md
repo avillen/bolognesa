@@ -79,10 +79,10 @@ Extract the scan repository's private inspection scheduling into the shared `Ins
 
 **Contract:** preparation consumes an authorized typed plan, revalidates the source and binds revision/indexes/actions/transport to the session. Seek replaces the session using that plan rather than source-only strategy selection. FFmpeg arguments accept no raw client values.
 
-- [ ] Add failing argument tests asserting copy/copy, copy/AAC, H.264/copy, H.264/AAC and absent-audio behavior, absolute mappings and exact encoder bounds.
-- [ ] Add manager tests for stale revision, unsupported plans, busy sessions and cleanup without process/directory creation on invalid input; confirm failures.
-- [ ] Implement plan execution, codec-specific filters and updated bounded enum allowlists. Retain existing authentication/controller checks.
-- [ ] Run `mix test test/bolognesa/playback` and relevant transcode-controller/observability tests; review and commit `feat(playback): execute minimal stream transformations`.
+- [x] Add failing argument tests asserting copy/copy, copy/AAC, H.264/copy, H.264/AAC and absent-audio behavior, absolute mappings and exact encoder bounds.
+- [x] Add manager tests for stale revision, unsupported plans, busy sessions and cleanup without process/directory creation on invalid input; confirm failures.
+- [x] Implement plan execution, codec-specific filters and updated bounded enum allowlists. Retain existing authentication/controller checks.
+- [x] Run `mix test test/bolognesa/playback` and relevant transcode-controller/observability tests; review and commit `feat(playback): execute minimal stream transformations`.
 
 ## Task 5 — Browser and LiveView capability exchange
 

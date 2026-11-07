@@ -2,12 +2,14 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
+  alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Playback
+  alias Bolognesa.Playback.Domain.Policies.Negotiation
   alias Bolognesa.Playback.Domain.ReadModels.Source
 
   test "authorizes only a currently linked available version" do
@@ -111,6 +113,78 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
 
     assert {:ok, :direct, %{duration_ms: nil, tracks: []}} =
              Playback.video_delivery(actor, {:movie, movie.id}, file.id)
+  end
+
+  test "preparing an accepted plan reauthorizes and checks revision, mappings and physical source" do
+    actor = %AuthenticatedUser{id: 1, role: :admin}
+    movie = movie(103)
+
+    directory =
+      Path.join(
+        hd(Application.fetch_env!(:bolognesa, :library_roots)),
+        "negotiated-#{System.unique_integer([:positive])}"
+      )
+
+    File.mkdir_p!(directory)
+    on_exit(fn -> File.rm_rf!(directory) end)
+    {:ok, root} = LocalSourcePath.canonical_directory(directory)
+    path = Path.join(root, "film.mp4")
+    File.write!(path, "abcdefgh")
+    {:ok, stat} = File.stat(path, time: :posix)
+
+    library =
+      Repo.insert!(LibrarySchema.changeset(%LibrarySchema{}, %{name: "Negotiated", path: root}))
+
+    file =
+      file(library.id, "film.mp4", :available)
+      |> Ecto.Changeset.change(
+        modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond)
+      )
+      |> Repo.update!()
+
+    identify(file.id, movie.id)
+
+    Repo.insert!(
+      InspectionSchema.changeset(%InspectionSchema{}, %{
+        media_file_id: file.id,
+        token: Ecto.UUID.generate(),
+        observed_revision: 1,
+        state: :succeeded,
+        format: "mp4",
+        tracks: %{
+          "items" => [
+            %{
+              "kind" => "video",
+              "codec" => "h264",
+              "codec_string" => "avc1.42C029",
+              "index" => 0,
+              "default?" => true,
+              "attached_picture?" => false
+            }
+          ]
+        }
+      })
+    )
+
+    {:ok, source} = Playback.start_video(actor, {:movie, movie.id}, file.id)
+    {:ok, [candidate]} = Negotiation.candidates(source)
+    plan = %{candidate.plan | transport: :file}
+    assert {:ok, :direct} = Playback.prepare_video(actor, {:movie, movie.id}, file.id, plan)
+    assert {:error, :forbidden} = Playback.prepare_video(nil, {:movie, movie.id}, file.id, plan)
+    assert {:error, :not_found} = Playback.prepare_video(actor, {:movie, 0}, file.id, plan)
+
+    assert {:error, :unsupported} =
+             Playback.prepare_video(actor, {:movie, movie.id}, file.id, %{plan | video_index: 9})
+
+    File.write!(path, "changed physical source")
+
+    assert {:error, :source_changed} =
+             Playback.prepare_video(actor, {:movie, movie.id}, file.id, plan)
+
+    Repo.update!(Ecto.Changeset.change(file, revision: 2))
+
+    assert {:error, :source_changed} =
+             Playback.prepare_video(actor, {:movie, movie.id}, file.id, plan)
   end
 
   defp movie(provider_id) do
