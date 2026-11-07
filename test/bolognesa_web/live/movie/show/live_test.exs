@@ -332,6 +332,9 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         "position_ms" => "1000"
       })
 
+      # A previously scheduled preparation poll can arrive after playback resumes.
+      send(ctx.view.pid, {:transcode_poll, session.id})
+
       assert has_element?(
                ctx.view,
                "#movie-video-frame[data-video-id='movie-video-#{session.id}'][data-paused-server='false']"

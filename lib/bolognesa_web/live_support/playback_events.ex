@@ -131,8 +131,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   @spec handle_info({:transcode_poll, binary()}, Phoenix.LiveView.Socket.t()) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
   def handle_info({:transcode_poll, id}, socket) do
-    case socket.assigns.transcode_session do
-      %{id: ^id} -> poll_transcode(socket, id)
+    case {socket.assigns.transcode_session, socket.assigns.transcode_ready?} do
+      {%{id: ^id}, false} -> poll_transcode(socket, id)
       _ -> {:noreply, socket}
     end
   end
