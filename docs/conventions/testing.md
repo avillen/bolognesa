@@ -89,7 +89,11 @@ or HLS decoding support.
 
 ### Negotiated delivery acceptance
 
-`scripts/playback/verify-negotiated-output.exs` generates disposable synthetic sources and executes source-derived FFmpeg plans. Run `mix run --no-start scripts/playback/verify-negotiated-output.exs tmp/negotiation-check`. It checks actual profile/pixel format/AVC configuration, independent stream actions and copied payload equivalence, reporting any leading AAC priming-packet trim. Add `--anamorphic` after the directory for the real-output display-aspect regression. Its matched remux/full-conversion timing is a local synthetic observation, not target-server capacity.
+`scripts/playback/verify-negotiated-output.exs` generates disposable synthetic sources and executes source-derived FFmpeg plans. Run `mix run --no-start scripts/playback/verify-negotiated-output.exs tmp/negotiation-check`. It checks actual profile/pixel format/AVC configuration, independent stream actions and copied payload equivalence, reporting any leading AAC priming-packet trim. Add `--anamorphic` after the directory for the real-output display-aspect regression.
+
+Add `--main-copy` for Main 3.1/720p25 and Main 4.1/1080p30 sources with MP3 audio and absent color declarations; this verifies AAC output, exact retained AVC configuration and copied video bytes.
+
+For a source-derived browser check, place an AAC/MP4 copy of the synthetic source at `sample.mp4` inside its generated output directory, then pass that directory and its `probe.json` to `npm run test-video-player -- <output-directory> <output-directory>/probe.json`. The optional probe checks exact output support before opening media and decodes the generated HLS through the production hook. Use an installed H.264-capable Chrome as above. These checks do not establish physical-device support. The matched remux/full-conversion timing from the default matrix is a local synthetic observation, not target-server capacity.
 
 For the real LiveView path, configure a disposable native demo following [CONTRIBUTING](../../CONTRIBUTING.md#local-demo-data). Run `scripts/playback/seed-negotiation-check.exs` through `mix run`, passing the generated fixture directory and that demo's `sample-ids.json`, with the same `BOLOGNESA_DB_NAME` and `BOLOGNESA_LIBRARY_ROOTS` as the demo server. The seeder refuses ordinary databases and adds only its synthetic fixture rows; it does not reset an installation. Start the matching native server, then run:
 
