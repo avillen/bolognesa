@@ -39,10 +39,24 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
     %TechnicalTrack{
       kind: track_kind(row["kind"]),
       codec: row["codec"],
+      codec_string: row["codec_string"],
       width: row["width"],
       height: row["height"],
       channels: row["channels"],
-      language: row["language"]
+      language: row["language"],
+      index: row["index"],
+      profile: row["profile"],
+      level: row["level"],
+      pixel_format: row["pixel_format"],
+      bit_depth: row["bit_depth"],
+      frame_rate: row["frame_rate"],
+      bit_rate: row["bit_rate"],
+      sample_rate: row["sample_rate"],
+      default?: row["default?"],
+      attached_picture?: row["attached_picture?"],
+      color_transfer: row["color_transfer"],
+      color_primaries: row["color_primaries"],
+      color_space: row["color_space"]
     }
   end
 

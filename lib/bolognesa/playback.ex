@@ -2,17 +2,24 @@ defmodule Bolognesa.Playback do
   @moduledoc "Authorize audio and video sources for direct or transcode playback."
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
+  alias Bolognesa.Playback.Application.UseCases.PrepareVideoDelivery
+  alias Bolognesa.Playback.Application.UseCases.SelectVideoPlan
   alias Bolognesa.Playback.Application.UseCases.StartTrackPlayback
   alias Bolognesa.Playback.Application.UseCases.StartVideoPlayback
-  alias Bolognesa.Playback.Domain.Policies.TranscodeStrategy
+  alias Bolognesa.Playback.Domain.Policies.Negotiation
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
   alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
+  alias Bolognesa.Playback.Domain.ValueObjects.PlaybackCandidate
+  alias Bolognesa.Playback.Infrastructure.LocalDeliveryExecutor
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   alias Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
 
   @type reason :: :forbidden | :not_found | :missing | :unavailable
+  @type negotiation_reason ::
+          reason() | LocalMediaFile.failure() | Negotiation.error() | :invalid_report
   @type transcode_reason ::
           reason() | LocalMediaFile.failure() | TranscodeManager.failure() | :unsupported
 
@@ -26,79 +33,74 @@ defmodule Bolognesa.Playback do
   def start_track(actor, track_id, file_id),
     do: StartTrackPlayback.call(actor, track_id, file_id, EctoPlaybackRepository)
 
-  @spec prepare_video(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
-          {:ok, :direct}
-          | {:ok, :transcode, TranscodeSession.t()}
-          | {:error, transcode_reason()}
-  def prepare_video(actor, content_ref, file_id) do
-    with {:ok, strategy, source} <- video_delivery(actor, content_ref, file_id) do
-      prepare_delivery(actor, content_ref, file_id, strategy, source)
-    end
-  end
-
-  defp prepare_delivery(_actor, _content_ref, _file_id, :direct, source) do
-    with :ok <- LocalMediaFile.validate(source), do: {:ok, :direct}
-  end
-
-  defp prepare_delivery(actor, content_ref, file_id, strategy, source) do
-    with {:ok, session} <-
-           TranscodeManager.start(
-             actor.id,
-             content_ref,
-             file_id,
-             source,
-             strategy,
-             0,
-             :version_selected
-           ) do
-      {:ok, :transcode, session}
-    end
-  end
-
-  @spec video_delivery(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
-          {:ok, :direct | :audio_only | :full_transcode, Source.t()} | {:error, reason()}
-  def video_delivery(actor, content_ref, file_id) do
-    with {:ok, source} <- start_video(actor, content_ref, file_id) do
-      {:ok, TranscodeStrategy.choose(source), source}
-    end
-  end
-
-  @spec start_video_transcode(
-          AuthenticatedUser.t(),
+  @spec prepare_video(
+          AuthenticatedUser.t() | nil,
           ContentRef.t(),
-          integer(),
-          integer(),
-          :auto | :full_transcode,
-          TranscodeManager.stop_reason() | :session_replaced
+          pos_integer(),
+          DeliveryPlan.t(),
+          non_neg_integer(),
+          TranscodeSession.stop_reason() | :session_replaced
         ) ::
-          {:ok, Bolognesa.Playback.Domain.ReadModels.TranscodeSession.t()}
-          | {:error, transcode_reason()}
-  def start_video_transcode(
+          {:ok, :direct} | {:ok, :transcode, TranscodeSession.t()} | {:error, transcode_reason()}
+  def prepare_video(
         actor,
         content_ref,
         file_id,
-        offset_ms,
-        strategy_override \\ :auto,
-        replace_reason \\ :session_replaced
-      ) do
-    with {:ok, strategy, source} <- video_delivery(actor, content_ref, file_id),
-         :ok <- validate_strategy(strategy, strategy_override) do
-      selected = selected_strategy(strategy, strategy_override)
+        plan,
+        offset_ms \\ 0,
+        replace_reason \\ :version_selected
+      ),
+      do:
+        PrepareVideoDelivery.call(
+          actor,
+          content_ref,
+          file_id,
+          plan,
+          offset_ms,
+          replace_reason,
+          EctoPlaybackRepository,
+          LocalDeliveryExecutor
+        )
 
-      TranscodeManager.start(
-        actor.id,
-        content_ref,
-        file_id,
-        source,
-        selected,
-        offset_ms,
-        replace_reason
-      )
+  @spec video_candidates(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
+          {:ok, Source.t(), [PlaybackCandidate.t()]}
+          | {:error, negotiation_reason()}
+  def video_candidates(actor, content_ref, file_id) do
+    with {:ok, source} <- start_video(actor, content_ref, file_id),
+         :ok <- LocalMediaFile.validate(source),
+         {:ok, candidates} <- Negotiation.candidates(source) do
+      {:ok, source, candidates}
     end
   end
 
-  defp selected_strategy(_strategy, :full_transcode), do: :full_transcode
-  defp selected_strategy(strategy, _strategy_override), do: strategy
+  @spec select_video_plan(
+          AuthenticatedUser.t(),
+          ContentRef.t(),
+          integer(),
+          [PlaybackCandidate.t()],
+          map(),
+          String.t()
+        ) ::
+          {:ok, DeliveryPlan.t()} | {:error, SelectVideoPlan.error()}
+  def select_video_plan(actor, content_ref, file_id, issued, raw, generation) do
+    SelectVideoPlan.call(
+      actor,
+      content_ref,
+      file_id,
+      issued,
+      raw,
+      generation,
+      EctoPlaybackRepository
+    )
+  end
+
+  @spec prepare_original(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
+          {:ok, :direct} | {:error, transcode_reason()}
+  def prepare_original(actor, content_ref, file_id) do
+    with {:ok, source} <- start_video(actor, content_ref, file_id),
+         :ok <- LocalMediaFile.validate(source),
+         do: {:ok, :direct}
+  end
 
   @spec video_transcode_session(AuthenticatedUser.t(), ContentRef.t(), integer(), String.t()) ::
           {:ok, Bolognesa.Playback.Domain.ReadModels.TranscodeSession.t()}
@@ -197,9 +199,6 @@ defmodule Bolognesa.Playback do
       total + seconds
     end)
   end
-
-  defp validate_strategy(:direct, :auto), do: {:error, :unsupported}
-  defp validate_strategy(_, _), do: :ok
 
   defp signal_transcode(actor, session_id, action) do
     with {:ok, session} <- TranscodeManager.lookup(session_id),

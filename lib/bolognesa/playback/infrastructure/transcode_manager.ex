@@ -2,9 +2,12 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @moduledoc "Own one FFmpeg process and its private sliding HLS directory."
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Infrastructure.Observability
+  alias Bolognesa.Infrastructure.Observability.PlaybackEvents
+  alias Bolognesa.Playback.Domain.Policies.Negotiation
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
   alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
   alias Bolognesa.Playback.Infrastructure.FfmpegArgs
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   use GenServer
@@ -13,15 +16,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @tick_ms 5_000
   @max_bytes 512 * 1_024 * 1_024
 
-  @type stop_reason ::
-          :operator_stop
-          | :version_selected
-          | :seek
-          | :ended
-          | :client_error
-          | :preparation_timeout
-          | :source_invalidated
-          | :liveview_terminated
+  @type stop_reason :: TranscodeSession.stop_reason()
 
   @type failure ::
           LocalMediaFile.failure()
@@ -31,6 +26,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
           | :tool_unavailable
           | :unsafe_root
           | :storage_unavailable
+          | :unsupported
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(_opts), do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -40,7 +36,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
           ContentRef.t(),
           pos_integer(),
           Source.t(),
-          :audio_only | :full_transcode,
+          DeliveryPlan.t(),
           integer(),
           stop_reason() | :session_replaced
         ) :: {:ok, TranscodeSession.t()} | {:error, failure()}
@@ -221,7 +217,8 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   defp prepare_session(request) do
     source = request.source
 
-    with :ok <- valid_offset(source, request.offset_ms),
+    with :ok <- validate_strategy(request.strategy, source),
+         :ok <- valid_offset(source, request.offset_ms),
          {:ok, root} <- root(),
          {:ok, executable} <- executable(),
          :ok <- LocalMediaFile.validate(source),
@@ -236,12 +233,13 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
         offset_ms: request.offset_ms,
         duration_ms: source.duration_ms,
         directory: directory,
-        strategy: request.strategy
+        strategy: request.strategy.mode,
+        plan: request.strategy
       }
 
       args =
         FfmpegArgs.for(
-          session.strategy,
+          session.plan,
           Path.join(source.path, source.relative_path),
           directory,
           session.offset_ms
@@ -250,6 +248,13 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
       {:ok, session, executable, args}
     end
   end
+
+  defp validate_strategy(%DeliveryPlan{mode: :direct}, _source), do: {:error, :unsupported}
+
+  defp validate_strategy(%DeliveryPlan{} = plan, source),
+    do: Negotiation.validate_plan(source, plan)
+
+  defp validate_strategy(_, _), do: {:error, :unsupported}
 
   defp create_directory(root, id) do
     directory = Path.join(root, "session-#{id}")
@@ -466,15 +471,17 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   defp signal_status(_status), do: {:error, :process_missing}
 
   defp session_event(event, session, measurements, metadata) do
-    :telemetry.execute(
-      [:bolognesa, :playback, :session, event],
-      measurements,
-      Map.merge(
-        %{session_id: session.id, file_id: session.file_id, strategy: session.strategy},
-        metadata
-      )
-    )
+    fields =
+      %{session_id: session.id, file_id: session.file_id, strategy: session.strategy}
+      |> Map.merge(plan_metadata(session.plan))
+      |> Map.merge(metadata)
+      |> PlaybackEvents.sanitize_delivery_metadata()
+
+    :telemetry.execute([:bolognesa, :playback, :session, event], measurements, fields)
   end
+
+  defp plan_metadata(nil), do: %{}
+  defp plan_metadata(plan), do: %{transport: plan.transport, delivery_reason: plan.reason}
 
   defp now, do: System.monotonic_time(:millisecond)
 end

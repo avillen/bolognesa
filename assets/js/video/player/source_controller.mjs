@@ -16,7 +16,7 @@ export function createSourceController(hook, {Hls, direct = createDirectControll
   function update() {
     const config = {...el.dataset}
     config.src = config.playbackError ? "" : config.src || ""
-    const nextSignature = `${config.recoveryScope}:${config.videoId}:${config.src}:${config.playbackError || ""}`
+    const nextSignature = `${config.attemptId || ""}:${config.recoveryScope}:${config.videoId}:${config.src}:${config.playbackError || ""}:${config.playbackPhase || ""}:${config.transport || ""}`
     if (signature === nextSignature) {
       video.dataset.pausedServer = config.pausedServer
       controller?.update(config)
@@ -25,12 +25,17 @@ export function createSourceController(hook, {Hls, direct = createDirectControll
     signature = nextSignature
     const retrying = !!playbackError && !config.playbackError
     playbackError = config.playbackError
+    if (config.playbackPhase === "checking" || config.playbackPhase === "preparing") {
+      recovery.suspend()
+      clearSource()
+      return
+    }
     recovery.beforeSourceChange()
     clearSource()
     video.id = config.videoId
     for (const key of Object.keys(video.dataset)) delete video.dataset[key]
     Object.assign(video.dataset, config)
-    if (config.playbackError || !recovery.source({retry: retrying})) return
+    if (!config.src || config.playbackError || !recovery.source({retry: retrying})) return
     const create = config.sessionId ? hls : direct
     controller = create({video, config, Hls, pushEvent: (...args) => hook.pushEvent(...args),
       reportPlaybackError: () => hook.diagnostics.reportError(), onReady: () => recovery.ready()})

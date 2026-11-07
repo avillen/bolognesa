@@ -139,7 +139,30 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
     Enum.flat_map(items, fn row ->
       case row do
         %{"kind" => kind, "codec" => codec} when kind in ["video", "audio", "subtitle"] ->
-          [%TechnicalTrack{kind: track_kind(kind), codec: codec}]
+          [
+            %TechnicalTrack{
+              kind: track_kind(kind),
+              codec: codec,
+              codec_string: row["codec_string"],
+              width: row["width"],
+              height: row["height"],
+              channels: row["channels"],
+              language: row["language"],
+              index: row["index"],
+              profile: row["profile"],
+              level: row["level"],
+              pixel_format: row["pixel_format"],
+              bit_depth: row["bit_depth"],
+              frame_rate: row["frame_rate"],
+              bit_rate: row["bit_rate"],
+              sample_rate: row["sample_rate"],
+              default?: row["default?"],
+              attached_picture?: row["attached_picture?"],
+              color_transfer: row["color_transfer"],
+              color_primaries: row["color_primaries"],
+              color_space: row["color_space"]
+            }
+          ]
 
         _ ->
           []

@@ -89,7 +89,9 @@ This quick start uses development credentials and binds to your own machine. For
 
 ## Playback limits
 
-Playback depends on browser codec support and server hardware. Limited FFmpeg/HLS conversion supports one shared conversion session. Files containing several episodes play in full.
+Video playback checks the selected browser before opening media and chooses supported original delivery, remux, audio conversion or video conversion. FFmpeg/HLS supports one shared session. Conversion is limited to known SDR sources and bounded H.264/AAC output; HEVC can play only as a positively supported original. HDR conversion and tone mapping are unavailable. Files containing several episodes play in full.
+
+Missing inspection data or uncertain browser support can stop automatic playback. Use the player’s inspection refresh, retry, compatible-playback action when available, or explicitly try the original without a compatibility promise. Existing files may need a fresh inspection to obtain the new decoding facts. There is one automatic recovery for eligible decode failures; network and ambiguous native errors require an explicit action. Browser predictions and local synthetic tests do not establish support on every device. Physical Chrome on iPhone and native HLS remain unverified; see [the playback decision](docs/decisions/0011-live-transcoding.md).
 
 Music listening dates follow a track's library and relative path. Rescanning, changing metadata, or restoring a missing file at the same path preserves them. Replacing a file at that path also retains the previous dates; moving or renaming it creates a new track without those dates.
 

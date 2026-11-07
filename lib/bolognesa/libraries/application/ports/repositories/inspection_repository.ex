@@ -9,6 +9,9 @@ defmodule Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepositor
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
 
   @type adapter :: module()
+  @type refresh_error :: :not_found | :missing | :source_changed | :refresh_limited | :unavailable
+  @type refresh_result :: {:ok, :enqueued | :already_pending} | {:error, refresh_error()}
+  @callback request_refresh(MediaFile.id(), pos_integer(), DateTime.t()) :: refresh_result()
   @callback counts(Library.id()) ::
               {:ok, InspectionCounts.t()} | {:error, :not_found | :unavailable}
   @callback fetch(MediaFile.id()) :: {:ok, Inspection.t()} | {:error, :not_found | :unavailable}

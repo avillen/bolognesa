@@ -2,7 +2,17 @@ defmodule Bolognesa.Playback.Domain.ReadModels.TranscodeSession do
   @moduledoc "Private metadata for one on-demand conversion."
 
   alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
 
+  @type stop_reason ::
+          :operator_stop
+          | :version_selected
+          | :seek
+          | :ended
+          | :client_error
+          | :preparation_timeout
+          | :source_invalidated
+          | :liveview_terminated
   @type t :: %__MODULE__{
           id: String.t(),
           actor_id: pos_integer(),
@@ -12,7 +22,8 @@ defmodule Bolognesa.Playback.Domain.ReadModels.TranscodeSession do
           offset_ms: non_neg_integer(),
           duration_ms: non_neg_integer() | nil,
           directory: String.t(),
-          strategy: :audio_only | :full_transcode,
+          strategy: DeliveryPlan.mode(),
+          plan: DeliveryPlan.t() | nil,
           status: :running | :finished | :failed
         }
 
@@ -26,6 +37,7 @@ defmodule Bolognesa.Playback.Domain.ReadModels.TranscodeSession do
     :duration_ms,
     :directory,
     :strategy,
+    :plan,
     status: :running
   ]
 end

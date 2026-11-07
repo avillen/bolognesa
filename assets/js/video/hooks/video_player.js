@@ -4,6 +4,7 @@ import {fileTimeFeature, fileBufferFeature} from "../player/timeline.mjs"
 import {createPlaybackDiagnostics} from "../player/playback_diagnostics.mjs"
 import {createPlaybackRecovery} from "../player/playback_recovery.mjs"
 import Hls from "../../../vendor/hls.min.mjs"
+import {probePlaybackCapabilities} from "../player/playback_capabilities.mjs"
 import {createSourceController} from "../player/source_controller.mjs"
 import {createPlayerFrame} from "../player/ui/player_frame.mjs"
 
@@ -32,6 +33,16 @@ const VideoPlayer = {
         this.diagnostics = createPlaybackDiagnostics(this)
       }
       this.sources.update()
+      if (data.playbackPhase === "checking" && data.playbackProbe) {
+        const probe = JSON.parse(data.playbackProbe)
+        if (this.probeGeneration !== probe.generation) {
+          this.probeGeneration = probe.generation
+          probePlaybackCapabilities(probe, {video: this.video, Hls}).then(report => {
+            if (!this.probeDestroyed && this.el.dataset.playbackPhase === "checking" &&
+                this.probeGeneration === report.generation) this.pushEvent("playback_capabilities", report)
+          })
+        }
+      } else this.probeGeneration = null
     }
     this.retrySource = () => this.sources.retry()
     this.sync()
@@ -40,6 +51,7 @@ const VideoPlayer = {
   disconnected() { this.diagnostics?.disconnected() },
   reconnected() { this.diagnostics?.reconnected() },
   destroyed() {
+    this.probeDestroyed = true
     this.unregisterMedia?.()
     this.unregisterMedia = null
     this.recovery?.destroy()

@@ -1,12 +1,19 @@
 defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
   @moduledoc "Closed FFmpeg argument list for a short sliding HLS stream."
 
-  @spec for(:audio_only | :full_transcode, String.t(), String.t(), non_neg_integer()) :: [
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
+
+  @spec for(
+          DeliveryPlan.t(),
+          String.t(),
+          String.t(),
+          non_neg_integer()
+        ) :: [
           String.t()
         ]
-  def for(strategy, input, directory, offset_ms)
-      when strategy in [:audio_only, :full_transcode] do
+  def for(%DeliveryPlan{} = plan, input, directory, offset_ms) do
     seek = :erlang.float_to_binary(offset_ms / 1_000, decimals: 3)
+    audio_map = if plan.audio_index, do: ["-map", "0:#{plan.audio_index}"], else: []
 
     [
       "-hide_banner",
@@ -21,41 +28,63 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
       "-i",
       input,
       "-map",
-      "0:v:0",
-      "-map",
-      "0:a:0",
-      "-sn",
-      "-dn"
+      "0:#{plan.video_index}"
     ] ++
-      video_args(strategy) ++
+      audio_map ++
+      ["-sn", "-dn"] ++
+      planned_video_args(plan) ++ planned_audio_args(plan.audio_action) ++ output_args(directory)
+  end
+
+  defp planned_video_args(%DeliveryPlan{video_action: :copy}),
+    do: ["-c:v", "copy", "-bsf:v", "h264_mp4toannexb"]
+
+  defp planned_video_args(%DeliveryPlan{video_action: :h264, configuration: config}) do
+    video = config.video
+
+    encoded_video_args() ++
       [
-        "-c:a",
-        "aac",
-        "-b:a",
-        "128k",
-        "-ac",
-        "2",
-        "-f",
-        "hls",
-        "-hls_segment_type",
-        "mpegts",
-        "-hls_time",
-        "4",
-        "-hls_list_size",
-        "12",
-        "-hls_delete_threshold",
-        "2",
-        "-hls_flags",
-        "delete_segments+temp_file",
-        "-hls_segment_filename",
-        Path.join(directory, "seg-%06d.ts"),
-        Path.join(directory, "index.m3u8")
+        "-profile:v",
+        "baseline",
+        "-level:v",
+        "4.1",
+        "-maxrate:v",
+        "8M",
+        "-bufsize:v",
+        "16M",
+        "-vf",
+        "scale=#{video.width}:#{video.height}:flags=fast_bilinear",
+        "-r",
+        Float.to_string(video.frame_rate)
       ]
   end
 
-  defp video_args(:audio_only), do: ["-c:v", "copy", "-bsf:v", "h264_mp4toannexb"]
+  defp planned_audio_args(:copy), do: ["-c:a", "copy"]
+  defp planned_audio_args(:absent), do: ["-an"]
 
-  defp video_args(:full_transcode),
+  defp planned_audio_args(:aac),
+    do: ["-c:a", "aac", "-profile:a", "aac_low", "-b:a", "128k", "-ar", "48000", "-ac", "2"]
+
+  defp output_args(directory) do
+    [
+      "-f",
+      "hls",
+      "-hls_segment_type",
+      "mpegts",
+      "-hls_time",
+      "4",
+      "-hls_list_size",
+      "12",
+      "-hls_delete_threshold",
+      "2",
+      "-hls_flags",
+      "delete_segments+temp_file",
+      "-hls_segment_filename",
+      Path.join(directory, "seg-%06d.ts"),
+      Path.join(directory, "index.m3u8")
+    ]
+  end
+
+  defp encoded_video_args,
     do: [
       "-c:v",
       "libx264",

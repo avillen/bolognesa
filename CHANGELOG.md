@@ -2,6 +2,13 @@
 
 Release notes and upgrade information. See the [README](README.md) for setup and playback limits.
 
+## Unreleased
+
+- Negotiate video delivery from bounded browser capability reports before opening media. Copy supported streams through remux or partial conversion instead of always encoding both.
+- Add explicit inspection refresh and compatible playback, with one bounded automatic recovery for eligible decode failures. Network/unknown native failures remain terminal until a user action.
+- Keep the player mounted through negotiation, replacement and consecutive parts/episodes. Desktop synthetic checks cover the real LiveView/FFmpeg path; physical Chrome on iPhone and native HLS remain unverified.
+- Existing inspections remain readable without a database migration. Missing new decoding facts may require an explicit inspection refresh; no automatic library-wide reinspection is scheduled.
+
 ## 0.1.0 — 2026-10-29
 
 First experimental preview for private home use.

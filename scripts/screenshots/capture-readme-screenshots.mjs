@@ -206,6 +206,20 @@ try {
       throw new Error(`Demo login failed with HTTP ${loginResponse.status()}.`);
     }
 
+    // The pinned capture browser consumes synthetic VP8 WebM. Its inspection is
+    // intentionally outside automatic AVC/HEVC negotiation; use the real explicit action.
+    const playDemoOriginal = async prefix => {
+      const frame = page.locator(`#${prefix}-video-frame`);
+      if (!await frame.count()) return;
+      await page.waitForFunction(prefix => ["ready", "error"].includes(
+        document.querySelector(`#${prefix}-video-frame`)?.dataset.playbackPhase), prefix);
+      if (await frame.getAttribute("data-playback-phase") === "error") {
+        await page.locator('[phx-click="playback_original"]').click();
+        await page.waitForFunction(prefix =>
+          document.querySelector(`#${prefix}-video-frame`)?.dataset.playbackPhase === "ready", prefix);
+      }
+    };
+
     const capture = async (name, route, selector = "main h1", loadingSelector = null) => {
       await page.goto(`${baseUrl}${route}`);
       await page.locator(selector).first().waitFor();
@@ -248,6 +262,8 @@ try {
           `
         });
       }
+      await playDemoOriginal("movie");
+      await playDemoOriginal("episode");
       await waitForTheme();
       await normalizeDemoDetails();
       await page.evaluate(() => document.activeElement?.blur());
@@ -316,7 +332,12 @@ try {
     await capture("movie-review.png", "/movies/review");
     await capture("movie.png", `/movies/${ids.movie}?library_id=${ids.movie_library}`);
     await page.locator("#movie-playback-options > summary").click();
+    const previousAttempt = await page.locator("#movie-video-frame").getAttribute("data-attempt-id");
     await page.locator('[id^="movie-play-"]').first().click();
+    await page.waitForFunction(previous => {
+      const frame = document.querySelector("#movie-video-frame");
+      return frame?.dataset.attemptId && frame.dataset.attemptId !== previous;
+    }, previousAttempt);
     const video = page.locator("video[id^='movie-video-']");
     try {
       await video.waitFor({ state: "attached" });
@@ -324,17 +345,26 @@ try {
       const message = await page.locator("body").innerText().catch(() => "No page text");
       throw new Error(`The player did not open: ${message}`, { cause: error });
     }
-    await video.evaluate((element) => element.play());
+    await playDemoOriginal("movie");
+    await page.waitForFunction(() => {
+      const element = document.querySelector("#movie-player video");
+      return element.readyState >= 2 && !element.seeking;
+    });
+    await video.evaluate(element => new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("Demo video play did not settle.")), 15_000);
+      element.play().then(() => { clearTimeout(timeout); resolve(); },
+        error => { clearTimeout(timeout); reject(error); });
+    }));
     await page.waitForFunction(() => {
       const element = document.querySelector("video[id^='movie-video-']");
       return element && element.readyState >= 2 && !element.paused;
     });
-    await video.evaluate(async (element) => {
-      const seeked = new Promise((resolve) => element.addEventListener("seeked", resolve, { once: true }));
-      element.currentTime = 2;
-      await seeked;
-      element.pause();
+    await video.evaluate(element => { element.currentTime = 2; });
+    await page.waitForFunction(() => {
+      const element = document.querySelector("#movie-player video");
+      return !element.seeking && Math.abs(element.currentTime - 2) < 0.1;
     });
+    await video.evaluate(element => element.pause());
     const playButton = page.locator("#movie-player media-play-button");
     await playButton.click();
     await page.waitForFunction(() => !document.querySelector("#movie-player video").paused);
@@ -345,10 +375,10 @@ try {
     await page.keyboard.press("Home");
     await page.keyboard.press("ArrowRight");
     await page.waitForFunction(() => document.querySelector("#movie-player video").currentTime > 0);
-    await video.evaluate(async element => {
-      const seeked = new Promise(resolve => element.addEventListener("seeked", resolve, {once: true}));
-      element.currentTime = 2;
-      await seeked;
+    await video.evaluate(element => { element.currentTime = 2; });
+    await page.waitForFunction(() => {
+      const element = document.querySelector("#movie-player video");
+      return !element.seeking && Math.abs(element.currentTime - 2) < 0.1;
     });
     await page.waitForTimeout(500);
     await normalizeDemoDetails();
@@ -379,7 +409,9 @@ try {
       const element = document.querySelector("#music-playback");
       return element && !element.seeking && Math.abs(element.currentTime - 2) < 0.1;
     });
-    await page.locator("#refresh-music").click();
+    // Refresh through the current visible search form; the old refresh button was removed.
+    await page.locator("#music-search button[type=submit]").click();
+    await waitForStablePage();
     await page.locator("#music-loading").waitFor({state: "detached"});
     const audioState = await audio.evaluate(element => ({paused: element.paused, position: element.currentTime, error: element.error?.code}));
     if (!audioState.paused || Math.abs(audioState.position - 2) > 0.1 || audioState.error) {

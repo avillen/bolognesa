@@ -11,6 +11,8 @@ defmodule Bolognesa.Infrastructure.Observability do
     :session_id,
     :file_id,
     :strategy,
+    :transport,
+    :delivery_reason,
     :offset_ms,
     :reason,
     :failure_stage,
@@ -95,6 +97,7 @@ defmodule Bolognesa.Infrastructure.Observability do
 
   @spec handle_event([atom()], map(), map(), nil) :: :ok
   def handle_event(event, measurements, metadata, _config) when event in @events do
+    metadata = PlaybackEvents.sanitize_delivery_metadata(metadata)
     {level, message} = log_message(event, metadata)
 
     fields =

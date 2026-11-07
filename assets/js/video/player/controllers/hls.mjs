@@ -1,10 +1,13 @@
+import {mediaErrorKind} from "./direct.mjs"
+
 /** Authorized HLS source lifecycle. Positions sent to LiveView use whole-file milliseconds. */
 export function createHlsController({video, config, pushEvent, reportPlaybackError, onReady, Hls}) {
   const sessionId = config.sessionId
   const offsetMs = Number(config.offsetMs), durationMs = Number(config.durationMs)
-  let resuming = false, serverPaused = false, destroyed = false, hls = null
+  let resuming = false, serverPaused = false, destroyed = false, reported = false, hls = null
   const currentPosition = () => Math.min(durationMs || Infinity,
-    offsetMs + Math.max(0, Math.floor(video.currentTime * 1000)))
+    (Number.isFinite(offsetMs) ? offsetMs : 0) +
+    (Number.isFinite(video.currentTime) ? Math.max(0, Math.floor(video.currentTime * 1000)) : 0))
 
   video.fileTimeline = {
     offset: offsetMs / 1000, duration: durationMs / 1000,
@@ -27,10 +30,12 @@ export function createHlsController({video, config, pushEvent, reportPlaybackErr
     resuming = true
     pushEvent("playback_resume", {session_id: sessionId, position_ms: String(currentPosition())})
   }
-  const onError = (diagnose = false) => {
-    if (destroyed || serverPaused || resuming) return
+  const onError = (kind = mediaErrorKind(video.error), diagnose = false) => {
+    if (destroyed || serverPaused || video.fileTimeline?.pending || reported) return
+    reported = true
     if (diagnose === true) reportPlaybackError?.()
-    pushEvent("transcode_error", {session_id: sessionId})
+    pushEvent("transcode_error", {session_id: sessionId, attempt_id: config.attemptId,
+      error_kind: kind, position_ms: String(currentPosition())})
   }
   const onEnded = () => {
     serverPaused = true
@@ -42,25 +47,26 @@ export function createHlsController({video, config, pushEvent, reportPlaybackErr
     if (onReady) onReady()
     else if (config.autoplay === "true") video.play().catch(() => {})
   }
-  const listeners = {pause: onPause, play: onPlay, error: onError, ended: onEnded}
+  const listeners = {pause: onPause, play: onPlay, error: () => onError(), ended: onEnded}
   for (const [name, listener] of Object.entries(listeners)) video.addEventListener(name, listener)
   attachSource()
 
   function attachSource() {
-    if (Hls.isSupported()) {
+    if (config.transport === "hls_js" && Hls.isSupported()) {
       hls = new Hls({lowLatencyMode: false, liveSyncDurationCount: 3, startPosition: 0})
       hls.on(Hls.Events.MANIFEST_PARSED, ready)
-      hls.on(Hls.Events.ERROR, (_event, data) => { if (data.fatal) onError(true) })
+      hls.on(Hls.Events.ERROR, (_event, data) => { if (data.fatal) onError(data.type === "mediaError" ? "media" :
+        data.type === "networkError" ? "network" : "unknown", true) })
       hls.loadSource(config.src)
       hls.attachMedia(video)
       return
     }
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+    if (config.transport === "native_hls" && video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = config.src
       video.addEventListener("loadedmetadata", ready, {once: true})
       return
     }
-    onError(true)
+    onError("unknown", true)
   }
   return {
     update(nextConfig) {

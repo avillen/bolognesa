@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Series.Episode.Live do
   @moduledoc false
-  use BolognesaWeb, :live_view
+  # Capability reports are untrusted; only sanitized playback diagnostics may be logged.
+  use BolognesaWeb, {:live_view, log: false}
   alias BolognesaWeb.LiveSupport.PlaybackEvents
   alias BolognesaWeb.Series.Episode.Reducer
   alias BolognesaWeb.Series.Navigation

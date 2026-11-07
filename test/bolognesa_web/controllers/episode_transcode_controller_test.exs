@@ -35,8 +35,8 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
     [first, second] = ctx.episode_ids
     file = ctx.media_file
 
-    assert {:ok, session} =
-             Playback.start_video_transcode(
+    assert {:ok, :transcode, session} =
+             Bolognesa.PlaybackNegotiationFixtures.prepare_transcode(
                ctx.actor,
                {:episode, first},
                file.id,
@@ -73,8 +73,8 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
     assert response(get(ctx.conn, "/episodes/#{first}/media/#{file.id}"), 404) == ""
     assert response(get(ctx.conn, "/episodes/#{second}/media/#{file.id}"), 200) == "abcdefgh"
 
-    assert {:ok, next} =
-             Playback.start_video_transcode(
+    assert {:ok, :transcode, next} =
+             Bolognesa.PlaybackNegotiationFixtures.prepare_transcode(
                ctx.actor,
                {:episode, second},
                file.id,
@@ -169,8 +169,8 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
           {:movie, file, :episode},
           {:episode, ctx.media_file, :movie}
         ] do
-      assert {:ok, session} =
-               Playback.start_video_transcode(
+      assert {:ok, :transcode, session} =
+               Bolognesa.PlaybackNegotiationFixtures.prepare_transcode(
                  ctx.actor,
                  {kind, id},
                  source_file.id,
@@ -221,7 +221,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
   test "container references remain unplayable when their numeric IDs overlap episodes", ctx do
     for kind <- [:series, :season] do
       assert {:error, :not_found} =
-               Playback.prepare_video(ctx.actor, {kind, ctx.episode_id}, ctx.media_file.id)
+               Playback.video_candidates(ctx.actor, {kind, ctx.episode_id}, ctx.media_file.id)
     end
   end
 end

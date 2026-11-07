@@ -22,9 +22,15 @@ try {
   }})
   assert.ok(login.ok(), "Synthetic account login succeeds")
 
-  for (const navigation of ["automatic", "next link", "conversion attempt"]) {
+  for (const navigation of ["automatic", "next link", "terminal media error"]) {
     await page.goto(`${baseUrl}/episodes/${ids.episode}`)
     await page.waitForFunction(() => document.querySelector("video-skin"))
+    await page.waitForFunction(() => ["ready", "error"].includes(
+      document.querySelector("#episode-video-frame")?.dataset.playbackPhase))
+    if (await page.locator("#episode-video-frame").getAttribute("data-playback-phase") === "error") {
+      await page.locator('[phx-click="playback_original"]').click()
+      await page.waitForFunction(() => document.querySelector("#episode-video-frame")?.dataset.playbackPhase === "ready")
+    }
     await page.evaluate(() => {
       const video = document.querySelector("video")
       const skin = document.querySelector("video-skin")
@@ -43,8 +49,8 @@ try {
     })
     await page.locator("media-fullscreen-button").click()
     await page.waitForFunction(() => !!document.fullscreenElement)
-    if (navigation === "conversion attempt") {
-      // Force the production direct-error handler to enter HLS preparation.
+    if (navigation === "terminal media error") {
+      // An unclassified native error remains terminal; it cannot justify conversion.
       await page.locator("video").evaluate(video => video.dispatchEvent(new Event("error")))
       await page.waitForFunction(() => {
         const frame = document.querySelector("#episode-video-frame")
@@ -57,11 +63,14 @@ try {
       // The link is outside fullscreen; invoke its real click handler without leaving fullscreen.
       await page.locator("#episode-next").evaluate(link => link.click())
     }
-    if (navigation !== "conversion attempt") {
+    if (navigation !== "terminal media error") {
       await page.waitForURL(`${baseUrl}/episodes/${ids.next_episode}`)
-      await page.waitForFunction(id =>
-        document.querySelector("#episode-video-frame")?.dataset.src?.includes(`/episodes/${id}/`),
-      ids.next_episode)
+      // Unknown demo metadata can stop the new part; no automatic original is implied.
+      await page.waitForFunction(id => {
+        const frame = document.querySelector("#episode-video-frame")
+        return frame?.dataset.recoveryScope?.endsWith(`:episode:${id}`) &&
+          ["ready", "error"].includes(frame.dataset.playbackPhase)
+      }, ids.next_episode)
     }
     const result = await page.evaluate(async () => {
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))

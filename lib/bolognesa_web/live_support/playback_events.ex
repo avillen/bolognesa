@@ -6,7 +6,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   alias BolognesaWeb.LiveSupport.PlaybackDiagnostics
   alias BolognesaWeb.LiveSupport.PlaybackState
 
-  @spec handle_event(binary(), map(), Phoenix.LiveView.Socket.t()) ::
+  @spec handle_event(binary(), PlaybackControl.capability_payload(), Phoenix.LiveView.Socket.t()) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
   def handle_event("playback_diagnostic", params, socket),
     do: {:noreply, PlaybackDiagnostics.record(socket, params)}
@@ -38,21 +38,75 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   def handle_event("playback_restore", _params, socket),
     do: {:reply, %{accepted: false}, socket}
 
-  def handle_event("playback_error", %{"file_id" => file_id} = params, socket) do
-    if socket.assigns.selected_file_id &&
-         Integer.to_string(socket.assigns.selected_file_id) == file_id &&
-         is_nil(socket.assigns.transcode_session) && is_nil(socket.assigns.playback_error) do
-      {:noreply,
-       PlaybackControl.start_transcode(
-         socket,
-         socket.assigns.selected_file_id,
-         fallback_position(params["position_ms"]),
-         :full_transcode
-       )}
+  def handle_event("playback_capabilities", params, socket),
+    do: {:noreply, PlaybackControl.accept_report(socket, params)}
+
+  def handle_event("playback_compatible", _params, socket),
+    do: {:noreply, PlaybackControl.play_compatible(socket)}
+
+  def handle_event("playback_original", _params, socket) do
+    if socket.assigns.selected_file_id do
+      case Playback.prepare_original(
+             socket.assigns.current_scope.actor,
+             socket.assigns.content_ref,
+             socket.assigns.selected_file_id
+           ) do
+        {:ok, :direct} ->
+          PlaybackControl.stop_transcode(socket, :version_selected)
+
+          {:noreply,
+           socket
+           |> Phoenix.Component.assign(:playback_attempt_id, Ecto.UUID.generate())
+           |> Phoenix.Component.assign(:capability_report, nil)
+           |> Phoenix.Component.assign(:compatible_playback_available?, false)
+           |> Phoenix.Component.assign(:recovery_used?, true)
+           |> Phoenix.Component.assign(:delivery_plan, nil)
+           |> PlaybackState.direct(socket.assigns.selected_file_id)}
+
+        {:error, reason} ->
+          {:noreply, PlaybackState.preparation_failed(socket, reason)}
+      end
     else
       {:noreply, socket}
     end
   end
+
+  def handle_event("playback_refresh", _params, socket) do
+    if socket.assigns.selected_file_id && !socket.assigns.inspection_refresh_used? do
+      actor = socket.assigns.current_scope.actor
+      socket = Phoenix.Component.assign(socket, :inspection_refresh_used?, true)
+
+      with {:ok, source} <-
+             Playback.start_video(
+               actor,
+               socket.assigns.content_ref,
+               socket.assigns.selected_file_id
+             ),
+           {:ok, _} <-
+             Bolognesa.Libraries.request_inspection_refresh(
+               actor,
+               socket.assigns.selected_file_id,
+               source.revision
+             ) do
+        {:noreply, Phoenix.Component.assign(socket, :inspection_refresh_requested?, true)}
+      else
+        {:error, reason} -> {:noreply, PlaybackState.preparation_failed(socket, reason)}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("playback_error", %{"file_id" => id} = params, socket) do
+    if socket.assigns.selected_file_id && to_string(socket.assigns.selected_file_id) == id &&
+         is_nil(socket.assigns.transcode_session) do
+      client_failure(socket, params)
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("playback_error", _params, socket), do: {:noreply, socket}
 
   def handle_event(
         "playback_seek",
@@ -63,16 +117,11 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
 
     case parse_position(position) do
       {offset, ""}
-      when not is_nil(session) and session.id == id and offset >= 0 and
+      when not is_nil(session) and session.id == id and
+             socket.assigns.playback_phase == :ready and offset >= 0 and offset <= 2_147_483_647 and
              (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
         next =
-          PlaybackControl.start_transcode(
-            socket,
-            session.file_id,
-            offset,
-            if(session.strategy == :full_transcode, do: :full_transcode, else: :auto),
-            :seek
-          )
+          PlaybackControl.deliver(socket, offset, :seek)
 
         {:noreply,
          Phoenix.Component.assign(next, :transcode_autoplay?, params["playing"] == "true")}
@@ -116,23 +165,33 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
     end
   end
 
-  def handle_event("transcode_error", %{"session_id" => id}, socket) do
+  def handle_event("transcode_error", %{"session_id" => id} = params, socket) do
     case socket.assigns.transcode_session do
-      %{id: ^id} ->
-        PlaybackControl.stop_transcode(socket, :client_error)
-
-        {:noreply, PlaybackState.transcode_failed(socket, :interrupted)}
-
-      _ ->
-        {:noreply, socket}
+      %{id: ^id} -> client_failure(socket, params)
+      _ -> {:noreply, socket}
     end
   end
 
-  @spec handle_info({:transcode_poll, binary()}, Phoenix.LiveView.Socket.t()) ::
+  def handle_event("transcode_error", _params, socket), do: {:noreply, socket}
+
+  @spec handle_info(
+          {:transcode_poll | :capability_timeout, binary()},
+          Phoenix.LiveView.Socket.t()
+        ) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
+  def handle_info({:capability_timeout, generation}, socket) do
+    if socket.assigns.playback_phase == :checking &&
+         socket.assigns.playback_probe.generation == generation do
+      {:noreply, PlaybackState.preparation_failed(socket, :detection_unknown)}
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_info({:transcode_poll, id}, socket) do
-    case socket.assigns.transcode_session do
-      %{id: ^id} -> poll_transcode(socket, id)
+    case {socket.assigns.transcode_session, socket.assigns.transcode_ready?,
+          socket.assigns.playback_phase} do
+      {%{id: ^id}, false, :preparing} -> poll_transcode(socket, id)
       _ -> {:noreply, socket}
     end
   end
@@ -158,24 +217,32 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
 
         {:noreply, PlaybackState.ready(socket)}
 
-      :waiting when socket.assigns.transcode_poll_attempts < 60 ->
-        Process.send_after(self(), {:transcode_poll, id}, 500)
-
-        {:noreply,
-         Phoenix.Component.assign(
-           socket,
-           :transcode_poll_attempts,
-           socket.assigns.transcode_poll_attempts + 1
-         )}
-
       :waiting ->
-        PlaybackControl.stop_transcode(socket, :preparation_timeout)
-        {:noreply, PlaybackState.transcode_failed(socket, :preparation)}
+        wait_or_timeout(socket, id)
 
       _ ->
         {:noreply, PlaybackState.transcode_failed(socket, :preparation)}
     end
   end
+
+  defp wait_or_timeout(socket, id) do
+    if System.monotonic_time(:millisecond) < socket.assigns.preparation_deadline do
+      Process.send_after(self(), {:transcode_poll, id}, 500)
+
+      {:noreply,
+       Phoenix.Component.assign(
+         socket,
+         :transcode_poll_attempts,
+         socket.assigns.transcode_poll_attempts + 1
+       )}
+    else
+      PlaybackControl.stop_transcode(socket, :preparation_timeout)
+      {:noreply, PlaybackState.transcode_failed(socket, :preparation)}
+    end
+  end
+
+  defp resume_session(%{assigns: %{playback_phase: phase}} = socket, _session, _position)
+       when phase != :ready, do: {:noreply, socket}
 
   defp resume_session(socket, session, position) do
     case Playback.resume_video_transcode(socket.assigns.current_scope.actor, session.id) do
@@ -187,28 +254,43 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   defp resume_expired(socket, session, position) do
     case parse_position(position) do
       {offset, ""}
-      when offset >= 0 and (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
-        strategy_override =
-          if session.strategy == :full_transcode, do: :full_transcode, else: :auto
-
-        {:noreply,
-         PlaybackControl.start_transcode(
-           socket,
-           session.file_id,
-           offset,
-           strategy_override
-         )}
+      when offset >= 0 and offset <= 2_147_483_647 and
+             (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
+        {:noreply, PlaybackControl.deliver(socket, offset, :session_replaced)}
 
       _ ->
         {:noreply, socket}
     end
   end
 
-  defp fallback_position(position) do
-    case parse_position(position) do
-      {offset, ""} when offset >= 0 -> offset
-      _ -> 0
+  defp client_failure(socket, params) do
+    with true <- socket.assigns.playback_phase == :ready and !socket.assigns[:loading?],
+         attempt when is_binary(attempt) <- socket.assigns[:playback_attempt_id],
+         ^attempt <- params["attempt_id"],
+         {offset, ""} when offset >= 0 and offset <= 2_147_483_647 <-
+           parse_position(params["position_ms"]),
+         true <- valid_position?(socket, offset) do
+      handle_client_failure(socket, params["error_kind"], offset)
+    else
+      _ -> {:noreply, socket}
     end
+  end
+
+  defp handle_client_failure(socket, "media", offset) do
+    {:noreply, PlaybackControl.recover(socket, offset)}
+  end
+
+  defp handle_client_failure(socket, kind, _offset)
+       when kind in ["network", "aborted", "unknown"] do
+    PlaybackControl.stop_transcode(socket, :client_error)
+    {:noreply, PlaybackState.transcode_failed(socket, :interrupted)}
+  end
+
+  defp handle_client_failure(socket, _kind, _offset), do: {:noreply, socket}
+
+  defp valid_position?(socket, offset) do
+    duration = socket.assigns[:playback_duration_ms]
+    is_nil(duration) or offset <= duration
   end
 
   defp parse_position(value) when is_binary(value), do: Integer.parse(value)

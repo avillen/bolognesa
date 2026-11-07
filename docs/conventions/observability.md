@@ -60,4 +60,6 @@ Events.emit(:libraries, :scan, :completed,
 - Monitoring failures must not break business workflows. Keep collectors and their privileges
   separate from the application; follow the [monitoring guide](../../deploy/compose/monitoring.md#optional-docker-resources-on-native-linux) for optional Docker collection.
 
+Movie and episode playback LiveViews disable automatic lifecycle/parameter logging. Their untrusted capability payloads must never reach a debug logger before validation; use the sanitized Playback emitters instead.
+
 These rules follow [Telemetry handler semantics](https://hexdocs.pm/telemetry/telemetry.html#attach/4).

@@ -103,8 +103,8 @@ defmodule BolognesaWeb.TranscodeControllerTest do
       File.rm_rf!(directory)
     end)
 
-    assert {:ok, session} =
-             Playback.start_video_transcode(
+    assert {:ok, :transcode, session} =
+             Bolognesa.PlaybackNegotiationFixtures.prepare_transcode(
                actor,
                {:movie, movie.id},
                file.id,
@@ -170,8 +170,8 @@ defmodule BolognesaWeb.TranscodeControllerTest do
     assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     Repo.update!(MediaFileSchema.changeset(file, %{revision: file.revision}))
 
-    assert {:ok, next_session} =
-             Playback.start_video_transcode(
+    assert {:ok, :transcode, next_session} =
+             Bolognesa.PlaybackNegotiationFixtures.prepare_transcode(
                actor,
                {:movie, movie.id},
                file.id,
