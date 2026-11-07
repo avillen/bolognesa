@@ -63,7 +63,7 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
     executable =
       fake(
         root,
-        "case \"$6\" in *stream_disposition=attached_pic*) ;; *) exit 7 ;; esac\nprintf '{\"format\":{\"format_name\":\"mp3\"},\"streams\":[{\"codec_type\":\"audio\",\"codec_name\":\"mp3\",\"channels\":2},{\"codec_type\":\"video\",\"codec_name\":\"mjpeg\",\"width\":0,\"height\":0,\"disposition\":{\"attached_pic\":1}}]}'"
+        "case \"$*\" in *stream_disposition=attached_pic*) ;; *) exit 7 ;; esac\nprintf '{\"format\":{\"format_name\":\"mp3\"},\"streams\":[{\"codec_type\":\"audio\",\"codec_name\":\"mp3\",\"channels\":2},{\"codec_type\":\"video\",\"codec_name\":\"mjpeg\",\"width\":0,\"height\":0,\"disposition\":{\"attached_pic\":1}}]}'"
       )
 
     assert {:ok, %{tracks: [%{kind: :audio, codec: "mp3", channels: 2}]}} =

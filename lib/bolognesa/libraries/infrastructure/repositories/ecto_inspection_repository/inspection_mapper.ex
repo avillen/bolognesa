@@ -39,6 +39,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
     %TechnicalTrack{
       kind: track_kind(row["kind"]),
       codec: row["codec"],
+      codec_string: row["codec_string"],
       width: row["width"],
       height: row["height"],
       channels: row["channels"],

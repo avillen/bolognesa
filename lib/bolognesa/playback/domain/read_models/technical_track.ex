@@ -4,6 +4,7 @@ defmodule Bolognesa.Playback.Domain.ReadModels.TechnicalTrack do
   @type t :: %__MODULE__{
           kind: :video | :audio | :subtitle,
           codec: String.t() | nil,
+          codec_string: String.t() | nil,
           width: pos_integer() | nil,
           height: pos_integer() | nil,
           channels: pos_integer() | nil,
@@ -26,6 +27,7 @@ defmodule Bolognesa.Playback.Domain.ReadModels.TechnicalTrack do
   defstruct [
     :kind,
     :codec,
+    :codec_string,
     :width,
     :height,
     :channels,

@@ -5,6 +5,7 @@ defmodule Bolognesa.Libraries do
     FetchInspectionCounts,
     FetchScanStatus,
     ListLibraries,
+    RequestInspectionRefresh,
     StartScan
   }
 
@@ -24,6 +25,12 @@ defmodule Bolognesa.Libraries do
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
+
+  @spec request_inspection_refresh(AuthenticatedUser.t() | nil, pos_integer(), pos_integer()) ::
+          Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository.refresh_result()
+          | {:error, :forbidden}
+  def request_inspection_refresh(actor, file_id, expected_revision),
+    do: RequestInspectionRefresh.call(actor, file_id, expected_revision, EctoInspectionRepository)
 
   @spec subscribe_status_updates(AuthenticatedUser.t() | nil) ::
           :ok | {:error, :forbidden | :unavailable}

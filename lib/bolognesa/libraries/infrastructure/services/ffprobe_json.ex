@@ -3,6 +3,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
 
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.{MusicTags, TechnicalMedia}
 
+  alias Bolognesa.Libraries.Infrastructure.Services.CodecConfiguration
+
   @max_bytes 262_144
   @max_tracks 128
 
@@ -91,6 +93,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
        %{
          kind: kind(type),
          codec: Map.get(stream, "codec_name"),
+         codec_string: CodecConfiguration.from_probe(stream),
          width: Map.get(stream, "width"),
          height: Map.get(stream, "height"),
          channels: Map.get(stream, "channels"),

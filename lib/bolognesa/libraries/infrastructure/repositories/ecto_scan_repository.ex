@@ -12,9 +12,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   alias Bolognesa.Libraries.Domain.Entities.Scan
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
-  alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy
   alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.InspectionRequest
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository.LibraryMapper
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.MediaFileMapper
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.ScanMapper
@@ -358,37 +358,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
       current_inspection = old && Map.get(inspections, old.id)
 
       if Map.fetch!(plans, entry.relative_path).inspect? do
-        request_inspection!(file, current_inspection)
+        InspectionRequest.enqueue!(file, current_inspection)
       end
     end)
-  end
-
-  defp request_inspection!(file, current) do
-    token = Ecto.UUID.generate()
-
-    attrs = %{
-      media_file_id: file.id,
-      token: token,
-      observed_revision: file.revision,
-      state: :pending,
-      failure_reason: nil,
-      job_id: nil,
-      format: nil,
-      duration_ms: nil,
-      tracks: %{"items" => []},
-      music_tags: nil,
-      started_at: nil,
-      finished_at: nil
-    }
-
-    inspection =
-      case current do
-        nil -> Repo.insert!(InspectionSchema.changeset(%InspectionSchema{}, attrs))
-        schema -> Repo.update!(InspectionSchema.changeset(schema, attrs))
-      end
-
-    {:ok, job} = Oban.insert(InspectionWorker.new(%{media_file_id: file.id, token: token}))
-    inspection |> InspectionSchema.changeset(%{job_id: job.id}) |> Repo.update!()
   end
 
   defp schedule_identifications(library_id, entries, saved, plans) do

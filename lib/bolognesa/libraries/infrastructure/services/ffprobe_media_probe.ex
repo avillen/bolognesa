@@ -11,10 +11,11 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
   @args [
     "-v",
     "quiet",
+    "-show_data",
     "-show_format",
     "-show_streams",
     "-show_entries",
-    "format=format_name,duration:stream=index,codec_type,codec_name,width,height,channels,profile,level,pix_fmt,bits_per_raw_sample,r_frame_rate,bit_rate,sample_rate,color_transfer,color_primaries,color_space:stream_disposition=attached_pic,default:stream_tags=language",
+    "format=format_name,duration:stream=index,codec_type,codec_name,codec_tag_string,extradata,width,height,channels,profile,level,pix_fmt,bits_per_raw_sample,r_frame_rate,bit_rate,sample_rate,color_transfer,color_primaries,color_space:stream_disposition=attached_pic,default:stream_tags=language",
     "-of",
     "json"
   ]

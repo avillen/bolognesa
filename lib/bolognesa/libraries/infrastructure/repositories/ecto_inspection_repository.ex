@@ -11,9 +11,65 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.InspectionMapper
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.InspectionRequest
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository.LibraryMapper
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.MediaFileMapper
   alias Bolognesa.Repo
+
+  @impl true
+  def request_refresh(file_id, expected_revision, now) do
+    transaction(fn ->
+      with {:ok, file} <- refresh_file(file_id, expected_revision) do
+        inspection =
+          Repo.one(
+            from row in InspectionSchema, where: row.media_file_id == ^file.id, lock: "FOR UPDATE"
+          )
+
+        refresh_current(file, inspection, now)
+      end
+    end)
+  end
+
+  defp refresh_file(file_id, expected_revision) do
+    file = Repo.one(from row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE")
+
+    case file do
+      nil ->
+        {:error, :not_found}
+
+      file ->
+        validate_refresh_file(file, Repo.get!(LibrarySchema, file.library_id), expected_revision)
+    end
+  end
+
+  defp validate_refresh_file(_file, %{content_type: :music}, _revision), do: {:error, :not_found}
+
+  defp validate_refresh_file(%{availability: :missing}, _library, _revision),
+    do: {:error, :missing}
+
+  defp validate_refresh_file(%{revision: revision}, _library, expected) when revision != expected,
+    do: {:error, :source_changed}
+
+  defp validate_refresh_file(file, _library, _revision), do: {:ok, file}
+
+  defp refresh_current(file, %{state: state, observed_revision: revision}, _now)
+       when state in [:pending, :running] and revision == file.revision,
+       do: {:ok, :already_pending}
+
+  defp refresh_current(file, inspection, now) do
+    if refresh_limited?(inspection, now) do
+      {:error, :refresh_limited}
+    else
+      InspectionRequest.enqueue!(file, inspection)
+      {:ok, :enqueued}
+    end
+  end
+
+  defp refresh_limited?(%{state: state, updated_at: updated_at}, now)
+       when state in [:succeeded, :failed],
+       do: DateTime.diff(now, updated_at, :millisecond) < 30_000
+
+  defp refresh_limited?(_, _), do: false
 
   @impl true
   def fetch(file_id) do

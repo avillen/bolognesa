@@ -3,6 +3,24 @@ defmodule Bolognesa.Infrastructure.Persistence.InspectionSchema do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          media_file_id: integer() | nil,
+          token: Ecto.UUID.t() | nil,
+          observed_revision: pos_integer() | nil,
+          state: :pending | :running | :succeeded | :failed,
+          failure_reason: Bolognesa.Libraries.Domain.Entities.Inspection.reason() | nil,
+          job_id: integer() | nil,
+          format: String.t() | nil,
+          duration_ms: non_neg_integer() | nil,
+          music_tags: map() | nil,
+          tracks: map(),
+          started_at: DateTime.t() | nil,
+          finished_at: DateTime.t() | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
   schema "media_inspections" do
     field :media_file_id, :id
     field :token, Ecto.UUID

@@ -143,6 +143,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
             %TechnicalTrack{
               kind: track_kind(kind),
               codec: codec,
+              codec_string: row["codec_string"],
               width: row["width"],
               height: row["height"],
               channels: row["channels"],

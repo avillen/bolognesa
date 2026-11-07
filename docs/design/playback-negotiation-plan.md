@@ -49,7 +49,7 @@ Local output/browser gate passed with `avc1.42C029` at both 320x180/24 fps and 1
 
 ## Task 2 — Exact codec identifiers and metadata refresh
 
-**Create:** Libraries inspection codec-configuration parser beside `ffprobe_json.ex`; Playback domain candidate and delivery-plan value objects; `lib/bolognesa/libraries/application/use_cases/request_inspection_refresh.ex`; `lib/bolognesa/libraries/infrastructure/repositories/ecto_inspection_repository/inspection_request.ex`; `test/bolognesa/libraries/request_inspection_refresh_test.exs`. **Modify:** Libraries facade, `application/ports/repositories/inspection_repository.ex`, `infrastructure/repositories/ecto_inspection_repository.ex`, `ecto_scan_repository.ex` and the modules from task 1.
+**Create:** Libraries inspection codec-configuration parser beside `ffprobe_json.ex`; `lib/bolognesa/libraries/application/use_cases/request_inspection_refresh.ex`; `lib/bolognesa/libraries/infrastructure/repositories/ecto_inspection_repository/inspection_request.ex`; `test/bolognesa/libraries/request_inspection_refresh_test.exs`. **Modify:** Libraries facade, `application/ports/repositories/inspection_repository.ex`, `infrastructure/repositories/ecto_inspection_repository.ex`, `ecto_scan_repository.ex` and the modules from task 1.
 
 **Contract:** codec parser returns a validated RFC 6381 identifier or unknown. Playback plan carries selected absolute stream indexes, delivery, independent stream actions, output envelope, transport and bounded reason. Select first non-picture video and first audio by index, with optional audio. An authorized explicit metadata refresh schedules existing durable inspection once per action without changing file identity.
 
@@ -57,14 +57,14 @@ Local output/browser gate passed with `avc1.42C029` at both 320x180/24 fps and 1
 
 Extract the scan repository's private inspection scheduling into the shared `InspectionRequest` collaborator; retain inventory/inspection/job transaction atomicity in scans. For an eligible explicit refresh, create a fresh token, reset inspection state and insert/link its Oban job in the same transaction. Roll back both on enqueue failure. Use a 30-second per-file cooldown based on the persisted inspection `updated_at` for terminal requests; completion/failure restarts that conservative cooldown. A successful enqueue always invalidates the previous token. This needs no migration and must not schedule identification or change file revision/identity. Duplicate browser events during an active request return `:already_pending`; repeated completed requests inside the cooldown return `:refresh_limited`.
 
-- [ ] Add failing AVC/HEVC configuration-record tests, truncated/oversize data tests and default-track mismatch tests. Add refresh tests for unauthorized/missing/music files, stale revisions, cooldown, atomic enqueue rollback and concurrent duplicate requests yielding exactly one current token/job. Exercise the race with independent database connections and deterministic synchronization.
-- [ ] Run focused tests and confirm failures before implementation.
-- [ ] Implement bounded configuration parsing and discard raw extradata before persistence. Add the explicit refresh entry point through the existing inspection lifecycle; preserve current revision/token protection.
-- [ ] Verify old inspection records, refreshed facts, stale worker completion rejection and unchanged scan atomicity through PostgreSQL tests, including `mix test test/bolognesa/libraries/request_inspection_refresh_test.exs`; review and commit `feat(playback): define exact source configurations`.
+- [x] Add failing AVC/HEVC configuration-record tests, truncated/oversize data tests tests. Add refresh tests for unauthorized/missing/music files, stale revisions, cooldown, atomic enqueue rollback and concurrent duplicate requests yielding exactly one current token/job. Exercise the race with independent database connections and deterministic synchronization.
+- [x] Run focused tests and confirm failures before implementation.
+- [x] Implement bounded configuration parsing and discard raw extradata before persistence. Add the explicit refresh entry point through the existing inspection lifecycle; preserve current revision/token protection.
+- [x] Verify old inspection records, refreshed facts, stale worker completion rejection and unchanged scan atomicity through PostgreSQL tests, including `mix test test/bolognesa/libraries/request_inspection_refresh_test.exs`; review and commit `feat(playback): define exact source configurations`.
 
 ## Task 3 — Pure candidates, reports and selection
 
-**Create:** Playback domain policies for candidates/negotiation and a capability-report value object. **Modify:** `domain/policies/transcode_strategy.ex`; add corresponding tests under `test/bolognesa/playback/`.
+**Create:** Playback domain candidate and delivery-plan value objects, policies for candidates/negotiation and a capability-report value object. **Modify:** `domain/policies/transcode_strategy.ex`; add corresponding tests under `test/bolognesa/playback/`.
 
 **Interfaces:** candidate generation consumes `Source.t()` and preference; returns at most six server-owned candidate configurations. Report validation consumes string-keyed report plus issued candidates and generation; returns typed results or bounded invalid-report error. Selection consumes source, candidates and validated observations; returns a typed plan or metadata/unsupported result.
 

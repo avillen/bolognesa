@@ -84,6 +84,7 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
               %{
                 "kind" => "video",
                 "codec" => "mpeg4",
+                "codec_string" => nil,
                 "index" => 3,
                 "profile" => "Simple Profile",
                 "frame_rate" => "24/1",

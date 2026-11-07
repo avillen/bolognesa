@@ -5,6 +5,7 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack do
   @type t :: %__MODULE__{
           kind: kind(),
           codec: String.t() | nil,
+          codec_string: String.t() | nil,
           width: pos_integer() | nil,
           height: pos_integer() | nil,
           channels: pos_integer() | nil,
@@ -27,6 +28,7 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack do
   defstruct [
     :kind,
     :codec,
+    :codec_string,
     :width,
     :height,
     :channels,
@@ -75,7 +77,14 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack do
 
   defp negotiation_facts(attrs) do
     texts =
-      for field <- [:profile, :pixel_format, :color_transfer, :color_primaries, :color_space],
+      for field <- [
+            :codec_string,
+            :profile,
+            :pixel_format,
+            :color_transfer,
+            :color_primaries,
+            :color_space
+          ],
           into: %{} do
         value = Map.get(attrs, field)
 
