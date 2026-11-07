@@ -48,6 +48,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
       duration_ms: 60_000
     }
 
+    {source, _plan} = negotiated_source(source)
     %{source: source}
   end
 
@@ -55,14 +56,23 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     attach_lifecycle()
 
     assert {:ok, session} =
-             TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 12_000)
+             TranscodeManager.start(
+               1,
+               {:movie, 2},
+               3,
+               source,
+               plan(source, :full_conversion),
+               12_000
+             )
 
     assert_receive {[:bolognesa, :playback, :session, :started], %{count: 1}, metadata}
 
     assert metadata == %{
              session_id: session.id,
              file_id: 3,
-             strategy: :full_transcode,
+             strategy: :full_conversion,
+             transport: :hls_js,
+             delivery_reason: :full_conversion_required,
              offset_ms: 12_000
            }
 
@@ -80,7 +90,8 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     attach_lifecycle()
 
     for {action, expected} <- [{:ended, :ended}, {:terminate, :liveview_terminated}] do
-      {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
+      {:ok, session} =
+        TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
 
       socket = %Phoenix.LiveView.Socket{
         assigns: %{
@@ -126,7 +137,9 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
 
   test "waits for three published segments, including after a seek", %{source: source} do
     for offset <- [0, 12_000] do
-      {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, offset)
+      {:ok, session} =
+        TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), offset)
+
       names = ["seg-000000.ts", "seg-000001.ts", "seg-000002.ts"]
       Enum.each(names, &File.write!(Path.join(session.directory, &1), "segment"))
 
@@ -148,7 +161,9 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   test "a long copied-video segment supplies the cushion without waiting for three GOPs", %{
     source: source
   } do
-    {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :audio_only, 0)
+    {:ok, session} =
+      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :audio_conversion), 0)
+
     File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
     path = Path.join(session.directory, "index.m3u8")
     File.write!(path, "#EXTM3U\n#EXTINF:16.0,\nseg-000000.ts\n")
@@ -156,7 +171,9 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   end
 
   test "a short completed playlist can start without three segments", %{source: source} do
-    {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 59_000)
+    {:ok, session} =
+      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 59_000)
+
     path = Path.join(session.directory, "index.m3u8")
     File.write!(path, "#EXTM3U\n#EXT-X-ENDLIST\n")
     assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
@@ -167,30 +184,55 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
 
   test "rejects malformed or untyped video references", %{source: source} do
     for ref <- [2, {:series, 2}, {:movie, 0}] do
-      assert {:error, :not_found} = TranscodeManager.start(1, ref, 3, source, :full_transcode, 0)
+      assert {:error, :not_found} =
+               TranscodeManager.start(1, ref, 3, source, plan(source, :full_conversion), 0)
     end
   end
 
   test "rejects a seek outside known duration", %{source: source} do
     assert {:error, :invalid_offset} =
-             TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, -1)
+             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), -1)
 
     assert {:error, :invalid_offset} =
-             TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 60_001)
+             TranscodeManager.start(
+               1,
+               {:movie, 2},
+               3,
+               source,
+               plan(source, :full_conversion),
+               60_001
+             )
   end
 
   test "allows one running conversion and releases it on stop", %{source: source} do
-    assert {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
-    assert {:error, :busy} = TranscodeManager.start(2, {:movie, 2}, 3, source, :full_transcode, 0)
+    assert {:ok, session} =
+             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
+    assert {:error, :busy} =
+             TranscodeManager.start(2, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
     assert {:ok, ^session} = TranscodeManager.lookup(session.id)
     assert :ok = TranscodeManager.stop(session.id)
     assert {:error, :not_found} = TranscodeManager.lookup(session.id)
-    assert {:ok, _} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 1_000)
+
+    assert {:ok, _} =
+             TranscodeManager.start(
+               1,
+               {:movie, 2},
+               3,
+               source,
+               plan(source, :full_conversion),
+               1_000
+             )
   end
 
   test "a new playback replaces the same actor's session", %{source: source} do
-    assert {:ok, previous} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
-    assert {:ok, next} = TranscodeManager.start(1, {:movie, 4}, 5, source, :full_transcode, 0)
+    assert {:ok, previous} =
+             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
+    assert {:ok, next} =
+             TranscodeManager.start(1, {:movie, 4}, 5, source, plan(source, :full_conversion), 0)
+
     assert next.id != previous.id
     assert {:error, :not_found} = TranscodeManager.lookup(previous.id)
     refute File.exists?(previous.directory)
@@ -200,12 +242,21 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   end
 
   test "invalid replacement keeps the current session and its fragments", %{source: source} do
-    {:ok, previous} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
+    {:ok, previous} =
+      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
     fragment = Path.join(previous.directory, "seg-000000.ts")
     File.write!(fragment, "published fragment")
 
     assert {:error, :invalid_offset} =
-             TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 60_001)
+             TranscodeManager.start(
+               1,
+               {:movie, 2},
+               3,
+               source,
+               plan(source, :full_conversion),
+               60_001
+             )
 
     assert {:ok, ^previous} = TranscodeManager.lookup(previous.id)
     assert File.read!(fragment) == "published fragment"
@@ -214,22 +265,26 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   end
 
   test "unavailable replacement source keeps the current session", %{source: source} do
-    {:ok, previous} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
+    {:ok, previous} =
+      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
     missing = %{source | relative_path: "missing.avi"}
 
     assert {:error, :unreadable} =
-             TranscodeManager.start(1, {:movie, 4}, 5, missing, :full_transcode, 0)
+             TranscodeManager.start(1, {:movie, 4}, 5, missing, plan(source, :full_conversion), 0)
 
     assert {:ok, ^previous} = TranscodeManager.lookup(previous.id)
     assert File.dir?(previous.directory)
   end
 
   test "missing FFmpeg keeps the current session", %{source: source} do
-    {:ok, previous} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
+    {:ok, previous} =
+      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
     Application.put_env(:bolognesa, :ffmpeg_executable, Path.join(source.path, "missing-ffmpeg"))
 
     assert {:error, :tool_unavailable} =
-             TranscodeManager.start(1, {:movie, 4}, 5, source, :full_transcode, 0)
+             TranscodeManager.start(1, {:movie, 4}, 5, source, plan(source, :full_conversion), 0)
 
     assert {:ok, ^previous} = TranscodeManager.lookup(previous.id)
     assert File.dir?(previous.directory)
@@ -243,7 +298,8 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
       spawn(fn ->
         send(
           caller,
-          {:started, TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)}
+          {:started,
+           TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)}
         )
 
         receive do
@@ -268,7 +324,9 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   end
 
   test "suspends production until playback resumes", %{source: source} do
-    assert {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
+    assert {:ok, session} =
+             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
     assert :ok = TranscodeManager.suspend(session.id)
     assert :ok = TranscodeManager.resume(session.id)
     assert :ok = TranscodeManager.stop(session.id)
@@ -276,7 +334,8 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   end
 
   test "the ended event releases only the displayed session", %{source: source} do
-    assert {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
+    assert {:ok, session} =
+             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
 
     socket = %Phoenix.LiveView.Socket{
       assigns: %{
@@ -308,7 +367,9 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   end
 
   test "logout cleanup only stops the matching actor", %{source: source} do
-    assert {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
+    assert {:ok, session} =
+             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
     assert :ok = TranscodeManager.stop_by_actor(2)
     assert {:ok, _} = TranscodeManager.lookup(session.id)
     assert :ok = TranscodeManager.stop_by_actor(1)
@@ -319,7 +380,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     Application.put_env(:bolognesa, :transcode_root, Path.join(source.path, "hls"))
 
     assert {:error, :unsafe_root} =
-             TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
+             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
   end
 
   test "a failed FFmpeg releases the only conversion slot", %{source: source} do
@@ -328,7 +389,10 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     File.chmod!(bad, 0o700)
     good = Application.fetch_env!(:bolognesa, :ffmpeg_executable)
     Application.put_env(:bolognesa, :ffmpeg_executable, bad)
-    assert {:ok, session} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
+
+    assert {:ok, session} =
+             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
     %{port: port} = :sys.get_state(TranscodeManager)
     ref = :erlang.monitor(:port, port)
     Port.command(port, "\n")
@@ -336,7 +400,9 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     _ = :sys.get_state(TranscodeManager)
     assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     Application.put_env(:bolognesa, :ffmpeg_executable, good)
-    assert {:ok, _} = TranscodeManager.start(1, {:movie, 2}, 3, source, :full_transcode, 0)
+
+    assert {:ok, _} =
+             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
   end
 
   defp restore(key, nil), do: Application.delete_env(:bolognesa, key)
@@ -360,6 +426,17 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     refute File.exists?(first.directory)
   end
 
+  test "source-only strategies cannot launch FFmpeg without a negotiated plan", %{source: source} do
+    root = Application.fetch_env!(:bolognesa, :transcode_root)
+
+    for strategy <- [:audio_only, :full_transcode] do
+      assert {:error, :unsupported} =
+               TranscodeManager.start(1, {:movie, 2}, 3, source, strategy, 0)
+    end
+
+    refute File.exists?(root)
+  end
+
   test "stale or forged plans are rejected before creating a session directory", %{
     source: original
   } do
@@ -381,6 +458,12 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     end
 
     refute File.exists?(root)
+  end
+
+  defp plan(source, mode) do
+    {:ok, candidates} = Negotiation.candidates(source)
+    candidate = Enum.find(candidates, &(&1.plan.mode == mode))
+    %{candidate.plan | transport: :hls_js}
   end
 
   defp negotiated_source(source) do

@@ -22,7 +22,7 @@ defmodule Bolognesa.Playback.Domain.ReadModels.TranscodeSession do
           offset_ms: non_neg_integer(),
           duration_ms: non_neg_integer() | nil,
           directory: String.t(),
-          strategy: :audio_only | :full_transcode | DeliveryPlan.mode(),
+          strategy: DeliveryPlan.mode(),
           plan: DeliveryPlan.t() | nil,
           status: :running | :finished | :failed
         }

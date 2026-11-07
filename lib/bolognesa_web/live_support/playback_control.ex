@@ -24,6 +24,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
       |> assign(:playback_attempt_id, Ecto.UUID.generate())
       |> assign(:playback_duration_ms, nil)
       |> assign(:capability_report, nil)
+      |> assign(:compatible_playback_available?, false)
       |> assign(:recovery_used?, false)
       |> assign(:inspection_refresh_used?, false)
       |> assign(:inspection_refresh_requested?, false)
@@ -69,6 +70,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
           |> assign(:playback_probe, nil)
           |> assign(:delivery_plan, plan)
           |> assign(:capability_report, raw)
+          |> assign(:compatible_playback_available?, compatible_available?(socket, raw, plan))
           |> deliver(0, :version_selected)
 
         {:error, :invalid_report} ->
@@ -108,7 +110,10 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
     raw = socket.assigns[:capability_report]
 
     if is_map(raw) and !socket.assigns.recovery_used? do
-      socket = assign(socket, :recovery_used?, true)
+      socket =
+        socket
+        |> assign(:recovery_used?, true)
+        |> assign(:compatible_playback_available?, false)
 
       case Playback.select_video_plan(
              socket.assigns.current_scope.actor,
@@ -134,6 +139,33 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
     else
       stop_transcode(socket, :client_error)
       PlaybackState.transcode_failed(socket, :interrupted)
+    end
+  end
+
+  @spec play_compatible(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
+  def play_compatible(socket) do
+    if socket.assigns[:compatible_playback_available?] and
+         socket.assigns.playback_phase in [:ready, :error] and !socket.assigns[:loading?] do
+      socket
+      |> assign(:playback_attempt_id, Ecto.UUID.generate())
+      |> assign(:recovery_used?, false)
+      |> recover(0)
+    else
+      socket
+    end
+  end
+
+  defp compatible_available?(socket, raw, selected) do
+    case Playback.select_video_plan(
+           socket.assigns.current_scope.actor,
+           socket.assigns.content_ref,
+           socket.assigns.selected_file_id,
+           socket.assigns.playback_candidates,
+           Map.put(raw, "preference", "compatible"),
+           raw["generation"]
+         ) do
+      {:ok, plan} -> plan != selected
+      _ -> false
     end
   end
 

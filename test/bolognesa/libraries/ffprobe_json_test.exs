@@ -50,6 +50,33 @@ defmodule Bolognesa.Libraries.FfprobeJsonTest do
     assert Map.get(audio, :sample_rate) == 48_000
   end
 
+  test "uses exact pixel format depth when ffprobe omits raw sample depth" do
+    for {format, raw, expected} <- [
+          {"yuv420p", nil, 8},
+          {"yuv420p10le", "0", 10},
+          {"yuv420p12le", nil, 12},
+          {"unrecognized", nil, nil},
+          {"yuv420p", "10", nil},
+          {"yuv420p", "invalid", nil}
+        ] do
+      json =
+        Jason.encode!(%{
+          "format" => %{},
+          "streams" => [
+            %{
+              "codec_type" => "video",
+              "codec_name" => "hevc",
+              "pix_fmt" => format,
+              "bits_per_raw_sample" => raw
+            }
+          ]
+        })
+
+      assert {:ok, %{tracks: [video]}} = FfprobeJson.parse(json)
+      assert video.bit_depth == expected
+    end
+  end
+
   test "malformed optional negotiation facts stay unknown without rejecting a legacy track" do
     json =
       Jason.encode!(%{

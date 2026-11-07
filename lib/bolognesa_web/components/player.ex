@@ -9,6 +9,7 @@ defmodule BolognesaWeb.Player do
   attr :playback_phase, :atom, default: :idle
   attr :playback_attempt_id, :string, default: nil
   attr :playback_probe, :map, default: nil
+  attr :compatible_playback_available?, :boolean, default: false
   attr :delivery_plan, :any, default: nil
   attr :inspection_refresh_used?, :boolean, default: false
   attr :inspection_refresh_requested?, :boolean, default: false
@@ -59,6 +60,8 @@ defmodule BolognesaWeb.Player do
         data-playback-error={@playback_error}
         data-retry-file-id={@selected_file_id || @retry_file_id}
         data-retry-label={gettext("Reintentar reproducción")}
+        data-compatible-playback-available={to_string(@compatible_playback_available?)}
+        data-compatible-playback-label={gettext("Probar reproducción compatible")}
         class="bolognesa-video-frame"
       >
         <div id={"#{@prefix}-video-ui"} phx-update="ignore">
@@ -78,6 +81,13 @@ defmodule BolognesaWeb.Player do
           </media-i18n>
         </div>
       </div>
+      <button
+        :if={@compatible_playback_available? && @playback_phase in [:ready, :error]}
+        id={"#{@prefix}-playback-compatible"}
+        type="button"
+        phx-click="playback_compatible"
+        class="series-episode-play"
+      >{gettext("Probar reproducción compatible")}</button>
     </section>
     <p :if={@playback_phase == :checking} role="status" id={"#{@prefix}-playback-checking"}>
       {gettext("Comprobando compatibilidad del navegador…")}
@@ -85,6 +95,7 @@ defmodule BolognesaWeb.Player do
     <p :if={@playback_phase == :preparing} role="status" id={"#{@prefix}-playback-preparing"}>
       {gettext("Preparando vídeo…")}
     </p>
+
     <div :if={@playback_error && @selected_file_id} class="mt-3 flex flex-wrap gap-3">
       <button
         :if={!@inspection_refresh_used?}

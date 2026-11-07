@@ -5,7 +5,7 @@ defmodule Bolognesa.Playback.FfmpegArgsTest do
   alias Bolognesa.Playback.Infrastructure.FfmpegArgs
 
   test "audio strategy copies video and converts audio to AAC" do
-    args = FfmpegArgs.for(:audio_only, "/movies/original.mkv", "/tmp/session", 0)
+    args = FfmpegArgs.for(plan(:audio_conversion), "/movies/original.mkv", "/tmp/session", 0)
     assert "-re" in args
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-c:v", "copy"])
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-c:a", "aac"])
@@ -14,8 +14,8 @@ defmodule Bolognesa.Playback.FfmpegArgsTest do
   end
 
   test "both strategies build an initial cushion while retaining paced sliding output" do
-    for strategy <- [:audio_only, :full_transcode] do
-      args = FfmpegArgs.for(strategy, "/movies/input.mkv", "/tmp/session", 0)
+    for strategy <- [:audio_conversion, :full_conversion] do
+      args = FfmpegArgs.for(plan(strategy), "/movies/input.mkv", "/tmp/session", 0)
       pairs = Enum.chunk_every(args, 2, 1, :discard)
       assert ["-readrate_initial_burst", "12"] in pairs
       assert "-re" in args
@@ -24,7 +24,7 @@ defmodule Bolognesa.Playback.FfmpegArgsTest do
   end
 
   test "video strategy encodes H.264 and AAC with browser pixel format" do
-    args = FfmpegArgs.for(:full_transcode, "/movies/original.avi", "/tmp/session", 12_000)
+    args = FfmpegArgs.for(plan(:full_conversion), "/movies/original.avi", "/tmp/session", 12_000)
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-c:v", "libx264"])
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-pix_fmt", "yuv420p"])
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-ss", "12.000"])

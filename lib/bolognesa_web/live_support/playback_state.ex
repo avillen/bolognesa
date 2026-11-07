@@ -11,6 +11,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
     |> assign(:playback_attempt_id, nil)
     |> assign(:playback_duration_ms, nil)
     |> assign(:capability_report, nil)
+    |> assign(:compatible_playback_available?, false)
     |> assign(:recovery_used?, false)
     |> assign(:playback_phase, :idle)
     |> assign(:playback_probe, nil)

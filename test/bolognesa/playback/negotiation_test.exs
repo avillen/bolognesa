@@ -33,6 +33,33 @@ defmodule Bolognesa.Playback.NegotiationTest do
     assert {:ok, %{mode: :direct}} = Negotiation.select(source, candidates, observations)
   end
 
+  test "Matroska streams can be copied without inventing missing average bitrates" do
+    source = source()
+    [video, audio] = source.tracks
+
+    source = %{
+      source
+      | format: "matroska,webm",
+        tracks: [
+          %{video | bit_rate: nil},
+          %{audio | bit_rate: nil}
+        ]
+    }
+
+    assert {:ok, candidates} = Negotiation.candidates(source)
+    candidate = Enum.find(candidates, &(&1.plan.mode == :remux))
+    assert candidate
+
+    {:ok, observations} =
+      CapabilityReport.new(report(candidates, candidate.id), candidates, "generation")
+
+    assert {:ok, plan} = Negotiation.select(source, candidates, observations)
+    assert plan.video_action == :copy
+    assert plan.audio_action == :copy
+    assert is_nil(plan.configuration.video.bit_rate)
+    assert is_nil(plan.configuration.audio.bit_rate)
+  end
+
   test "compatible preference selects the verified full conversion envelope" do
     source = source()
     {:ok, candidates} = Negotiation.candidates(source)

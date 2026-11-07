@@ -18,7 +18,14 @@ export function createPlayerFrame({el, video, pushEvent}) {
     if (fileId) pushEvent("play", {file_id: fileId})
   }
   retry.addEventListener("click", onRetry)
-  feedback.append(message, retry)
+  const compatible = document.createElement("button")
+  compatible.type = "button"
+  compatible.setAttribute("data-playback-compatible", "")
+  const onCompatible = () => {
+    if (el.dataset.compatiblePlaybackAvailable === "true") pushEvent("playback_compatible", {})
+  }
+  compatible.addEventListener("click", onCompatible)
+  feedback.append(message, retry, compatible)
   skin.append(feedback)
   const onFullscreenChange = () => skin.toggleAttribute("data-player-fullscreen",
     (document.fullscreenElement || document.webkitFullscreenElement) === skin)
@@ -38,6 +45,8 @@ export function createPlayerFrame({el, video, pushEvent}) {
       message.textContent = data.playbackError || ""
       retry.textContent = data.retryLabel || ""
       retry.hidden = !data.retryFileId
+      compatible.textContent = data.compatiblePlaybackLabel || ""
+      compatible.hidden = data.compatiblePlaybackAvailable !== "true"
       feedback.hidden = !data.playbackError
       // Session changes retain the frame; a different file starts a new opening.
       if (fileId === data.fileId) return
@@ -49,6 +58,7 @@ export function createPlayerFrame({el, video, pushEvent}) {
       document.removeEventListener("webkitfullscreenchange", onFullscreenChange)
       video.removeEventListener("loadeddata", clearInitialLoading)
       retry.removeEventListener("click", onRetry)
+      compatible.removeEventListener("click", onCompatible)
     },
   }
 }

@@ -112,13 +112,15 @@ Add an explicit `:checking` playback phase separate from selected-file identity.
 
 **Modify:** existing scripts under `scripts/playback/` and browser fixtures/tests; temporary media and reports belong under `tmp/`.
 
-- [ ] Expose the approved explicit compatible-playback action when a compatible candidate has positive support; verify it with the real UI. Native source-not-supported errors (code 4) are ambiguous with network failures and must remain terminal without an explicit action.
+- [x] Expose the approved explicit compatible-playback action when a compatible candidate has positive support; verify it with the real UI. Native source-not-supported errors (code 4) are ambiguous with network failures and must remain terminal without an explicit action.
 
-- [ ] Generate synthetic direct MP4, H.264/AAC MKV, H.264/AC-3, incompatible video/AAC, both-stream conversion, silent and false-report fixtures with actual FFmpeg.
-- [ ] Inspect actual output codecs/profile/pixel format/mappings with ffprobe; verify copied stream packet equivalence where practical and compare matched remux/full-conversion CPU observations.
-- [ ] Exercise the real LiveView and FFmpeg path in desktop Chrome: startup, seek, pause/resume, EOF, fallback, episode/part continuation and fullscreen stability. Test native HLS separately where available.
-- [ ] Run `node --test assets/test/*.mjs`, relevant browser harnesses and `sh scripts/dev/local.sh test`; require zero failures or record precise blockers. Use native setup/server; confirm Tidewave instance before runtime inspection. Do not start Docker automatically.
-- [ ] Record a sanitized matrix in #10 with actual browser/device versions. Keep physical Chrome-on-iPhone acceptance pending until actually tested; emulation does not satisfy it.
+- [x] Generate synthetic direct MP4, H.264/AAC MKV, H.264/AC-3, incompatible video/AAC, both-stream conversion, silent and false-report fixtures with actual FFmpeg.
+- [x] Inspect actual output codecs/profile/pixel format/mappings with ffprobe; verify copied stream packet equivalence where practical and compare matched remux/full-conversion CPU observations.
+- [x] Exercise the real LiveView and FFmpeg path in desktop Chrome: startup, seek, pause/resume, EOF, fallback, episode/part continuation and fullscreen stability. Test native HLS separately where available.
+- [x] Run `node --test assets/test/*.mjs`, relevant browser harnesses and `sh scripts/dev/local.sh test`; require zero failures or record precise blockers. Use native setup/server; confirm Tidewave instance before runtime inspection. Do not start Docker automatically.
+- [x] Record a sanitized matrix in #10 with actual browser/device versions. Keep physical Chrome-on-iPhone acceptance pending until actually tested; emulation does not satisfy it.
+
+Local desktop gate passed with actual inspected synthetic sources and generated output. The browser matrix labels controlled original rejection and injected native errors separately from real media consumption; an actual aborted download remained terminal without conversion. Native HLS and physical Chrome on iPhone remain unverified and acceptance in #10 stays open.
 
 ## Task 8 — Document implemented limits and final review
 

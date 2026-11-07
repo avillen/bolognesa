@@ -102,7 +102,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
          profile: Map.get(stream, "profile"),
          level: Map.get(stream, "level"),
          pixel_format: Map.get(stream, "pix_fmt"),
-         bit_depth: integer_field(stream["bits_per_raw_sample"]),
+         bit_depth: bit_depth(stream),
          frame_rate: Map.get(stream, "r_frame_rate"),
          bit_rate: integer_field(stream["bit_rate"]),
          sample_rate: integer_field(stream["sample_rate"]),
@@ -119,6 +119,24 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
 
   defp track(%{"codec_type" => _other}), do: {:ok, nil}
   defp track(_), do: {:error, :invalid_output}
+
+  defp bit_depth(stream) do
+    raw = stream["bits_per_raw_sample"]
+    known = pixel_depth(stream["pix_fmt"])
+    declared = integer_field(raw)
+
+    cond do
+      raw in [nil, "0", 0] -> known
+      is_nil(known) -> declared
+      declared == known -> known
+      true -> nil
+    end
+  end
+
+  defp pixel_depth("yuv420p"), do: 8
+  defp pixel_depth("yuv420p10le"), do: 10
+  defp pixel_depth("yuv420p12le"), do: 12
+  defp pixel_depth(_), do: nil
 
   defp integer_field(value) when is_binary(value) and byte_size(value) <= 16 do
     case Integer.parse(value) do

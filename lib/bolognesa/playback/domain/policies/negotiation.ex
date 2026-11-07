@@ -224,14 +224,13 @@ defmodule Bolognesa.Playback.Domain.Policies.Negotiation do
 
   defp copy_video_bounds?(video) do
     video.width <= 1920 and video.height <= 1080 and frame_rate(video.frame_rate) <= 30 and
-      is_integer(video.bit_rate) and video.bit_rate <= 8_000_000
+      (is_nil(video.bit_rate) or video.bit_rate <= 8_000_000)
   end
 
   defp copy_audio?(audio),
     do:
       audio.codec == "aac" and exact_codec?(audio) and audio.profile == "LC" and
-        audio.channels in [1, 2] and audio.sample_rate in [32_000, 44_100, 48_000] and
-        is_integer(audio.bit_rate)
+        audio.channels in [1, 2] and audio.sample_rate in [32_000, 44_100, 48_000]
 
   defp video_config(video),
     do: %{

@@ -4,7 +4,7 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
   alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
 
   @spec for(
-          DeliveryPlan.t() | :audio_only | :full_transcode,
+          DeliveryPlan.t(),
           String.t(),
           String.t(),
           non_neg_integer()
@@ -35,62 +35,13 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
       planned_video_args(plan) ++ planned_audio_args(plan.audio_action) ++ output_args(directory)
   end
 
-  def for(strategy, input, directory, offset_ms)
-      when strategy in [:audio_only, :full_transcode] do
-    seek = :erlang.float_to_binary(offset_ms / 1_000, decimals: 3)
-
-    [
-      "-hide_banner",
-      "-nostdin",
-      "-loglevel",
-      "error",
-      "-ss",
-      seek,
-      "-re",
-      "-readrate_initial_burst",
-      "12",
-      "-i",
-      input,
-      "-map",
-      "0:v:0",
-      "-map",
-      "0:a:0",
-      "-sn",
-      "-dn"
-    ] ++
-      video_args(strategy) ++
-      [
-        "-c:a",
-        "aac",
-        "-b:a",
-        "128k",
-        "-ac",
-        "2",
-        "-f",
-        "hls",
-        "-hls_segment_type",
-        "mpegts",
-        "-hls_time",
-        "4",
-        "-hls_list_size",
-        "12",
-        "-hls_delete_threshold",
-        "2",
-        "-hls_flags",
-        "delete_segments+temp_file",
-        "-hls_segment_filename",
-        Path.join(directory, "seg-%06d.ts"),
-        Path.join(directory, "index.m3u8")
-      ]
-  end
-
   defp planned_video_args(%DeliveryPlan{video_action: :copy}),
     do: ["-c:v", "copy", "-bsf:v", "h264_mp4toannexb"]
 
   defp planned_video_args(%DeliveryPlan{video_action: :h264, configuration: config}) do
     video = config.video
 
-    video_args(:full_transcode) ++
+    encoded_video_args() ++
       [
         "-profile:v",
         "baseline",
@@ -133,9 +84,7 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
     ]
   end
 
-  defp video_args(:audio_only), do: ["-c:v", "copy", "-bsf:v", "h264_mp4toannexb"]
-
-  defp video_args(:full_transcode),
+  defp encoded_video_args,
     do: [
       "-c:v",
       "libx264",

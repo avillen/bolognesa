@@ -368,6 +368,8 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         assert_receive :playback_source_selected
         assert_receive :playback_source_selected
         assert_receive :playback_source_selected
+        # Eligibility for the explicit compatible action is independently authorized.
+        assert_receive :playback_source_selected
         refute_receive :playback_source_selected
       end
 
@@ -572,6 +574,9 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       playback_error(ctx.view, %{"file_id" => to_string(ctx.first.id)})
       assert has_element?(ctx.view, "#movie-playback-error")
       refute has_element?(ctx.view, "#movie-playback-preparing")
+      refute has_element?(ctx.view, "#movie-playback-compatible")
+      render_hook(ctx.view, "playback_compatible", %{})
+      refute has_element?(ctx.view, "#movie-playback-preparing")
     end
 
     test "explicit original delivery ignores errors from its previous source", ctx do
@@ -594,6 +599,37 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       assert has_element?(ctx.view, "#movie-playback-error")
       render_hook(ctx.view, "playback_original", %{})
       playback_error(ctx.view, %{"file_id" => to_string(ctx.second.id), "position_ms" => "60001"})
+      assert has_element?(ctx.view, "#movie-playback-error")
+      refute has_element?(ctx.view, "#movie-playback-preparing")
+    end
+
+    test "ambiguous failure offers explicit compatible playback without automatic recovery",
+         ctx do
+      old = playback_attempt(ctx.view)
+      playback_error(ctx.view, %{"file_id" => to_string(ctx.first.id), "error_kind" => "unknown"})
+      refute has_element?(ctx.view, "#movie-playback-preparing")
+      render_click(element(ctx.view, "#movie-playback-compatible"))
+      session = preparing_session(ctx.view)
+      assert session.strategy == :full_conversion
+      refute playback_attempt(ctx.view) == old
+      make_ready(ctx.view, session)
+      refute has_element?(ctx.view, "#movie-playback-compatible")
+
+      render_hook(ctx.view, "transcode_error", %{
+        "session_id" => session.id,
+        "attempt_id" => playback_attempt(ctx.view),
+        "error_kind" => "media",
+        "position_ms" => "0"
+      })
+
+      assert has_element?(ctx.view, "#movie-playback-error")
+      refute has_element?(ctx.view, "#movie-playback-preparing")
+    end
+
+    test "explicit compatible playback rechecks source availability", ctx do
+      assert has_element?(ctx.view, "#movie-playback-compatible")
+      mark_unavailable(ctx.first)
+      render_click(element(ctx.view, "#movie-playback-compatible"))
       assert has_element?(ctx.view, "#movie-playback-error")
       refute has_element?(ctx.view, "#movie-playback-preparing")
     end

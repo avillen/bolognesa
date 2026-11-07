@@ -36,7 +36,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
           ContentRef.t(),
           pos_integer(),
           Source.t(),
-          DeliveryPlan.t() | :audio_only | :full_transcode,
+          DeliveryPlan.t(),
           integer(),
           stop_reason() | :session_replaced
         ) :: {:ok, TranscodeSession.t()} | {:error, failure()}
@@ -233,13 +233,13 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
         offset_ms: request.offset_ms,
         duration_ms: source.duration_ms,
         directory: directory,
-        strategy: strategy_name(request.strategy),
-        plan: delivery_plan(request.strategy)
+        strategy: request.strategy.mode,
+        plan: request.strategy
       }
 
       args =
         FfmpegArgs.for(
-          session.plan || session.strategy,
+          session.plan,
           Path.join(source.path, source.relative_path),
           directory,
           session.offset_ms
@@ -254,15 +254,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   defp validate_strategy(%DeliveryPlan{} = plan, source),
     do: Negotiation.validate_plan(source, plan)
 
-  # Temporary adapter until all LiveView callers negotiate in Task 5.
-  defp validate_strategy(strategy, _source) when strategy in [:audio_only, :full_transcode],
-    do: :ok
-
   defp validate_strategy(_, _), do: {:error, :unsupported}
-  defp strategy_name(%DeliveryPlan{mode: mode}), do: mode
-  defp strategy_name(strategy), do: strategy
-  defp delivery_plan(%DeliveryPlan{} = plan), do: plan
-  defp delivery_plan(_), do: nil
 
   defp create_directory(root, id) do
     directory = Path.join(root, "session-#{id}")

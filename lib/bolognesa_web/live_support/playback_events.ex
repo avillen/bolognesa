@@ -41,6 +41,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   def handle_event("playback_capabilities", params, socket),
     do: {:noreply, PlaybackControl.accept_report(socket, params)}
 
+  def handle_event("playback_compatible", _params, socket),
+    do: {:noreply, PlaybackControl.play_compatible(socket)}
+
   def handle_event("playback_original", _params, socket) do
     if socket.assigns.selected_file_id do
       case Playback.prepare_original(
@@ -55,6 +58,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
            socket
            |> Phoenix.Component.assign(:playback_attempt_id, Ecto.UUID.generate())
            |> Phoenix.Component.assign(:capability_report, nil)
+           |> Phoenix.Component.assign(:compatible_playback_available?, false)
            |> Phoenix.Component.assign(:recovery_used?, true)
            |> Phoenix.Component.assign(:delivery_plan, nil)
            |> PlaybackState.direct(socket.assigns.selected_file_id)}
