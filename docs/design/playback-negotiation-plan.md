@@ -68,10 +68,10 @@ Extract the scan repository's private inspection scheduling into the shared `Ins
 
 **Interfaces:** candidate generation consumes `Source.t()` and preference; returns at most six server-owned candidate configurations. Report validation consumes string-keyed report plus issued candidates and generation; returns typed results or bounded invalid-report error. Selection consumes source, candidates and validated observations; returns a typed plan or metadata/unsupported result.
 
-- [ ] Write failing tests covering all five action combinations, exact output properties, silent video, HDR/unknown-color rejection, muxer restrictions, and direct default-track ambiguity.
-- [ ] Add validation failures for unknown versions/fields/enums, duplicate/unissued IDs, 65-byte tokens, seven results and reports over 8 KiB; missing results remain unknown.
-- [ ] Confirm failures, implement the pure policies and closed validation without input-derived atoms, then run the focused tests.
-- [ ] Require deterministic cheapest eligible selection and no unsafe candidate creation; review and commit `feat(playback): negotiate validated delivery plans`.
+- [x] Write failing tests covering all five action combinations, exact output properties, silent video, HDR/unknown-color rejection, muxer restrictions, and direct default-track ambiguity.
+- [x] Add validation failures for unknown versions/fields/enums, duplicate/unissued IDs, 65-byte tokens, seven results and reports over 8 KiB; missing results remain unknown.
+- [x] Confirm failures, implement the pure policies and closed validation without input-derived atoms, then run the focused tests.
+- [x] Require deterministic cheapest eligible selection and no unsafe candidate creation; review and commit `feat(playback): negotiate validated delivery plans`.
 
 ## Task 4 — Execute independent stream actions
 
