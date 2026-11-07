@@ -44,6 +44,21 @@ test("pausing and resuming use the file position and cleanup stops further event
   assert.equal(events.length, 2)
 })
 
+test("current decode errors remain visible while a resume acknowledgement is pending", () => {
+  const {context, el, events} = setup()
+  el.dataset.attemptId = "attempt"
+  el.pause()
+  el.paused = false
+  el.dispatchEvent(new Event("play"))
+  el.error = {code: 3}
+  el.dispatchEvent(new Event("error"))
+  el.dispatchEvent(new Event("error"))
+  assert.deepEqual(events.at(-1), ["transcode_error", {session_id: "a", attempt_id: "attempt",
+    error_kind: "media", position_ms: "132345"}])
+  assert.equal(events.filter(([event]) => event === "transcode_error").length, 1)
+  context.controller.destroy()
+})
+
 test("seeking while paused does not request autoplay", () => {
   const {context, el, events} = setup()
   el.paused = true

@@ -52,7 +52,7 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
         "-bufsize:v",
         "16M",
         "-vf",
-        "scale=#{video.width}:#{video.height}:flags=fast_bilinear,setsar=1",
+        "scale=#{video.width}:#{video.height}:flags=fast_bilinear",
         "-r",
         Float.to_string(video.frame_rate)
       ]

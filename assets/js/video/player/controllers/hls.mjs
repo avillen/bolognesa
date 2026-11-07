@@ -31,7 +31,7 @@ export function createHlsController({video, config, pushEvent, reportPlaybackErr
     pushEvent("playback_resume", {session_id: sessionId, position_ms: String(currentPosition())})
   }
   const onError = (kind = mediaErrorKind(video.error), diagnose = false) => {
-    if (destroyed || serverPaused || resuming || reported) return
+    if (destroyed || serverPaused || video.fileTimeline?.pending || reported) return
     reported = true
     if (diagnose === true) reportPlaybackError?.()
     pushEvent("transcode_error", {session_id: sessionId, attempt_id: config.attemptId,

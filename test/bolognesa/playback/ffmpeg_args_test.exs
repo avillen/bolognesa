@@ -57,7 +57,7 @@ defmodule Bolognesa.Playback.FfmpegArgsTest do
         assert ["-level:v", "4.1"] in pairs
         assert ["-maxrate:v", "8M"] in pairs
         assert ["-bufsize:v", "16M"] in pairs
-        assert ["-vf", "scale=1920:1080:flags=fast_bilinear,setsar=1"] in pairs
+        assert ["-vf", "scale=1920:1080:flags=fast_bilinear"] in pairs
         assert ["-r", "30.0"] in pairs
       end
 

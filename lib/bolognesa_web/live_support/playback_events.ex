@@ -6,7 +6,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   alias BolognesaWeb.LiveSupport.PlaybackDiagnostics
   alias BolognesaWeb.LiveSupport.PlaybackState
 
-  @spec handle_event(binary(), map(), Phoenix.LiveView.Socket.t()) ::
+  @spec handle_event(binary(), PlaybackControl.capability_payload(), Phoenix.LiveView.Socket.t()) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
   def handle_event("playback_diagnostic", params, socket),
     do: {:noreply, PlaybackDiagnostics.record(socket, params)}

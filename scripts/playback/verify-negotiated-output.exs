@@ -74,6 +74,75 @@ defmodule NegotiatedOutputVerification do
     verify(Path.join(directory, "remux.mkv"), :full_conversion, directory)
   end
 
+  @spec verify_anamorphic(String.t()) :: :ok
+  def verify_anamorphic(directory) do
+    File.mkdir_p!(directory)
+    input = Path.join(directory, "anamorphic.mp4")
+
+    command!("ffmpeg", [
+      "-y",
+      "-v",
+      "error",
+      "-f",
+      "lavfi",
+      "-i",
+      "testsrc2=size=720x576:rate=25,setsar=64/45",
+      "-t",
+      "1",
+      "-c:v",
+      "libx264",
+      "-profile:v",
+      "high",
+      "-pix_fmt",
+      "yuv420p",
+      "-x264-params",
+      "colorprim=bt709:transfer=bt709:colormatrix=bt709",
+      input
+    ])
+
+    media = inspect!(input)
+
+    source = %Source{
+      revision: 1,
+      format: media.format,
+      duration_ms: media.duration_ms,
+      tracks: Enum.map(media.tracks, &struct!(TechnicalTrack, Map.from_struct(&1)))
+    }
+
+    {:ok, candidates} = Negotiation.candidates(source)
+    candidate = Enum.find(candidates, &(&1.plan.mode == :video_conversion))
+    plan = %{candidate.plan | transport: :hls_js}
+    args = FfmpegArgs.for(plan, Path.expand(input), Path.expand(directory), 0)
+    command!("ffmpeg", ["-y" | args])
+
+    result =
+      command!("ffprobe", [
+        "-v",
+        "quiet",
+        "-show_entries",
+        "stream=sample_aspect_ratio,display_aspect_ratio,width,height",
+        "-of",
+        "json",
+        Path.join(directory, "index.m3u8")
+      ])
+      |> Jason.decode!()
+
+    [video] = result["streams"]
+
+    if video["display_aspect_ratio"] != "16:9",
+      do: raise("Anamorphic display geometry changed: #{video["display_aspect_ratio"]}")
+
+    IO.puts(
+      Jason.encode!(%{
+        anamorphic: true,
+        width: video["width"],
+        height: video["height"],
+        sample_aspect_ratio: video["sample_aspect_ratio"],
+        display_aspect_ratio: video["display_aspect_ratio"]
+      })
+    )
+  end
+
   defp hevc do
     [
       "-c:v",
@@ -262,5 +331,6 @@ end
 
 case System.argv() do
   [directory] -> NegotiatedOutputVerification.run(directory)
+  [directory, "--anamorphic"] -> NegotiatedOutputVerification.verify_anamorphic(directory)
   _ -> raise "Pass a disposable output directory under tmp/"
 end

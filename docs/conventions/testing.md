@@ -68,14 +68,7 @@ separately. Accounting and playlist-generation tests run with the Node suite. Se
 for report interpretation, a short smoke check, and the separate target-server baseline.
 This tool observes paused polling; it does not require that polling to remain present.
 
-`bash scripts/screenshots/run-readme-screenshots.sh --verify-fullscreen` seeds two
-synthetic episodes in an isolated database and checks automatic continuation, the
-next-episode link, and a browser-error conversion attempt through the real LiveView.
-It asserts fullscreen, video identity, and continuous connection of the player's
-ancestors. The hook-only browser fixture does not exercise DOM changes made by LiveView.
-This check uses the screenshot workflow's Docker and browser dependencies and does not
-update README captures. When FFmpeg is unavailable, the conversion attempt verifies
-fullscreen through the visible preparation failure instead of a ready HLS session.
+`bash scripts/screenshots/run-readme-screenshots.sh --verify-fullscreen` checks stable fullscreen through real LiveView episode navigation and an unclassified native error. Its pinned-browser WebM demo deliberately uses the explicit original action; unknown metadata on the next episode may remain terminal. It does not establish negotiated conversion or ready playback after continuation. Use the negotiated-delivery matrix below for actual FFmpeg delivery and natural EOF across parts/episodes. The workflow uses its isolated Docker browser/database dependencies and does not update README captures.
 
 Generate disposable fixtures with FFmpeg, then use an installed Chrome with H.264 support:
 
@@ -96,7 +89,7 @@ or HLS decoding support.
 
 ### Negotiated delivery acceptance
 
-`scripts/playback/verify-negotiated-output.exs` generates disposable synthetic sources and executes source-derived FFmpeg plans. Run `mix run --no-start scripts/playback/verify-negotiated-output.exs tmp/negotiation-check`. It checks actual profile/pixel format/AVC configuration, independent stream actions and copied payload equivalence, reporting any leading AAC priming-packet trim. Its matched remux/full-conversion timing is a local synthetic observation, not target-server capacity.
+`scripts/playback/verify-negotiated-output.exs` generates disposable synthetic sources and executes source-derived FFmpeg plans. Run `mix run --no-start scripts/playback/verify-negotiated-output.exs tmp/negotiation-check`. It checks actual profile/pixel format/AVC configuration, independent stream actions and copied payload equivalence, reporting any leading AAC priming-packet trim. Add `--anamorphic` after the directory for the real-output display-aspect regression. Its matched remux/full-conversion timing is a local synthetic observation, not target-server capacity.
 
 For the real LiveView path, configure a disposable native demo following [CONTRIBUTING](../../CONTRIBUTING.md#local-demo-data). Run `scripts/playback/seed-negotiation-check.exs` through `mix run`, passing the generated fixture directory and that demo's `sample-ids.json`, with the same `BOLOGNESA_DB_NAME` and `BOLOGNESA_LIBRARY_ROOTS` as the demo server. The seeder refuses ordinary databases and adds only its synthetic fixture rows; it does not reset an installation. Start the matching native server, then run:
 

@@ -52,10 +52,10 @@ defmodule BolognesaWeb do
     end
   end
 
-  @spec live_view() :: Macro.t()
-  def live_view do
+  @spec live_view(keyword()) :: Macro.t()
+  def live_view(options \\ []) do
     quote do
-      use Phoenix.LiveView
+      use Phoenix.LiveView, unquote(options)
 
       unquote(html_helpers())
     end
@@ -116,8 +116,12 @@ defmodule BolognesaWeb do
   @doc """
   When used, dispatch to the appropriate controller/live_view/etc.
   """
-  @spec __using__(atom()) :: Macro.t()
+  @spec __using__(atom() | {:live_view, keyword()}) :: Macro.t()
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
+  end
+
+  defmacro __using__({:live_view, options}) when is_list(options) do
+    live_view(options)
   end
 end

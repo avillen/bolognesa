@@ -65,7 +65,12 @@ try {
       await page.locator("video").hover()
       await page.locator(`#${prefix}-video-frame media-play-button`).click()
     }
-    await page.waitForFunction(() => !document.querySelector("video").paused && document.querySelector("video").currentTime > 0.2)
+    await page.waitForFunction(prefix => {
+      const frame = document.querySelector(`#${prefix}-video-frame`)
+      const video = document.querySelector("video")
+      return !video.paused && video.currentTime > 0.2 &&
+        (!frame.dataset.sessionId || frame.dataset.pausedServer === "false")
+    }, prefix)
   }
   const stable = async () => {
     assert.deepEqual(await page.evaluate(() => {
@@ -143,6 +148,9 @@ try {
   // A correlated native decode failure spends one recovery; a second is terminal.
   await select(ids.fixtures["direct.mp4"])
   await ready("movie")
+  // Keep the injected failure well before EOF and separate from checkpoint restoration.
+  await page.locator("video").evaluate(video => {video.currentTime = 1})
+  await page.waitForFunction(() => !document.querySelector("video").seeking && document.querySelector("video").currentTime < 3)
   const decodeFailure = () => page.locator("video").evaluate(video => {
     Object.defineProperty(video, "error", {configurable: true, value: {code: 3}})
     video.dispatchEvent(new Event("error"))

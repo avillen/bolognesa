@@ -206,6 +206,20 @@ try {
       throw new Error(`Demo login failed with HTTP ${loginResponse.status()}.`);
     }
 
+    // The pinned capture browser consumes synthetic VP8 WebM. Its inspection is
+    // intentionally outside automatic AVC/HEVC negotiation; use the real explicit action.
+    const playDemoOriginal = async prefix => {
+      const frame = page.locator(`#${prefix}-video-frame`);
+      if (!await frame.count()) return;
+      await page.waitForFunction(prefix => ["ready", "error"].includes(
+        document.querySelector(`#${prefix}-video-frame`)?.dataset.playbackPhase), prefix);
+      if (await frame.getAttribute("data-playback-phase") === "error") {
+        await page.locator('[phx-click="playback_original"]').click();
+        await page.waitForFunction(prefix =>
+          document.querySelector(`#${prefix}-video-frame`)?.dataset.playbackPhase === "ready", prefix);
+      }
+    };
+
     const capture = async (name, route, selector = "main h1", loadingSelector = null) => {
       await page.goto(`${baseUrl}${route}`);
       await page.locator(selector).first().waitFor();
@@ -248,6 +262,8 @@ try {
           `
         });
       }
+      await playDemoOriginal("movie");
+      await playDemoOriginal("episode");
       await waitForTheme();
       await normalizeDemoDetails();
       await page.evaluate(() => document.activeElement?.blur());
@@ -324,6 +340,7 @@ try {
       const message = await page.locator("body").innerText().catch(() => "No page text");
       throw new Error(`The player did not open: ${message}`, { cause: error });
     }
+    await playDemoOriginal("movie");
     await video.evaluate((element) => element.play());
     await page.waitForFunction(() => {
       const element = document.querySelector("video[id^='movie-video-']");
@@ -379,7 +396,9 @@ try {
       const element = document.querySelector("#music-playback");
       return element && !element.seeking && Math.abs(element.currentTime - 2) < 0.1;
     });
-    await page.locator("#refresh-music").click();
+    // Refresh through the current visible search form; the old refresh button was removed.
+    await page.locator("#music-search button[type=submit]").click();
+    await waitForStablePage();
     await page.locator("#music-loading").waitFor({state: "detached"});
     const audioState = await audio.evaluate(element => ({paused: element.paused, position: element.currentTime, error: element.error?.code}));
     if (!audioState.paused || Math.abs(audioState.position - 2) > 0.1 || audioState.error) {

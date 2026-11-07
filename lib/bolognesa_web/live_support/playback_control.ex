@@ -4,6 +4,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
   alias Bolognesa.Playback
   alias BolognesaWeb.LiveSupport.PlaybackState
 
+  @type capability_payload :: map() | list() | binary() | number() | boolean() | nil
+
   @spec select_version(Phoenix.LiveView.Socket.t(), pos_integer()) :: Phoenix.LiveView.Socket.t()
   def select_version(socket, file_id) do
     with %{versions: versions} <- socket.assigns.detail,
@@ -49,8 +51,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
     end
   end
 
-  @spec accept_report(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
-  def accept_report(socket, raw) do
+  @spec accept_report(Phoenix.LiveView.Socket.t(), capability_payload()) ::
+          Phoenix.LiveView.Socket.t()
+  def accept_report(socket, raw) when is_map(raw) do
     probe = socket.assigns.playback_probe
 
     if !socket.assigns[:loading?] and socket.assigns.playback_phase == :checking and is_map(probe) and
@@ -83,6 +86,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
       socket
     end
   end
+
+  def accept_report(socket, _raw), do: socket
 
   @spec deliver(
           Phoenix.LiveView.Socket.t(),

@@ -32,7 +32,7 @@ The server allows five seconds for an unresolved generation, including transport
 
 Only known SDR sources qualify for transformation. Copied video is restricted to exact H.264 Constrained Baseline at level 4.1 or below, yuv420p/8-bit, at most 1920×1080 and 30 fps. Known average video bitrates over 8 Mbps exclude copying. Matroska often omits average bitrates; absent bitrates remain unknown and do not alone force encoding when the remaining envelope and client probe qualify. Neither an average bitrate nor a decoding prediction guarantees network throughput. Copied AAC must be exact AAC-LC, mono/stereo at 32, 44.1 or 48 kHz.
 
-Generated video uses ultrafast/CRF 25, two threads, Constrained Baseline level 4.1, SDR yuv420p/8-bit, an 8 Mbps VBV maximum and 16 Mbit buffer, and at most 1920×1080/30 fps without upscaling. Generated AAC-LC is 128 kbps, 48 kHz stereo. The actual AVC configuration is `avc1.42C029`; the requested profile name alone is not evidence. HEVC is eligible only for an exact positively supported original. HEVC HLS/fMP4, HDR/Dolby Vision conversion and tone mapping are outside this envelope. Unknown required color/profile facts cannot establish safe conversion.
+Generated video uses ultrafast/CRF 25, two threads, Constrained Baseline level 4.1, SDR yuv420p/8-bit, an 8 Mbps VBV maximum and 16 Mbit buffer, and at most 1920×1080/30 fps without upscaling. Scaling preserves display aspect ratio, including anamorphic sources. Generated AAC-LC is 128 kbps, 48 kHz stereo. The actual AVC configuration is `avc1.42C029`; the requested profile name alone is not evidence. HEVC is eligible only for an exact positively supported original. HEVC HLS/fMP4, HDR/Dolby Vision conversion and tone mapping are outside this envelope. Unknown required color/profile facts cannot establish safe conversion.
 
 No positive candidate produces a terminal detection/metadata/unsupported state. The user can retry detection, request inspection refresh, or deliberately try the original without a compatibility promise. An available positive compatible candidate also enables an explicit compatible-playback action, including in fullscreen feedback. These are per-attempt actions, not account preferences.
 
@@ -54,7 +54,7 @@ Video.js 10.1.0 owns controls through the vendored HTML build; hls.js owns the s
 
 The vendor bundle/license and English/Spanish controls remain local. Rebuild with `npm ci` and `npm run vendor-videojs`. The scoped time-format adapter preserves browsers that reject `Intl.NumberFormat` unit style, without implying device compatibility.
 
-Strategy, transport and selection-reason telemetry uses closed enums and existing sanitized emitters. Reports, MIME strings, user-agent strings, paths, titles and extradata are not diagnostic labels. Validated IDs are for local correlation only. Performance observations do not override positive support or select arbitrary quality levels.
+Strategy, transport and selection-reason telemetry uses closed enums and existing sanitized emitters. Automatic LiveView parameter logging is disabled for the movie and episode player views so rejected reports cannot be logged before validation. Reports, MIME strings, user-agent strings, paths, titles and extradata are not diagnostic labels. Validated IDs are for local correlation only. Performance observations do not override positive support or select arbitrary quality levels.
 
 ## Consequences and verification limits
 
