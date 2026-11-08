@@ -117,40 +117,42 @@ defmodule Bolognesa.Playback.Domain.Policies.Negotiation do
   end
 
   defp transformed_candidates(source, video, audio) do
-    if safe_sdr?(video) and complete_video?(video) do
-      copy_video = copy_video?(video)
-      copy_audio = is_nil(audio) or copy_audio?(audio)
-      copied_video = video_config(video)
-      encoded_video = encoded_video(video)
-      copied_audio = audio_config(audio)
-      encoded_audio = encoded_audio(audio)
-      absent_or_copy = if audio, do: :copy, else: :absent
-      absent_or_aac = if audio, do: :aac, else: :absent
+    if complete_video?(video), do: build_transformed_candidates(source, video, audio), else: []
+  end
 
-      options = [
-        {copy_video and copy_audio, "c1", :remux, :copy, absent_or_copy, copied_video,
-         copied_audio},
-        {copy_video and not is_nil(audio), "c2", :audio_conversion, :copy, :aac, copied_video,
-         encoded_audio},
-        {copy_audio, "c3", :video_conversion, :h264, absent_or_copy, encoded_video, copied_audio},
-        {not is_nil(audio), "c4", :full_conversion, :h264, absent_or_aac, encoded_video,
-         encoded_audio}
-      ]
+  defp build_transformed_candidates(source, video, audio) do
+    copy_video = copy_video?(video)
+    encode_video = safe_sdr?(video)
+    copy_audio = is_nil(audio) or copy_audio?(audio)
+    copied_video = video_config(video)
+    encoded_video = encoded_video(video)
+    copied_audio = audio_config(audio)
+    encoded_audio = encoded_audio(audio)
+    absent_or_copy = if audio, do: :copy, else: :absent
+    absent_or_aac = if audio, do: :aac, else: :absent
 
-      for {true, id, mode, video_action, audio_action, v, a} <- options do
-        candidate(
-          id,
-          source,
-          video,
-          audio,
-          mode,
-          video_action,
-          audio_action,
-          configuration(:mpegts, "video/mp2t", v, a)
-        )
-      end
-    else
-      []
+    options = [
+      {copy_video and copy_audio, "c1", :remux, :copy, absent_or_copy, copied_video,
+       copied_audio},
+      {copy_video and not is_nil(audio), "c2", :audio_conversion, :copy, :aac, copied_video,
+       encoded_audio},
+      {encode_video and copy_audio, "c3", :video_conversion, :h264, absent_or_copy, encoded_video,
+       copied_audio},
+      {encode_video and not is_nil(audio), "c4", :full_conversion, :h264, absent_or_aac,
+       encoded_video, encoded_audio}
+    ]
+
+    for {true, id, mode, video_action, audio_action, v, a} <- options do
+      candidate(
+        id,
+        source,
+        video,
+        audio,
+        mode,
+        video_action,
+        audio_action,
+        configuration(:mpegts, "video/mp2t", v, a)
+      )
     end
   end
 
@@ -205,9 +207,15 @@ defmodule Bolognesa.Playback.Domain.Policies.Negotiation do
 
   defp safe_sdr?(video) do
     video.profile != nil and video.pixel_format != nil and video.bit_depth in 8..16 and
-      video.color_transfer in ["bt709", "smpte170m", "gamma22", "gamma28", "iec61966-2-1"] and
-      video.color_primaries in ["bt709", "smpte170m", "bt470bg", "bt470m"] and
-      video.color_space in ["bt709", "smpte170m", "bt470bg", "fcc"]
+      video.color_transfer != nil and video.color_primaries != nil and video.color_space != nil and
+      copy_color_facts?(video)
+  end
+
+  # Copy preserves absent color declarations; it does not infer SDR for video encoding.
+  defp copy_color_facts?(video) do
+    video.color_transfer in [nil, "bt709", "smpte170m", "gamma22", "gamma28", "iec61966-2-1"] and
+      video.color_primaries in [nil, "bt709", "smpte170m", "bt470bg", "bt470m"] and
+      video.color_space in [nil, "bt709", "smpte170m", "bt470bg", "fcc"]
   end
 
   defp complete_video?(video),
@@ -215,11 +223,13 @@ defmodule Bolognesa.Playback.Domain.Policies.Negotiation do
       is_integer(video.width) and video.width > 0 and is_integer(video.height) and
         video.height > 0 and is_number(frame_rate(video.frame_rate))
 
-  defp copy_video?(video), do: copy_video_format?(video) and copy_video_bounds?(video)
+  defp copy_video?(video),
+    do: copy_color_facts?(video) and copy_video_format?(video) and copy_video_bounds?(video)
 
   defp copy_video_format?(video) do
     video.codec == "h264" and exact_codec?(video) and video.pixel_format == "yuv420p" and
-      video.bit_depth == 8 and video.profile == "Constrained Baseline" and video.level in 1..41
+      video.bit_depth == 8 and video.profile in ["Constrained Baseline", "Main"] and
+      video.level in 1..41
   end
 
   defp copy_video_bounds?(video) do

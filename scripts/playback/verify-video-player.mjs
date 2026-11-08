@@ -10,6 +10,7 @@ import {chromium} from "playwright"
 
 const mediaDirectory = process.argv[2]
 if (!mediaDirectory) throw new Error("Pass a directory with synthetic sample.mp4 and HLS index.m3u8 fixtures.")
+const fixtureProbe = process.argv[3] ? JSON.parse(await readFile(process.argv[3], "utf8")) : null
 const temporary = await mkdtemp(join(tmpdir(), "bolognesa-player-"))
 const bundle = join(temporary, "player.js")
 const buildConfig = await readFile("config/config.exs", "utf8")
@@ -39,7 +40,7 @@ const server = createServer(async (request, response) => {
     const name = new URL(request.url, "http://localhost").pathname.slice(1)
     const files = {"player.js": bundle, "images/bolognesa-cat.svg": resolve("priv/static/images/bolognesa-cat.svg")}
     const path = files[name] ?? resolve(mediaDirectory, name)
-    if (name && !files[name] && !/^(sample\.mp4|index\.m3u8|segment\d+\.ts)$/.test(name)) {
+    if (name && !files[name] && !/^(sample\.mp4|index\.m3u8|segment\d+\.ts|seg-\d{6}\.ts)$/.test(name)) {
       response.writeHead(404).end()
       return
     }
@@ -55,7 +56,7 @@ const server = createServer(async (request, response) => {
       'data-src="/index.m3u8" data-transport="hls_js" data-session-id="part-1" data-offset-ms="0"')
     const checking = new URL(request.url, "http://localhost").searchParams.get("checking")
     if (checking) {
-      const probe = {generation: "browser-gate", candidates: [{id: "c0", transports: ["file"],
+      const probe = checking === "fixture" ? fixtureProbe : {generation: "browser-gate", candidates: [{id: "c0", transports: ["file"],
         configuration: {mime: "video/mp4", video: {codec_string: "avc1.42C029", width: 1920,
           height: 1080, frame_rate: 30, bit_rate: 8000000}, audio: {codec_string: "mp4a.40.2",
           sample_rate: 48000, channels: 2, bit_rate: 128000}}}]}
@@ -81,6 +82,30 @@ const browser = process.env.BOLOGNESA_SCREENSHOT_BROWSER_WS
   ? await chromium.connect(process.env.BOLOGNESA_SCREENSHOT_BROWSER_WS, {exposeNetwork: "<loopback>"})
   : await chromium.launch({headless: true, channel: process.env.BOLOGNESA_TEST_BROWSER_CHANNEL})
 try {
+  if (fixtureProbe) {
+    const fixture = await browser.newPage()
+    const requests = []
+    fixture.on("request", request => {
+      if (/\.(mp4|m3u8|ts)(\?|$)/.test(request.url())) requests.push(request.url())
+    })
+    await fixture.goto(`http://127.0.0.1:${server.address().port}/?checking=fixture`)
+    await fixture.waitForFunction(() => window.events?.some(([name]) => name === "playback_capabilities"))
+    const report = await fixture.evaluate(() => window.events.find(([name]) => name === "playback_capabilities")[1])
+    assert.equal(report.results[0].support, "supported", "Actual source-derived output must pass the exact probe")
+    assert.equal(report.results[0].transport, "hls_js")
+    assert.deepEqual(requests, [], "Exact fixture probe must not open media")
+    await fixture.evaluate(() => {
+      Object.assign(window.context.el.dataset, {playbackPhase: "ready", transport: "hls_js",
+        sessionId: "fixture", src: "/index.m3u8", autoplay: "true"})
+      delete window.context.el.dataset.playbackProbe
+      window.hook.updated.call(window.context)
+    })
+    await fixture.waitForFunction(() => document.querySelector("video").currentTime > 1)
+    assert.ok(requests.some(url => url.includes(".ts")), "Accepted fixture must decode actual HLS segments")
+    assert.equal(await fixture.evaluate(() => document.querySelector("video").error), null)
+    await fixture.close()
+    console.log("Source-derived fixture: exact positive probe, no early media and actual HLS playback passed.")
+  }
   for (const mode of ["hold", "timeout"]) {
     const gate = await browser.newPage()
     const requests = []

@@ -4,6 +4,7 @@ Release notes and upgrade information. See the [README](README.md) for setup and
 
 ## Unreleased
 
+- Preserve eligible H.264 Main video when converting audio, including sources without color declarations. Video encoding still requires known SDR facts; already-current inspections do not need another refresh for this correction.
 - Negotiate video delivery from bounded browser capability reports before opening media. Copy supported streams through remux or partial conversion instead of always encoding both.
 - Add explicit inspection refresh and compatible playback, with one bounded automatic recovery for eligible decode failures. Network/unknown native failures remain terminal until a user action.
 - Keep the player mounted through negotiation, replacement and consecutive parts/episodes. Desktop synthetic checks cover the real LiveView/FFmpeg path; physical Chrome on iPhone and native HLS remain unverified.

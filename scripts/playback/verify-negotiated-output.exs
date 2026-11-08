@@ -74,6 +74,72 @@ defmodule NegotiatedOutputVerification do
     verify(Path.join(directory, "remux.mkv"), :full_conversion, directory)
   end
 
+  @spec verify_main_copy(String.t()) :: :ok
+  def verify_main_copy(directory) do
+    File.mkdir_p!(directory)
+
+    for {name, size, rate, level, codec} <- [
+          {"main-720.mkv", "1280x720", "25", "3.1", "avc1.4D401F"},
+          {"main-1080.mkv", "1920x1080", "30", "4.1", "avc1.4D4029"}
+        ] do
+      input = Path.join(directory, name)
+
+      command!("ffmpeg", [
+        "-y",
+        "-v",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "testsrc2=size=#{size}:rate=#{rate}",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=440:sample_rate=44100",
+        "-t",
+        "20",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-threads",
+        "2",
+        "-profile:v",
+        "main",
+        "-level:v",
+        level,
+        "-pix_fmt",
+        "yuv420p",
+        "-g",
+        rate,
+        "-b:v",
+        "2M",
+        "-maxrate",
+        "8M",
+        "-bufsize",
+        "16M",
+        "-c:a",
+        "libmp3lame",
+        "-ac",
+        "2",
+        "-b:a",
+        "128k",
+        input
+      ])
+
+      media = inspect!(input)
+      video = Enum.find(media.tracks, &(&1.kind == :video))
+      audio = Enum.find(media.tracks, &(&1.kind == :audio))
+      ^codec = video.codec_string
+      "Main" = video.profile
+      "mp3" = audio.codec
+      nil = video.color_transfer
+      nil = video.color_primaries
+      nil = video.color_space
+      verify(input, :audio_conversion, directory)
+    end
+  end
+
   @spec verify_anamorphic(String.t()) :: :ok
   def verify_anamorphic(directory) do
     File.mkdir_p!(directory)
@@ -182,16 +248,36 @@ defmodule NegotiatedOutputVerification do
     timing = command!("/usr/bin/time", ["-p", "ffmpeg", "-y" | args])
     File.write!(Path.join(output, "encode.log"), timing)
 
+    File.write!(
+      Path.join(output, "probe.json"),
+      Jason.encode!(%{
+        generation: "synthetic-output",
+        candidates: [
+          %{
+            id: candidate.id,
+            transports: candidate.transports,
+            configuration: Map.from_struct(plan.configuration)
+          }
+        ]
+      })
+    )
+
     manifest = Path.join(output, "index.m3u8")
     actual = inspect!(manifest)
     video = Enum.find(actual.tracks, &(&1.kind == :video))
     audio = Enum.find(actual.tracks, &(&1.kind == :audio))
     "h264" = video.codec
-    "Constrained Baseline" = video.profile
-    41 = video.level
+    expected_video = Enum.find(media.tracks, &(&1.kind == :video))
+
+    expected_profile =
+      if plan.video_action == :copy, do: expected_video.profile, else: "Constrained Baseline"
+
+    expected_level = if plan.video_action == :copy, do: expected_video.level, else: 41
+    ^expected_profile = video.profile
+    ^expected_level = video.level
     "yuv420p" = video.pixel_format
-    320 = video.width
-    180 = video.height
+    true = video.width == plan.configuration.video.width
+    true = video.height == plan.configuration.video.height
 
     if plan.audio_action == :absent do
       nil = audio
@@ -331,6 +417,7 @@ end
 
 case System.argv() do
   [directory] -> NegotiatedOutputVerification.run(directory)
+  [directory, "--main-copy"] -> NegotiatedOutputVerification.verify_main_copy(directory)
   [directory, "--anamorphic"] -> NegotiatedOutputVerification.verify_anamorphic(directory)
   _ -> raise "Pass a disposable output directory under tmp/"
 end

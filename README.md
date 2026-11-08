@@ -89,7 +89,7 @@ This quick start uses development credentials and binds to your own machine. For
 
 ## Playback limits
 
-Video playback checks the selected browser before opening media and chooses supported original delivery, remux, audio conversion or video conversion. FFmpeg/HLS supports one shared session. Conversion is limited to known SDR sources and bounded H.264/AAC output; HEVC can play only as a positively supported original. HDR conversion and tone mapping are unavailable. Files containing several episodes play in full.
+Video playback checks the selected browser before opening media and chooses supported original delivery, remux, audio conversion or video conversion. FFmpeg/HLS supports one shared session. Video encoding requires known SDR sources and uses bounded H.264/AAC output. Eligible H.264 can be copied while converting audio even when color declarations are absent; HEVC can play only as a positively supported original. HDR conversion and tone mapping are unavailable. Files containing several episodes play in full.
 
 Missing inspection data or uncertain browser support can stop automatic playback. Use the player’s inspection refresh, retry, compatible-playback action when available, or explicitly try the original without a compatibility promise. Existing files may need a fresh inspection to obtain the new decoding facts. There is one automatic recovery for eligible decode failures; network and ambiguous native errors require an explicit action. Browser predictions and local synthetic tests do not establish support on every device. Physical Chrome on iPhone and native HLS remain unverified; see [the playback decision](docs/decisions/0011-live-transcoding.md).
 
