@@ -1,8 +1,8 @@
 defmodule Bolognesa.Music.Application.Ports.Repositories.MusicRepository do
   @moduledoc "Atomic, revalidated application of musical metadata."
   alias Bolognesa.Music.Domain.Entities.Track
-  alias Bolognesa.Music.Domain.ValueObjects.{Observation, TrackMetadata}
+  alias Bolognesa.Music.Domain.ValueObjects.{CatalogMetadata, Observation}
   @type adapter :: atom()
   @type result :: {:ok, Track.t() | :stale} | {:error, :unavailable}
-  @callback apply_observation(Observation.t(), TrackMetadata.t()) :: result()
+  @callback apply_observation(Observation.t(), CatalogMetadata.t()) :: result()
 end

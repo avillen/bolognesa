@@ -1,13 +1,14 @@
 defmodule Bolognesa.Music.Application.Dto.RecentAlbum do
   @moduledoc "Account-scoped recent album and inferred playback action."
+  alias Bolognesa.Music.Domain.Entities.{Album, Track}
   alias Bolognesa.Music.Domain.ReadModels.RecentAlbum
 
   @type t :: %__MODULE__{
-          id: pos_integer(),
+          id: Album.id(),
           title: String.t(),
           artist: String.t() | nil,
           last_played_at: DateTime.t(),
-          track_id: pos_integer(),
+          track_id: Track.id(),
           file_id: pos_integer(),
           track_title: String.t(),
           track_available?: boolean(),

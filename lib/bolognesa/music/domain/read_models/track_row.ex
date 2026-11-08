@@ -1,6 +1,8 @@
 defmodule Bolognesa.Music.Domain.ReadModels.TrackRow do
   @moduledoc "Music list item including processing state."
 
+  alias Bolognesa.Music.Domain.Entities.Track
+
   @type failure_reason ::
           Bolognesa.Music.Domain.Entities.ImportState.failure_reason()
           | :source_changed
@@ -13,7 +15,7 @@ defmodule Bolognesa.Music.Domain.ReadModels.TrackRow do
           | :invalid_output
 
   @type t :: %__MODULE__{
-          id: pos_integer() | nil,
+          id: Track.id() | nil,
           file_id: pos_integer(),
           title: String.t(),
           artist: String.t() | nil,

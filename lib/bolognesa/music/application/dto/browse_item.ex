@@ -1,8 +1,10 @@
 defmodule Bolognesa.Music.Application.Dto.BrowseItem do
   @moduledoc "Bounded local music browsing projection."
 
+  alias Bolognesa.Music.Domain.Entities.{Album, Artist}
+
   @type t :: %__MODULE__{
-          id: pos_integer(),
+          id: Artist.id() | Album.id(),
           title: String.t(),
           subtitle: String.t() | nil,
           year: pos_integer() | nil,

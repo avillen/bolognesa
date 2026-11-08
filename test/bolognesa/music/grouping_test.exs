@@ -1,8 +1,7 @@
 defmodule Bolognesa.Music.GroupingTest do
   use ExUnit.Case, async: true
   alias Bolognesa.Music.Domain.Policies.Grouping
-  alias Bolognesa.Music.Domain.ValueObjects.MusicTags
-  alias Bolognesa.Music.Domain.ValueObjects.{Observation, TrackMetadata}
+  alias Bolognesa.Music.Domain.ValueObjects.{CatalogMetadata, FileTags, Observation}
 
   test "folder and library boundaries separate otherwise identical albums" do
     first = Grouping.album_key(1, "a", " Sample Album ", nil)
@@ -18,7 +17,7 @@ defmodule Bolognesa.Music.GroupingTest do
     observation = %Observation{
       library_id: 1,
       relative_path: "album/song.mp3",
-      music_tags: %MusicTags{
+      music_tags: %FileTags{
         artist: "Solo",
         album_artist: "Ensemble",
         album: "Compilation",
@@ -27,7 +26,7 @@ defmodule Bolognesa.Music.GroupingTest do
       }
     }
 
-    metadata = TrackMetadata.from_observation(observation)
+    metadata = CatalogMetadata.from_observation(observation)
     assert metadata.title == "song"
     assert metadata.artist == "Solo"
     assert metadata.album_artist == "Ensemble"
@@ -36,10 +35,10 @@ defmodule Bolognesa.Music.GroupingTest do
     assert metadata.track_number == 3
 
     fallback =
-      TrackMetadata.from_observation(%{
+      CatalogMetadata.from_observation(%{
         observation
         | relative_path: <<"song-", 255, ".mp3">>,
-          music_tags: %MusicTags{}
+          music_tags: %FileTags{}
       })
 
     assert String.valid?(fallback.title)

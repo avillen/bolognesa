@@ -1,13 +1,17 @@
 defmodule Bolognesa.Music.Domain.Entities.Album do
   @moduledoc "Local musical album."
 
+  alias Bolognesa.Music.Domain.Entities.Artist
+
+  @type id :: pos_integer()
+
   @type t :: %__MODULE__{
-          id: pos_integer(),
+          id: id(),
           library_id: pos_integer(),
           source_parent: binary(),
           title: String.t(),
           normalized_title: String.t(),
-          artist_id: pos_integer(),
+          artist_id: Artist.id() | nil,
           album_artist_key: String.t(),
           year: pos_integer() | nil
         }

@@ -1,5 +1,5 @@
-defmodule Bolognesa.Music.Domain.ValueObjects.TrackMetadata do
-  @moduledoc "Musical metadata with safe display fallback and raw grouping parent."
+defmodule Bolognesa.Music.Domain.ValueObjects.CatalogMetadata do
+  @moduledoc "Musical metadata prepared for the catalog with fallbacks and a grouping parent."
   alias Bolognesa.Music.Domain.ValueObjects.Observation
 
   @type t :: %__MODULE__{

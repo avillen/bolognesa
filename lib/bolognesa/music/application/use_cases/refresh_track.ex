@@ -3,7 +3,7 @@ defmodule Bolognesa.Music.Application.UseCases.RefreshTrack do
   alias Bolognesa.Infrastructure.Observability.Events
   alias Bolognesa.Music.Application.Ports.Readers.ObservationsReader
   alias Bolognesa.Music.Application.Ports.Repositories.MusicRepository
-  alias Bolognesa.Music.Domain.ValueObjects.TrackMetadata
+  alias Bolognesa.Music.Domain.ValueObjects.CatalogMetadata
 
   @type correlation :: %{optional(:job_id) => pos_integer(), optional(:attempt) => pos_integer()}
   @type result :: :ok | {:error, :unavailable}
@@ -36,7 +36,7 @@ defmodule Bolognesa.Music.Application.UseCases.RefreshTrack do
     metadata = Map.put(metadata, :library_id, observation.library_id)
 
     result =
-      repository.apply_observation(observation, TrackMetadata.from_observation(observation))
+      repository.apply_observation(observation, CatalogMetadata.from_observation(observation))
 
     observe_result(result, metadata, started)
   end

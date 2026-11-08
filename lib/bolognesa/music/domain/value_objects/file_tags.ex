@@ -1,5 +1,5 @@
-defmodule Bolognesa.Music.Domain.ValueObjects.MusicTags do
-  @moduledoc "Sanitized tag facts used by the local music catalog."
+defmodule Bolognesa.Music.Domain.ValueObjects.FileTags do
+  @moduledoc "Sanitized tags read from an audio file, before catalog fallbacks."
 
   @type t :: %__MODULE__{
           title: String.t() | nil,

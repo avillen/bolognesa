@@ -3,7 +3,7 @@ defmodule Bolognesa.Music.RefreshTrackTest do
   import Bolognesa.MusicFixtures
   alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, MediaFileSchema, MusicTrackSchema}
   alias Bolognesa.Music
-  alias Bolognesa.Music.Domain.ValueObjects.TrackMetadata
+  alias Bolognesa.Music.Domain.ValueObjects.CatalogMetadata
   alias Bolognesa.Music.Infrastructure.Readers.EctoObservationsReader
   alias Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository
 
@@ -37,7 +37,7 @@ defmodule Bolognesa.Music.RefreshTrackTest do
       assert {:ok, :stale} =
                EctoMusicRepository.apply_observation(
                  observation,
-                 TrackMetadata.from_observation(observation)
+                 CatalogMetadata.from_observation(observation)
                )
 
       assert Repo.get_by(MusicTrackSchema, media_file_id: fixture.file.id) == nil

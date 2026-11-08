@@ -12,8 +12,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   }
 
   alias Bolognesa.Music.Domain.ReadModels.{TrackPage, TrackRow}
-  alias Bolognesa.Music.Domain.ValueObjects.MusicTags
-  alias Bolognesa.Music.Domain.ValueObjects.{Observation, TrackMetadata}
+  alias Bolognesa.Music.Domain.ValueObjects.{CatalogMetadata, FileTags, Observation}
   alias Bolognesa.Repo
   @impl true
   def fetch_track(track_id) do
@@ -169,9 +168,9 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
       if track,
         do: track.title,
         else:
-          TrackMetadata.from_observation(%Observation{
+          CatalogMetadata.from_observation(%Observation{
             relative_path: file.relative_path,
-            music_tags: %MusicTags{}
+            music_tags: %FileTags{}
           }).title
 
     %TrackRow{

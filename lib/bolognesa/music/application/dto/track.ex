@@ -1,8 +1,10 @@
 defmodule Bolognesa.Music.Application.Dto.Track do
   @moduledoc "Music list item including processing state."
 
+  alias Bolognesa.Music.Domain.Entities.Track
+
   @type t :: %__MODULE__{
-          id: pos_integer() | nil,
+          id: Track.id() | nil,
           file_id: pos_integer(),
           title: String.t(),
           artist: String.t() | nil,

@@ -3,7 +3,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoObservationsReader do
   @behaviour Bolognesa.Music.Application.Ports.Readers.ObservationsReader
   import Ecto.Query
   alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, LibrarySchema, MediaFileSchema}
-  alias Bolognesa.Music.Domain.ValueObjects.MusicTags
+  alias Bolognesa.Music.Domain.ValueObjects.FileTags
   alias Bolognesa.Music.Domain.ValueObjects.Observation
   alias Bolognesa.Repo
   @impl true
@@ -49,10 +49,10 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoObservationsReader do
     end
   end
 
-  defp tags(nil), do: %MusicTags{}
+  defp tags(nil), do: %FileTags{}
 
   defp tags(tags),
-    do: %MusicTags{
+    do: %FileTags{
       title: tags["title"],
       artist: tags["artist"],
       album_artist: tags["album_artist"],
