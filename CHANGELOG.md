@@ -4,13 +4,7 @@ Release notes and upgrade information. See the [README](README.md) for setup and
 
 ## Unreleased
 
-- Recognize native HLS when WebKit reports a generic playlist as `maybe`, while requiring positive exact stream-codec support. A local WebKit native-HLS fixture plays; physical iPhone verification remains pending. Document format limits and actual device evidence.
-
-- Preserve eligible H.264 Main video when converting audio, including sources without color declarations. Video encoding still requires known SDR facts; already-current inspections do not need another refresh for this correction.
-- Negotiate video delivery from bounded browser capability reports before opening media. Copy supported streams through remux or partial conversion instead of always encoding both.
-- Add explicit inspection refresh and compatible playback, with one bounded automatic recovery for eligible decode failures. Network/unknown native failures remain terminal until a user action.
-- Keep the player mounted through negotiation, replacement and consecutive parts/episodes. Desktop synthetic checks cover the real LiveView/FFmpeg path; physical Chrome on iPhone and native HLS remain unverified.
-- Existing inspections remain readable without a database migration. Missing new decoding facts may require an explicit inspection refresh; no automatic library-wide reinspection is scheduled.
+- Improve video compatibility with browser-based delivery selection, remuxing and selective conversion, native HLS detection, and bounded error recovery. Preserve the player across episode changes and add inspection refresh and a compatibility guide; existing files may need updated analysis.
 
 ## 0.1.0 — 2026-10-29
 
