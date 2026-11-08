@@ -90,7 +90,7 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     refute has_element?(view, "#music-last-listened")
   end
 
-  test "continuation targets the last heard track and navigates within the library", %{
+  test "recent playback targets the last heard track without opening the album", %{
     conn: conn,
     token: token
   } do
@@ -115,7 +115,7 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
 
     assert has_element?(
              view,
-             "#recent-play-#{fixture.track.album_id}[data-music-action=album][data-open-album=true]",
+             "#recent-play-#{fixture.track.album_id}[data-music-action=album]",
              "Reproducir de nuevo"
            )
 
@@ -127,9 +127,11 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
              "Continuar"
            )
 
+    refute has_element?(view, "#recent-album-#{fixture.track.album_id} [data-open-album]")
+
     view
-    |> element("#music-screen")
-    |> render_hook("open-album", %{"album_id" => fixture.track.album_id})
+    |> element("#recent-album-#{fixture.track.album_id} .recent-album-open")
+    |> render_click()
 
     assert_patch(
       view,
@@ -189,7 +191,10 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
 
     render_async(view)
     assert has_element?(view, "#music-home-link[aria-current=page]")
-    assert has_element?(view, "#music-explore")
+    refute has_element?(view, "#music-explore")
+    assert has_element?(view, "#music-last-listened-empty")
+    assert has_element?(view, "#music-artists-link")
+    assert has_element?(view, "#music-albums-link")
     refute has_element?(view, "#music-search")
     view |> element("#music-songs-link") |> render_click()
     render_async(view)

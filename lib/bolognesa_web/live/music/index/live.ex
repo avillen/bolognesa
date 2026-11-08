@@ -74,16 +74,6 @@ defmodule BolognesaWeb.Music.Index.Live do
      push_patch(socket, to: ~p"/music?#{Map.put(socket.assigns.browse_params, :query, query)}")}
   end
 
-  def handle_event("open-album", %{"album_id" => id}, socket)
-      when is_integer(id) and id > 0 and id <= 9_007_199_254_740_991 do
-    {:noreply,
-     push_patch(socket,
-       to: ~p"/music?#{Map.merge(socket.assigns.library_params, %{view: :album, album_id: id})}"
-     )}
-  end
-
-  def handle_event("open-album", _params, socket), do: {:noreply, socket}
-
   def handle_event("retry-import", %{"file_id" => file}, socket),
     do: {:noreply, RetryImport.call(socket, file)}
 

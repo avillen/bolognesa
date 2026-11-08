@@ -1,5 +1,5 @@
 defmodule BolognesaWeb.Music.Index.Components.Home do
-  @moduledoc "Music home with recent listening and collection entry points."
+  @moduledoc "Music home with recent listening."
   use BolognesaWeb, :html
 
   attr :albums, :list, required: true
@@ -74,7 +74,6 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
                 data-library-id={@library_id}
                 data-track-id={album.track_id}
                 data-file-id={album.file_id}
-                data-open-album="true"
                 disabled={!album.track_available?}
                 aria-label={gettext("Continuar %{title}", title: album.title)}
                 class="music-recent-play"
@@ -87,7 +86,6 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
                 data-music-action="album"
                 data-album-id={album.id}
                 data-library-id={@library_id}
-                data-open-album="true"
                 aria-label={gettext("Reproducir %{title} de nuevo", title: album.title)}
                 class={if album.restart?, do: "music-recent-play", else: "music-recent-replay"}
               ><.icon
@@ -97,27 +95,6 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
             </div>
           </div>
         </article>
-      </div>
-    </section>
-    <section id="music-explore" aria-labelledby="music-explore-title">
-      <h2 id="music-explore-title" class="mb-4 text-xl font-semibold">
-        {gettext("Explorar tu música")}
-      </h2>
-      <div class="music-explore-grid">
-        <.link
-          :for={
-            {kind, title, icon} <- [
-              {:artists, gettext("Artistas"), "hero-user-group"},
-              {:albums, gettext("Álbumes"), "hero-musical-note"},
-              {:tracks, gettext("Canciones"), "hero-list-bullet"}
-            ]
-          }
-          patch={~p"/music?#{Map.put(@library_params, :view, kind)}"}
-          class="flex min-h-20 items-center gap-4 rounded-xl border border-border-strong bg-surface p-5 font-semibold text-ink hover:bg-raised"
-        ><.icon name={icon} class="size-6 text-accent-soft" />{title}<.icon
-          name="hero-chevron-right"
-          class="ml-auto size-5"
-        /></.link>
       </div>
     </section>
     """

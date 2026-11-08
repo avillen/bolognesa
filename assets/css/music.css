@@ -6,7 +6,7 @@
 .music-tabs { display: flex; gap: 28px; overflow-x: auto; border-bottom: 1px solid var(--color-border); }
 .music-recent-section-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; margin-bottom: 16px; }
 .music-recent-section-heading p { color: var(--color-muted); font-size: 13px; }
-.music-recent-grid, .music-explore-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; }
+.music-recent-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; }
 .music-recent-card { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 34px; min-width: 0; min-height: 225px; padding: 20px; border: 1px solid var(--color-border-strong); border-radius: 16px; background: var(--color-surface); }
 .music-recent-heading { display: flex; align-items: center; gap: 16px; border-radius: 8px; }
 .music-recent-heading::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }

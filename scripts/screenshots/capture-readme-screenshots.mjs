@@ -386,7 +386,7 @@ try {
     await page.mouse.move(1430, 990);
     await withStableVideoFrame(() => page.locator("#movie-player").screenshot({ animations: "disabled", path: screenshotPath("player.png") }));
 
-    await capture("music-home.png", `/music?library_id=${ids.music_library}`, "#music-explore");
+    await capture("music-home.png", `/music?library_id=${ids.music_library}`, "#music-last-listened");
     await page.locator("#music-last-listened [role='status']").waitFor({state: "detached"});
     await page.screenshot({animations: "disabled", path: screenshotPath("music-home.png"), fullPage: true});
     await page.setViewportSize({width: 390, height: 844});

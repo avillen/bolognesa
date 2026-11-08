@@ -36,14 +36,13 @@ test("Music screen commands the document session and unmount only detaches it", 
     button.dataset = {musicAction: "track", trackId: "4", fileId: "9"}
     listeners.get("click")(event)
     assert.deepEqual(actions[1], ["select", {trackId: 4, fileId: 9}])
-    button.dataset = {musicAction: "resume-album", albumId: "2", trackId: "4", fileId: "9", openAlbum: "true"}
+    button.dataset = {musicAction: "resume-album", albumId: "2", trackId: "4", fileId: "9"}
     listeners.get("click")(event)
     assert.deepEqual(actions[2], ["album", {albumId: 2, libraryId: null, trackId: 4, fileId: 9, requireTrack: true}])
-    assert.deepEqual(navigation, [["open-album", {album_id: 2}]])
-    hook.disconnected.call(context)
+    button.dataset = {musicAction: "album", albumId: "2"}
     listeners.get("click")(event)
-    assert.equal(actions.length, 3)
-    assert.equal(navigation.length, 1)
+    assert.deepEqual(actions[3], ["album", {albumId: 2, libraryId: null}])
+    assert.deepEqual(navigation, [])
     hook.destroyed.call(context)
     assert.equal(listeners.size, 0)
     assert.ok(context.session === null)
