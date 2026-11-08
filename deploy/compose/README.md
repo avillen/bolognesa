@@ -53,7 +53,7 @@ Avoid binding to `0.0.0.0` unless you have appropriate firewall filtering: [Dock
 
 The published `ghcr.io/avillen/bolognesa` images can be pulled anonymously. No GitHub login or maintainer credentials are needed. The default `latest-lan` tag follows published `main` builds; prefer a commit tag or immutable digest for controlled installations. The [source-build path](#build-from-release-source) is an alternative to downloading the application image.
 
-For the first experimental preview, set `BOLOGNESA_IMAGE=ghcr.io/avillen/bolognesa:v0.1.0` in the server's `.env`. For an immutable installation, use the `ghcr.io/avillen/bolognesa@sha256:<digest>` reference recorded in the [release notes](https://github.com/avillen/bolognesa/releases/tag/v0.1.0). The image and source tag `v0.1.0` identify the same commit; distribution evidence is recorded in [#13](https://github.com/avillen/bolognesa/issues/13).
+Choose a published version from the [release notes](https://github.com/avillen/bolognesa/releases), for example `BOLOGNESA_IMAGE=ghcr.io/avillen/bolognesa:v0.1.0`. For an immutable installation, use the `ghcr.io/avillen/bolognesa@sha256:<digest>` reference recorded for that release. Source and image tags must identify the same commit. Version 0.2.0 publication and verification are tracked in [#40](https://github.com/avillen/bolognesa/issues/40); use its versioned image only after publication is complete.
 
 ### 4. Install and open the app
 
@@ -124,15 +124,15 @@ The image workflow publishes HTTP images for `linux/amd64` and `linux/arm64`, ta
 
 ### Versioned public distribution
 
-The first release pairs source tag `v0.1.0` with image tag `ghcr.io/avillen/bolognesa:v0.1.0`. Both select the same source commit. This versioned image uses the private LAN/HTTP build, despite having no `-lan` suffix. Existing `latest-lan` and `sha-<commit>-lan` tags keep their LAN/HTTP meaning; historical `latest` and `sha-<commit>` tags retain their HTTPS meaning. A release tag must not be reassigned to a different image. Install by the recorded digest to avoid mutable-tag ambiguity.
+For release 0.2.0, pair source tag `v0.2.0` with image tag `ghcr.io/avillen/bolognesa:v0.2.0` only after verifying that both select the same source commit. Publication is pending in #40. The versioned image must use the private LAN/HTTP build, despite having no `-lan` suffix. Existing `latest-lan` and `sha-<commit>-lan` tags keep their LAN/HTTP meaning; historical `latest` and `sha-<commit>` tags retain their HTTPS meaning. A release tag must not be reassigned to a different image. Install by the recorded digest to avoid mutable-tag ambiguity.
 
-The existing workflow can supply the release image without workflow changes. After the final release commit is selected in #14, the maintainer must:
+The existing workflow can supply the release image without workflow changes. After the final release commit is selected in [#40](https://github.com/avillen/bolognesa/issues/40), the maintainer must:
 
-1. Verify a successful `container-image.yml` run on `main` for that exact commit, including both native build jobs and the publish job. Download its `server-image-ref` artifact before its 30-day expiry; check `variant=lan`, the full commit SHA, and the repository/digest. Preserve this evidence in #13 and the release notes.
+1. Verify a successful `container-image.yml` run on `main` for that exact commit, including both native build jobs and the publish job. Download its `server-image-ref` artifact before its 30-day expiry; check `variant=lan`, the full commit SHA, and the repository/digest. Preserve this evidence in the release issue and notes.
 2. Inspect that digest with `docker buildx imagetools inspect --raw ghcr.io/avillen/bolognesa@sha256:<digest>`. Require exactly `linux/amd64` and `linux/arm64` in the manifest. Native build and manifest evidence does not establish runtime or playback compatibility on both architectures; state the environments actually tested separately.
-3. After explicit image-publication approval, add `v0.1.0` to that verified manifest using `docker buildx imagetools create -t ghcr.io/avillen/bolognesa:v0.1.0 ghcr.io/avillen/bolognesa@sha256:<digest>`. Verify that the version tag resolves to the same digest and platforms. This leaves the existing rolling and commit tags in place.
+3. After explicit image-publication approval, add `v0.2.0` to that verified manifest using `docker buildx imagetools create -t ghcr.io/avillen/bolognesa:v0.2.0 ghcr.io/avillen/bolognesa@sha256:<digest>`. Verify that the version tag resolves to the same digest and platforms. This leaves the existing rolling and commit tags in place.
 4. For a package that is still private, inspect the retained images for private files and embedded credentials before changing visibility. Either review every existing package version or, with explicit deletion approval, remove obsolete versions first. Preserve the selected multi-architecture manifest and both referenced platform manifests, including those without tags. Keep a private recovery copy of any image needed by an existing installation before deleting its registry version. Removing a tag alone does not remove a version. Obtain separate approval for the visibility change, then apply it through GitHub's package settings. GitHub does not allow a public package to become private again. The upstream package has completed this visibility preparation; inspect any new release image before promoting it.
-5. Verify anonymous access on a disposable Docker daemon with an empty credential configuration, as below. Record the command results, tag, immutable digest, source commit, and workflow URL in #13. Publish the corresponding source tag and release only under #14's separate authorization.
+5. Verify anonymous access on a disposable Docker daemon with an empty credential configuration, as below. Record the command results, tag, immutable digest, source commit, and workflow URL in the release issue. Publish the corresponding source tag and release only after explicit maintainer approval.
 
 For the anonymous check, replace the digest with the release manifest digest. Run on a disposable daemon because these commands download both platform images. The temporary client configuration prevents use of saved registry credentials:
 
@@ -142,7 +142,7 @@ digest='sha256:<digest>'
 anonymous_config=$(mktemp -d)
 trap 'rm -rf "$anonymous_config"' EXIT
 printf '%s\n' '{"auths":{"ghcr.io":{}},"credHelpers":{}}' > "$anonymous_config/config.json"
-DOCKER_CONFIG="$anonymous_config" docker manifest inspect "$image:v0.1.0"
+DOCKER_CONFIG="$anonymous_config" docker manifest inspect "$image:v0.2.0"
 DOCKER_CONFIG="$anonymous_config" docker manifest inspect "$image@$digest"
 DOCKER_CONFIG="$anonymous_config" docker pull --platform linux/amd64 "$image@$digest"
 DOCKER_CONFIG="$anonymous_config" docker pull --platform linux/arm64 "$image@$digest"
@@ -177,7 +177,7 @@ make deploy-install IMAGE_REF=bolognesa:lan
 
 ### Build from release source
 
-Start with a fresh checkout of source tag `v0.1.0` and confirm its commit matches the release notes:
+Select a published source tag and confirm its commit matches the release notes. This example uses `v0.1.0`; use `v0.2.0` only after its publication is complete:
 
 ```sh
 git clone --branch v0.1.0 --depth 1 https://github.com/avillen/bolognesa.git bolognesa-v0.1.0

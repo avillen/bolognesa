@@ -15,6 +15,10 @@ Track tasks, verification gaps, and blockers in GitHub issues; track release sco
 
 Temporary designs and execution plans belong in the change that uses them. Remove completed working notes or distill any lasting rule into a convention or decision. Do not keep deployment diaries, personal inventories, or redundant milestone histories in the public documentation.
 
+## Release notes
+
+Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/): retain an `Unreleased` section, use `## [VERSION] - YYYY-MM-DD` headings with the publication date, and group changes under the applicable `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, or `Security` categories. Put an optional release description below the heading. Keep `Limitations` and `Upgrading` sections when needed, and link version headings to release comparisons (or the first release). Confirm the planned date when publishing a prepared release.
+
 ## Privacy and evidence
 
 - Use generic paths, addresses, usernames, and sample values. Never include credentials, private media names, personal library inventories, or identifying operational details.
