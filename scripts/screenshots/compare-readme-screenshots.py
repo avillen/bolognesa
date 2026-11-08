@@ -11,6 +11,8 @@ RASTER_LIMITS = {
     "library-create-mobile.png": (8, 1, 0, 0, 0),
     "music-player.png": (MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA, 0, 0, 0),
     "music.png": (16, 1, 0, 0, 0),
+    # Observed fourteen one-level antialiasing differences on the search corners.
+    "music-albums.png": (16, 1, 0, 0, 0),
     # Observed up to ten isolated antialiasing outliers between CI captures.
     "series-detail.png": (16, 1, 10, 2, 39),
     "season.png": (16, 1, 0, 0, 0),

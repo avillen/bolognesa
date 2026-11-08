@@ -26,13 +26,21 @@ class ScreenshotCheckTest(unittest.TestCase):
             self.assertEqual(checker.differences(expected, actual), ['home.png'])
 
     def test_catalog_surfaces_allow_only_tiny_antialiasing(self):
-        for name in ['music.png', 'season.png', 'about.png']:
+        for name in ['music.png', 'music-albums.png', 'season.png', 'about.png']:
             with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:
                 expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
                 expected.mkdir(); actual.mkdir()
                 (expected / name).write_bytes(png(16, 16, [100] * 768))
                 (actual / name).write_bytes(png(16, 16, [101] + [100] * 767))
                 self.assertEqual(checker.differences(expected, actual), [])
+                changed = [100] * 768
+                for index in range(16):
+                    changed[index * 3] = 101
+                (actual / name).write_bytes(png(16, 16, changed))
+                self.assertEqual(checker.differences(expected, actual), [])
+                changed[16 * 3] = 101
+                (actual / name).write_bytes(png(16, 16, changed))
+                self.assertEqual(checker.differences(expected, actual), [name])
                 (actual / name).write_bytes(png(16, 16, [102] + [100] * 767))
                 self.assertEqual(checker.differences(expected, actual), [name])
                 (actual / name).write_bytes(png(16, 16, [101] * 768))

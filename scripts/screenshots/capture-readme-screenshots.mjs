@@ -359,12 +359,12 @@ try {
       const element = document.querySelector("video[id^='movie-video-']");
       return element && element.readyState >= 2 && !element.paused;
     });
-    await video.evaluate(element => { element.currentTime = 2; });
+    // Hold the target position while the browser reports that the seek settled.
+    await video.evaluate(element => { element.pause(); element.currentTime = 2; });
     await page.waitForFunction(() => {
       const element = document.querySelector("#movie-player video");
       return !element.seeking && Math.abs(element.currentTime - 2) < 0.1;
     });
-    await video.evaluate(element => element.pause());
     const playButton = page.locator("#movie-player media-play-button");
     await playButton.click();
     await page.waitForFunction(() => !document.querySelector("#movie-player video").paused);
