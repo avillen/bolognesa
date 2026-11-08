@@ -37,3 +37,25 @@ test("HLS.js requires HLS and exact MSE codecs, native HLS requires both MIME an
   const report = await probe({...options, video: {canPlayType: mime => mime.includes("mpegurl") ? "probably" : ""}, MediaSource: {isTypeSupported: () => false}}, [hls])
   assert.equal(report.results[0].support, "unsupported")
 })
+
+test("native HLS recognition can be maybe while exact elementary streams must be positive", async () => {
+  const hls = {...candidate, transports: ["hls_js", "native_hls"]}
+  const options = {Hls: {isSupported: () => false}, MediaSource: undefined,
+    video: {canPlayType: mime => mime === "application/vnd.apple.mpegurl" ? "maybe" : "probably"}}
+  const result = (await probe(options, [hls])).results[0]
+  assert.equal(result.transport, "native_hls")
+  assert.equal(result.support, "supported")
+  for (const streams of ["maybe", ""]) {
+    const report = await probe({...options, video: {canPlayType: mime => mime.includes("mpegurl") ? "maybe" : streams}}, [hls])
+    assert.equal(report.results[0].support, streams === "" ? "unsupported" : "unknown")
+  }
+  const absent = await probe({...options, video: {canPlayType: mime => mime.includes("mpegurl") ? "" : "probably"}}, [hls])
+  assert.equal(absent.results[0].support, "unsupported")
+  const rejected = await probe({...options, mediaCapabilities: {decodingInfo: async () => ({supported: false})}}, [hls])
+  assert.equal(rejected.results[0].support, "unsupported")
+  const throwing = await probe({...options, video: {canPlayType: mime => {
+    if (mime.includes("mpegurl")) throw Error("unavailable")
+    return "probably"
+  }}}, [hls])
+  assert.equal(throwing.results[0].support, "unknown")
+})

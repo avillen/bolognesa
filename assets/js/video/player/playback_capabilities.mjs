@@ -33,7 +33,10 @@ async function probeCandidate(candidate, {video, mediaCapabilities, MediaSource,
     supported = support(safely(() => video.canPlayType(mime), "maybe"))
   } else {
     const mse = safely(() => Hls?.isSupported() && MediaSource?.isTypeSupported(mimeWithCodecs("video/mp4", config)), false)
-    const native = support(safely(() => video.canPlayType("application/vnd.apple.mpegurl"), "maybe"))
+    // A generic playlist MIME has no codec detail. WebKit can recognize it as "maybe";
+    // exact elementary-stream support below must still be "probably".
+    const playlist = safely(() => video.canPlayType("application/vnd.apple.mpegurl"), null)
+    const native = playlist === "maybe" ? "supported" : support(playlist)
     const streams = support(safely(() => video.canPlayType(mimeWithCodecs("video/mp4", config)), "maybe"))
     if (candidate.transports.includes("hls_js") && mse) {
       transport = "hls_js"
