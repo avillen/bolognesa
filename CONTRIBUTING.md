@@ -34,16 +34,14 @@ that process or use a different checkout.
 
 ## Local demo data
 
-To try the interface with generated audio, a video, and sample catalog entries, prepare a separate demo database. Choose a disposable email and password (12–72 characters):
+To try the interface with generated audio, a video, and sample catalog entries, prepare a separate demo database:
 
 ```sh
-export BOLOGNESA_DEMO_EMAIL=demo@example.test
-read -rs BOLOGNESA_DEMO_PASSWORD; export BOLOGNESA_DEMO_PASSWORD
 sh scripts/dev/local.sh demo-setup
 sh scripts/dev/local.sh demo-server
 ```
 
-This requires `ffmpeg` with VP8 and Vorbis encoders. The demo server prints its local address. Its database and generated media are separate from the worktree's normal development and test databases. The sample includes an album with listening activity, a film and an episode. Repeating setup leaves existing demo data and credentials unchanged. The regular test suite keeps its own isolated fixtures. Do not use a real password for the demo.
+This requires `ffmpeg` with VP8 and Vorbis encoders. Sign in with `admin@example.com` and `123456`; these credentials are for the local demo only. To choose different disposable credentials, set `BOLOGNESA_DEMO_EMAIL` and `BOLOGNESA_DEMO_PASSWORD` before setup; custom passwords must contain 12–72 characters. The demo server prints its local address. Its database and generated media are separate from the worktree's normal development and test databases. The sample includes several artists and albums, three recent listening examples, a film and an episode. Repeating setup adds missing sample tracks without changing existing demo data or credentials. The regular test suite keeps its own isolated fixtures. Do not use a real password for the demo.
 
 ## Development with Docker
 

@@ -2,7 +2,7 @@
 alias Bolognesa.Repo
 alias Bolognesa.Infrastructure.Persistence.{LibrarySchema, UserSchema}
 
-if not String.starts_with?(System.fetch_env!("BOLOGNESA_DB_NAME"), "bolognesa_demo_") do
+if Mix.env() != :dev or not String.starts_with?(System.fetch_env!("BOLOGNESA_DB_NAME"), "bolognesa_demo_") do
   raise "Demo data requires a dedicated demo database"
 end
 
@@ -50,4 +50,16 @@ if status != 0, do: Mix.raise("Could not generate sample video: #{output}")
 System.put_env("BOLOGNESA_LOCAL_DEMO", "1")
 System.put_env("BOLOGNESA_SCREENSHOT_VIDEO", video)
 System.put_env("BOLOGNESA_SCREENSHOT_IDS", Path.join(root, "sample-ids.json"))
+demo_password = System.fetch_env!("BOLOGNESA_DEMO_PASSWORD")
+
+if demo_password == "123456" do
+  System.put_env("BOLOGNESA_DEMO_PASSWORD", "temporary-demo-password")
+end
+
 Code.require_file("../screenshots/seed_readme_screenshots.exs", __DIR__)
+
+if demo_password == "123456" do
+  Repo.get_by!(UserSchema, email: System.fetch_env!("BOLOGNESA_DEMO_EMAIL"))
+  |> Ecto.Changeset.change(hashed_password: Bcrypt.hash_pwd_salt(demo_password))
+  |> Repo.update!()
+end
