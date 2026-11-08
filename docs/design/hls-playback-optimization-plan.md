@@ -1,199 +1,249 @@
-# HLS playback reliability and efficiency implementation plan
+# Playback flow simplification and efficiency implementation plan
 
-> Execution: use `superpowers:executing-plans` to implement one bounded task at a time. Checkboxes track implementation, not approval or completion of this planning phase. No product changes or deployment are included in creating this document.
+> Execute with `superpowers:executing-plans`, one bounded task at a time. Checkboxes describe implementation work, not approval or release status. This planning change does not implement or deploy anything.
 
-**Goal:** eliminate avoidable HLS work and playback failures while preserving authorized movie and episode playback on modest hardware.
+**Goal:** simplify playback coordination and remove redundant work while preserving server-owned delivery decisions and authorized media access.
 
-**Architecture:** retain Video.js HTML controls, hls.js with native HLS fallback, progressive FFmpeg output, and the single-session manager. Fix confirmed lifecycle defects first; use measurements to decide whether additional optimizations justify their complexity.
+**Architecture:** the server owns authorization, source safety, primary/fallback plans, attempt budgets and FFmpeg admission. The browser owns immediate media interaction, buffered seeks and checkpoint hints through one coordinator. Retain the mounted video element, existing player, progressive HLS and one shared producer; measure optimizations before claiming resource savings.
 
-**Stack:** Elixir, Phoenix/LiveView, FFmpeg, Video.js HTML 10.1.0, vendored hls.js 1.7.0, PromEx/Alloy/Grafana, ExUnit, Node tests and the existing Playwright harness.
+**Tech stack:** Elixir/Phoenix LiveView, PostgreSQL/Ecto, FFmpeg, current pinned Video.js HTML and hls.js, ExUnit, Node tests, existing Playwright harness and optional Telemetry/PromEx monitoring.
 
-**Basis:** the streaming audit in the preceding conversation, performed against `c80d5f19a50b0d0aba66949b719b5f936b8944d5`; [decision 0011](../decisions/0011-live-transcoding.md), [decision 0024](../decisions/0024-tab-playback-recovery.md), [decision 0025](../decisions/0025-consecutive-episode-parts.md), and the [project conventions](../conventions/).
+**Design basis:** the accepted server/browser responsibility split and [review in issue #10](https://github.com/avillen/bolognesa/issues/10#issuecomment-6726069448), against `7fcac2b`; decisions [0011](../decisions/0011-live-transcoding.md), [0024](../decisions/0024-tab-playback-recovery.md), [0025](../decisions/0025-consecutive-episode-parts.md), [0028](../decisions/0028-context-owned-browser-modules.md), and [conventions](../conventions/). This replaces the earlier HLS optimization task ordering; remux and selective conversion are already implemented and must not be rebuilt.
 
-## Scope and evidence
+## Evidence and scope
 
-Confirmed findings: manifest polling continues while FFmpeg is paused; initial `serverPaused` ignores the server attribute; segments are read completely into BEAM memory; every HLS resource revalidates the original; the strategy set has no pure remux; every committed HLS seek replaces its session; routine HTTP requests are logged at info level by the endpoint.
+Confirmed by code review: restored HLS playback first prepares offset zero and then replaces the session; compatible-action availability repeats source selection; every committed HLS seek requests replacement; segments are read into binaries; pause does not stop hls.js loading; browser coordination shares mutable pending/resume state; readiness requires 12 seconds of output within a 12-second preparation deadline.
 
-Not established: excessive request frequency during actual NAS playback, harmful database load, a browser memory leak, orphaned FFmpeg processes, duplicate players, incompatible native-HLS startup, or a specific file benefiting from remux. These require verification tasks, not speculative fixes.
+The previous local synthetic measurement is retained as evidence: commit `d5aee51`, Chrome 156.0.8078.49, hls.js 1.7.0, 120-second phases. Frozen-playlist polling reproduced and teardown stopped requests. The [monitoring guide](../../deploy/compose/monitoring.md#local-synthetic-baseline) records the comparison. The latest review ran 140 Node tests successfully. Neither establishes target-server costs or universal browser support.
 
-Audit checks passed: 40 Node tests, backend groups of 44 and 45 tests, and the production-hook browser harness in Chrome 155. A controlled frozen playlist with target duration two seconds produced approximately one manifest request per second while paused; destroying the hook stopped further requests. Simulated playlist disappearance exposed a terminal error for an initially paused hook. These are local synthetic results, not target-device verification. FFmpeg was unavailable locally during the audit.
+Unproven: harmful SQL load, browser memory leaks, orphaned FFmpeg processes, a performance benefit from splitting the manager, and the cause of any individual preparation timeout. Device and source details from private investigation must not appear in project artifacts.
 
 ## Global constraints
 
-- Preserve movies, episodes, consecutive parts, multi-episode files, same-tab recovery, Spanish/English controls and fullscreen behavior.
-- Reauthorize every media request; preserve current actor, association, revision and physical-source validation. Do not add an authorization cache.
-- Keep the original media read-only, the five-minute idle policy, the single global HLS session and the existing storage bound unless separate evidence justifies changing them.
-- Keep progressive sliding output. Do not add premature `ENDLIST`, label it VOD/EVENT, pre-generate whole movies, or change the four-second segment target merely to lower request counts.
-- Retain the player, pinned dependencies and native fallback. No dependency upgrades, new streaming service, persistent segment cache or generic refactor.
-- Metrics use fixed enums and route templates; never label them with session, file, viewer, tab, raw URL or media path. Correlation IDs remain in sanitized logs only.
-- No deployment as part of implementation. Read `make help` and the deployment guide before any separately requested deployment.
-- Keep this temporary plan with its change; remove it after completion and retain durable rules in decisions/conventions. Public documentation stays in English.
+- Preserve movies, episodes, numbered parts, multi-episode files, natural continuation, same-tab recovery, English/Spanish controls and stable fullscreen elements.
+- Server policy alone chooses original/remux/conversion and allowed fallback. Browser observations and positions are untrusted hints, never authorization or conversion rules.
+- Reauthorize each media request; preserve current actor/session revocation, association, revision and physical-source identity checks. No cross-request authorization or filesystem-validation cache.
+- Preserve one global producer, same-actor replacement, other-actor `busy`, five-minute idle expiry and the 512 MiB scratch bound. Manifest-only requests do not refresh idle lifetime.
+- Keep originals read-only. Keep four-second HLS target, 12-entry sliding playlist and progressive publication unless a separate measured change is reviewed. No premature ENDLIST, VOD/EVENT relabeling or whole-file pre-generation.
+- Keep the present safe format envelope and one automatic eligible decode recovery per attempt. Seek/reconnect do not renew its budget. Do not broaden automatic recovery to network or ambiguous native errors.
+- Keep pinned dependencies and transport preference. No new streaming service, persistent media cache or dependency upgrades.
+- Keep one owner for each state: socket for server presentation/attempt state, browser coordinator for immediate lifecycle, media element for position/duration/actual pause. No mirrored copy of all socket assigns.
+- Diagnostics use bounded stages/reasons and existing sanitized emitters. No raw reports, media-tool stderr, titles, paths, URLs, user-agent or private device details. IDs stay out of metric labels.
+- No deployment. Significant implementation requires `sh scripts/dev/local.sh test` (runs `mix precommit`) plus relevant browser/Node/FFmpeg checks. Planning-only changes need document checks.
 
-## Order and completion rules
+## Delivery order and review gates
 
-Tasks 1–5 form the first delivery: baseline, pause correctness, resource cleanup verification, bounded segment delivery, and observability. Tasks 6–9 address measurement-gated optimizations and compatibility. Task 10 verifies the combined result on the target installation.
+| Delivery | Tasks | Result |
+| --- | --- | --- |
+| A | 1–3 | Reproducible evidence, actionable failures and correct pause lifecycle |
+| B | 4–5 | One negotiation decision and one initial preparation at the desired position |
+| C | 6–7 | Explicit browser coordination and measured startup policy |
+| D | 8–10 | Buffered seeks, file-backed segments and useful bounded observations |
+| E | 11–12 | Measured query/probe improvements and a decision on manager isolation |
+| Acceptance | 13 | Combined regression and remaining hardware evidence |
 
-Each implementation task follows focused failing behavioral test → minimal fix → focused checks → review → `mix precommit` for significant work. A measurement-only task can finish with a documented decision to keep current behavior; it must record the measurements and rationale. Missing hardware evidence leaves that acceptance item pending rather than blocking independent local work or claiming compatibility.
+A task depends on preceding tasks unless stated otherwise. Task 9 can proceed after 1; task 10 after 3 and 7. Task 12 starts as a decision/measurement task and may conclude without a process split. Do not bundle all deliveries into one PR.
 
-Use one reviewable commit per task or coherent subtask. Inspect Git before each task and preserve unrelated changes. After significant implementation, record actual verification and the next step in the relevant issue or pull request; keep unexecuted work out of implemented behavior.
+For functional changes: add the lowest useful failing behavioral regression, confirm its failure, implement, then run focused and required checks. For structural refactors use existing regressions and add missing transition coverage before moving ownership. Review each delivery, commit coherent changes and record actual results/remaining work in #10 or its PR. No checkbox is complete merely because its proposal is written here.
 
 ## Review focus
 
-1. Initially paused recovery and autoplay rejection must bootstrap enough media to become usable without permanently polling a frozen manifest (Task 2).
-2. Play/pause/seek and delayed messages crossing a source replacement must affect only the current session (Tasks 2–3).
-3. Session cleanup or source invalidation during file transfer must not crash the manager or expose another source (Task 4).
-4. A copied-video GOP longer than four seconds must not be mistaken for duplicate loads or fixed-duration segments (Tasks 1, 6, 9).
-5. Native-HLS playback, touch/keyboard seeks, fullscreen and automatic part continuation must retain the global file timeline (Tasks 7, 9–10).
+1. Initially paused playback and rejected autoplay must bootstrap without deadlock and remain playable (3, 5, 6).
+2. Old probe completions, restore acknowledgements, pause updates, errors and EOF crossing an episode/retry must not affect the new attempt (2, 3, 5, 6, 13).
+3. Long/irregular copied GOPs and slow input must distinguish progress from readiness; no assumed four-second segment duration (1, 7, 13).
+4. Source invalidation, cleanup and disconnected clients during delivery must retain access guarantees and controlled failures (9, 11, 12).
+5. Native HLS must retain global offsets, pause, continuation and stable player identity without assuming hls.js controls apply (3, 5–8, 13).
 
-## Task 1 — Make the request baseline reproducible
+## File responsibilities and interfaces
 
-**Files:** extend `scripts/playback/verify-video-player.mjs`; add `scripts/playback/measure-hls-playback.mjs` only if isolating measurement keeps the regression harness short; update `deploy/compose/monitoring.md` with the operator procedure. Disposable fixtures/results belong under `tmp/`; private HARs and media inventories must not be committed.
+- `lib/bolognesa/playback/domain/policies/negotiation.ex`: pure candidate, primary/fallback and rejection policy; no browser, DB or filesystem effects.
+- New `domain/value_objects/playback_decision.ex`: `%PlaybackDecision{primary: DeliveryPlan.t(), fallback: DeliveryPlan.t() | nil}`; both plans derive from the same validated source/report. Primary plan's reason remains the selected-delivery reason.
+- `application/use_cases/select_video_plan.ex` and `lib/bolognesa/playback.ex`: evolve to `select_video_decision(actor, ref, file_id, issued, raw, generation)` returning `{:ok, PlaybackDecision.t()} | {:error, reason}`. Migrate callers/tests together and remove the old selector after migration; no permanent parallel API.
+- `lib/bolognesa_web/live_support/playback_control.ex`, `playback_events.ex`, `playback_state.ex`: UI coordination, current attempt/fallback and authorized effects. Display errors as bounded reason/stage plus eligible actions; business rules remain in Playback.
+- New `assets/js/video/player/playback_session.mjs`: browser coordinator composed by `video/hooks/video_player.js`; keep `source_controller.mjs`, controllers, recovery and diagnostics as collaborators rather than copying Music's whole layer tree.
+- New `assets/js/video/player/initial_playback.mjs` and `lib/bolognesa_web/live_support/playback_start_hint.ex`: storage hint extraction and closed envelope validation, respectively. No new persisted progress record.
+- New `lib/bolognesa/playback/infrastructure/hls_readiness.ex`: filesystem/playlist inspection with `check(directory) :: :waiting | :ready | {:error, reason}`. Readiness I/O leaves the public facade; the facade delegates and LiveView retains generation-bound notification/polling until task 12's decision.
+- `transcode_controller.ex`: authorized HTTP delivery. `transcode_manager.ex`: atomic single-slot ownership and current process lifetime until task 12; no worker split as incidental cleanup.
 
-**Contract:** count requests at the HTTP boundary by manifest/segment, phase and status, with monotonic timestamps. Support evolving and frozen synthetic playlists, the existing completed fixture, and an explicit destruction phase. Output JSON containing phase duration, request counts, intervals, segment bytes and browser errors. Never present simulated output as real Phoenix/FFmpeg performance.
+## Task 1 — Refresh reproducible baselines
 
-- [x] Add controlled scenarios: completed playlist, progressive playlist, frozen paused playlist, expired resource and destroyed hook. Verify the counter against a known server request sequence before using it to assess the hook.
-- [x] Run each phase for at least two minutes when measuring cadence; count the bootstrap separately. Record actual `TARGETDURATION`, `EXTINF`, media sequence and `ENDLIST` instead of assuming four-second segments.
-- [x] Document Grafana Query Inspector capture: effective `$window`, dashboard time range, legend reduction, query evaluation time, job/instance and release commit. The overview query is rolling `increase(...[$window])` by route/status, with `lastNotNull` in its legend; do not sum overlapping rolling points.
-- [ ] Collect a target baseline when access is available: five minutes playing, two minutes paused, resume, one seek and navigation away; separately test a pause longer than five minutes. Include direct, audio-conversion and full-conversion sources with anonymous fixture labels.
-- [ ] Record request/minute, unchanged-manifest fraction, HTTP mean/p95 and sample count, startup/seek time, FFmpeg/container CPU, container/BEAM memory, scratch usage and log lines/minute. Distinguish wall-clock observation time from playback position advanced.
+**Files:** `scripts/playback/measure-hls-playback.mjs`, `hls-measurement-helpers.mjs`, `verify-video-player.mjs`, `verify-negotiated-liveview.mjs`; `assets/test/hls_measurement_test.mjs`; `deploy/compose/monitoring.md` only if invocation changes.
 
-**Acceptance:** the harness reproduces paused polling and no requests after teardown; the completed playlist stops recurring reloads; a sanitized measurement table clearly separates local synthetic and target results. Task 2 can proceed without NAS access.
+**Produces:** JSON measurements by bootstrap/playing/paused/resume/seek/destroyed phase; anonymous fixture labels, counts, statuses, bytes, elapsed time and errors. Add producer-start count, startup-to-ready time and source-read count at controlled test boundaries, not production raw SQL logs.
 
-Local verification is complete: clean commit `d5aee51`, Chrome 156.0.8078.49,
-hls.js 1.7.0, 120-second phases, no browser exceptions and all report assertions passed.
-The [monitoring guide](../../deploy/compose/monitoring.md#local-synthetic-baseline)
-records the sanitized comparison. The target capture and its resource measurements
-remain pending; do not mark those checkboxes complete from the synthetic run.
+- [ ] Verify existing request accounting against known synthetic sequences; add regression assertions for any added counters.
+- [ ] Capture completed/progressive/frozen/expired sources with two-minute request phases, plus restored nonzero startup and buffered/unbuffered seeks. Preserve initial baseline results before changing behavior.
+- [ ] Generate disposable regular/irregular-GOP fixtures under `tmp/` using the existing FFmpeg verifier. Record actual EXTINF/TARGETDURATION, not an assumed segment duration.
+- [ ] When target access is available, measure five minutes playing, two paused, resume/seek/navigation, then a separate pause exceeding five minutes; separate SQL, physical validation, producer/container CPU, BEAM memory and scratch usage.
+- [ ] Record which measurements are synthetic, actual local FFmpeg, browser or target observations. Missing target evidence does not block independent correctness work.
 
-## Task 2 — Correct pause, load control and expired-session recovery
+**Check:** `node --test assets/test/hls_measurement_test.mjs`; `npm run measure-hls -- tmp/videojs-fixtures`. Acceptance: trustworthy phase accounting and repeatable before/after input, with no unsupported resource claims.
 
-**Modify:** `assets/js/video/player/controllers/hls.mjs`, `assets/js/video/hooks/video_player.js`, and only if necessary `assets/js/video/player/playback_recovery.mjs`, `lib/bolognesa_web/live_support/playback_events.ex` and `playback_state.ex`.
+## Task 2 — Actionable rejection and failure states
 
-**Tests:** `assets/test/transcode_video_test.mjs`, `assets/test/playback_recovery_test.mjs`, the browser harness, and `test/bolognesa_web/live/movie/show/` / `series/episode/`.
+**Files:** `negotiation.ex`, `playback_state.ex`, `playback_events.ex`, `lib/bolognesa_web/components/player.ex`, English/Spanish Gettext catalogs; `test/bolognesa/playback/negotiation_test.exs`, `test/bolognesa_web/live_support/playback_events_test.exs`, movie/episode LiveView tests.
 
-**Interfaces:** preserve `playback_pause`, `playback_resume`, `playback_seek`, `playback_restore` and session identity checks. hls.js `stopLoad()`/`startLoad()` own network loading; native media pause/play owns decoding. Read initial `data-paused-server` rather than inventing an unpaused state. A failed or expired session must use the existing authorized replacement flow, never resurrect a destroyed controller.
+**Produces:** closed UI failure stages `inspection`, `compatibility`, `preparation`, `playback`; keep backend reason atoms. Derive eligible refresh/original/retry/compatible actions from validated failure context. Store these presentation fields on the socket, not in a second state store.
 
-- [ ] Add failing tests for initial server-paused state, manual pause, unchanged LiveView updates, duplicate pause/play events and a fatal error while initially paused.
-- [ ] Add a real-hls.js browser regression for paused polling. Preserve initial bootstrap: stopping loading before manifest/metadata readiness must not deadlock `onReady`, autoplay or recovery. Allow only the minimum initial loading necessary, then quiesce a paused session.
-- [ ] Coordinate stop/start loading with requested playback and server state. Coalesce repeated transitions. Handle play-before-pause-update and pause-before-resume-update without reviving an obsolete session.
-- [ ] Test valid resume and expired resume independently: valid resume retains the session; expired resume creates exactly one replacement at the global position. Exercise delayed 404/fatal events from the previous source and rejected/missing recovery acknowledgements.
-- [ ] Test autoplay rejection and paused reload recovery. A user waiting before first play must retain usable controls; idle expiry must not force the terminal error screen solely because playback remained paused.
-- [ ] Keep native HLS behavior separate: no calls to hls.js methods when absent; no source clearing/reload merely to emulate pause without device evidence.
+- [ ] Add regressions: valid copy candidate plus absent encoding color facts must not be mislabeled missing inspection when the report is unknown/unsupported; genuinely missing required facts still permit refresh. Preserve explicit HDR exclusion.
+- [ ] Distinguish rejection under auto versus compatible preference; no safe encoder is different from no client support. Missing encoding facts may explain why a fallback cannot be created without declaring the original inspection obsolete.
+- [ ] Render refresh only for inspection-related failure. Busy, preparation timeout, network interruption and uncertain browser support offer relevant actions and distinct localized feedback; never expose raw backend errors.
+- [ ] Verify late capability timeouts cannot replace a newer error/attempt, and validate movie/episode action parity.
+- [ ] Run focused negotiation/LiveView tests and native precommit; review translations and selectors before committing.
 
-**Run:** `node --test assets/test/*.mjs`; `BOLOGNESA_TEST_BROWSER_CHANNEL=chrome npm run test-video-player -- tmp/videojs-fixtures`; focused movie/episode LiveView tests.
+**Acceptance:** every displayed action can address its failure class; metadata, compatibility and preparation remain distinguishable in UI and sanitized diagnostics.
 
-**Acceptance:** after bootstrap and in-flight requests settle, no recurring hls.js requests during a two-minute pause; playing continues progressive discovery; long-pause resume preserves position/pause intent; teardown generates no new loads. Compare request reduction with Task 1. Keep target-native pause traffic explicitly unverified until Task 9.
+## Task 3 — Pause intent and HLS loading lifecycle
 
-## Task 3 — Pin session ownership, concurrency and process cleanup
+**Files:** `assets/js/video/player/controllers/hls.mjs`, `playback_recovery.mjs`, `video/hooks/video_player.js`; `playback_events.ex` if acknowledgement handling needs adjustment; `assets/test/transcode_video_test.mjs`, recovery tests and production-hook harness.
 
-**Files:** `lib/bolognesa/playback/infrastructure/transcode_manager.ex`, `lib/bolognesa_web/live_support/playback_control.ex`, `playback_events.ex`; tests in `test/bolognesa/playback/transcode_manager_test.exs`, movie/episode LiveView tests and the browser harness.
+**Contract:** retain `playback_pause/resume/seek` identity checks; initialize from `pausedServer`. Distinguish desired pause, server acknowledgement and transport loading; repeated acknowledgements have no extra effects.
 
-**Contract:** one current session and one admitted FFmpeg producer. Same-actor replacement remains intentional; another actor receives `:busy`. Obsolete stop/touch/poll/error events cannot close a newer session. Manifest-only activity does not extend idle lifetime.
+- [ ] Add failing cases for initially paused source, play before pause acknowledgement, pause before resume acknowledgement, duplicate events, autoplay rejection and old-session errors.
+- [ ] Allow manifest/metadata bootstrap before quiescing a paused hls.js transport; call stopLoad/startLoad only on actual transitions. Preserve useful error handling during pending resume.
+- [ ] Keep valid resume on the same session and expired resume on one authorized replacement at the global position. Missing/rejected responses cannot strand controls.
+- [ ] Add actual-hls.js frozen-playlist pause coverage: after in-flight requests settle, no recurring requests over two minutes; progressive loading resumes on play; no requests follow destroy.
+- [ ] Verify native HLS separately without clearing/reloading its source just to emulate stopLoad. Run Node, relevant LiveView, browser and native precommit checks.
 
-- [ ] Add missing concurrent-start/replacement coverage using monitored owners and barriers, not arbitrary sleeps. Verify different actors, two tabs for the same actor, stale owner-down notifications and invalid replacement preserving the previous session.
-- [ ] Exercise idle cleanup, preparation timeout, normal completion, logout, source revision change and storage exhaustion using deterministic clock/state synchronization at the narrowest boundary needed. Keep test-only timing controls out of browser input.
-- [ ] On Linux with real FFmpeg, observe OS PIDs and directory contents through pause, repeated seeks, tab closure, manager shutdown/restart and FFmpeg failure. Verify the old OS process actually exits, rather than inferring it from a closed Port.
-- [ ] If termination/file-removal races reproduce, implement bounded process shutdown in the manager before final directory cleanup. Do not add a watchdog, process pool or SIGKILL escalation without a reproduced case and a test for its shutdown bound.
-- [ ] Verify listener/source lifecycle: repeated `updated`, reconnect, source replacement and navigation keep one active media transport; destroyed transports make no further requests. Document same-actor tab replacement as a current limit instead of expanding session concurrency.
+**Acceptance:** paused startup stays usable; long-pause resume retains position/intent. Native request cadence remains an evidence item rather than a promised hls.js result.
 
-**Acceptance:** at most one admitted producer; actual OS cleanup demonstrated where tested; no stale action affects a replacement. Unreproduced orphan concerns close as investigated risks, with platform limits stated.
+## Task 4 — One primary/fallback negotiation decision
 
-## Task 4 — Deliver segments without whole-file BEAM reads
+**Files:** new `playback_decision.ex`; `negotiation.ex`, `select_video_plan.ex`, `playback.ex`, `playback_control.ex`, `playback_state.ex`; negotiation and playback event tests.
 
-**Files:** `lib/bolognesa_web/controllers/transcode_controller.ex`; controller tests for movies and episodes; `test/bolognesa_web/controllers/media_delivery_observability_test.exs` where shared delivery observations apply.
+**Consumes/produces:** validated CapabilityReport and current source -> `PlaybackDecision` as defined above. Auto keeps current least-cost candidate ordering. Fallback keeps current full H.264/AAC-or-silent eligibility, must be positively supported and different from primary; otherwise nil.
 
-**Contract:** after existing authorization and source validation, segments use `Plug.Conn.send_file/3` or the bounded delivery mechanism supported by the configured adapter. Keep the small manifest read and `private, no-store`. Accept only the generated segment-name format. Do not reuse the original-source byte-range module blindly: it validates a different file identity.
+- [ ] Add domain tests for primary/fallback combinations, unknown/negative observations, stale revision and selected plan already equal to compatible output.
+- [ ] Return both choices from one authorized source read and one report validation. Remove the availability-only call to select_video_plan and migrate facade callers atomically.
+- [ ] Retain only the server-selected fallback needed by recovery; browser cannot supply a plan. Revalidate source/plan when preparing either choice; preserve current one-shot budget across seek/reconnect.
+- [ ] Add a repository-read-count regression specifically for the removed redundant selection. Keep preparation's fresh authorization/read; do not optimize away distinct trust boundaries.
+- [ ] Verify retry/new-attempt versus reconnect budgets and stale error events; run negotiation, LiveView, FFmpeg and native precommit checks.
 
-- [ ] Add response tests for exact bytes, MIME, cache headers, authorization, invalid segment names, missing files and invalidated sources for both route families.
-- [ ] Reproduce cleanup between validation and file opening, concurrent segment requests and a disconnected client against the real HTTP adapter. Define failure behavior before/after headers; never claim a new status after response headers were sent.
-- [ ] Replace whole-segment `File.read` without adding a segment cache or a new producer. Preserve the session-touch rule for admitted segment delivery and explicit errors when the session vanished.
-- [ ] Compare repeated large-segment transfers with Task 1: BEAM peak memory and response latency at one and several concurrent requests. Account for adapter/kernel buffering; `send_file` alone does not prove lower end-to-end memory.
+**Acceptance:** one decision drives playback and compatible-action visibility, without policy duplication or broader recovery behavior.
 
-**Acceptance:** correct bytes and unchanged access guarantees; no whole-segment binary assembled by controller code; no unexplained latency regression; adapter cleanup races produce controlled outcomes.
+## Task 5 — One initial preparation at the checkpoint
 
-## Task 5 — Separate useful metrics from routine HTTP logs
+**Files:** new `initial_playback.mjs`, `playback_start_hint.ex`; hook, recovery, control/events; `assets/test/playback_recovery_test.mjs`, `playback_capabilities_test.mjs`; new `assets/test/initial_playback_test.mjs`, new `test/bolognesa_web/live_support/playback_start_hint_test.exs`; playback event tests and negotiated LiveView verifier.
 
-**Files:** `lib/bolognesa/infrastructure/observability/playback_metrics.ex`, `playback_events.ex`, `observability.ex`, `lib/bolognesa_web/endpoint.ex`, `grafana/build-overview.py`, generated `grafana/dashboards/overview.json`, `deploy/compose/monitoring.md`, `docs/conventions/observability.md`; tests in `test/bolognesa/infrastructure/prom_ex_test.exs`, `observability_test.exs`, `test/grafana/overview-test.py`.
+**Contract:** capability event remains the bounded version-one report, optionally augmented with `initial: {position_ms: integer, paused: boolean}`. The web adapter strips/validates that optional field before passing the unchanged closed report to CapabilityReport.new/3. Validate the entire envelope at <=8,192 external bytes; absent/invalid hint becomes offset 0/current default intent, never bypasses report validation. Position is 0..2,147,483,647 and below known duration. The accepted generation/file binding comes from server state, not a client ID.
 
-**Interfaces:** reuse existing HTTP counters/histograms for request rate and endpoint latency. Add `TranscodeManager.runtime_snapshot/0 :: %{sessions: 0 | 1, ffmpeg_processes: 0 | 1, suspended_processes: 0 | 1}` for optional bounded polling metrics; expose counts only. A live session with an exited FFmpeg has zero producer count. These states do not prove the browser is playing.
+- [ ] Read a matching checkpoint before sending the capability event; retain current 12-hour lifetime and viewer/content/file matching. Storage failure must not delay reporting.
+- [ ] Test old clients with no hint, corrupt/expired/mismatched checkpoints, negative/noninteger/oversized positions, unknown keys and oversized envelopes. Reject unknown envelope keys; ignore invalid hint values without accepting an invalid report.
+- [ ] Prepare the selected plan once at the accepted HLS offset and retain requested pause intent. For direct playback, restore after metadata as today. Ignore hints received after the checking generation ends.
+- [ ] Stop issuing playback_restore for initial HLS restore once both sides migrate; remove that obsolete event/acknowledgement timer and its replacement-only tests, retaining restore success/failure diagnostics. Ordinary seeks must never reinstate the checkpoint.
+- [ ] Verify a nonzero reload produces one FFmpeg start, first attachment at the restored timeline, and usable controls after autoplay rejection; run Node, LiveView, real negotiated browser and native precommit checks. Update decision 0024 only to implemented behavior.
 
-- [ ] Add dashboard checks for manifest versus segment request/minute, HTTP mean/p50/p95 with sample counts, and selected-range versus rolling-window labels. Preserve movie/episode attribution and distinguish absent data from zero.
-- [ ] Add snapshot/gauge tests across start, pause, resume, successful FFmpeg exit and cleanup. Polling must not scan directories or query SQL; monitoring-disabled startup remains supported.
-- [ ] Measure preparation time from admitted session to ready/failure once per session, separately from session lifetime. Export bounded outcomes and retain the existing 30-second browser progress cadence. Do not label wall-clock producer lifetime as FFmpeg CPU time.
-- [ ] Keep container CPU/memory as the initial FFmpeg-inclusive resource view. Add FFmpeg progress parsing only if Task 1 shows that conversion speed cannot otherwise explain stalls; allowlist numeric speed/frame progress and never export raw stderr.
-- [ ] Configure endpoint-level dynamic logging for the known HLS routes to suppress routine info start/stop lines while retaining structured HLS failures, session lifecycle and HTTP telemetry. Verify both success and failures with captured logs; changing router log options alone is insufficient.
-- [ ] Preserve all existing metric names. Add only bounded HLS error/retry enums if the controlled fault scenarios need them; coalesce repeated observations and test an explicit event budget. Do not emit a log per successful segment.
-- [ ] Evaluate per-session request/byte summaries against measured diagnostic needs. If needed, accumulate bounded counters through existing manager messages and emit one sanitized closure summary; avoid extra synchronous manager calls per manifest solely for analytics. Otherwise record why route metrics plus correlated lifecycle logs suffice.
+**Acceptance:** no throwaway offset-zero HLS producer; untrusted hints cannot select another file or renew recovery budgets.
 
-**Acceptance:** rate and latency are independently visible for both resources; active session/producer counts survive transitions correctly; routine HLS log volume falls while failure visibility remains; metric series and event counts remain bounded. Run the existing Grafana test script and relevant ExUnit tests; regenerate the dashboard from its generator.
+## Task 6 — Consolidate browser playback transitions
 
-## Task 6 — Remux delivered through capability negotiation
+**Files:** new `playback_session.mjs`, new `assets/test/video_playback_session_test.mjs`; hook, source controller, HLS/direct controllers, recovery, diagnostics and existing source/transport tests; frontend convention/decision 0028 when implemented.
 
-[Issue #10](https://github.com/avillen/bolognesa/issues/10) implements the bounded client-report/typed-plan path, including copy/copy, independent audio/video conversion and one compatible recovery. It replaces this task's proposed source-only strategy. The durable contract and copied-stream restrictions are in [decision 0011](../decisions/0011-live-transcoding.md); output/browser/CPU evidence and remaining physical/native-HLS acceptance belong in the issue. Do not add a second source-only remux policy. The other optimization tasks below remain independent.
+**Interface:** `createPlaybackSession({video, checkpoint, diagnostics, createSource, probeCapabilities, readInitialHint, pushEvent}) -> {update(config), retry(), disconnected(), reconnected(), destroy()}`. The hook composes concrete adapters and delegates lifecycle. The coordinator issues capability probes, reads the initial hint and discards obsolete completions; the hook no longer owns a second probe generation. Coordinator phases: checking, preparing, attaching, ready, error, destroyed. Server config remains authoritative; video remains authoritative for actual currentTime/paused/duration.
 
-## Task 7 — Avoid session replacement for safely buffered seeks
+- [ ] Pin public event traces before refactoring: source replacement, pending seek, retry, old probe/ready callback, rapid episode change, EOF and destroy. No tests for arbitrary private field layout.
+- [ ] Move orchestration into the coordinator incrementally. Give each attachment a generation guard; let transports report ready/error and dispose resources. Checkpoint storage no longer drives source creation through a hook retry callback.
+- [ ] Keep timeline offset/seek interface and transport-local resources, but centralize pending replacement and intent transitions. Avoid duplicating the media element's actual pause/time in mutable stores.
+- [ ] Make update/destroy idempotent; one controller and listener set survive unchanged updates/reconnect. Stale completion after destroy must have no effects.
+- [ ] Run Node, production-hook and real episode/part fullscreen checks, then native precommit. Preserve the existing mounted frame and diagnostics limits.
 
-**Files:** `assets/js/video/player/controllers/hls.mjs`, `assets/js/video/player/timeline.mjs`, their Node tests, browser harness; modify server events only if the existing pause/resume contract requires it.
+**Acceptance:** one explicit browser lifecycle owner, smaller hook, unchanged authorized event semantics and no new global player store.
 
-**Interface:** keep `fileTimeline.seek(globalSeconds)`; calculate session-local time by subtracting the offset. A local seek is eligible only when the requested point lies strictly inside one actual native `video.buffered` interval, outside a 0.25-second margin at either edge, and there is no pending source replacement. All other seeks keep the existing server event.
+## Task 7 — Readiness and bounded startup policy
 
-- [ ] First run short seek benchmarks and fault scenarios; proceed only if avoiding a restart has measurable benefit and no timeline drift. Do not treat the synthetic full-file `seekable` range as buffered data.
-- [ ] Add failing tests: nonzero offset, multiple buffered intervals, holes, exact edges, invalid positions, pending replacement, paused and playing seeks. Local path emits no `playback_seek`; remote path emits exactly one.
-- [ ] Implement local seek without leaving `timeline.pending` or Video.js `seeking` stuck. Preserve pause intent and checkpoint updates; browser `seeked` and waiting/recovery diagnostics must still work.
-- [ ] Verify keyboard, touch/drag commit, fullscreen, reload checkpoint and native-HLS behavior; seeks outside the window still replace the session and use the existing preparation cushion.
+**Files:** new `hls_readiness.ex`, new `test/bolognesa/playback/hls_readiness_test.exs`; playback facade, state/events, FFmpeg args only if measurements justify them; transcode manager tests and measurement harness.
 
-**Acceptance:** buffered seeks leave session ID and FFmpeg PID unchanged; out-of-buffer seeks remain correct; fewer restart events and shorter buffered-seek latency without skipped content. Otherwise retain current server seeks.
+**Interface:** `HlsReadiness.check(directory)` returns waiting/ready/error after parsing actual published durations and regular referenced segments. Extract existing >=12 seconds or ENDLIST behavior first. Keep the current 12,000 ms deadline until the measurement decision below; no hidden timeout increase.
 
-## Task 8 — Measure source-validation cost without weakening access
+- [ ] Add fixtures for partial/atomic manifests, missing segments, short ENDLIST, regular/long/irregular GOPs and stopped producer. Test using deterministic files and messages.
+- [ ] Move readiness I/O out of the facade, keeping generation-bound checks and one terminal outcome. Record admitted-to-ready/failed duration separately from total session lifetime.
+- [ ] Compare startup across remux, audio/video/full conversion and slow input. Record burst input seconds, published seconds, first segment and time-to-playable separately.
+- [ ] Decide and record whether to retain or change the startup cushion/deadline using task 1's results. Any change gets its exact threshold, finite bound, failed regression and renewed browser/underrun check in this task's PR before implementation. Do not implement an adaptive retry policy without those facts.
+- [ ] Verify failures without progress remain bounded, slow progress cannot occupy the slot indefinitely, ENDLIST is never fabricated, and short files still start. Run relevant ExUnit/FFmpeg/browser and precommit checks.
 
-**Files for investigation:** `lib/bolognesa/playback.ex`, `infrastructure/local_media_file.ex`, `infrastructure/repositories/ecto_playback_repository.ex`, `lib/bolognesa/accounts/infrastructure/repositories/ecto_user_repository.ex`; existing source and authorization tests.
+**Acceptance:** readiness has a coherent owner, explicit progress evidence and a justified startup policy. A measured decision to retain thresholds is a valid result.
 
-- [ ] Profile authentication SQL, source SQL, physical validation and resource delivery separately on representative media directories. Use local sampling/benchmarks, not high-volume permanent logs.
-- [ ] Compare their duration and resource usage after Tasks 2 and 4; only optimize work that is material in the remaining endpoint latency or NAS load.
-- [ ] If needed, reduce redundant projections/preloads or demonstrably repeated work within the same request. Preserve facade boundaries and inspect query plans before adding indexes.
-- [ ] Any change must retain per-request session revocation, role/association checks, source revision, source deletion/replacement, symlink/ancestor and descriptor identity protection. Re-run existing adversarial source tests and add a regression for the measured redundancy.
+## Task 8 — Local buffered seeks
 
-**Acceptance:** measured improvement with unchanged guarantees, or a documented decision that current costs are acceptable. Cross-request authorization or physical-source caching is outside this plan; it requires a separate design if measurements justify it.
+**Files:** HLS controller, `timeline.mjs`, new `assets/js/video/player/buffered_seek.mjs`, new `assets/test/buffered_seek_test.mjs`, transport tests and browser harness.
 
-## Task 9 — Validate browser memory, native HLS and segment characteristics
+**Interface:** `bufferedSeekTarget(video, globalSeconds, offsetSeconds) -> number | null`; return local seconds only strictly inside one real `video.buffered` interval, with 0.25 seconds excluded at each edge. Pending replacement always uses existing suppression.
 
-**Files:** production-hook harness and measurement script; `assets/js/video/player/controllers/hls.mjs` only for a proven adjustment; existing fixtures; record verified limits in the relevant issue or pull request.
+- [ ] Measure task 1's local/unbuffered seek paths before changing them. Add tests for nonzero offset, holes, interval edges, invalid numbers and paused/playing intent.
+- [ ] Resolve eligible seeks through currentTime without playback_seek; otherwise send exactly one existing server event. Never treat synthetic full-file seekable as downloaded bytes.
+- [ ] Clear Video.js seeking/pending correctly; preserve checkpoint, diagnostic and fullscreen behavior. Verify drag commit, keyboard and touch interaction with native and JS transports where available.
+- [ ] Compare seek-to-progress time and restart count; run Node, browser, relevant LiveView and precommit checks.
 
-- [ ] Measure an extended hls.js playback (at least 30 minutes), buffered-range retention and browser memory. The current infinite back buffer is a risk, not proof of a leak; memory includes browser-owned buffers outside JS heap.
-- [ ] If retention is harmful, compare `backBufferLength:60` with the baseline, keeping forward-buffer defaults initially. Verify full-file seeking, local seeks from Task 7 and long playback. Keep the change only with lower retained memory and no added stalls; do not conflate browser RAM with NAS RAM.
-- [ ] On Safari/iOS and any actually used TV browser, establish which branch runs, where initial playback starts, and whether pause/resume, global offsets, reload recovery and EOF behave correctly. Do not switch native-versus-JS preference globally based on Chrome tests.
-- [ ] With real FFmpeg, inspect several manifest snapshots, `TARGETDURATION` stability, `EXTINF`, sequence advancement, final `ENDLIST`, atomic publication and deletion timing for regular and irregular copied-video GOPs. Check the HLS requirements before changing flags or retention.
-- [ ] Throttle network and conversion separately. Verify behavior when consumption falls behind the sliding window, conversion cannot sustain real time, storage fills or startup exceeds the preparation bound. Distinguish playback error, rebuffering and automatic live-edge movement.
-- [ ] Make a narrowly scoped fix only for a reproduced failure, with a regression and renewed device checks. Keep four-second target and 12-entry window otherwise.
+**Acceptance:** buffered seek retains session and OS PID with no drift; out-of-buffer seek retains correct server replacement. Keep current behavior if benefit/correctness cannot be demonstrated.
 
-**Acceptance:** explicit results per actual browser/device and source class, with unknowns retained. Any memory/manifest adjustment has before/after evidence and preserves the preparation/storage budget.
+## Task 9 — File-backed segment delivery
 
-## Task 10 — Combined acceptance and release readiness
+**Files:** `lib/bolognesa_web/controllers/transcode_controller.ex`; movie/episode transcode controller tests and media-delivery observability tests.
 
-**Files:** decision 0011 and observability/testing conventions only where implemented behavior changed. Record verification evidence and remaining work in the relevant issue or pull request. Do not mark issues or milestones complete based solely on this plan.
+**Contract:** keep small manifest reads and `private, no-store`; segments use the adapter-supported file-backed path after current authorization, name/regular-file validation and admitted session touch. No cross-request media cache.
 
-- [ ] Run `node --test assets/test/*.mjs`, the production-player browser harness, the Grafana dashboard checks when changed, relevant real-FFmpeg integration checks and `mix precommit`.
-- [ ] Exercise movies, episodes, consecutive parts, multi-episode files, direct delivery, audio conversion, full conversion and remux if enabled. Cover autoplay block, pause/long pause, buffered/unbuffered seeks, EOF, retry, reload, reconnect, navigation, logout and same-actor tab replacement.
-- [ ] Repeat the Task 1 target scenario with the same media classes, browser, resource limits and scrape configuration. Compare bootstrap separately from steady playback; record intervals, requests, latency, CPU/memory, buffering, scratch use and log volume.
-- [ ] Require zero recurring paused hls.js requests after settling, zero post-destruction requests, no duplicate producers, correct expired-session recovery and no new authorization failures. Hardware CPU/memory improvements require matched measurements, not assumed percentages.
-- [ ] Review the full diff for security, source lifecycle, enum/type completeness, privacy and test evidence. Keep conditional tasks explicitly accepted, rejected with evidence, or pending device access.
-- [ ] Update status with the implemented subset, commands/results, remaining blockers and next step. Prepare changes for review; do not publish or deploy under this planning request. Each task must be independently revertible through its commit, with regression checks rerun after reversal.
+- [ ] Add response regressions for exact bytes, MIME, invalid name, missing/invalidated source, missing session and changed revision for both route families.
+- [ ] Exercise cleanup between validation/open, concurrent transfer and disconnected client using the real HTTP adapter. Pin controlled outcomes before/after headers; do not promise a replacement HTTP status after sending headers.
+- [ ] Replace segment File.read, preserving failure telemetry and existing source protection. Do not reuse original-file range machinery that validates a different identity.
+- [ ] Measure peak BEAM memory and latency with one/several transfers against the same fixtures; account for adapter/kernel buffers. Run controller/integration tests and native precommit.
 
-## Coverage and handoff
+**Acceptance:** no whole-segment binary assembled by the controller; access guarantees/bytes remain correct and resource claims have measured support.
 
-| Audit topic | Owner tasks |
-| --- | --- |
-| Metric window and actual request cadence | 1, 5, 10 |
-| Progressive playlist versus VOD/ENDLIST | 1, 9 |
-| Pause polling and initial pause defect | 2 |
-| Duplicate mounts/listeners, reconnect and stale events | 2, 3 |
-| Session expiry, tab changes, races and orphan risk | 2, 3 |
-| Segment memory and concurrent delivery | 4 |
-| Repeated SQL/physical validation | 8 |
-| Logs, latency, retries, active resources and summaries | 5 |
-| Avoidable full conversion and remux | 6 |
-| Buffered seeks and FFmpeg restarts | 7 |
-| Browser back buffer, native HLS, GOP and device limits | 9 |
-| Series/parts preservation and target validation | 6, 7, 9, 10 |
+## Task 10 — Bounded startup and resource observations
 
-Planning is complete when this document is reviewed for coverage and path correctness. Implementation, target measurements and deployment remain separate statuses.
+**Files:** `lib/bolognesa/infrastructure/observability/playback_events.ex`, `playback_metrics.ex`, `observability.ex`, `lib/bolognesa_web/endpoint.ex`, manager, `grafana/build-overview.py`, generated dashboard, monitoring guide; `test/bolognesa/infrastructure/observability_test.exs`, `prom_ex_test.exs`, `test/grafana/overview-test.py`.
+
+**Interface:** `TranscodeManager.runtime_snapshot/0 -> %{sessions: 0 | 1, ffmpeg_processes: 0 | 1, suspended_processes: 0 | 1}` from in-memory state, no SQL/directory scan. Count readiness once per session with bounded outcome/reason/stage.
+
+- [ ] Verify snapshot values through start/pause/resume/process exit/cleanup; a retained finished session has zero producer count. Monitoring-disabled startup must work.
+- [ ] Reuse existing HTTP measurements; distinguish manifest/segment request rate, latency sample counts and preparation latency from session lifetime or CPU time.
+- [ ] Suppress routine successful HLS request info logs at the endpoint boundary while preserving structured failures and HTTP telemetry. Capture both success/failure logs in tests; do not log reports or chunk contents.
+- [ ] Preserve existing metric names, bounded labels and event budgets. Add session summaries or numeric FFmpeg progress only if task 1/7 evidence shows a concrete missing diagnostic; never export raw stderr.
+- [ ] Run Grafana tests/regenerate its JSON if changed, relevant ExUnit and native precommit; compare log volume and failure visibility.
+
+**Acceptance:** preparation failures are distinguishable without high-volume logs or sensitive data, and counts represent actual resources rather than assumed playback.
+
+## Task 11 — Measured query and capability-probe simplifications
+
+**Files:** playback facade/repository, `local_media_file.ex`, capability probe module and tests; relevant source/authorization tests; measurement harness.
+
+- [ ] Profile SQL/source projection/physical validation/delivery separately after preceding improvements. Compare a narrower authorized session-delivery projection against current full inspection/tracks loading.
+- [ ] If material, add the narrow repository method with a typed source identity result, preserving association/revision/physical checks; define its exact fields in the task PR from existing Source consumers before coding. Add invalidation/revocation/adversarial source regressions and query-count evidence. No indexes without query-plan evidence.
+- [ ] Deduplicate identical complete browser probe configurations within one attempt, including transport/type and every codec/dimension/rate field. Add tests that identical probes share work but different configurations do not; retain explicit negative veto and aggregate unknown-on-deadline behavior.
+- [ ] Do not add cross-document persistent capability caches. A document-local cache is deferred until repeated-probe latency is material and its invalidation contract is separately specified; no user-agent capability table.
+- [ ] Run relevant Node/source/LiveView/precommit checks; record before/after or a measured decision to retain existing reads/probes.
+
+**Acceptance:** fewer demonstrably redundant reads/probes with unchanged safety and deadline semantics; no speculative cache infrastructure.
+
+## Task 12 — Decide whether session effects need isolation
+
+**Files for measurement:** manager, supervisor in `lib/bolognesa/application.ex`, manager tests and real FFmpeg lifecycle checks. **Conditional files:** new `infrastructure/transcode_session_worker.ex` and worker tests only after the decision.
+
+**Decision inputs:** manager call latency during filesystem preparation, signals, scratch scans and cleanup; OS process lifetime on replacement/shutdown; complexity of current ownership/readiness handling. Retaining the single manager is an acceptable result.
+
+- [ ] Add deterministic concurrent start/replacement and stale-owner tests. Cover same actor/two tabs, different actors/busy, failed preflight preserving current session, stale DOWN/stop/touch and logout.
+- [ ] Observe actual OS PIDs through suspended stop, repeated seeks, producer failure, owner exit and manager shutdown. Closing a Port alone does not establish process death.
+- [ ] Record isolate/retain decision. If isolation is justified, first specify manager/worker start-stop-status message contracts and bounded OS shutdown in this plan's PR; review that concrete contract before implementation. No process pool or concurrency increase.
+- [ ] For an approved split, manager reserves/replaces one slot atomically; worker owns Port, directory/readiness/signals/cleanup and monitors the actual LiveView owner, not a short-lived task. No new producer launches until old producer exit is confirmed; failed preflight preserves it and failed launch releases the reservation.
+- [ ] Verify bounded termination before directory removal, stale generations, supervisor restart, limits and in-memory snapshots; no orphan claim without Linux process evidence. Run manager/worker/native precommit plus real FFmpeg acceptance.
+
+**Acceptance:** either documented retain rationale, or proven single-producer/ownership guarantees with responsive arbitration and independently testable resource lifetime. Measurements/review gate this optional larger refactor.
+
+## Task 13 — Combined acceptance and handoff
+
+**Files:** existing negotiated-output/LiveView/production-hook harnesses; decisions 0011/0024/0028, testing/frontend conventions and playback guide only for behavior actually delivered. Keep changelog as one concise Unreleased playback point.
+
+- [ ] Run `node --test assets/test/*.mjs` and `sh scripts/dev/local.sh test`; run source-derived FFmpeg output checks and production-hook/negotiated LiveView browser harnesses per the testing convention. Run Grafana checks when affected.
+- [ ] Cover original/remux/audio/video/full conversion, silent media, absent optional color facts, explicit HDR rejection, missing analysis and unknown capability results.
+- [ ] Cover initial nonzero paused/playing checkpoint, rejected autoplay, long pause/expiry, local/remote seeks, genuine decode/network/ambiguous errors, retry, reconnect, navigation, logout and same-actor tab replacement.
+- [ ] Verify real EOF across parts/episodes, global timeline and stable fullscreen frame; late callbacks/events from outgoing content cannot affect new content.
+- [ ] Repeat matched measurements: startup and seek latency, producer starts, source reads, paused/post-destroy requests, memory/CPU/scratch/log volume. No recurring paused hls.js requests after settling, no post-destroy requests, no duplicate producer; report actual distributions/sample counts rather than invented percentage targets.
+- [ ] Run at least 30 minutes of playback for retained buffer and memory behavior. If harmful retention is demonstrated, evaluate bounded backBufferLength separately with the same fixtures; do not label growing memory a leak without evidence.
+- [ ] Record native-HLS and actual target results separately. Missing hardware evidence remains pending and does not become a compatibility claim. Keep private device/installation/source facts out of all artifacts.
+- [ ] Review the full delivery diff, incoming history/privacy scan before pushing, CI and remaining gaps; update #10/PR with actual checks and next steps. Do not close the issue/milestone solely because this plan exists or local suites pass. No deployment.
+
+## Plan completion and later maintenance
+
+Self-review must check file paths, interface consistency, review-focus coverage and preservation of prior measurement/cleanup/observability work. Measurement gates are explicit decisions, not permission to implement an unspecified algorithm. Implementations must update the plan with concrete threshold/worker/projection contracts when their evidence gates are reached.
+
+After delivered tasks finish, remove this temporary document or distill lasting rules into the existing decisions/conventions. GitHub remains the record of scope, measured evidence and outstanding acceptance.
