@@ -101,10 +101,10 @@ ROWS = [
                 'title': 'Preparation · elapsed by stage', 'unit': 'ms',
                 'queries': [
                     (playback_mean('preparation_duration_milliseconds'), '{{stage}}'),
-                    ('vector(30000)', 'Preparation limit'),
+                    ('vector(60000)', 'Preparation limit'),
                 ],
                 'overrides': LIMIT_OVERRIDES,
-                'description': PREPARATION_MEAN + 'Elapsed since Port.open returned. First progress, first published segment, ready and timeout are separate milestones; stages can belong to the same session. The dashed line is the 30-second preparation limit.',
+                'description': PREPARATION_MEAN + 'Elapsed since Port.open returned. First progress, first published segment, ready and timeout are separate milestones; stages can belong to the same session. The dashed line is the 60-second preparation limit.',
             },
             {
                 'title': 'Preparation · milestone observations', 'kind': 'stat',

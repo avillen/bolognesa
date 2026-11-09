@@ -113,7 +113,7 @@
       "id": 3,
       "type": "timeseries",
       "title": "Preparation \u00b7 elapsed by stage",
-      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Elapsed since Port.open returned. First progress, first published segment, ready and timeout are separate milestones; stages can belong to the same session. The dashed line is the 30-second preparation limit.",
+      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Elapsed since Port.open returned. First progress, first published segment, ready and timeout are separate milestones; stages can belong to the same session. The dashed line is the 60-second preparation limit.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -195,7 +195,7 @@
         },
         {
           "refId": "Q1",
-          "expr": "vector(30000)",
+          "expr": "vector(60000)",
           "legendFormat": "Preparation limit",
           "editorMode": "code",
           "instant": false,

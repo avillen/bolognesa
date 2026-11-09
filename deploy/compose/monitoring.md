@@ -21,7 +21,7 @@ The overview's **Playback · preparation** row separates validation, setup and
 prior-session cleanup (`prelaunch_ms`) from `Port.open` (`spawn_ms`). Preparation
 elapsed time starts when `Port.open` returns. Stages are `first_progress`,
 `first_segment`, `ready`, and `timeout`; unexpected stages map to `other`.
-The elapsed chart includes the 30-second preparation limit. A ready observation
+The elapsed chart includes the 60-second preparation limit. A ready observation
 means the server found enough published HLS data; it does not establish that a
 browser decoded or played it.
 

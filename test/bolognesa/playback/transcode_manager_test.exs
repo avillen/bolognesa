@@ -167,7 +167,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     refute Map.has_key?(final, :ffmpeg_output_ms)
   end
 
-  test "preparation allows a slow start beyond twelve seconds and stops at thirty", %{
+  test "preparation allows a slow start beyond thirty seconds and stops at sixty", %{
     source: source
   } do
     {:ok, session} =
@@ -183,7 +183,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
       Phoenix.Component.assign(
         socket,
         :preparation_deadline,
-        socket.assigns.preparation_deadline - 15_000
+        socket.assigns.preparation_deadline - 45_000
       )
 
     assert {:noreply, waiting} = PlaybackEvents.handle_info({:transcode_poll, session.id}, socket)

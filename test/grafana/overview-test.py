@@ -98,11 +98,11 @@ preparation = [panel for panel in panels if panel['title'].startswith('Preparati
 assert len(preparation) == 9
 elapsed = next(panel for panel in preparation if panel['title'] == 'Preparation · elapsed by stage')
 assert elapsed['fieldConfig']['defaults']['unit'] == 'ms'
-assert any(target['expr'] == 'vector(30000)' for target in elapsed['targets'])
+assert any(target['expr'] == 'vector(60000)' for target in elapsed['targets'])
 for panel in preparation:
     for target in panel['targets']:
         query = target['expr']
-        if query == 'vector(30000)':
+        if query == 'vector(60000)':
             continue
         assert 'job="$job", instance="$instance"' in query
         assert '[$__range]' in query

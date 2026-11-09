@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Allow up to thirty seconds to prepare compatible video playback, while starting as soon as output is ready.
+- Allow up to sixty seconds to prepare compatible video playback, while starting as soon as output is ready.
 
 ### Added
 
