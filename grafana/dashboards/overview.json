@@ -35,7 +35,7 @@
     {
       "id": 1,
       "type": "row",
-      "title": "BEAM \u00b7 runtime resources",
+      "title": "Playback \u00b7 preparation",
       "collapsed": false,
       "panels": [],
       "gridPos": {
@@ -47,6 +47,571 @@
     },
     {
       "id": 2,
+      "type": "timeseries",
+      "title": "Preparation \u00b7 launch phases",
+      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Prelaunch precedes process creation; spawn measures Port.open only.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "sum(increase(bolognesa_playback_session_prelaunch_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum(increase(bolognesa_playback_session_prelaunch_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
+          "legendFormat": "Validation / setup / prior-session cleanup",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q1",
+          "expr": "sum(increase(bolognesa_playback_session_spawn_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum(increase(bolognesa_playback_session_spawn_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
+          "legendFormat": "Port.open",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Preparation \u00b7 elapsed by stage",
+      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Elapsed since Port.open returned. First progress, first published segment, ready and timeout are separate milestones; stages can belong to the same session. The dashed line is the 30-second preparation limit.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 1,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "limit"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8a8a8a"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_duration_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_duration_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
+          "legendFormat": "{{stage}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q1",
+          "expr": "vector(30000)",
+          "legendFormat": "Preparation limit",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Preparation \u00b7 milestone observations",
+      "description": "Estimated observations in the selected dashboard range, including timeouts. Stages overlap within a session, so their counts must not be added as sessions. A first occurrence before the first scrape can be missed; absent series remain No data.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 1,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_observations_total{job=\"$job\", instance=\"$instance\"}[$__range]))",
+          "legendFormat": "{{stage}}",
+          "editorMode": "code",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Preparation \u00b7 published and processed output",
+      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Published playlist duration and FFmpeg-reported output timestamp describe media time, not wall time or network/read throughput. Output progress is absent until reported.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_published_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_published_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
+          "legendFormat": "{{stage}} \u00b7 published HLS",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "Q1",
+          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_output_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_output_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
+          "legendFormat": "{{stage}} \u00b7 FFmpeg output timestamp",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Preparation \u00b7 processed frames",
+      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. FFmpeg-reported frame count at each milestone; absent until reported.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 7,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_frames_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_frames_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
+          "legendFormat": "{{stage}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Preparation \u00b7 published segments",
+      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Complete segments published in the playlist at each milestone.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 7,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_segments_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_segments_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
+          "legendFormat": "{{stage}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Preparation \u00b7 FFmpeg speed",
+      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. FFmpeg-reported processing speed: 1x means real-time output. This does not measure input-read or network throughput. Missing reports remain No data.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix:x",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_speed_milli_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_speed_milli_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0) / 1000",
+          "legendFormat": "{{stage}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Preparation \u00b7 progress report age",
+      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Age of the latest numeric FFmpeg progress report at the milestone; absent before any report.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 13,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_progress_age_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_progress_age_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
+          "legendFormat": "{{stage}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Preparation \u00b7 first progress latency",
+      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Time from session launch to receipt of the first complete numeric FFmpeg progress report, retained at later stages. A report can contain frame=0; this does not prove when input reading or decoding began.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 13,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "Q0",
+          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_first_progress_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_first_progress_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
+          "legendFormat": "{{stage}}",
+          "editorMode": "code",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "BEAM \u00b7 runtime resources",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "x": 0,
+        "y": 19,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 12,
       "type": "stat",
       "title": "Uptime",
       "description": "",
@@ -56,7 +621,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 1,
+        "y": 20,
         "w": 8,
         "h": 4
       },
@@ -96,7 +661,7 @@
       ]
     },
     {
-      "id": 3,
+      "id": 13,
       "type": "timeseries",
       "title": "Memory",
       "description": "",
@@ -106,7 +671,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 1,
+        "y": 20,
         "w": 8,
         "h": 4
       },
@@ -192,7 +757,7 @@
       ]
     },
     {
-      "id": 4,
+      "id": 14,
       "type": "timeseries",
       "title": "Processes / ports / ETS",
       "description": "",
@@ -202,7 +767,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 1,
+        "y": 20,
         "w": 8,
         "h": 4
       },
@@ -264,7 +829,7 @@
       ]
     },
     {
-      "id": 5,
+      "id": 15,
       "type": "timeseries",
       "title": "Scheduler work and run queues",
       "description": "",
@@ -274,7 +839,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 5,
+        "y": 24,
         "w": 8,
         "h": 4
       },
@@ -328,7 +893,7 @@
       ]
     },
     {
-      "id": 6,
+      "id": 16,
       "type": "timeseries",
       "title": "Atoms",
       "description": "",
@@ -338,7 +903,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 5,
+        "y": 24,
         "w": 8,
         "h": 4
       },
@@ -392,7 +957,7 @@
       ]
     },
     {
-      "id": 7,
+      "id": 17,
       "type": "timeseries",
       "title": "Garbage collections",
       "description": "",
@@ -402,7 +967,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 5,
+        "y": 24,
         "w": 8,
         "h": 4
       },
@@ -448,7 +1013,7 @@
       ]
     },
     {
-      "id": 8,
+      "id": 18,
       "type": "timeseries",
       "title": "GC reclaimed bytes",
       "description": "",
@@ -458,7 +1023,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 9,
+        "y": 28,
         "w": 8,
         "h": 4
       },
@@ -504,7 +1069,7 @@
       ]
     },
     {
-      "id": 9,
+      "id": 19,
       "type": "timeseries",
       "title": "Reductions",
       "description": "",
@@ -514,7 +1079,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 9,
+        "y": 28,
         "w": 8,
         "h": 4
       },
@@ -560,7 +1125,7 @@
       ]
     },
     {
-      "id": 10,
+      "id": 20,
       "type": "timeseries",
       "title": "Port I/O",
       "description": "",
@@ -570,7 +1135,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 9,
+        "y": 28,
         "w": 8,
         "h": 4
       },
@@ -616,571 +1181,6 @@
       ]
     },
     {
-      "id": 11,
-      "type": "row",
-      "title": "Playback \u00b7 preparation",
-      "collapsed": false,
-      "panels": [],
-      "gridPos": {
-        "x": 0,
-        "y": 13,
-        "w": 24,
-        "h": 1
-      }
-    },
-    {
-      "id": 12,
-      "type": "timeseries",
-      "title": "Preparation \u00b7 launch phases",
-      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Prelaunch precedes process creation; spawn measures Port.open only.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 14,
-        "w": 8,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms",
-          "noValue": "No data",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 8,
-            "showPoints": "auto",
-            "spanNulls": false
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "Q0",
-          "expr": "sum(increase(bolognesa_playback_session_prelaunch_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum(increase(bolognesa_playback_session_prelaunch_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
-          "legendFormat": "Validation / setup / prior-session cleanup",
-          "editorMode": "code",
-          "instant": false,
-          "range": true
-        },
-        {
-          "refId": "Q1",
-          "expr": "sum(increase(bolognesa_playback_session_spawn_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum(increase(bolognesa_playback_session_spawn_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
-          "legendFormat": "Port.open",
-          "editorMode": "code",
-          "instant": false,
-          "range": true
-        }
-      ]
-    },
-    {
-      "id": 13,
-      "type": "timeseries",
-      "title": "Preparation \u00b7 elapsed by stage",
-      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Elapsed since Port.open returned. First progress, first published segment, ready and timeout are separate milestones; stages can belong to the same session. The dashed line is the 30-second preparation limit.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "gridPos": {
-        "x": 8,
-        "y": 14,
-        "w": 8,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms",
-          "noValue": "No data",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 8,
-            "showPoints": "auto",
-            "spanNulls": false
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "limit"
-            },
-            "properties": [
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "dash",
-                  "dash": [
-                    10,
-                    10
-                  ]
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#8a8a8a"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "Q0",
-          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_duration_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_duration_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
-          "legendFormat": "{{stage}}",
-          "editorMode": "code",
-          "instant": false,
-          "range": true
-        },
-        {
-          "refId": "Q1",
-          "expr": "vector(30000)",
-          "legendFormat": "Preparation limit",
-          "editorMode": "code",
-          "instant": false,
-          "range": true
-        }
-      ]
-    },
-    {
-      "id": 14,
-      "type": "stat",
-      "title": "Preparation \u00b7 milestone observations",
-      "description": "Estimated observations in the selected dashboard range, including timeouts. Stages overlap within a session, so their counts must not be added as sessions. A first occurrence before the first scrape can be missed; absent series remain No data.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "gridPos": {
-        "x": 16,
-        "y": 14,
-        "w": 8,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "noValue": "No data",
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "none",
-        "graphMode": "none",
-        "textMode": "auto",
-        "orientation": "auto",
-        "justifyMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "Q0",
-          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_observations_total{job=\"$job\", instance=\"$instance\"}[$__range]))",
-          "legendFormat": "{{stage}}",
-          "editorMode": "code",
-          "instant": true,
-          "range": false
-        }
-      ]
-    },
-    {
-      "id": 15,
-      "type": "timeseries",
-      "title": "Preparation \u00b7 published and processed output",
-      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Published playlist duration and FFmpeg-reported output timestamp describe media time, not wall time or network/read throughput. Output progress is absent until reported.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 18,
-        "w": 8,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms",
-          "noValue": "No data",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 8,
-            "showPoints": "auto",
-            "spanNulls": false
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "Q0",
-          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_published_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_published_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
-          "legendFormat": "{{stage}} \u00b7 published HLS",
-          "editorMode": "code",
-          "instant": false,
-          "range": true
-        },
-        {
-          "refId": "Q1",
-          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_output_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_output_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
-          "legendFormat": "{{stage}} \u00b7 FFmpeg output timestamp",
-          "editorMode": "code",
-          "instant": false,
-          "range": true
-        }
-      ]
-    },
-    {
-      "id": 16,
-      "type": "timeseries",
-      "title": "Preparation \u00b7 processed frames",
-      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. FFmpeg-reported frame count at each milestone; absent until reported.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "gridPos": {
-        "x": 8,
-        "y": 18,
-        "w": 8,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "noValue": "No data",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 8,
-            "showPoints": "auto",
-            "spanNulls": false
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "Q0",
-          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_frames_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_frames_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
-          "legendFormat": "{{stage}}",
-          "editorMode": "code",
-          "instant": false,
-          "range": true
-        }
-      ]
-    },
-    {
-      "id": 17,
-      "type": "timeseries",
-      "title": "Preparation \u00b7 published segments",
-      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Complete segments published in the playlist at each milestone.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "gridPos": {
-        "x": 16,
-        "y": 18,
-        "w": 8,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "noValue": "No data",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 8,
-            "showPoints": "auto",
-            "spanNulls": false
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "Q0",
-          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_segments_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_segments_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
-          "legendFormat": "{{stage}}",
-          "editorMode": "code",
-          "instant": false,
-          "range": true
-        }
-      ]
-    },
-    {
-      "id": 18,
-      "type": "timeseries",
-      "title": "Preparation \u00b7 FFmpeg speed",
-      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. FFmpeg-reported processing speed: 1x means real-time output. This does not measure input-read or network throughput. Missing reports remain No data.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 22,
-        "w": 8,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "suffix:x",
-          "noValue": "No data",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 8,
-            "showPoints": "auto",
-            "spanNulls": false
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "Q0",
-          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_speed_milli_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_ffmpeg_speed_milli_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0) / 1000",
-          "legendFormat": "{{stage}}",
-          "editorMode": "code",
-          "instant": false,
-          "range": true
-        }
-      ]
-    },
-    {
-      "id": 19,
-      "type": "timeseries",
-      "title": "Preparation \u00b7 progress report age",
-      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Age of the latest numeric FFmpeg progress report at the milestone; absent before any report.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "gridPos": {
-        "x": 8,
-        "y": 22,
-        "w": 8,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms",
-          "noValue": "No data",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 8,
-            "showPoints": "auto",
-            "spanNulls": false
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "Q0",
-          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_progress_age_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_progress_age_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
-          "legendFormat": "{{stage}}",
-          "editorMode": "code",
-          "instant": false,
-          "range": true
-        }
-      ]
-    },
-    {
-      "id": 20,
-      "type": "timeseries",
-      "title": "Preparation \u00b7 first progress latency",
-      "description": "Mean over the trailing selected dashboard range, using histogram sum/count increases. Sparse scrape-based samples are estimates; missing observations remain No data. Time from session launch to receipt of the first complete numeric FFmpeg progress report, retained at later stages. A report can contain frame=0; this does not prove when input reading or decoding began.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "gridPos": {
-        "x": 16,
-        "y": 22,
-        "w": 8,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms",
-          "noValue": "No data",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 8,
-            "showPoints": "auto",
-            "spanNulls": false
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "Q0",
-          "expr": "sum by (stage)(increase(bolognesa_playback_preparation_first_progress_milliseconds_sum{job=\"$job\", instance=\"$instance\"}[$__range])) / (sum by (stage)(increase(bolognesa_playback_preparation_first_progress_milliseconds_count{job=\"$job\", instance=\"$instance\"}[$__range])) > 0)",
-          "legendFormat": "{{stage}}",
-          "editorMode": "code",
-          "instant": false,
-          "range": true
-        }
-      ]
-    },
-    {
       "id": 21,
       "type": "row",
       "title": "Docker \u00b7 optional Linux collector",
@@ -1197,7 +1197,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 27,
+            "y": 33,
             "w": 8,
             "h": 4
           },
@@ -1247,7 +1247,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 27,
+            "y": 33,
             "w": 8,
             "h": 4
           },
@@ -1297,7 +1297,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 27,
+            "y": 33,
             "w": 8,
             "h": 4
           },
@@ -1353,7 +1353,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 31,
+            "y": 37,
             "w": 8,
             "h": 4
           },
@@ -1417,7 +1417,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 31,
+            "y": 37,
             "w": 8,
             "h": 4
           },
@@ -1481,7 +1481,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 31,
+            "y": 37,
             "w": 8,
             "h": 4
           },
@@ -1533,7 +1533,7 @@
           "repeatDirection": "v",
           "gridPos": {
             "x": 0,
-            "y": 35,
+            "y": 41,
             "w": 24,
             "h": 4
           },
@@ -1619,7 +1619,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 26,
+        "y": 32,
         "w": 24,
         "h": 1
       }

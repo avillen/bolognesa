@@ -30,8 +30,8 @@ assert dashboard['__inputs'][0]['name'] == 'DS_PROMETHEUS'
 
 rows = [p for p in dashboard['panels'] if p['type'] == 'row']
 assert [row['title'] for row in rows] == [
-    'BEAM · runtime resources',
     'Playback · preparation',
+    'BEAM · runtime resources',
     'Docker · optional Linux collector',
 ]
 assert [row['collapsed'] for row in rows] == [False, False, True]
@@ -77,7 +77,8 @@ for index, row in enumerate(rows):
     assert lines, row['title']
     for y, line in lines.items():
         assert sum(child['gridPos']['w'] for child in line) == 24, (row['title'], y)
-        assert {child['gridPos']['h'] for child in line} == {4}, (row['title'], y)
+        expected_height = 6 if row['title'] == 'Playback · preparation' else 4
+        assert {child['gridPos']['h'] for child in line} == {expected_height}, (row['title'], y)
 
 queries = [target['expr'] for panel in panels for target in panel.get('targets', [])]
 for metric in (

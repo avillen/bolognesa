@@ -85,66 +85,9 @@ LIMIT_OVERRIDES = [
 
 ROWS = [
     {
-        'title': 'BEAM · runtime resources',
-        'collapsed': False,
-        'panels': [
-            {
-                'title': 'Uptime', 'unit': 'ms', 'kind': 'stat',
-                'queries': [(beam('stats_uptime_milliseconds_count'), 'Uptime')],
-            },
-            {
-                'title': 'Memory', 'unit': 'bytes',
-                'queries': [
-                    (beam(name), f'{name} {{{{type}}}}')
-                    for name in (
-                        'memory_allocated_bytes', 'memory_processes_total_bytes',
-                        'memory_binary_total_bytes', 'memory_ets_total_bytes',
-                        'memory_atom_total_bytes', 'memory_code_total_bytes',
-                    )
-                ],
-            },
-            {
-                'title': 'Processes / ports / ETS',
-                'queries': [
-                    (beam(name), f'{name} {{{{type}}}}')
-                    for name in ('stats_process_count', 'stats_port_count', 'stats_ets_count')
-                ],
-            },
-            {
-                'title': 'Scheduler work and run queues',
-                'queries': [
-                    (beam(name), f'{name} {{{{type}}}}')
-                    for name in ('stats_active_task_count', 'stats_run_queue_count')
-                ],
-            },
-            {
-                'title': 'Atoms',
-                'queries': [
-                    (beam(name), f'{name} {{{{type}}}}')
-                    for name in ('stats_atom_count', 'system_atom_limit_info')
-                ],
-            },
-            {
-                'title': 'Garbage collections', 'unit': 'ops',
-                'queries': [(beam_rate('stats_gc_count'), '{{type}}')],
-            },
-            {
-                'title': 'GC reclaimed bytes', 'unit': 'Bps',
-                'queries': [(beam_rate('stats_gc_reclaimed_bytes'), '{{type}}')],
-            },
-            {
-                'title': 'Reductions', 'unit': 'ops',
-                'queries': [(beam_rate('stats_reduction_count'), '{{type}}')],
-            },
-            {
-                'title': 'Port I/O', 'unit': 'Bps',
-                'queries': [(beam_rate('stats_port_io_byte_count'), '{{type}}')],
-            },
-        ],
-    },
-    {
         'title': 'Playback · preparation',
         'collapsed': False,
+        'panel_height': 6,
         'panels': [
             {
                 'title': 'Preparation · launch phases', 'unit': 'ms',
@@ -200,6 +143,64 @@ ROWS = [
                 'title': 'Preparation · first progress latency', 'unit': 'ms',
                 'queries': [(playback_mean('preparation_first_progress_milliseconds'), '{{stage}}')],
                 'description': PREPARATION_MEAN + 'Time from session launch to receipt of the first complete numeric FFmpeg progress report, retained at later stages. A report can contain frame=0; this does not prove when input reading or decoding began.',
+            },
+        ],
+    },
+    {
+        'title': 'BEAM · runtime resources',
+        'collapsed': False,
+        'panels': [
+            {
+                'title': 'Uptime', 'unit': 'ms', 'kind': 'stat',
+                'queries': [(beam('stats_uptime_milliseconds_count'), 'Uptime')],
+            },
+            {
+                'title': 'Memory', 'unit': 'bytes',
+                'queries': [
+                    (beam(name), f'{name} {{{{type}}}}')
+                    for name in (
+                        'memory_allocated_bytes', 'memory_processes_total_bytes',
+                        'memory_binary_total_bytes', 'memory_ets_total_bytes',
+                        'memory_atom_total_bytes', 'memory_code_total_bytes',
+                    )
+                ],
+            },
+            {
+                'title': 'Processes / ports / ETS',
+                'queries': [
+                    (beam(name), f'{name} {{{{type}}}}')
+                    for name in ('stats_process_count', 'stats_port_count', 'stats_ets_count')
+                ],
+            },
+            {
+                'title': 'Scheduler work and run queues',
+                'queries': [
+                    (beam(name), f'{name} {{{{type}}}}')
+                    for name in ('stats_active_task_count', 'stats_run_queue_count')
+                ],
+            },
+            {
+                'title': 'Atoms',
+                'queries': [
+                    (beam(name), f'{name} {{{{type}}}}')
+                    for name in ('stats_atom_count', 'system_atom_limit_info')
+                ],
+            },
+            {
+                'title': 'Garbage collections', 'unit': 'ops',
+                'queries': [(beam_rate('stats_gc_count'), '{{type}}')],
+            },
+            {
+                'title': 'GC reclaimed bytes', 'unit': 'Bps',
+                'queries': [(beam_rate('stats_gc_reclaimed_bytes'), '{{type}}')],
+            },
+            {
+                'title': 'Reductions', 'unit': 'ops',
+                'queries': [(beam_rate('stats_reduction_count'), '{{type}}')],
+            },
+            {
+                'title': 'Port I/O', 'unit': 'Bps',
+                'queries': [(beam_rate('stats_port_io_byte_count'), '{{type}}')],
             },
         ],
     },
@@ -348,7 +349,7 @@ def build():
     for row in ROWS:
         dashboard.row(row['title'], row['collapsed'])
         for panel in row['panels']:
-            dashboard.panel(**panel)
+            dashboard.panel(**{'height': row.get('panel_height', 4), **panel})
     return {
         '__inputs': [
             {
