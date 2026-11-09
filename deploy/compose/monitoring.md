@@ -15,6 +15,53 @@ Alloy scrapes every 60 seconds and sends Prometheus remote write over HTTPS. Gra
 credentials live in Alloy, not in the application. No logs, traces, host metrics,
 Docker socket, or media mounts are collected by the metrics-only Alloy service.
 
+## Playback preparation
+
+The overview's **Playback · preparation** row separates validation, setup and
+prior-session cleanup (`prelaunch_ms`) from `Port.open` (`spawn_ms`). Preparation
+elapsed time starts when `Port.open` returns. Stages are `first_progress`,
+`first_segment`, `ready`, and `timeout`; unexpected stages map to `other`.
+The elapsed chart includes the 30-second preparation limit. A ready observation
+means the server found enough published HLS data; it does not establish that a
+browser decoded or played it.
+
+The exporter adds these histogram families (each has `_bucket`, `_sum`, `_count`):
+
+- `bolognesa_playback_session_prelaunch_milliseconds` and
+  `bolognesa_playback_session_spawn_milliseconds`, without labels.
+- `bolognesa_playback_preparation_duration_milliseconds`,
+  `bolognesa_playback_preparation_published_milliseconds`, and
+  `bolognesa_playback_preparation_segments`, with only the bounded `stage` label.
+- Optional `bolognesa_playback_preparation_first_progress_milliseconds`,
+  `bolognesa_playback_preparation_progress_age_milliseconds`,
+  `bolognesa_playback_preparation_ffmpeg_frames`,
+  `bolognesa_playback_preparation_ffmpeg_output_milliseconds`, and
+  `bolognesa_playback_preparation_ffmpeg_speed_milli`, with the same `stage` label.
+
+`bolognesa_playback_preparation_observations_total{stage="timeout"}` counts timeout
+milestones. Other stages have their own series; do not add stages to count sessions.
+Snapshots are emitted at milestones, not for every FFmpeg progress report.
+
+FFmpeg progress is optional. First-progress latency measures receipt of the first
+complete report with a recognized numeric field, even `frame=0`; it does not prove
+when input reading or decoding began. Progress age is the time since the latest
+report. Output timestamps and published playlist duration measure media time,
+while speed is FFmpeg's processing ratio (`1000` means `1x`). These measurements
+do not establish network or input-read throughput. Frame and output values can
+reflect different FFmpeg processing strategies. Missing fields produce no
+histogram sample, preserving unknown values rather than reporting zero.
+
+Panels use selected-range counter increases for counts and the ratio of
+histogram sum/count increases for means. Each chart point summarizes its trailing
+selected-range window. Empty denominators stay **No data**. With low traffic,
+inspect counts alongside means: scrape extrapolation, restarts and observations
+before the first scrape can limit precision. Means aggregate separate sessions;
+there are no media or session labels. Preparation logs retain individual milestone
+context for investigation. No new metrics appear until the corresponding events
+occur with collection enabled. Regenerate and explicitly publish the overview
+following [the Grafana guide](../../grafana/README.md); application deployment does
+not update Grafana automatically.
+
 ## Measure HLS request behavior
 
 To inspect HLS request behavior, evaluate this in Grafana Explore with an

@@ -31,9 +31,10 @@ assert dashboard['__inputs'][0]['name'] == 'DS_PROMETHEUS'
 rows = [p for p in dashboard['panels'] if p['type'] == 'row']
 assert [row['title'] for row in rows] == [
     'BEAM · runtime resources',
+    'Playback · preparation',
     'Docker · optional Linux collector',
 ]
-assert [row['collapsed'] for row in rows] == [False, True]
+assert [row['collapsed'] for row in rows] == [False, False, True]
 
 panels = dashboard['panels'] + [p for row in rows for p in row.get('panels', [])]
 assert len({panel['id'] for panel in panels}) == len(panels)
@@ -91,6 +92,23 @@ for metric in (
     'up{job="bolognesa-docker"',
 ):
     assert any(metric in query for query in queries), metric
+
+preparation = [panel for panel in panels if panel['title'].startswith('Preparation ·')]
+assert len(preparation) == 9
+elapsed = next(panel for panel in preparation if panel['title'] == 'Preparation · elapsed by stage')
+assert elapsed['fieldConfig']['defaults']['unit'] == 'ms'
+assert any(target['expr'] == 'vector(30000)' for target in elapsed['targets'])
+for panel in preparation:
+    for target in panel['targets']:
+        query = target['expr']
+        if query == 'vector(30000)':
+            continue
+        assert 'job="$job", instance="$instance"' in query
+        assert '[$__range]' in query
+        if '_sum{' in query:
+            assert '> 0' in query, query
+assert any('bolognesa_playback_preparation_observations_total' in query for query in queries)
+assert any('/ 1000' in query and 'ffmpeg_speed_milli' in query for query in queries)
 
 assert not any('bolognesa_libraries_' in query for query in queries)
 assert not any('$window' in query for query in queries)

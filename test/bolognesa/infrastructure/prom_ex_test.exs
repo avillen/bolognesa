@@ -174,6 +174,72 @@ defmodule Bolognesa.Infrastructure.PromExTest do
     refute export =~ "private-session"
   end
 
+  test "preparation exports stage timing and optional progress without inventing missing samples" do
+    enable_metrics()
+
+    ExUnit.CaptureLog.capture_log(fn ->
+      :telemetry.execute(
+        [:bolognesa, :playback, :session, :started],
+        %{count: 1, prelaunch_ms: 12, spawn_ms: 3},
+        %{session_id: "private-session"}
+      )
+
+      :telemetry.execute(
+        [:bolognesa, :playback, :session, :preparation],
+        %{
+          duration_ms: 40,
+          published_ms: 0,
+          segment_count: 0,
+          first_progress_ms: 35,
+          progress_age_ms: 5,
+          ffmpeg_frame: 24,
+          ffmpeg_output_ms: 1_000,
+          ffmpeg_speed_milli: 1_250
+        },
+        %{stage: :first_progress, session_id: "private-session"}
+      )
+
+      for stage <- [:first_segment, :ready, :timeout, "private-stage"] do
+        :telemetry.execute(
+          [:bolognesa, :playback, :session, :preparation],
+          %{duration_ms: 30_000, published_ms: 2_000, segment_count: 1},
+          %{stage: stage}
+        )
+      end
+    end)
+
+    export = PromEx.get_metrics(Metrics)
+    assert export =~ "bolognesa_playback_session_prelaunch_milliseconds_sum 12"
+    assert export =~ "bolognesa_playback_session_spawn_milliseconds_sum 3"
+
+    for stage <- ~w(first_progress first_segment ready timeout other) do
+      assert export =~ ~s(bolognesa_playback_preparation_observations_total{stage="#{stage}"} 1)
+
+      assert export =~
+               ~s(bolognesa_playback_preparation_duration_milliseconds_count{stage="#{stage}"} 1)
+    end
+
+    for {metric, value} <- [
+          {"first_progress_milliseconds", 35},
+          {"progress_age_milliseconds", 5},
+          {"ffmpeg_frames", 24},
+          {"ffmpeg_output_milliseconds", 1_000},
+          {"ffmpeg_speed_milli", 1_250}
+        ] do
+      assert export =~
+               ~s(bolognesa_playback_preparation_#{metric}_sum{stage="first_progress"} #{value})
+
+      refute export =~ ~s(bolognesa_playback_preparation_#{metric}_count{stage="timeout"})
+    end
+
+    assert export =~
+             ~s(bolognesa_playback_preparation_published_milliseconds_sum{stage="timeout"} 2000)
+
+    assert export =~ ~s(bolognesa_playback_preparation_segments_sum{stage="timeout"} 1)
+    refute export =~ "private-session"
+    refute export =~ "private-stage"
+  end
+
   test "Ecto exports precise small-query buckets without SQL or parameters" do
     enable_metrics()
 

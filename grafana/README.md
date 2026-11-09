@@ -14,6 +14,14 @@ python3 grafana/export-promex-dashboards.py # five PromEx dashboards
 panels declared in the same file. The output keeps `${DS_PROMETHEUS}` so it also
 works as an import template. Commit the generated file with its generator.
 
+The overview contains BEAM resources, playback preparation, and optional Docker
+resources. Preparation panels show launch phases, milestone elapsed time and
+counts, published HLS duration and segments, and available FFmpeg numeric progress.
+Means use histogram sum/count increases over the selected dashboard range; counts
+are scrape-based estimates. Missing progress stays **No data**. See the
+[preparation metric guide](../deploy/compose/monitoring.md#playback-preparation)
+for timing boundaries and interpretation. Building does not publish the dashboard.
+
 ## Publish the overview
 
 Create `.env.grafana` in the repository root, ignored by Git and readable only

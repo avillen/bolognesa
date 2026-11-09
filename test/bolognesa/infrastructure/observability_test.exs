@@ -70,6 +70,37 @@ defmodule Bolognesa.Infrastructure.ObservabilityTest do
     assert Observability.exit_reason({%RuntimeError{message: "private path"}, []}) == :abnormal
   end
 
+  test "preparation logs include numeric progress but exclude raw tool output" do
+    previous = Logger.level()
+    Logger.configure(level: :info)
+    on_exit(fn -> Logger.configure(level: previous) end)
+
+    log =
+      capture_log([level: :info, format: "$metadata$message\n", metadata: :all], fn ->
+        :telemetry.execute(
+          [:bolognesa, :playback, :session, :preparation],
+          %{
+            duration_ms: 14_000,
+            first_progress_ms: 2000,
+            progress_age_ms: 500,
+            ffmpeg_frame: 240,
+            ffmpeg_output_ms: 10_000,
+            ffmpeg_speed_milli: 1250,
+            stderr: "/private/source.mkv"
+          },
+          %{stage: :timeout}
+        )
+      end)
+
+    assert log =~ "first_progress_ms=2000"
+    assert log =~ "progress_age_ms=500"
+    assert log =~ "ffmpeg_frame=240"
+    assert log =~ "ffmpeg_output_ms=10000"
+    assert log =~ "ffmpeg_speed_milli=1250"
+    refute log =~ "private"
+    refute log =~ "stderr"
+  end
+
   test "a supervised restart detaches and reinstalls the handler" do
     old = Process.whereis(Observability)
     ref = Process.monitor(old)

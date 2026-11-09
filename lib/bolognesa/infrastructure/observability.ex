@@ -64,7 +64,14 @@ defmodule Bolognesa.Infrastructure.Observability do
                                   :duration_ms,
                                   :exit_status,
                                   :segment_count,
-                                  :published_ms
+                                  :published_ms,
+                                  :prelaunch_ms,
+                                  :spawn_ms,
+                                  :first_progress_ms,
+                                  :progress_age_ms,
+                                  :ffmpeg_frame,
+                                  :ffmpeg_output_ms,
+                                  :ffmpeg_speed_milli
                                 ],
                               &{&1, nil}
                             )
@@ -107,7 +114,19 @@ defmodule Bolognesa.Infrastructure.Observability do
       @empty_operational_fields
       |> Map.merge(Map.take(metadata, @metadata))
       |> Map.merge(
-        Map.take(measurements, [:duration_ms, :exit_status, :segment_count, :published_ms])
+        Map.take(measurements, [
+          :duration_ms,
+          :exit_status,
+          :segment_count,
+          :published_ms,
+          :prelaunch_ms,
+          :spawn_ms,
+          :first_progress_ms,
+          :progress_age_ms,
+          :ffmpeg_frame,
+          :ffmpeg_output_ms,
+          :ffmpeg_speed_milli
+        ])
       )
 
     Logger.log(level, message, Map.to_list(fields))

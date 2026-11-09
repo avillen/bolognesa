@@ -18,6 +18,11 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
     [
       "-hide_banner",
       "-nostdin",
+      "-nostats",
+      "-stats_period",
+      "1",
+      "-progress",
+      "pipe:1",
       "-loglevel",
       "error",
       "-ss",

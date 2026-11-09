@@ -53,7 +53,9 @@ Events.emit(:libraries, :scan, :completed,
 - Use small fixed label sets for outcomes, strategies, and reasons. Keep user, file, session,
   tab, path, query, URL, and raw exception data out of labels; use route templates for HTTP metrics.
 - Keep external export opt-in and credential-protected. Exported operational counters and
-  histograms remain unlabelled; richer bounded local labels do not automatically belong in export.
+  histograms remain unlabelled. Playback diagnostic breakdowns may export explicitly allowlisted
+  stages, outcomes and reasons; keep their label sets fixed and test actual Prometheus output.
+  Richer bounded local labels do not automatically belong in export.
 - Update generated dashboards when metric contracts change and publish them deliberately; the
   application never holds Grafana credentials. Distinguish missing data from zero and interpret
   percentiles and scrape-based counts as estimates, especially with few samples.

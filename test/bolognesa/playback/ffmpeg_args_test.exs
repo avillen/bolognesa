@@ -7,6 +7,9 @@ defmodule Bolognesa.Playback.FfmpegArgsTest do
   test "audio strategy copies video and converts audio to AAC" do
     args = FfmpegArgs.for(plan(:audio_conversion), "/movies/original.mkv", "/tmp/session", 0)
     assert "-re" in args
+    assert "-nostats" in args
+    assert ["-progress", "pipe:1"] in Enum.chunk_every(args, 2, 1, :discard)
+    assert ["-stats_period", "1"] in Enum.chunk_every(args, 2, 1, :discard)
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-c:v", "copy"])
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-c:a", "aac"])
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-ac", "2"])

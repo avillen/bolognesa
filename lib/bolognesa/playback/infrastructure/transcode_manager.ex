@@ -9,6 +9,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
   alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
   alias Bolognesa.Playback.Infrastructure.FfmpegArgs
+  alias Bolognesa.Playback.Infrastructure.FfmpegProgress
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
   use GenServer
 
@@ -128,10 +129,12 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   @impl true
   def handle_call({:start, request}, {owner, _tag}, state) do
+    requested_at = now()
+
     with :ok <- available_slot(state, request.actor_id),
          {:ok, session, executable, args} <- prepare_session(request) do
       state = replace_actor_session(state, request.actor_id, request.replace_reason)
-      launch_session(state, session, executable, args, owner)
+      launch_session(state, session, executable, args, owner, now() - requested_at)
     else
       {:error, reason} -> {:reply, {:error, reason}, state}
     end
@@ -209,7 +212,12 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     end
   end
 
-  def handle_info({port, {:data, _bytes}}, %{port: port} = state), do: {:noreply, state}
+  def handle_info({port, {:data, line}}, %{port: port, preparation: prep} = state) do
+    {parser, report} = FfmpegProgress.consume(prep.parser, line)
+    prep = %{prep | parser: parser}
+    prep = record_progress(state, prep, report)
+    {:noreply, %{state | preparation: prep}}
+  end
 
   def handle_info({:DOWN, ref, :process, _owner, reason}, %{owner_ref: ref} = state) do
     {:noreply,
@@ -306,10 +314,17 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     end
   end
 
-  defp launch_session(state, session, executable, args, owner) do
+  defp launch_session(state, session, executable, args, owner, prelaunch_ms) do
+    spawn_started = now()
+
     case open_port(executable, args) do
       {:ok, port} ->
-        session_event(:started, session, %{count: 1}, %{offset_ms: session.offset_ms})
+        session_event(
+          :started,
+          session,
+          %{count: 1, prelaunch_ms: prelaunch_ms, spawn_ms: now() - spawn_started},
+          %{offset_ms: session.offset_ms}
+        )
 
         {:reply, {:ok, session},
          %{
@@ -319,7 +334,16 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
              owner_ref: Process.monitor(owner),
              last_activity: now(),
              started_at: now(),
-             preparation: %{count: 0, published_ms: 0, first?: false, ready?: false},
+             preparation: %{
+               count: 0,
+               published_ms: 0,
+               first?: false,
+               ready?: false,
+               parser: FfmpegProgress.new(),
+               progress: %{},
+               first_progress_ms: nil,
+               progress_at: nil
+             },
              suspended?: false
          }}
 
@@ -333,6 +357,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     {:ok,
      Port.open({:spawn_executable, executable}, [
        :binary,
+       {:line, 1024},
        :exit_status,
        :stderr_to_stdout,
        args: args
@@ -478,14 +503,28 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   end
 
   defp preparation_event(state, prep, stage) do
+    measurements = %{
+      duration_ms: now() - state.started_at,
+      segment_count: prep.count,
+      published_ms: prep.published_ms
+    }
+
+    measurements =
+      if prep.progress_at do
+        measurements
+        |> Map.merge(prep.progress)
+        |> Map.merge(%{
+          first_progress_ms: prep.first_progress_ms,
+          progress_age_ms: now() - prep.progress_at
+        })
+      else
+        measurements
+      end
+
     session_event(
       :preparation,
       state.current,
-      %{
-        duration_ms: now() - state.started_at,
-        segment_count: prep.count,
-        published_ms: prep.published_ms
-      },
+      measurements,
       %{stage: stage}
     )
 
@@ -493,7 +532,24 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
       :first_segment -> %{prep | first?: true}
       :ready -> %{prep | ready?: true}
       :timeout -> prep
+      :first_progress -> prep
     end
+  end
+
+  defp record_progress(_state, prep, nil), do: prep
+
+  defp record_progress(state, prep, report) do
+    received_at = now()
+    first? = is_nil(prep.first_progress_ms)
+
+    prep = %{
+      prep
+      | progress: report,
+        progress_at: received_at,
+        first_progress_ms: prep.first_progress_ms || received_at - state.started_at
+    }
+
+    if first?, do: preparation_event(state, prep, :first_progress), else: prep
   end
 
   defp close_port(nil, _suspended?), do: :ok

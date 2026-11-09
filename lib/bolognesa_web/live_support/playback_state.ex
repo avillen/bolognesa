@@ -38,7 +38,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
     |> reset()
     |> assign(:selected_file_id, session.file_id)
     |> assign(:playback_phase, :preparing)
-    |> assign(:preparation_deadline, System.monotonic_time(:millisecond) + 12_000)
+    |> assign(:preparation_deadline, System.monotonic_time(:millisecond) + 30_000)
     |> assign(:transcode_session, session)
     |> assign(:transcode_autoplay?, true)
   end

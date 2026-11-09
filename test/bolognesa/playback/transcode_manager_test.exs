@@ -6,6 +6,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   alias Bolognesa.Playback.Domain.ReadModels.TechnicalTrack
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias BolognesaWeb.LiveSupport.PlaybackEvents
+  alias BolognesaWeb.LiveSupport.PlaybackState
 
   setup do
     base =
@@ -162,6 +163,83 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     assert_receive {[:bolognesa, :playback, :session, :preparation], final, %{stage: :timeout}}
     assert final.published_ms == 3999
     assert final.segment_count == 1
+    refute Map.has_key?(final, :first_progress_ms)
+    refute Map.has_key?(final, :ffmpeg_output_ms)
+  end
+
+  test "preparation allows a slow start beyond twelve seconds and stops at thirty", %{
+    source: source
+  } do
+    {:ok, session} =
+      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :audio_conversion), 0)
+
+    socket = %Phoenix.LiveView.Socket{
+      assigns: %{__changed__: %{}, current_scope: %{actor: %{id: 1}}}
+    }
+
+    socket = PlaybackState.preparing(socket, session)
+
+    socket =
+      Phoenix.Component.assign(
+        socket,
+        :preparation_deadline,
+        socket.assigns.preparation_deadline - 15_000
+      )
+
+    assert {:noreply, waiting} = PlaybackEvents.handle_info({:transcode_poll, session.id}, socket)
+    assert waiting.assigns.playback_phase == :preparing
+    assert {:ok, _} = TranscodeManager.lookup(session.id)
+    assert_receive {:transcode_poll, id}
+    assert id == session.id
+
+    expired =
+      Phoenix.Component.assign(
+        waiting,
+        :preparation_deadline,
+        socket.assigns.preparation_deadline - 15_001
+      )
+
+    assert {:noreply, failed} = PlaybackEvents.handle_info({:transcode_poll, session.id}, expired)
+    assert failed.assigns.playback_phase == :error
+    assert {:error, :not_found} = TranscodeManager.lookup(session.id)
+  end
+
+  test "FFmpeg progress is summarized at milestones without logging every report", %{
+    source: source
+  } do
+    executable = Application.fetch_env!(:bolognesa, :ffmpeg_executable)
+
+    File.write!(
+      executable,
+      "#!/bin/sh\nread line\nprintf 'frame=25\\nout_time_us=2500000\\nspeed=1.25x\\nprogress=continue\\n'\nread line\n"
+    )
+
+    attach_lifecycle()
+
+    {:ok, session} =
+      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :audio_conversion), 0)
+
+    assert_receive {[:bolognesa, :playback, :session, :started], started, _}
+    assert started.prelaunch_ms >= 0
+    assert started.spawn_ms >= 0
+    %{port: port} = :sys.get_state(TranscodeManager)
+    Port.command(port, "start\n")
+
+    assert_receive {[:bolognesa, :playback, :session, :preparation], first,
+                    %{stage: :first_progress}},
+                   5_000
+
+    assert first.ffmpeg_frame == 25
+    assert first.ffmpeg_output_ms == 2500
+    assert first.ffmpeg_speed_milli == 1250
+    assert first.first_progress_ms >= 0
+
+    assert :ok = TranscodeManager.stop(session.id, :preparation_timeout)
+    assert_receive {[:bolognesa, :playback, :session, :preparation], final, %{stage: :timeout}}
+    assert final.ffmpeg_output_ms == 2500
+    assert final.progress_age_ms >= 0
+    assert final.first_progress_ms == first.first_progress_ms
+    refute_receive {[:bolognesa, :playback, :session, :preparation], _, _}
   end
 
   test "starts with four published seconds, including after a seek", %{source: source} do

@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Allow up to thirty seconds to prepare compatible video playback, while starting as soon as output is ready.
+
+### Added
+
+- Numeric FFmpeg preparation diagnostics and a Grafana row for startup timings and progress.
+
 ## [0.2.0] - 2026-11-08
 
 Better music listening.

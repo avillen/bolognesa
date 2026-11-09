@@ -56,6 +56,21 @@ def docker(name):
     return f'{name}{{{DOCKER_SCOPE}}}'
 
 
+def playback(name):
+    return f'bolognesa_playback_{name}{{{BEAM_SCOPE}}}'
+
+
+def playback_mean(name, staged=True):
+    aggregation = 'sum by (stage)' if staged else 'sum'
+    total = f'{aggregation}(increase({playback(name + "_sum")}[$__range]))'
+    count = f'{aggregation}(increase({playback(name + "_count")}[$__range]))'
+    return f'{total} / ({count} > 0)'
+
+
+PREPARATION_MEAN = ('Mean over the trailing selected dashboard range, using histogram sum/count increases. '
+                    'Sparse scrape-based samples are estimates; missing observations remain No data. ')
+
+
 LIMIT_OVERRIDES = [
     {
         'matcher': {'id': 'byRegexp', 'options': 'limit'},
@@ -124,6 +139,67 @@ ROWS = [
             {
                 'title': 'Port I/O', 'unit': 'Bps',
                 'queries': [(beam_rate('stats_port_io_byte_count'), '{{type}}')],
+            },
+        ],
+    },
+    {
+        'title': 'Playback · preparation',
+        'collapsed': False,
+        'panels': [
+            {
+                'title': 'Preparation · launch phases', 'unit': 'ms',
+                'queries': [
+                    (playback_mean('session_prelaunch_milliseconds', staged=False), 'Validation / setup / prior-session cleanup'),
+                    (playback_mean('session_spawn_milliseconds', staged=False), 'Port.open'),
+                ],
+                'description': PREPARATION_MEAN + 'Prelaunch precedes process creation; spawn measures Port.open only.',
+            },
+            {
+                'title': 'Preparation · elapsed by stage', 'unit': 'ms',
+                'queries': [
+                    (playback_mean('preparation_duration_milliseconds'), '{{stage}}'),
+                    ('vector(30000)', 'Preparation limit'),
+                ],
+                'overrides': LIMIT_OVERRIDES,
+                'description': PREPARATION_MEAN + 'Elapsed since Port.open returned. First progress, first published segment, ready and timeout are separate milestones; stages can belong to the same session. The dashed line is the 30-second preparation limit.',
+            },
+            {
+                'title': 'Preparation · milestone observations', 'kind': 'stat',
+                'queries': [(f'sum by (stage)(increase({playback("preparation_observations_total")}[$__range]))', '{{stage}}')],
+                'description': 'Estimated observations in the selected dashboard range, including timeouts. Stages overlap within a session, so their counts must not be added as sessions. A first occurrence before the first scrape can be missed; absent series remain No data.',
+            },
+            {
+                'title': 'Preparation · published and processed output', 'unit': 'ms',
+                'queries': [
+                    (playback_mean('preparation_published_milliseconds'), '{{stage}} · published HLS'),
+                    (playback_mean('preparation_ffmpeg_output_milliseconds'), '{{stage}} · FFmpeg output timestamp'),
+                ],
+                'description': PREPARATION_MEAN + 'Published playlist duration and FFmpeg-reported output timestamp describe media time, not wall time or network/read throughput. Output progress is absent until reported.',
+            },
+            {
+                'title': 'Preparation · processed frames',
+                'queries': [(playback_mean('preparation_ffmpeg_frames'), '{{stage}}')],
+                'description': PREPARATION_MEAN + 'FFmpeg-reported frame count at each milestone; absent until reported.',
+            },
+            {
+                'title': 'Preparation · published segments',
+                'queries': [(playback_mean('preparation_segments'), '{{stage}}')],
+                'description': PREPARATION_MEAN + 'Complete segments published in the playlist at each milestone.',
+            },
+            {
+                'title': 'Preparation · FFmpeg speed', 'unit': 'suffix:x',
+                'queries': [(playback_mean('preparation_ffmpeg_speed_milli') + ' / 1000', '{{stage}}')],
+                'description': PREPARATION_MEAN + 'FFmpeg-reported processing speed: 1x means real-time output. This does not measure input-read or network throughput. Missing reports remain No data.',
+            },
+            {
+                'title': 'Preparation · progress report age', 'unit': 'ms',
+                'queries': [(playback_mean('preparation_progress_age_milliseconds'), '{{stage}}')],
+                'description': PREPARATION_MEAN + 'Age of the latest numeric FFmpeg progress report at the milestone; absent before any report.',
+            },
+            {
+                'title': 'Preparation · first progress latency', 'unit': 'ms',
+                'queries': [(playback_mean('preparation_first_progress_milliseconds'), '{{stage}}')],
+                'description': PREPARATION_MEAN + 'Time from session launch to receipt of the first complete numeric FFmpeg progress report, retained at later stages. A report can contain frame=0; this does not prove when input reading or decoding began.',
             },
         ],
     },
@@ -293,7 +369,7 @@ def build():
                 }
             ]
         },
-        'description': 'BEAM runtime and optional Docker resources for a low-traffic home installation. Missing data is never healthy zero.',
+        'description': 'BEAM runtime, playback preparation and optional Docker resources for a low-traffic home installation. Missing data is never healthy zero.',
         'editable': True,
         'fiscalYearStartMonth': 0,
         'graphTooltip': 1,

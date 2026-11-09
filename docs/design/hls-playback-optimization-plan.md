@@ -12,7 +12,7 @@
 
 ## Evidence and scope
 
-Confirmed by code review: restored HLS playback first prepares offset zero and then replaces the session; compatible-action availability repeats source selection; every committed HLS seek requests replacement; segments are read into binaries; pause does not stop hls.js loading; browser coordination shares mutable pending/resume state; readiness requires 12 seconds of output within a 12-second preparation deadline.
+Confirmed by code review: restored HLS playback first prepares offset zero and then replaces the session; compatible-action availability repeats source selection; every committed HLS seek requests replacement; segments are read into binaries; pause does not stop hls.js loading; browser coordination shares mutable pending/resume state; readiness requires four seconds of published output within a thirty-second preparation deadline. An initial numeric FFmpeg progress report and publication milestones now provide separate startup observations; they do not identify input-read or CPU delay by themselves.
 
 The previous local synthetic measurement is retained as evidence: commit `d5aee51`, Chrome 156.0.8078.49, hls.js 1.7.0, 120-second phases. Frozen-playlist polling reproduced and teardown stopped requests. The [monitoring guide](../../deploy/compose/monitoring.md#local-synthetic-baseline) records the comparison. The latest review ran 140 Node tests successfully. Neither establishes target-server costs or universal browser support.
 
