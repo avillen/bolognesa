@@ -13,6 +13,7 @@ defmodule Bolognesa.Infrastructure.Observability do
     :strategy,
     :transport,
     :delivery_reason,
+    :stage,
     :offset_ms,
     :reason,
     :failure_stage,
@@ -61,7 +62,9 @@ defmodule Bolognesa.Infrastructure.Observability do
                                   :changed_library_count,
                                   :count,
                                   :duration_ms,
-                                  :exit_status
+                                  :exit_status,
+                                  :segment_count,
+                                  :published_ms
                                 ],
                               &{&1, nil}
                             )
@@ -103,7 +106,9 @@ defmodule Bolognesa.Infrastructure.Observability do
     fields =
       @empty_operational_fields
       |> Map.merge(Map.take(metadata, @metadata))
-      |> Map.merge(Map.take(measurements, [:duration_ms, :exit_status]))
+      |> Map.merge(
+        Map.take(measurements, [:duration_ms, :exit_status, :segment_count, :published_ms])
+      )
 
     Logger.log(level, message, Map.to_list(fields))
   end
@@ -135,6 +140,9 @@ defmodule Bolognesa.Infrastructure.Observability do
 
   defp log_message([:bolognesa, :playback, :session, :started]),
     do: {:info, "Playback session started"}
+
+  defp log_message([:bolognesa, :playback, :session, :preparation]),
+    do: {:info, "Playback preparation observation"}
 
   defp log_message([:bolognesa, :playback, :session, :closed]),
     do: {:info, "Playback session closed"}

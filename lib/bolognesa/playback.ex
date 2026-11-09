@@ -169,12 +169,29 @@ defmodule Bolognesa.Playback do
   def video_transcode_status(session_id) do
     case TranscodeManager.lookup(session_id) do
       {:ok, %{status: :failed}} -> :failed
-      {:ok, session} -> playlist_status(session.directory)
+      {:ok, session} -> playlist_status(session)
       _ -> :not_found
     end
   end
 
-  defp playlist_status(directory), do: if(playlist_ready?(directory), do: :ready, else: :waiting)
+  defp playlist_status(session) do
+    directory = session.directory
+    status = if playlist_ready?(directory), do: :ready, else: :waiting
+    {count, published_ms} = playlist_progress(directory)
+    TranscodeManager.observe_preparation(session.id, status, count, published_ms)
+    status
+  end
+
+  defp playlist_progress(directory) do
+    case File.read(Path.join(directory, "index.m3u8")) do
+      {:ok, manifest} ->
+        count = Regex.scan(~r/^seg-[0-9]{6,12}\.ts$/m, manifest) |> length()
+        {count, round(buffered_seconds(manifest) * 1000)}
+
+      _ ->
+        {0, 0}
+    end
+  end
 
   defp playlist_ready?(directory) do
     case File.read(Path.join(directory, "index.m3u8")) do

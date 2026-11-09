@@ -69,6 +69,11 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @spec lookup(String.t()) :: {:ok, TranscodeSession.t()} | {:error, :not_found}
   def lookup(id), do: GenServer.call(__MODULE__, {:lookup, id})
 
+  @spec observe_preparation(String.t(), :ready | :waiting, non_neg_integer(), non_neg_integer()) ::
+          :ok
+  def observe_preparation(id, status, count, published_ms),
+    do: GenServer.call(__MODULE__, {:observe_preparation, id, status, count, published_ms})
+
   @spec touch(String.t()) :: :ok | {:error, :not_found}
   def touch(id), do: GenServer.call(__MODULE__, {:touch, id})
 
@@ -112,7 +117,8 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
            owner_ref: nil,
            last_activity: nil,
            started_at: nil,
-           suspended?: false
+           suspended?: false,
+           preparation: nil
          }}
 
       {:error, reason} ->
@@ -135,6 +141,28 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     do: {:reply, {:ok, session}, state}
 
   def handle_call({:lookup, _id}, _from, state), do: {:reply, {:error, :not_found}, state}
+
+  def handle_call(
+        {:observe_preparation, id, status, count, published_ms},
+        _from,
+        %{current: %{id: id}, preparation: prep} = state
+      ) do
+    prep = %{prep | count: count, published_ms: published_ms}
+
+    prep =
+      if count > 0 and not prep.first?,
+        do: preparation_event(state, prep, :first_segment),
+        else: prep
+
+    prep =
+      if status == :ready and not prep.ready?,
+        do: preparation_event(state, prep, :ready),
+        else: prep
+
+    {:reply, :ok, %{state | preparation: prep}}
+  end
+
+  def handle_call({:observe_preparation, _, _, _, _}, _from, state), do: {:reply, :ok, state}
 
   def handle_call({:touch, id}, _from, %{current: %{id: id}} = state),
     do: {:reply, :ok, %{state | last_activity: now()}}
@@ -291,6 +319,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
              owner_ref: Process.monitor(owner),
              last_activity: now(),
              started_at: now(),
+             preparation: %{count: 0, published_ms: 0, first?: false, ready?: false},
              suspended?: false
          }}
 
@@ -423,6 +452,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   defp clear(%{current: nil} = state, _reason, _metadata), do: state
 
   defp clear(state, reason, metadata) do
+    if reason == :preparation_timeout, do: preparation_event(state, state.preparation, :timeout)
     if state.owner_ref, do: Process.demonitor(state.owner_ref, [:flush])
 
     close_port(state.port, state.suspended?)
@@ -436,7 +466,34 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
       Map.put(metadata, :reason, reason)
     )
 
-    %{state | current: nil, port: nil, owner_ref: nil, last_activity: nil, suspended?: false}
+    %{
+      state
+      | current: nil,
+        port: nil,
+        owner_ref: nil,
+        last_activity: nil,
+        suspended?: false,
+        preparation: nil
+    }
+  end
+
+  defp preparation_event(state, prep, stage) do
+    session_event(
+      :preparation,
+      state.current,
+      %{
+        duration_ms: now() - state.started_at,
+        segment_count: prep.count,
+        published_ms: prep.published_ms
+      },
+      %{stage: stage}
+    )
+
+    case stage do
+      :first_segment -> %{prep | first?: true}
+      :ready -> %{prep | ready?: true}
+      :timeout -> prep
+    end
   end
 
   defp close_port(nil, _suspended?), do: :ok

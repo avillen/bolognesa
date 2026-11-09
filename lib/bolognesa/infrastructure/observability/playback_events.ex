@@ -5,6 +5,7 @@ defmodule Bolognesa.Infrastructure.Observability.PlaybackEvents do
     [:bolognesa, :playback, :session, :started],
     [:bolognesa, :playback, :session, :closed],
     [:bolognesa, :playback, :session, :exited],
+    [:bolognesa, :playback, :session, :preparation],
     [:bolognesa, :playback, :liveview, :terminated],
     [:bolognesa, :playback, :hls, :failed],
     [:bolognesa, :playback, :browser, :diagnostic]

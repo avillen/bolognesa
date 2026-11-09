@@ -122,7 +122,8 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
         handler,
         [
           [:bolognesa, :playback, :session, :started],
-          [:bolognesa, :playback, :session, :closed]
+          [:bolognesa, :playback, :session, :closed],
+          [:bolognesa, :playback, :session, :preparation]
         ],
         &__MODULE__.handle_telemetry/4,
         self()
@@ -135,7 +136,37 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   def handle_telemetry(event, measurements, metadata, caller),
     do: send(caller, {event, measurements, metadata})
 
+  test "reports preparation milestones and the final timeout snapshot", %{source: source} do
+    attach_lifecycle()
+
+    {:ok, session} =
+      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :audio_conversion), 0)
+
+    assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+    File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
+
+    File.write!(
+      Path.join(session.directory, "index.m3u8"),
+      "#EXTM3U\n#EXTINF:4.0,\nseg-000000.ts\n"
+    )
+
+    assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+
+    assert_receive {[:bolognesa, :playback, :session, :preparation], first,
+                    %{stage: :first_segment}}
+
+    assert first.duration_ms >= 0
+    assert first.published_ms == 4000
+    assert first.segment_count == 1
+    assert :ok = TranscodeManager.stop(session.id, :preparation_timeout)
+    assert_receive {[:bolognesa, :playback, :session, :preparation], final, %{stage: :timeout}}
+    assert final.published_ms == 4000
+    assert final.segment_count == 1
+  end
+
   test "waits for three published segments, including after a seek", %{source: source} do
+    attach_lifecycle()
+
     for offset <- [0, 12_000] do
       {:ok, session} =
         TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), offset)
@@ -152,6 +183,12 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
         expected = if count == 3, do: :ready, else: :waiting
         assert Bolognesa.Playback.video_transcode_status(session.id) == expected
       end
+
+      assert_receive {[:bolognesa, :playback, :session, :preparation], measurements,
+                      %{stage: :ready}}
+
+      assert measurements.segment_count == 3
+      assert measurements.published_ms == 12_000
 
       File.rm!(Path.join(session.directory, List.last(names)))
       assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting

@@ -56,6 +56,8 @@ The vendor bundle/license and English/Spanish controls remain local. Rebuild wit
 
 Strategy, transport and selection-reason telemetry uses closed enums and existing sanitized emitters. Automatic LiveView parameter logging is disabled for the movie and episode player views so rejected reports cannot be logged before validation. Reports, MIME strings, user-agent strings, paths, titles and extradata are not diagnostic labels. Validated IDs are for local correlation only. Performance observations do not override positive support or select arbitrary quality levels.
 
+Preparation logs record elapsed milliseconds, playlist segment count and declared duration at the first observed segment, readiness, and preparation timeout. These observations follow the existing readiness polling schedule; they do not measure FFmpeg's precise publication times or prove that listed segments were readable at timeout. A missing first-segment observation means none was observed before closure. No media paths or titles are recorded.
+
 ## Consequences and verification limits
 
 The bounded envelope trades some avoidable encoding for explicit, testable output. Optional missing metadata can require user refresh. Advisory support can still be wrong, and ambiguous native errors require deliberate compatible playback rather than speculative automatic conversion.
