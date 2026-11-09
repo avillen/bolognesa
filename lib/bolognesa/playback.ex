@@ -202,7 +202,7 @@ defmodule Bolognesa.Playback do
 
   defp manifest_ready?(directory, manifest) do
     segments = Regex.scan(~r/^seg-[0-9]{6,12}\.ts$/m, manifest) |> List.flatten()
-    enough? = buffered_seconds(manifest) >= 12 or String.contains?(manifest, "#EXT-X-ENDLIST")
+    enough? = buffered_seconds(manifest) >= 4 or String.contains?(manifest, "#EXT-X-ENDLIST")
 
     enough? and segments != [] and
       Enum.all?(segments, &File.regular?(Path.join(directory, &1)))

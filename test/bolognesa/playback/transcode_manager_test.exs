@@ -147,7 +147,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
 
     File.write!(
       Path.join(session.directory, "index.m3u8"),
-      "#EXTM3U\n#EXTINF:4.0,\nseg-000000.ts\n"
+      "#EXTM3U\n#EXTINF:3.999,\nseg-000000.ts\n"
     )
 
     assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
@@ -156,54 +156,61 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
                     %{stage: :first_segment}}
 
     assert first.duration_ms >= 0
-    assert first.published_ms == 4000
+    assert first.published_ms == 3999
     assert first.segment_count == 1
     assert :ok = TranscodeManager.stop(session.id, :preparation_timeout)
     assert_receive {[:bolognesa, :playback, :session, :preparation], final, %{stage: :timeout}}
-    assert final.published_ms == 4000
+    assert final.published_ms == 3999
     assert final.segment_count == 1
   end
 
-  test "waits for three published segments, including after a seek", %{source: source} do
+  test "starts with four published seconds, including after a seek", %{source: source} do
     attach_lifecycle()
 
     for offset <- [0, 12_000] do
       {:ok, session} =
         TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), offset)
 
-      names = ["seg-000000.ts", "seg-000001.ts", "seg-000002.ts"]
-      Enum.each(names, &File.write!(Path.join(session.directory, &1), "segment"))
-
-      for count <- [1, 2, 3] do
-        manifest =
-          "#EXTM3U\n" <>
-            Enum.map_join(Enum.take(names, count), "", &("#EXTINF:4.0,\n" <> &1 <> "\n"))
-
-        File.write!(Path.join(session.directory, "index.m3u8"), manifest)
-        expected = if count == 3, do: :ready, else: :waiting
-        assert Bolognesa.Playback.video_transcode_status(session.id) == expected
-      end
+      path = Path.join(session.directory, "index.m3u8")
+      File.write!(path, "#EXTM3U\n#EXTINF:4.0,\nseg-000000.ts\n")
+      assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+      File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
+      assert Bolognesa.Playback.video_transcode_status(session.id) == :ready
 
       assert_receive {[:bolognesa, :playback, :session, :preparation], measurements,
                       %{stage: :ready}}
 
-      assert measurements.segment_count == 3
-      assert measurements.published_ms == 12_000
+      assert measurements.segment_count == 1
+      assert measurements.published_ms == 4000
 
-      File.rm!(Path.join(session.directory, List.last(names)))
+      File.rm!(Path.join(session.directory, "seg-000000.ts"))
       assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
     end
   end
 
-  test "a long copied-video segment supplies the cushion without waiting for three GOPs", %{
-    source: source
-  } do
+  test "a long copied-video segment starts without waiting for the next GOP", %{source: source} do
     {:ok, session} =
       TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :audio_conversion), 0)
 
     File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
     path = Path.join(session.directory, "index.m3u8")
-    File.write!(path, "#EXTM3U\n#EXTINF:16.0,\nseg-000000.ts\n")
+    File.write!(path, "#EXTM3U\n#EXTINF:10.427,\nseg-000000.ts\n")
+    assert Bolognesa.Playback.video_transcode_status(session.id) == :ready
+  end
+
+  test "short segments accumulate four seconds and every referenced file must exist", %{
+    source: source
+  } do
+    {:ok, session} =
+      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :audio_conversion), 0)
+
+    path = Path.join(session.directory, "index.m3u8")
+    File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
+    File.write!(path, "#EXTM3U\n#EXTINF:2.0,\nseg-000000.ts\n")
+    assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+    File.write!(path, "#EXTM3U\n#EXTINF:2.0,\nseg-000000.ts\n#EXTINF:2.0,\nseg-000001.ts\n")
+    assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+    File.write!(Path.join(session.directory, "seg-000001.ts"), "segment")
     assert Bolognesa.Playback.video_transcode_status(session.id) == :ready
   end
 
