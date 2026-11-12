@@ -4,7 +4,7 @@ defmodule Bolognesa.Movies.ObservabilityTest do
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Movies.Application.UseCases.CorrectMovieIdentification, as: Correct
-  alias Bolognesa.Movies.Application.UseCases.ReconcileIdentificationJobs, as: Reconcile
+  alias Bolognesa.Movies.Application.UseCases.ReconcileIdentifications, as: Reconcile
   alias Bolognesa.Movies.Application.UseCases.RetryIdentification, as: Retry
   alias Bolognesa.Movies.Application.UseCases.SearchMovieCandidates, as: Search
   alias Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker, as: Worker

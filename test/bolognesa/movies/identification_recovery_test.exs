@@ -5,7 +5,7 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Movies.Application.UseCases.IdentifyMovieFile
-  alias Bolognesa.Movies.Application.UseCases.ReconcileIdentificationJobs
+  alias Bolognesa.Movies.Application.UseCases.ReconcileIdentifications
   alias Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
 
@@ -66,7 +66,7 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
       """)
 
       try do
-        assert {:error, :unavailable} = ReconcileIdentificationJobs.call(now, Repository)
+        assert {:error, :unavailable} = ReconcileIdentifications.call(now, Repository)
 
         assert_receive {[:bolognesa, :movies, :reconciliation, :failed], %{recovered_count: 2},
                         %{reason: :storage_unavailable}}

@@ -2,7 +2,7 @@ defmodule Bolognesa.Movies.Infrastructure.Jobs.IdentificationReconciler do
   @moduledoc "Marks pending identifications whose jobs ended without a result."
   alias Bolognesa.Infrastructure.Jobs.PeriodicRunner
   alias Bolognesa.Infrastructure.Observability.Events
-  alias Bolognesa.Movies.Application.UseCases.ReconcileIdentificationJobs
+  alias Bolognesa.Movies.Application.UseCases.ReconcileIdentifications
 
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository
 
@@ -22,7 +22,7 @@ defmodule Bolognesa.Movies.Infrastructure.Jobs.IdentificationReconciler do
     do: %{id: Keyword.get(opts, :name, __MODULE__), start: {__MODULE__, :start_link, [opts]}}
 
   defp run(repository) do
-    ReconcileIdentificationJobs.call(DateTime.utc_now(), repository)
+    ReconcileIdentifications.call(DateTime.utc_now(), repository)
   rescue
     _ ->
       Events.emit(:movies, :reconciliation, :failed, %{

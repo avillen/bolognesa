@@ -4,7 +4,7 @@ defmodule Bolognesa.Series.ObservabilityTest do
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification, as: Correct
-  alias Bolognesa.Series.Application.UseCases.ReconcileIdentificationJobs, as: Reconcile
+  alias Bolognesa.Series.Application.UseCases.ReconcileIdentifications, as: Reconcile
   alias Bolognesa.Series.Application.UseCases.RetryIdentification, as: Retry
   alias Bolognesa.Series.Application.UseCases.SearchSeriesCandidates, as: Search
   alias Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker, as: Worker

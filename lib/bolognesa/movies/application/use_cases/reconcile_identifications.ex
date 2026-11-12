@@ -1,7 +1,7 @@
-defmodule Bolognesa.Series.Application.UseCases.ReconcileIdentificationJobs do
+defmodule Bolognesa.Movies.Application.UseCases.ReconcileIdentifications do
   @moduledoc "Observe committed recovery changes, retaining partial results."
   alias Bolognesa.Infrastructure.Observability.Events
-  alias Bolognesa.Series.Application.Ports.Repositories.IdentificationRepository
+  alias Bolognesa.Movies.Application.Ports.Repositories.IdentificationRepository
 
   @spec call(DateTime.t(), IdentificationRepository.adapter()) :: :ok | {:error, :unavailable}
   def call(now, repository) do
@@ -12,7 +12,7 @@ defmodule Bolognesa.Series.Application.UseCases.ReconcileIdentificationJobs do
         :ok
 
       {:ok, count} ->
-        Events.emit(:series, :reconciliation, :recovered, %{}, %{
+        Events.emit(:movies, :reconciliation, :recovered, %{}, %{
           recovered_count: count,
           duration_ms: Events.elapsed(started)
         })
@@ -20,7 +20,7 @@ defmodule Bolognesa.Series.Application.UseCases.ReconcileIdentificationJobs do
         :ok
 
       {:error, :unavailable, count} ->
-        Events.emit(:series, :reconciliation, :failed, %{reason: :storage_unavailable}, %{
+        Events.emit(:movies, :reconciliation, :failed, %{reason: :storage_unavailable}, %{
           recovered_count: count,
           duration_ms: Events.elapsed(started)
         })
