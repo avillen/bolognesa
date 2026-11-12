@@ -32,7 +32,7 @@ Each reducer exposes `call(socket, ...)`, takes the socket first, and always ret
 
 ## Presentation state and forms
 
-The socket owns screen state. Do not duplicate all assigns and streams in a parallel state struct. Put screen-specific view models in `state/`; they contain only prepared display data and remain independent of domain entities and persistence schemas. Stream items need stable identities. Use assigns for simple state and small bounded collections, and streams for growing or paginated collections; extract shared stream helpers only after real reuse appears.
+The socket owns screen state. Do not duplicate all assigns and streams in a parallel state struct. Put screen-specific view models in `state/`; they contain only prepared display data and remain independent of domain entities and persistence schemas. Use assigns for simple state and small bounded collections; follow the [stream rules](phoenix.md#liveview-and-hooks) for growing collections. Extract shared stream helpers only after real reuse appears.
 
 Put presentation-only models and changesets in `forms/`, using embedded schemas or schema-less changesets. They validate input shape and required fields; the backend validates business rules again. Do not expose persistence schemas to the UI. Web params arrive with string keys; convert validated form data to the atom-keyed shape promised by the backend facade.
 
@@ -52,7 +52,7 @@ The screen template lives beside its LiveView. Function components receive attri
 
 LiveView templates start with `<Layouts.app flash={@flash} ...>`. Follow [Phoenix conventions](phoenix.md) for HEEx, hooks, forms, and accessible interactions.
 
-The browser owns immediate player state such as position, volume, and fullscreen. Send meaningful actions and progress to the backend; do not send every visual update.
+The browser owns immediate player state such as position, volume, and fullscreen. The server owns authorization and durable business state.
 
 Browser playback modules stay within their context. LiveView hooks adapt lifecycle and
 screen events; sessions own playback use cases; views render snapshots and manage local
@@ -78,12 +78,10 @@ using the actual bundled import graph. A session owns one playback/lifecycle rec
 operations share that record rather than introducing their own selection, retry or queue
 store. Model transitions return updated display state without mutating their input.
 
-Music has one explicit command API in `assets/js/music/player/session.mjs`.
-`playAlbum({albumId, libraryId, trackId, fileId, startIndex, requireTrack})` is the canonical album-start
-command; recent-album continuation sets `requireTrack: true` to reject a vanished selection and preserve it on retry. Do not add speculative aliases or dynamic method fallbacks. The session owns
-selection, queue, retries, and source generations. Audio effects and ordered asynchronous
-operations have separate adapters; position, duration, and pause state come from the media
-element rather than duplicated mutable state.
+The Music session provides one explicit command API and owns selection, queue, retries,
+and source generations. Do not add speculative aliases or dynamic method fallbacks.
+Audio effects and ordered asynchronous operations have separate adapters; position,
+duration, and pause state come from the media element rather than duplicated mutable state.
 
 `assets/js/browser_runtime.mjs` composes document-owned services once. Hooks borrow
 `musicSession` and `mediaCoordinator` through `getBrowserRuntime()` and detach on teardown.
@@ -102,11 +100,9 @@ the controller boundary. Browser sources declare ESM in `assets/js/package.json`
 does not change root-level Node scripts. Keep the existing build target and browser
 fallbacks when introducing syntax or APIs.
 
-Native dialogs and disclosures also own their open state. Preserve their `open` attribute across LiveView patches with `JS.ignore_attributes("open")`. Keep responsive navigation accessible when changing between mobile and desktop.
-
 ## Visual design
 
-Use semantic CSS tokens from `assets/css/app.css`. The current design uses a dark charcoal base, warm white text, and coral accents. Preserve contrast, visible focus, semantic error/success colors, and reduced-motion preferences. Missing poster art must have a useful fallback. Keep actions and data tied to existing behavior; presentation changes do not imply new product capabilities.
+Use the styling and accessibility rules in [Phoenix and UI](phoenix.md#heex-forms-and-accessibility). The current design uses a dark charcoal base, warm white text, and coral accents. Missing poster art must have a useful fallback. Keep actions and data tied to existing behavior; presentation changes do not imply new product capabilities.
 
 ## Interface language
 

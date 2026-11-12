@@ -12,7 +12,7 @@ Bolognesa is one Phoenix application organized into bounded contexts. Context bo
 - **Infrastructure** implements persistence, filesystem access, HTTP providers, media tools, and background jobs.
 - A context's public facade is its interface. Other contexts do not call its internal modules, repositories, or schemas.
 
-Use cases do not call another context's use cases. Share business behavior through the owning context's facade; keep cross-context technical utilities neutral and free of business rules. Inject adapters outside the domain. Tests must not mutate global configuration concurrently.
+Use cases do not call another context's use cases. Share business behavior through the owning context's facade; keep cross-context technical utilities neutral and free of business rules. Inject adapters outside the domain. Test isolation follows [testing conventions](testing.md).
 
 Name ports after their responsibility (`LibraryRepository`, `MoviesReader`) and adapters after their technology (`EctoLibraryRepository`). Within each context, mirror `Application.Ports` and `Infrastructure` categories: `Repositories`, `Readers`, `Providers`, and `Services`. Keep mappers and collaborators beside the adapter that owns them. Global Ecto schemas live under `Bolognesa.Infrastructure.Persistence`; job workers and recovery policies live under `Infrastructure.Jobs`.
 
@@ -26,7 +26,7 @@ Organize domain modules by concept type where useful: `entities/`, `value_object
 - Business results from repositories use domain models, not Ecto schemas, application DTOs, or untyped maps. Type compound results and explicit scalar metadata in the port contract.
 - Use cases build public DTOs from domain results. Keep pure `from_domain/1` conversion on the DTO; it must not perform I/O or call facades. Simple response containers can be assembled by the use case.
 - Changesets enforce persistence requirements; domain rules belong in the domain. Database constraints protect uniqueness and integrity under concurrency.
-- Keep transactions short. Do not hold one open during HTTP calls, scans, or media inspection. Use a transaction port when the application needs atomic work without depending on `Ecto.Multi`.
+- Keep transactions short. Do not hold one open during HTTP calls, scans, or media inspection. Use a transaction port to keep application code independent of Ecto. In adapters, prefer `Repo.transact/2`; its function must return `{:ok, result}` or `{:error, reason}`. Use `Ecto.Multi` for named, composable database steps. Do not mechanically rename `Repo.transaction/2`: its function return semantics differ. See the [Ecto transaction API](https://hexdocs.pm/ecto/Ecto.Repo.html#c:transact/2).
 - Read adapters may join tables across contexts but return models owned by the reading context. A read join does not grant write ownership.
 - Entities are values, not OTP processes. Use processes for coordination, supervision, concurrency, and temporary state.
 - Do not introduce event sourcing or full CQRS without a concrete requirement.
@@ -41,55 +41,31 @@ Organize domain modules by concept type where useful: `entities/`, `value_object
 
 ## Context responsibilities
 
-### Accounts
+| Context | Owns | Contract reference |
+| --- | --- | --- |
+| Accounts | Credentials, revocable sessions, authorization, and account preferences | [Initial access](../decisions/0002-initial-access.md), [locale](../decisions/0016-user-locale-and-settings.md) |
+| Libraries | Read-only sources, inventory, recoverable scans, and technical inspection | [Scans](../decisions/0003-recoverable-library-scans.md), [inspection](../decisions/0004-technical-media-inspection.md) |
+| Movies and Series | Independent identities, metadata, matching, manual corrections, file associations, and recovery | [Content boundaries](../decisions/0019-content-context-boundaries.md), [episode parts](../decisions/0025-consecutive-episode-parts.md) |
+| Music | Library-local tracks, artists, albums, imports, listening activity, and musical read models | [Local music](../decisions/0018-local-music-catalog.md), listening rules below |
+| Playback | Authorized source selection, delivery plans, and temporary video sessions | [Direct delivery](../decisions/0006-authorized-direct-playback.md), [FFmpeg/HLS](../decisions/0011-live-transcoding.md) |
 
-Owns accounts, credentials, sessions, and authorization through `Bolognesa.Accounts`. Persistence uses the `accounts_users` and `accounts_sessions` tables. Initial setup creates one administrator; there is no public registration or hard-coded user. Protected use cases receive an `AuthenticatedUser` established by trusted authentication, never an arbitrary client-supplied ID. `User` represents the persisted account inside Accounts; `AuthenticatedUser` represents the verified caller supplied to protected operations. Its `from_user/1` conversion copies account data and does not authenticate a caller by itself. Authorization is enforced in the backend, including media delivery.
+Protected operations receive an `Accounts.Domain.Entities.AuthenticatedUser` established by trusted authentication. Constructing it from a `User` copies data; it does not authenticate a caller. Playback uses explicit `{:movie, id}` or `{:episode, id}` references and separate track endpoints so overlapping numeric IDs cannot select another content type.
 
-### Libraries
+Original media remains read-only. Inventory identity follows library and relative path, with size and modification time identifying the observed revision. Only a complete successful scan can mark unseen files absent. Manual corrections take precedence over later automatic results; request tokens and revisions reject stale work. Libraries routes handoffs through explicit transaction-aware owner facades; inventory, requests, and jobs commit together. [Decision 0020](../decisions/0020-direct-durable-jobs.md) supersedes the older outbox mechanisms in the linked records.
 
-Owns configured sources, file inventory, scans, and technical inspection. A file is identified within a library by its relative path; the original path bytes are preserved. Size and modification time define the observed revision. A rename creates a new inventory entry; content deduplication is not promised.
+### Music listening contracts
 
-Only a complete successful scan can mark unseen files as absent. An inaccessible source or partial scan must not cause bulk removals. Repeated scans reconcile without duplicates. Original media is read-only and is never moved, renamed, or deleted by the application.
+Listening activity stores at most one latest timestamp per account and track. The browser reports after 30 seconds of observed playback, or half a shorter track; pauses and seeks do not count. Retry transient failures only while that selection remains active. This is a best-effort client observation. Refreshes and replacements at the same path retain activity; renames create a new identity. Deleting an account or track deletes its activity.
 
-### Movies and Series
+Album `last_played_at` is the account's latest activity across its current tracks, including temporarily missing files; no activity returns `nil`. It is derived independently of browsing filters and pagination and does not prove completion. Albums without available files remain hidden.
 
-Movies owns movie identities, metadata, versions, file decisions, matching, corrections, requests, durable jobs, and recovery. Series independently owns the equivalent series/season/episode hierarchy and ordered episode selections. Both expose their own public facades; neither imports the other's internal models or adapters. Catalog and Identification are no longer business contexts. Persisted schemas remain under `Bolognesa.Infrastructure.Persistence`.
-
-Each content table has an independent generated ID and unique `(provider, provider_id)` reference. A movie decision stores a nullable scalar `movie_id`; a series decision stores ordered episode associations. Confirmed relationships and newly created works commit together. Series selections contain at most one hundred unique episodes from one season and are replaced atomically. Unconfirmed decisions expose no active relationships. See [decision 0019](../decisions/0019-content-context-boundaries.md).
-
-A single-episode file decision can carry a filename part number from 1 to 100. Parts share the provider episode identity; season display entries and continuation distinguish them. Whole-episode alternatives remain separate from part versions. Known missing parts and numbering gaps stop automatic continuation. See [decision 0025](../decisions/0025-consecutive-episode-parts.md) for naming, activation, navigation, and rollback contracts.
-
-Manual corrections survive later automatic results, retries, and concurrent work. Persisted request tokens and revisions reject stale responses; manual provider lookups recheck the observed file revision under lock. Provider calls remain outside transactions. Movies and Series share only the neutral TMDb HTTP transport under `Bolognesa.Infrastructure.Providers`; their provider ports, endpoints, and payload mappers remain context-owned. TMDb receives only the inferred title and year, never local paths or library names; enabling lookup requires a runtime read token.
-
-Libraries explicitly routes inventory handoffs to the owning facade inside the inventory transaction. Inventory, owner requests, and their Oban jobs commit or roll back together. Each owner revalidates content type, and filters backfill and recovery before batch limits. Workers and reconciler processes are separately named; both video owners initially share the existing `identifications` queue and its concurrency budget.
-
-### Music
-
-Owns library-local tracks, artists, albums, file associations, import attempts, and musical read models. Tracks have stable database IDs and one association per inventory file; copies remain distinct. Grouping preserves library and source boundaries rather than merging unrelated releases.
-
-Libraries owns sanitized observations; Music accepts them through its transaction-aware facade and owns pending import state, linked jobs, and recovery from acceptance onward. Imports revalidate the current observation before writing, tolerate duplicate delivery, and reject stale revisions or inspection tokens. Reads are authorized and library-scoped; Playback reauthorizes each selected track.
-
-Listening activity belongs to an account and stores at most one latest timestamp per track and account. The browser reports after 30 seconds of observed playback, or half the duration of a shorter track; pauses and seeks do not count. This is a best-effort client observation, not server-verified proof of listening. Transient failures are retried while that selection remains active. Track identity follows the inventory path: refreshes and replacements at the same path retain activity, while a rename creates a new identity. Deleting an account or track deletes its activity.
-
-Album browsing derives `last_played_at` from the account's latest activity across all tracks currently associated with that album, including temporarily missing files. No activity returns `nil`; this date does not mean the album was completed. The value is not stored on the album and is independent of browsing filters and pagination. Albums without available files remain hidden under the existing browsing rules.
-
-Recent listening returns up to three distinct available albums within the selected library, or across libraries when none is selected. Order by latest account activity descending and album ID ascending for ties; choose the latest heard track by date descending and track ID ascending for ties. Empty activity returns an empty list, distinct from a failed read. Continue selects that exact track from the current authorized album queue; missing selections must not silently fall back to another track. If it is the last available track in album order (disc, track, path, ID; missing numbers last), Replay starts at the beginning. This is an inferred action, not an album-completion state; no additional activity fields are stored.
-
-Identity keys, import locking and recovery, browsing limits, and album playback contracts are defined in [decision 0018](../decisions/0018-local-music-catalog.md). User-facing listening behavior and limitations belong in the [README](../../README.md#playback-limits); record verification evidence in the relevant issue or pull request.
-
-### Playback
-
-Owns authorization, file selection, delivery strategy, and temporary playback sessions. Confirmed movies and episodes, and music tracks imported from a current successful audio inspection, are playable; series and seasons are containers. Keep the distinction visible in the API: `start_video` and `start_track` select their respective sources, and video delivery/preparation/transcoding operations carry `video` in their names. Music selection is track/file based and uses a separate endpoint so its numeric IDs cannot resolve video works. Video calls use explicit `{:movie, id}` or `{:episode, id}` references. Direct delivery and the optional FFmpeg/HLS path both revalidate the actor, current association, file availability, and revision. HLS sessions bind actor, typed content reference, file, and revision. Only a successful inspection of the current revision supplies technical metadata; video direct delivery remains available without inspection. Byte-range requests support seeking. A file linked to several episodes plays in full and the UI explains that limitation.
-
-Video delivery requires a source-specific, generation/revision-bound capability report before automatic selection. Choose a typed plan with absolute selected stream indexes, independent video/audio actions and an accepted transport. The application reauthorizes/reloads before selection and preparation; infrastructure validates the source-derived plan before process creation. Unknown required safety facts or client support never justify automatic conversion. Explicit original playback remains a separately authorized best-effort action. Keep the browser report closed and bounded, and recovery limited to one eligible decode failure per server-owned attempt; seek/reconnect do not reset its budget.
-
-Do not assume a server can transcode fast enough or that a browser supports a given container and codec. Verify real formats and devices separately. The current output envelope, detection limits and lifecycle rules are in [decision 0011](../decisions/0011-live-transcoding.md).
+Recent listening returns at most three distinct available albums in the selected library, or across libraries when none is selected. Order by activity descending, then album ID ascending; choose the latest heard track by activity descending, then track ID ascending. No activity returns an empty list; failed reads return an error. Continue must select that exact track from the current authorized queue, preserving a missing selection on retry. Replay starts at the beginning when it is the last available track. Album order is disc, track, path, ID, with missing numbers last. Do not store a separate album-completion state.
 
 ## Background work, events, and recovery
 
 Run long tasks outside web requests with durable jobs, bounded retries, and measured concurrency. Job uniqueness limits duplicate insertion; it does not guarantee idempotent execution or serialize workers. Workers call use cases; the domain does not depend on Oban. Delivery is at least once, so consumers tolerate duplicates. A generation or request token rejects stale results; do not promise exactly-once execution.
 
-When durable work uses Oban in the same PostgreSQL database, insert its job and request state in the same transaction and link the job before commit. An additional outbox is unnecessary for this boundary; see [decision 0020](../decisions/0020-direct-durable-jobs.md). Retain an outbox when delivery has a separate consistency boundary or an explicit existing contract pending migration. PubSub may notify connected clients but is not a source of truth or a recovery mechanism. Authorize subscriptions and actions independently; topic names do not grant access. Notifications contain minimal references, never private paths or media content.
+When durable work uses Oban in the same PostgreSQL database, insert its job and request state in the same transaction and link the job before commit. An additional outbox is unnecessary for this boundary; see [decision 0020](../decisions/0020-direct-durable-jobs.md). Retain an outbox when delivery has a separate consistency boundary or an explicit existing contract pending migration. PubSub may notify connected clients but is not a source of truth or a recovery mechanism. Notifications contain minimal references, never private paths or media content.
 
 Application use cases signal confirmed status changes through a context-owned notification port after repository operations succeed. Repositories persist and return results; they do not publish PubSub hints. Recovery results retain references changed by successful transactions even when later work fails, so application can notify those committed changes before returning the error. Notification adapters define topics and payloads and contain delivery failures, preserving successful persistence. Authorize subscriptions at the context facade and keep domain models independent of notification transport.
 
@@ -111,6 +87,4 @@ Apply this convention to new and revised contracts. Existing DTOs will be reorga
 
 ### Verification
 
-Use case names describe user or system outcomes; do not create a module for every trivial operation. Apply [testing conventions](testing.md): test domain rules without a database, application behavior through public contracts, persistence guarantees with PostgreSQL, and UI behavior through LiveViewTest. Use controlled external resources; ordinary tests do not depend on public providers, a NAS, or a TV.
-
-Verification commands and evidence follow [testing conventions](testing.md); automated tests do not establish deployment, device compatibility, or real-world media performance.
+Use case names describe user or system outcomes; do not create a module for every trivial operation. Follow [testing conventions](testing.md) for coverage, commands, and evidence.

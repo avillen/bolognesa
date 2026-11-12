@@ -26,7 +26,7 @@ One shared conversion/remux session is available. Preparation, storage, authoriz
 | Desktop Chrome 156.0.8078.81 | Synthetic source-derived FFmpeg/HLS and production player checks, including Main 3.1/720p25 and Main 4.1/1080p30 with audio conversion | Verified for those fixtures and the documented desktop test matrix; not every file. |
 | Local Playwright WebKit build 2140 | Generic HLS MIME returns `maybe`; exact Main 4.0/AAC-LC MP4 codecs return `probably` | Reproduces the pre-correction rejection; the corrected probe accepts native HLS and a synthetic Main 4.1/1080p30 + AAC fixture advances through native HLS without a media error. This macOS test engine does not certify iPhone playback. |
 
-A mobile-sized desktop viewport is not an iPhone test. Keep physical-device results separate from synthetic fixtures and capability predictions. See [issue #10](https://github.com/avillen/bolognesa/issues/10) for ongoing acceptance evidence and [the testing convention](conventions/testing.md) for runnable checks.
+A mobile-sized desktop viewport is not an iPhone test. Keep physical-device results separate from synthetic fixtures and capability predictions. See [issue #10](https://github.com/avillen/bolognesa/issues/10) for ongoing acceptance evidence and [the playback verification guide](playback-testing.md) for runnable checks.
 
 ## When playback stops before starting
 

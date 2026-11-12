@@ -1,8 +1,10 @@
 # Elixir conventions
 
+These naming, typing, and layout rules are project choices. Follow the official [typespec reference](https://hexdocs.pm/elixir/typespecs.html) for language semantics.
+
 ## Public contracts
 
-- Add an `@spec` for every public function and macro. Place it before the first clause and cover all clauses and default arguments with one contract.
+- Add an `@spec` for each project-owned public function and macro, except the callback and generated functions noted below. Place it before the first clause and describe its supported inputs and results, including defaults. Specs document contracts; they do not validate runtime input.
 - Use named domain and port types for inputs and results, including errors. Avoid overly broad public types such as `term()` and `module()`.
 - Use `String.t()` for text when its string meaning is clear; use `binary()` for opaque byte data.
 - Name cross-context IDs in callbacks (for example, `library_id :: pos_integer()`). Inside the owning context, use the domain entity's ID type directly without a redundant parameter name (for example, `Movie.id()`).
@@ -17,7 +19,7 @@
 - Use `get_<resource>/...` when absence is an expected optional result and `value | nil` is sufficient. Do not collapse authorization, persistence, or integration failures into `nil`.
 - Use `fetch_<resource>!/...` or `get_<resource>!/...` only when failure should raise an exception. Successful calls return the value directly. Expected application failures should normally use the non-bang tuple contract.
 - Standard-library APIs may use `:error` (for example, `Map.fetch/2`); preserve external API contracts at their boundary. Project-owned lookup APIs distinguish `:not_found` from `{:error, reason}`.
-- Name collection queries `list_<resources>/...` and predicates with `?`; do not force these operations into the single-resource lookup convention. Preserve callback names required by behaviours and framework APIs.
+- Name collection queries `list_<resources>/...`; do not force them into the single-resource lookup convention. Preserve callback names required by behaviours and framework APIs.
 - Apply these names consistently across facades, use cases, ports, adapters, and callers when introducing or revising a lookup. Existing names are migrated with their contracts; do not infer a return shape from a legacy name alone.
 
 ## Struct declaration order
@@ -45,6 +47,4 @@ Always write the struct body in `@type t` across multiple lines, with one field 
 
 ## Mix
 
-- Read task options with `mix help TASK` before using unfamiliar tasks.
-- Run a focused test file with `mix test path/to/test.exs`; use `mix test --failed` to rerun prior failures.
-- Avoid `mix deps.clean --all` unless there is a specific reason.
+Read task options with `mix help TASK` before using unfamiliar tasks. Avoid `mix deps.clean --all` unless there is a specific reason. Test commands and workflow belong in [testing conventions](testing.md) and [CONTRIBUTING](../../CONTRIBUTING.md#native-development).

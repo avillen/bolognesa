@@ -87,7 +87,7 @@ Do not add session IDs as Prometheus labels to recover per-session detail.
 ### Local synthetic baseline
 
 Generate the disposable H.264 MPEG-TS fixtures described in the
-[browser testing convention](../../docs/conventions/testing.md#browser-player-verification),
+[browser verification guide](../../docs/playback-testing.md#browser-player-verification),
 then run from the repository root:
 
 ```sh
