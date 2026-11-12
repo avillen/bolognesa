@@ -17,10 +17,10 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   alias Bolognesa.Series.Infrastructure.Repositories.IdentifiedSeriesWriter
 
   @impl true
-  def find_file(id) do
+  def fetch_file(id) do
     case Repo.get(MediaFileSchema, id, log: false) do
       %{availability: :available} = file -> {:ok, file_projection(file)}
-      _ -> {:error, :not_found}
+      _ -> :not_found
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}

@@ -35,7 +35,7 @@ defmodule Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification do
 
     result =
       with :ok <- Accounts.authorize(actor, :admin),
-           {:ok, file} <- repository.find_file(id),
+           {:ok, file} <- repository.fetch_file(id),
            :ok <- series_file(file),
            {:ok, selection} <- selection(choice, provider, file.relative_path) do
         repository.correct_series(id, file.revision, selection)
@@ -122,6 +122,7 @@ defmodule Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification do
   end
 
   defp observe(_result, _actor, _file_id, _started), do: :ok
+  defp normalize(:not_found), do: {:error, :not_found}
   defp normalize({:provider_error, reason, _, _}), do: {:error, reason}
   defp normalize(result), do: result
 end

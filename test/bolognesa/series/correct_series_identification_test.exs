@@ -52,9 +52,14 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
                @actor,
                file.id,
                :unidentified,
-               Repository,
+               Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository,
                SyntheticSeriesProvider
              )
+  end
+
+  test "returns not found when the file does not exist" do
+    assert :not_found = Repository.fetch_file(0)
+    assert {:error, :not_found} = correct(@actor, 0, :unidentified)
   end
 
   test "shrinking a multiple episode selection preserves the remaining episode and hierarchy" do
