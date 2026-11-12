@@ -1,4 +1,4 @@
-defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter do
+defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.RequestWriter do
   @moduledoc "Writes identification requests in the inventory transaction."
 
   import Ecto.Query
@@ -6,7 +6,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Movies.Domain.Entities.Identification
-  alias Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker
+  alias Bolognesa.Movies.Infrastructure.Jobs.Oban.ObanIdentificationJob
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
   alias Bolognesa.Movies.Infrastructure.Repositories.IdentificationMapper
   alias Bolognesa.Repo
@@ -117,11 +117,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter do
   defp insert_job!(repo, decision) do
     {:ok, %{job: job}} =
       Ecto.Multi.new()
-      |> Oban.insert(
-        :job,
-        IdentificationWorker.new(%{file_id: decision.media_file_id, token: decision.token}),
-        log: false
-      )
+      |> ObanIdentificationJob.insert(decision)
       |> repo.transaction()
 
     decision |> Ecto.Changeset.change(job_id: job.id) |> repo.update!(log: false)

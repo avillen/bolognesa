@@ -6,7 +6,7 @@ defmodule Bolognesa.Series.IdentificationRecoveryTest do
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
   alias Bolognesa.Series.Application.UseCases.IdentifySeriesFile
   alias Bolognesa.Series.Application.UseCases.ReconcileIdentifications
-  alias Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker
+  alias Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
 
   alias Ecto.Adapters.SQL

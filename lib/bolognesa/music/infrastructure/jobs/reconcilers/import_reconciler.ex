@@ -1,4 +1,4 @@
-defmodule Bolognesa.Music.Infrastructure.Jobs.ImportReconciler do
+defmodule Bolognesa.Music.Infrastructure.Jobs.Reconcilers.ImportReconciler do
   @moduledoc "Restores visible music import state after job interruption."
   alias Bolognesa.Infrastructure.Jobs.PeriodicRunner
   alias Bolognesa.Infrastructure.Observability.Events

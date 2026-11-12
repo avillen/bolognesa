@@ -3,7 +3,7 @@ defmodule Bolognesa.Music.MusicJourneyTest do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, MediaFileSchema}
   alias Bolognesa.Libraries
-  alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker
 
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
 

@@ -18,7 +18,6 @@ defmodule Bolognesa.Movies do
   alias Bolognesa.Movies.Infrastructure.Readers.EctoMovieReviewReader
   alias Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository
-  alias Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter
 
   @type reason ::
           :forbidden
@@ -73,7 +72,7 @@ defmodule Bolognesa.Movies do
           [request_entry()]
         ) :: non_neg_integer()
   def request_batch_in_transaction!(repo, entries),
-    do: EctoRequestWriter.request_batch!(repo, entries)
+    do: EctoIdentificationRepository.request_batch!(repo, entries)
 
   @spec identify_file(pos_integer(), Identification.token(), pos_integer(), pos_integer() | nil) ::
           :ok | {:error, reason()}

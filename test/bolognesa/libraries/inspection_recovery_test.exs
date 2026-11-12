@@ -6,11 +6,9 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
 
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
-  alias Bolognesa.Libraries.Infrastructure.Jobs.{
-    InspectionPolicy,
-    InspectionReconciler,
-    InspectionWorker
-  }
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.InspectionPolicy
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.InspectionReconciler
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker
 
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema

@@ -36,28 +36,28 @@ defmodule Bolognesa.Application do
 
   defp scan_reconciler_children do
     if Application.get_env(:bolognesa, :scan_reconciler, true),
-      do: [Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler],
+      do: [Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.ScanReconciler],
       else: []
   end
 
   defp inspection_reconciler_children do
     if Application.get_env(:bolognesa, :inspection_reconciler, true),
-      do: [Bolognesa.Libraries.Infrastructure.Jobs.InspectionReconciler],
+      do: [Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.InspectionReconciler],
       else: []
   end
 
   defp identification_reconciler_children do
     if Application.get_env(:bolognesa, :identification_reconciler, true),
       do: [
-        Bolognesa.Movies.Infrastructure.Jobs.IdentificationReconciler,
-        Bolognesa.Series.Infrastructure.Jobs.IdentificationReconciler
+        Bolognesa.Movies.Infrastructure.Jobs.Reconcilers.IdentificationReconciler,
+        Bolognesa.Series.Infrastructure.Jobs.Reconcilers.IdentificationReconciler
       ],
       else: []
   end
 
   defp music_children do
     if Application.get_env(:bolognesa, :music_import_reconciler, true),
-      do: [Bolognesa.Music.Infrastructure.Jobs.ImportReconciler],
+      do: [Bolognesa.Music.Infrastructure.Jobs.Reconcilers.ImportReconciler],
       else: []
   end
 

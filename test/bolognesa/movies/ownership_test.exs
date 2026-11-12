@@ -4,7 +4,8 @@ defmodule Bolognesa.Movies.OwnershipTest do
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Movies
-  alias Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter
+
+  alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository
 
   @actor %AuthenticatedUser{id: 1, role: :admin}
 
@@ -22,7 +23,8 @@ defmodule Bolognesa.Movies.OwnershipTest do
 
     assert Repo.aggregate(
              from(j in Oban.Job,
-               where: j.worker == "Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker"
+               where:
+                 j.worker == "Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker"
              ),
              :count
            ) == 0
@@ -45,9 +47,9 @@ defmodule Bolognesa.Movies.OwnershipTest do
 
     assert Repo.get_by(MovieIdentificationSchema, media_file_id: foreign_file.id) == nil
     second = Bolognesa.SeriesFixtures.file(library.id, "Second.mkv")
-    assert {:ok, cursor, 0} = EctoRequestWriter.backfill_batch(0, 1)
+    assert {:ok, cursor, 0} = EctoIdentificationRepository.backfill_batch(0, 1)
     assert cursor == file.id
-    assert {:ok, next, 1} = EctoRequestWriter.backfill_batch(cursor, 1)
+    assert {:ok, next, 1} = EctoIdentificationRepository.backfill_batch(cursor, 1)
     assert next == second.id
   end
 end

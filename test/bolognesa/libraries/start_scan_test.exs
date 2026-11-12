@@ -74,7 +74,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
     assert id == scan.id
     assert job_id == scan.job_id
     assert job.max_attempts == 3
-    assert job.worker == "Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker"
+    assert job.worker == "Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker"
     assert {:error, :scan_in_progress} = Libraries.start_scan(@admin, library.id)
     assert {:ok, status} = Libraries.fetch_scan_status(@admin, library.id)
     assert status.latest_scan == scan
@@ -98,7 +98,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
         assert Repo.get!(ScanSchema, scan.id).state == :queued
 
         assert_enqueued(
-          worker: Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker,
+          worker: Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker,
           args: %{scan_id: scan.id}
         )
       end)

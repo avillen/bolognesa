@@ -9,11 +9,21 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   alias Bolognesa.Movies.Domain.Entities.Identification
   alias Bolognesa.Movies.Domain.ReadModels.FileToIdentify
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
-  alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.JobRecovery
-  alias Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter
+  alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.ObanJobRecovery
+  alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.RequestWriter
   alias Bolognesa.Movies.Infrastructure.Repositories.IdentificationMapper
   alias Bolognesa.Movies.Infrastructure.Repositories.IdentifiedMovieWriter
   alias Bolognesa.Repo
+
+  @spec request_batch!(Bolognesa.Movies.transaction_repository(), [
+          Bolognesa.Movies.request_entry()
+        ]) ::
+          non_neg_integer()
+  def request_batch!(repo, entries), do: RequestWriter.request_batch!(repo, entries)
+
+  @spec backfill_batch(non_neg_integer(), pos_integer()) ::
+          {:ok, non_neg_integer(), non_neg_integer()} | {:error, :unavailable}
+  def backfill_batch(cursor_id, limit), do: RequestWriter.backfill_batch(cursor_id, limit)
 
   @impl true
   def find_file(id) do
@@ -151,7 +161,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
 
   @impl true
   def reconcile_jobs_result(now) do
-    JobRecovery.interrupted(Repo, now)
+    ObanJobRecovery.interrupted(Repo, now)
     |> Enum.reduce({:ok, 0}, fn {file_id, token, state}, result ->
       reason = if state == "discarded", do: :attempts_exhausted, else: :unexpected_failure
       recovery_result(fail(file_id, token, reason), result)
@@ -210,7 +220,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   end
 
   defp request_retry(file) do
-    EctoRequestWriter.request_batch!(Repo, [
+    RequestWriter.request_batch!(Repo, [
       %{file_id: file.id, revision: file.revision, requested?: true}
     ])
 

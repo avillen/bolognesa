@@ -1,25 +1,25 @@
-defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.JobRecovery do
+defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.ObanJobRecovery do
   @moduledoc false
   import Ecto.Query
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
-  alias Bolognesa.Movies.Domain.Entities.Identification
-  alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
+  alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
+  alias Bolognesa.Series.Domain.Entities.Identification
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
   alias Oban.Job
 
   @spec interrupted(DecisionStore.repo(), DateTime.t()) ::
-          [{pos_integer(), Identification.token(), String.t() | nil}]
+          [{pos_integer(), Identification.token(), binary() | nil}]
   def interrupted(repo, now) do
     cutoff = DateTime.add(now, -60, :second)
 
     repo.all(
-      from(identification in MovieIdentificationSchema,
+      from(identification in SeriesIdentificationSchema,
         join: file in MediaFileSchema,
         on: file.id == identification.media_file_id,
         join: library in LibrarySchema,
         on: library.id == file.library_id,
-        where: library.content_type == :movie,
+        where: library.content_type == :series,
         left_join: job in Job,
         on: job.id == identification.job_id,
         where: identification.state == :pending and not is_nil(identification.job_id),

@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionReconciler do
+defmodule Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.InspectionReconciler do
   @moduledoc "Resolves technical inspections left unfinished by terminal or lost jobs."
   alias Bolognesa.Infrastructure.Jobs.PeriodicRunner
   alias Bolognesa.Infrastructure.Observability.Events
@@ -6,7 +6,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionReconciler do
   alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
   alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
   alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
-  alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.InspectionPolicy
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 

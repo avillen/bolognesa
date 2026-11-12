@@ -1,7 +1,7 @@
-defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.InspectionRequest do
+defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.InspectionRequestWriter do
   @moduledoc "Persist an inspection and its durable job inside the caller's transaction."
   alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, MediaFileSchema}
-  alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Oban.ObanInspectionJob
   alias Bolognesa.Repo
 
   @spec enqueue!(MediaFileSchema.t(), InspectionSchema.t() | nil) :: InspectionSchema.t()
@@ -29,11 +29,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
         schema -> Repo.update!(InspectionSchema.changeset(schema, attrs))
       end
 
-    job =
-      case Oban.insert(InspectionWorker.new(%{media_file_id: file.id, token: token})) do
-        {:ok, job} -> job
-        {:error, _changeset} -> Repo.rollback(:unavailable)
-      end
+    job = ObanInspectionJob.insert!(file.id, token)
 
     inspection |> InspectionSchema.changeset(%{job_id: job.id}) |> Repo.update!()
   end

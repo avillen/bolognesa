@@ -7,7 +7,7 @@ defmodule Bolognesa.Series.ObservabilityTest do
   alias Bolognesa.Series.Application.UseCases.ReconcileIdentifications, as: Reconcile
   alias Bolognesa.Series.Application.UseCases.RetryIdentification, as: Retry
   alias Bolognesa.Series.Application.UseCases.SearchSeriesCandidates, as: Search
-  alias Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker, as: Worker
+  alias Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker, as: Worker
 
   defmodule Repository do
     def fetch_file(_),

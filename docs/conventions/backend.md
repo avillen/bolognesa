@@ -23,6 +23,7 @@ Organize domain modules by concept type where useful: `entities/`, `value_object
 - Keep aggregates small and use them to define consistency boundaries. Do not load every file in a library or every episode in a series into memory.
 - Each context owns writes to its data. Cross-context references use IDs and public facades.
 - Repositories expose domain needs, not Ecto queries or changesets. Do not create a generic CRUD repository.
+- Keep request persistence on its owning repository, including atomic job insertion. Extract a named writer beside that repository when a concrete write is shared or the repository needs a focused collaborator; route external callers through the repository.
 - Business results from repositories use domain models, not Ecto schemas, application DTOs, or untyped maps. Type compound results and explicit scalar metadata in the port contract.
 - Use cases build public DTOs from domain results. Keep pure `from_domain/1` conversion on the DTO; it must not perform I/O or call facades. Simple response containers can be assembled by the use case.
 - Changesets enforce persistence requirements; domain rules belong in the domain. Database constraints protect uniqueness and integrity under concurrency.

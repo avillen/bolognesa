@@ -3,7 +3,8 @@ defmodule Bolognesa.Series.IdentificationStorageTest do
 
   alias Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository
-  alias Bolognesa.Series.Infrastructure.Repositories.EctoRequestWriter
+
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository
 
   alias Bolognesa.Infrastructure.Persistence.{
     EpisodeSchema,
@@ -37,7 +38,7 @@ defmodule Bolognesa.Series.IdentificationStorageTest do
 
     assert {:ok, 0} =
              Repo.transaction(fn ->
-               EctoRequestWriter.request_batch!(
+               EctoIdentificationRepository.request_batch!(
                  Repo,
                  [
                    %{file_id: file.id, revision: 2, requested?: true}

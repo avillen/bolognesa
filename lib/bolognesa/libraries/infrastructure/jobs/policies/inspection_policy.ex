@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy do
+defmodule Bolognesa.Libraries.Infrastructure.Jobs.Policies.InspectionPolicy do
   @moduledoc "Execution and recovery budgets for technical inspections."
 
   alias Bolognesa.Libraries.Domain.Entities.Inspection

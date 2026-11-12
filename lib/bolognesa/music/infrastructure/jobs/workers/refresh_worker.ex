@@ -1,6 +1,6 @@
-defmodule Bolognesa.Music.Infrastructure.Jobs.RefreshWorker do
+defmodule Bolognesa.Music.Infrastructure.Jobs.Workers.RefreshWorker do
   @moduledoc "Bounded durable music import with token and job ownership checks."
-  alias Bolognesa.Music.Infrastructure.Jobs.ImportPolicy
+  alias Bolognesa.Music.Infrastructure.Jobs.Policies.ImportPolicy
   use Oban.Worker, queue: :music_imports, max_attempts: ImportPolicy.max_attempts()
 
   alias Bolognesa.Infrastructure.Observability.Events

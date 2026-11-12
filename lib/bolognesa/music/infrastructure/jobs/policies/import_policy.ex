@@ -1,4 +1,4 @@
-defmodule Bolognesa.Music.Infrastructure.Jobs.ImportPolicy do
+defmodule Bolognesa.Music.Infrastructure.Jobs.Policies.ImportPolicy do
   @moduledoc "Bounded music import operational budgets."
   @spec max_attempts() :: pos_integer()
   def max_attempts, do: 3

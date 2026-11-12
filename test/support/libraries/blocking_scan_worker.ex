@@ -2,7 +2,7 @@ defmodule Bolognesa.Libraries.Support.BlockingScanWorker do
   @moduledoc false
   use Oban.Worker, queue: :library_scans, max_attempts: 3
 
-  alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Libraries.Support.{ControlledFileDiscovery, UnavailableScanRepository}
 

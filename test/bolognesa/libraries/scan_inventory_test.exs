@@ -252,7 +252,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
       SQL.query!(Repo, """
       ALTER TABLE oban_jobs ADD CONSTRAINT inventory_test_reject_identification
-      CHECK (worker <> 'Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker') NOT VALID
+      CHECK (worker <> 'Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker') NOT VALID
       """)
 
       try do
@@ -297,7 +297,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
       SQL.query!(
         Repo,
-        "ALTER TABLE oban_jobs ADD CONSTRAINT inventory_test_reject_series CHECK (worker <> 'Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker') NOT VALID"
+        "ALTER TABLE oban_jobs ADD CONSTRAINT inventory_test_reject_series CHECK (worker <> 'Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker') NOT VALID"
       )
 
       try do
@@ -318,7 +318,9 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
         assert Repo.aggregate(
                  from(j in Oban.Job,
-                   where: j.worker == "Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker"
+                   where:
+                     j.worker ==
+                       "Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker"
                  ),
                  :count
                ) == 1
@@ -787,7 +789,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
       SQL.query!(Repo, """
       ALTER TABLE oban_jobs ADD CONSTRAINT inventory_test_reject_event
-      CHECK (worker <> 'Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker') NOT VALID
+      CHECK (worker <> 'Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker') NOT VALID
       """)
 
       try do
@@ -896,7 +898,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   defp inspection_jobs(file_id) do
     Repo.all(
       from job in Oban.Job,
-        where: job.worker == "Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker",
+        where: job.worker == "Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker",
         where: fragment("?->>'media_file_id'", job.args) == ^Integer.to_string(file_id),
         order_by: job.id
     )
@@ -905,7 +907,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   defp identification_jobs(file_id) do
     Repo.all(
       from job in Oban.Job,
-        where: job.worker == "Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker",
+        where: job.worker == "Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker",
         where: fragment("?->>'file_id'", job.args) == ^Integer.to_string(file_id),
         order_by: job.id
     )

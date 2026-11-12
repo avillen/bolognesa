@@ -6,7 +6,7 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Movies.Application.UseCases.IdentifyMovieFile
   alias Bolognesa.Movies.Application.UseCases.ReconcileIdentifications
-  alias Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker
+  alias Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
 
   alias Ecto.Adapters.SQL

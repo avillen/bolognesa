@@ -1,7 +1,7 @@
-defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker do
+defmodule Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker do
   @moduledoc "Oban boundary that exposes only safe, bounded operational reasons."
 
-  alias Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.ScanPolicy
   use Oban.Worker, queue: :library_scans, max_attempts: ScanPolicy.max_attempts()
 
   alias Bolognesa.Infrastructure.Observability.Events

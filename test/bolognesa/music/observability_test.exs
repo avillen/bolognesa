@@ -5,7 +5,7 @@ defmodule Bolognesa.Music.ObservabilityTest do
   alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, MusicImportSchema}
   alias Bolognesa.Music
   alias Bolognesa.Music.Application.UseCases.{ReconcileImports, RefreshTrack, RetryImport}
-  alias Bolognesa.Music.Infrastructure.Jobs.RefreshWorker
+  alias Bolognesa.Music.Infrastructure.Jobs.Workers.RefreshWorker
   alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository
 
   defmodule UnavailableReader do

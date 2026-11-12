@@ -8,7 +8,7 @@ defmodule Bolognesa.Series.IdentifySeriesFileTest do
   alias Bolognesa.Infrastructure.Persistence.SeriesSchema
   alias Bolognesa.Series.Application.UseCases.IdentifySeriesFile
   alias Bolognesa.Series.Domain.ValueObjects.EpisodeSelection
-  alias Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker
+  alias Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
   alias Bolognesa.Test.SyntheticSeriesProvider, as: Provider
   alias Ecto.Adapters.SQL

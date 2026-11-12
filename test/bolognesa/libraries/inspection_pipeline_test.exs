@@ -7,7 +7,7 @@ defmodule Bolognesa.Libraries.InspectionPipelineTest do
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
-  alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Support.SuccessfulMediaProbe
 

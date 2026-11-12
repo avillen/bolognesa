@@ -10,13 +10,14 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   alias Bolognesa.Infrastructure.Persistence.ScanSchema
   alias Bolognesa.Libraries.Application.InventoryRequestPlan
   alias Bolognesa.Libraries.Domain.Entities.Scan
-  alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
-  alias Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy
-  alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
-  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.InspectionRequest
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Oban.ObanScanJob
+
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
+
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository.LibraryMapper
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.MediaFileMapper
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.ObanJobRecovery
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.ScanMapper
   alias Bolognesa.Movies
   alias Bolognesa.Repo
@@ -37,9 +38,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
         requested_at: DateTime.utc_now()
       })
     )
-    |> Oban.insert(:job, fn %{scan: scan} ->
-      ScanWorker.new(%{scan_id: scan.id})
-    end)
+    |> ObanScanJob.insert()
     |> Ecto.Multi.update(:referenced_scan, fn %{scan: scan, job: job} ->
       ScanSchema.changeset(scan, %{job_id: job.id})
     end)
@@ -148,93 +147,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   end
 
   @impl true
-  def reconcile_jobs(now) do
-    cutoff = DateTime.add(now, -ScanPolicy.timeout_ms(), :millisecond)
-
-    candidates =
-      Repo.all(
-        from scan in ScanSchema,
-          left_join: job in Oban.Job,
-          on: job.id == scan.job_id,
-          where: scan.state in [:queued, :running, :retrying],
-          where:
-            is_nil(job.id) or job.state in ["retryable", "discarded", "cancelled", "completed"],
-          where:
-            scan.state != :running or is_nil(scan.attempt_started_at) or
-              scan.attempt_started_at <= ^cutoff,
-          where:
-            not (scan.state == :retrying and not is_nil(job.id) and job.state == "retryable"),
-          order_by: scan.id,
-          limit: 100,
-          select: scan.id
-      )
-
-    Enum.reduce_while(candidates, %ReconciliationResult{}, fn id, result ->
-      reconcile_result(
-        transaction(fn -> reconcile_locked(locked_scan(id, :not_found), now) end),
-        result
-      )
-    end)
-  rescue
-    DBConnection.ConnectionError -> %ReconciliationResult{error: :unavailable}
-    Postgrex.Error -> %ReconciliationResult{error: :unavailable}
-  end
-
-  defp reconcile_locked(%ScanSchema{state: state}, _now) when state in [:completed, :failed],
-    do: {:ok, []}
-
-  defp reconcile_locked(scan, now) do
-    if attempt_within_budget?(scan, now),
-      do: {:ok, []},
-      else: reconcile_job(scan, reconciliation_job(scan.job_id), now)
-  end
-
-  defp reconciliation_job(nil), do: nil
-  defp reconciliation_job(id), do: Repo.get(Oban.Job, id)
-
-  defp attempt_within_budget?(
-         %ScanSchema{state: :running, attempt_started_at: %DateTime{} = started},
-         now
-       ),
-       do: DateTime.diff(now, started, :millisecond) < ScanPolicy.timeout_ms()
-
-  defp attempt_within_budget?(_scan, _now), do: false
-
-  defp reconcile_job(scan, nil, now),
-    do: reconcile_transition(scan, :failed, :unexpected_failure, now)
-
-  defp reconcile_job(scan, %{state: "discarded"}, now),
-    do: reconcile_transition(scan, :failed, :attempts_exhausted, now)
-
-  defp reconcile_job(scan, %{state: state}, now) when state in ["cancelled", "completed"],
-    do: reconcile_transition(scan, :failed, :unexpected_failure, now)
-
-  defp reconcile_job(%ScanSchema{state: :retrying}, %{state: "retryable"}, _now),
-    do: {:ok, []}
-
-  defp reconcile_job(scan, %{state: "retryable"}, now),
-    do: reconcile_transition(scan, :retrying, :unexpected_failure, now)
-
-  defp reconcile_job(_scan, _job, _now), do: {:ok, []}
-
-  defp reconcile_transition(scan, state, fallback, now) do
-    reason = scan.failure_reason || fallback
-
-    case Scan.transition(ScanMapper.to_scan(scan), state, reason, now) do
-      {:ok, transitioned} ->
-        _stored = save_scan(scan, transitioned)
-        {:ok, [scan.library_id]}
-
-      _ ->
-        Repo.rollback(:unavailable)
-    end
-  end
-
-  defp reconcile_result({:ok, library_ids}, result),
-    do: {:cont, %{result | changed_library_ids: library_ids ++ result.changed_library_ids}}
-
-  defp reconcile_result({:error, :not_found}, result), do: {:cont, result}
-  defp reconcile_result({:error, _reason}, result), do: {:halt, %{result | error: :unavailable}}
+  def reconcile_jobs(now), do: ObanJobRecovery.reconcile(now)
 
   defp transaction(operation) do
     case Repo.transaction(operation) do
@@ -358,7 +271,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
       current_inspection = old && Map.get(inspections, old.id)
 
       if Map.fetch!(plans, entry.relative_path).inspect? do
-        InspectionRequest.enqueue!(file, current_inspection)
+        EctoInspectionRepository.enqueue_in_transaction!(file, current_inspection)
       end
     end)
   end

@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler do
+defmodule Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.ScanReconciler do
   @moduledoc "Reconciles persisted results after startup and after each bounded interval."
   alias Bolognesa.Infrastructure.Jobs.PeriodicRunner
   alias Bolognesa.Infrastructure.Observability.Events
@@ -6,7 +6,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanReconciler do
   alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
   alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
   alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
-  alias Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.ScanPolicy
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 

@@ -9,7 +9,7 @@ defmodule Bolognesa.Libraries.ObservabilityTest do
   }
 
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
-  alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
   defmodule Repository do

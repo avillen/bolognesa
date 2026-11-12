@@ -9,7 +9,9 @@ defmodule Bolognesa.Series.IdentificationJobsTest do
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Series.Domain.ValueObjects.EpisodeSelection
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
-  alias Bolognesa.Series.Infrastructure.Repositories.EctoRequestWriter
+
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository
+
   alias Bolognesa.Test.SyntheticSeriesProvider
   alias Ecto.Adapters.SQL
   alias SQL.Sandbox
@@ -23,14 +25,14 @@ defmodule Bolognesa.Series.IdentificationJobsTest do
 
     assert {:ok, 0} =
              Repo.transaction(fn ->
-               EctoRequestWriter.request_batch!(Repo, [%{entry | requested?: false}])
+               EctoIdentificationRepository.request_batch!(Repo, [%{entry | requested?: false}])
              end)
 
     assert {:ok, ^old} = Repository.get(event.media_file_id)
 
     assert {:ok, 1} =
              Repo.transaction(fn ->
-               EctoRequestWriter.request_batch!(Repo, [entry])
+               EctoIdentificationRepository.request_batch!(Repo, [entry])
              end)
 
     assert {:ok, requested} = Repository.get(event.media_file_id)
@@ -45,7 +47,8 @@ defmodule Bolognesa.Series.IdentificationJobsTest do
 
     assert Repo.aggregate(
              from(j in Oban.Job,
-               where: j.worker == "Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker"
+               where:
+                 j.worker == "Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker"
              ),
              :count
            ) == 2
@@ -62,20 +65,21 @@ defmodule Bolognesa.Series.IdentificationJobsTest do
         job_count =
           Repo.aggregate(
             from(j in Oban.Job,
-              where: j.worker == "Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker"
+              where:
+                j.worker == "Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker"
             ),
             :count
           )
 
         SQL.query!(Repo, """
         ALTER TABLE oban_jobs ADD CONSTRAINT identification_refactor_reject_event
-        CHECK (worker <> 'Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker') NOT VALID
+        CHECK (worker <> 'Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker') NOT VALID
         """)
 
         try do
           assert_raise Ecto.ConstraintError, fn ->
             Repo.transaction(fn ->
-              EctoRequestWriter.request_batch!(Repo, [
+              EctoIdentificationRepository.request_batch!(Repo, [
                 %{file_id: file.id, revision: file.revision, requested?: true}
               ])
             end)
@@ -86,7 +90,8 @@ defmodule Bolognesa.Series.IdentificationJobsTest do
           assert Repo.aggregate(
                    from(j in Oban.Job,
                      where:
-                       j.worker == "Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker"
+                       j.worker ==
+                         "Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker"
                    ),
                    :count
                  ) == job_count
@@ -114,7 +119,8 @@ defmodule Bolognesa.Series.IdentificationJobsTest do
         job_count =
           Repo.aggregate(
             from(j in Oban.Job,
-              where: j.worker == "Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker"
+              where:
+                j.worker == "Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker"
             ),
             :count
           )
@@ -127,7 +133,7 @@ defmodule Bolognesa.Series.IdentificationJobsTest do
         try do
           assert_raise Ecto.ConstraintError, fn ->
             Repo.transaction(fn ->
-              EctoRequestWriter.request_batch!(Repo, [
+              EctoIdentificationRepository.request_batch!(Repo, [
                 %{file_id: file.id, revision: file.revision, requested?: true}
               ])
             end)
@@ -138,7 +144,8 @@ defmodule Bolognesa.Series.IdentificationJobsTest do
           assert Repo.aggregate(
                    from(j in Oban.Job,
                      where:
-                       j.worker == "Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker"
+                       j.worker ==
+                         "Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker"
                    ),
                    :count
                  ) == job_count
@@ -165,7 +172,7 @@ defmodule Bolognesa.Series.IdentificationJobsTest do
 
   test "transaction-aware request writer refuses an unboxed call" do
     Sandbox.unboxed_run(Repo, fn ->
-      assert_raise ArgumentError, fn -> EctoRequestWriter.request_batch!(Repo, []) end
+      assert_raise ArgumentError, fn -> EctoIdentificationRepository.request_batch!(Repo, []) end
     end)
   end
 

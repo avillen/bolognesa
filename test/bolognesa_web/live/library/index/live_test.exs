@@ -12,7 +12,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
-  alias Bolognesa.Libraries.Infrastructure.Jobs.ScanWorker
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker
 
   alias Bolognesa.Libraries.Infrastructure.Repositories.{
     EctoInspectionRepository,

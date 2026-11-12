@@ -7,7 +7,7 @@ defmodule Bolognesa.Movies.ObservabilityTest do
   alias Bolognesa.Movies.Application.UseCases.ReconcileIdentifications, as: Reconcile
   alias Bolognesa.Movies.Application.UseCases.RetryIdentification, as: Retry
   alias Bolognesa.Movies.Application.UseCases.SearchMovieCandidates, as: Search
-  alias Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker, as: Worker
+  alias Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker, as: Worker
 
   defmodule Repository do
     def find_file(_), do: {:ok, %{content_type: :movie, revision: 3}}

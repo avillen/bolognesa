@@ -8,7 +8,9 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
 
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
-  alias Bolognesa.Libraries.Infrastructure.Jobs.{ScanPolicy, ScanReconciler, ScanWorker}
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.ScanPolicy
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.ScanReconciler
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
 
   alias Bolognesa.Libraries.Support.{

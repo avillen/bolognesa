@@ -1,4 +1,4 @@
-defmodule Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy do
+defmodule Bolognesa.Libraries.Infrastructure.Jobs.Policies.ScanPolicy do
   @moduledoc "Bounded execution and recovery budgets for the single scan queue."
 
   @spec timeout_ms() :: pos_integer()

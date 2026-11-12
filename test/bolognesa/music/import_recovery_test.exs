@@ -10,7 +10,7 @@ defmodule Bolognesa.Music.ImportRecoveryTest do
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Music
-  alias Bolognesa.Music.Infrastructure.Jobs.RefreshWorker
+  alias Bolognesa.Music.Infrastructure.Jobs.Workers.RefreshWorker
   alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository
 
   test "obsolete missing-file imports cannot starve current recovery batches" do

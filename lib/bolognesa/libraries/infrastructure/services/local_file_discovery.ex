@@ -12,7 +12,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery do
   alias Bolognesa.Libraries.Domain.Policies.MediaExtensions
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.{DiscoveryRequest, NewMediaFile}
 
-  @batch_size Bolognesa.Libraries.Infrastructure.Jobs.ScanPolicy.batch_size()
+  @batch_size Bolognesa.Libraries.Infrastructure.Jobs.Policies.ScanPolicy.batch_size()
 
   @impl true
   def walk(%DiscoveryRequest{path: path, content_type: type}, sink) do

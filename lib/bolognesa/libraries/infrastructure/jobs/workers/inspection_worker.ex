@@ -1,7 +1,7 @@
-defmodule Bolognesa.Libraries.Infrastructure.Jobs.InspectionWorker do
+defmodule Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker do
   @moduledoc "Oban boundary that exposes only safe inspection failure reasons."
 
-  alias Bolognesa.Libraries.Infrastructure.Jobs.InspectionPolicy
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.InspectionPolicy
   use Oban.Worker, queue: :media_inspections, max_attempts: InspectionPolicy.max_attempts()
 
   alias Bolognesa.Infrastructure.Observability.Events

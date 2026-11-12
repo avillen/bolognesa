@@ -26,7 +26,6 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReviewReader
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository
-  alias Bolognesa.Series.Infrastructure.Repositories.EctoRequestWriter
 
   @type reason ::
           :forbidden
@@ -125,7 +124,7 @@ defmodule Bolognesa.Series do
           [request_entry()]
         ) :: non_neg_integer()
   def request_batch_in_transaction!(repo, entries),
-    do: EctoRequestWriter.request_batch!(repo, entries)
+    do: EctoIdentificationRepository.request_batch!(repo, entries)
 
   @spec identify_file(pos_integer(), Identification.token(), pos_integer(), pos_integer() | nil) ::
           :ok | {:error, reason()}

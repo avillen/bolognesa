@@ -1,10 +1,10 @@
-defmodule Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker do
-  @moduledoc "Runs a token-protected series identification."
+defmodule Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker do
+  @moduledoc "Runs a token-protected movie identification."
   use Oban.Worker, queue: :identifications, max_attempts: 3
   alias Bolognesa.Infrastructure.Observability.Events
-  alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
-  alias Bolognesa.Series.Application.Ports.Repositories.IdentificationRepository
-  alias Bolognesa.Series.Application.UseCases.IdentifySeriesFile
+  alias Bolognesa.Movies.Application.Ports.Providers.MovieProvider
+  alias Bolognesa.Movies.Application.Ports.Repositories.IdentificationRepository
+  alias Bolognesa.Movies.Application.UseCases.IdentifyMovieFile
 
   @impl Oban.Worker
   def timeout(_job), do: 30_000
@@ -12,7 +12,7 @@ defmodule Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"file_id" => id, "token" => token}, attempt: attempt} = job)
       when is_integer(id) and id > 0 and is_binary(token) do
-    Bolognesa.Series.identify_file(id, token, attempt, job.id)
+    Bolognesa.Movies.identify_file(id, token, attempt, job.id)
   rescue
     _ -> unexpected_failure(id, job.id, attempt)
   catch
@@ -21,9 +21,9 @@ defmodule Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker do
 
   def perform(_), do: {:cancel, :invalid_job}
 
-  @spec perform(Oban.Job.t(), IdentificationRepository.adapter(), SeriesProvider.adapter()) ::
+  @spec perform(Oban.Job.t(), IdentificationRepository.adapter(), MovieProvider.adapter()) ::
           :ok
-          | {:error, IdentificationRepository.reason() | SeriesProvider.reason()}
+          | {:error, IdentificationRepository.reason() | :unusable_name | MovieProvider.reason()}
           | {:cancel, :invalid_job}
   def perform(
         %Oban.Job{args: %{"file_id" => id, "token" => token}, attempt: attempt} = job,
@@ -31,7 +31,7 @@ defmodule Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker do
         provider
       )
       when is_integer(id) and id > 0 and is_binary(token) do
-    IdentifySeriesFile.call(id, token, attempt, repository, provider, job.id)
+    IdentifyMovieFile.call(id, token, attempt, repository, provider, job.id)
   rescue
     _ -> unexpected_failure(id, job.id, attempt)
   catch
@@ -41,7 +41,7 @@ defmodule Bolognesa.Series.Infrastructure.Jobs.IdentificationWorker do
   def perform(_, _, _), do: {:cancel, :invalid_job}
 
   defp unexpected_failure(id, job_id, attempt) do
-    Events.emit(:series, :identification, :failed, %{
+    Events.emit(:movies, :identification, :failed, %{
       file_id: id,
       job_id: job_id,
       attempt: attempt,

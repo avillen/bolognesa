@@ -11,10 +11,20 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   alias Bolognesa.Series.Domain.ReadModels.FileToIdentify
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.EntryStore
-  alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.JobRecovery
-  alias Bolognesa.Series.Infrastructure.Repositories.EctoRequestWriter
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.ObanJobRecovery
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.RequestWriter
   alias Bolognesa.Series.Infrastructure.Repositories.IdentificationMapper
   alias Bolognesa.Series.Infrastructure.Repositories.IdentifiedSeriesWriter
+
+  @spec request_batch!(Bolognesa.Series.transaction_repository(), [
+          Bolognesa.Series.request_entry()
+        ]) ::
+          non_neg_integer()
+  def request_batch!(repo, entries), do: RequestWriter.request_batch!(repo, entries)
+
+  @spec backfill_batch(non_neg_integer(), pos_integer()) ::
+          {:ok, non_neg_integer(), non_neg_integer()} | {:error, :unavailable}
+  def backfill_batch(cursor_id, limit), do: RequestWriter.backfill_batch(cursor_id, limit)
 
   @impl true
   def fetch_file(id) do
@@ -198,7 +208,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
           {:ok, non_neg_integer()} | {:error, :unavailable, non_neg_integer()}
   @impl true
   def reconcile_jobs_result(now) do
-    JobRecovery.interrupted(Repo, now)
+    ObanJobRecovery.interrupted(Repo, now)
     |> Enum.reduce({:ok, 0}, fn {file_id, token, state}, result ->
       reason = if state == "discarded", do: :attempts_exhausted, else: :unexpected_failure
       recovery_result(fail(file_id, token, reason), result)
@@ -223,7 +233,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   end
 
   defp request_retry(file) do
-    EctoRequestWriter.request_batch!(Repo, [
+    RequestWriter.request_batch!(Repo, [
       %{file_id: file.id, revision: file.revision, requested?: true}
     ])
 

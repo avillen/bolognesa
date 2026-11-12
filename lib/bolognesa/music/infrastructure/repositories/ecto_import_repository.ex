@@ -11,7 +11,8 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   }
 
   alias Bolognesa.Music.Domain.Entities.ImportState
-  alias Bolognesa.Music.Infrastructure.Jobs.RefreshWorker
+  alias Bolognesa.Music.Infrastructure.Jobs.Oban.ObanImportJob
+  alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository.ObanJobRecovery
   alias Bolognesa.Repo
 
   @spec request_in_transaction!(
@@ -56,10 +57,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
       })
       |> repo.insert_or_update!()
 
-    {:ok, %{job: job}} =
-      Ecto.Multi.new()
-      |> Oban.insert(:job, RefreshWorker.new(%{file_id: file.id, revision: file.revision}))
-      |> repo.transaction()
+    job = ObanImportJob.insert!(repo, file)
 
     row |> MusicImportSchema.changeset(%{job_id: job.id}) |> repo.update!()
   end
@@ -219,7 +217,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   def reconcile_jobs_with_summary(now) do
     cutoff = DateTime.add(now, -60, :second)
 
-    ids = reconciliation_ids(cutoff)
+    ids = ObanJobRecovery.list_interrupted(cutoff)
 
     Enum.reduce_while(ids, {:ok, empty_summary()}, &reconcile_id(&1, cutoff, &2))
   rescue
@@ -228,40 +226,6 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   end
 
   defp empty_summary, do: %{recovered_count: 0, library_ids: []}
-
-  defp job(nil), do: nil
-  defp job(id), do: Repo.get(Oban.Job, id)
-
-  defp reconciliation_ids(cutoff) do
-    Repo.all(
-      from(row in MusicImportSchema,
-        join: file in MediaFileSchema,
-        on: file.id == row.media_file_id,
-        join: library in LibrarySchema,
-        on: library.id == file.library_id,
-        join: inspection in InspectionSchema,
-        on: inspection.media_file_id == file.id,
-        where: file.availability == :available,
-        where: library.content_type == :music,
-        where: inspection.state == :succeeded,
-        where: inspection.observed_revision == file.revision,
-        where: row.observed_revision == file.revision,
-        where: row.inspection_token == inspection.token,
-        where: fragment(~s|? @> '{"items":[{"kind":"audio"}]}'::jsonb|, inspection.tracks),
-        left_join: job in Oban.Job,
-        on: job.id == row.job_id,
-        where: row.state in [:pending, :running],
-        where:
-          is_nil(job.id) or job.state in ["discarded", "cancelled", "completed"] or
-            (row.state == :running and job.state in ["retryable", "available"]) or
-            (row.state == :running and row.started_at < ^cutoff and job.state == "executing" and
-               job.attempted_at < ^cutoff),
-        order_by: row.id,
-        limit: 100,
-        select: row.media_file_id
-      )
-    )
-  end
 
   defp reconcile_id(id, cutoff, {:ok, summary}) do
     case transaction(fn -> reconcile(id, cutoff) end) do
@@ -293,7 +257,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
 
   defp reconcile_state(state, inspection, cutoff, library_id) do
     if state.state in [:pending, :running] && state.inspection_token == inspection.token do
-      recover_current(state, job(state.job_id), cutoff, library_id)
+      recover_current(state, ObanJobRecovery.get_job(state.job_id), cutoff, library_id)
     else
       :ok
     end
@@ -310,7 +274,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   end
 
   defp recover_current(state, job, cutoff, library_id) do
-    case recovery_reason(job, cutoff) do
+    case ObanJobRecovery.failure_reason(job, cutoff) do
       nil ->
         :ok
 
@@ -319,17 +283,4 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
         {:changed, library_id}
     end
   end
-
-  defp recovery_reason(nil, _cutoff), do: :unexpected_failure
-  defp recovery_reason(%{state: "discarded"}, _cutoff), do: :attempts_exhausted
-
-  defp recovery_reason(%{state: state}, _cutoff) when state in ["cancelled", "completed"],
-    do: :unexpected_failure
-
-  defp recovery_reason(%{state: "executing", attempted_at: attempted}, cutoff)
-       when not is_nil(attempted) do
-    if DateTime.compare(attempted, cutoff) == :lt, do: :unexpected_failure, else: nil
-  end
-
-  defp recovery_reason(_job, _cutoff), do: nil
 end

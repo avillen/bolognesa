@@ -6,15 +6,16 @@ defmodule Bolognesa.Movies.RequestBackfillTest do
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
-  alias Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter
+
+  alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository
 
   test "music is excluded at explicit and backfill request boundaries" do
     fixture = Bolognesa.MusicFixtures.music_fixture()
-    assert {:ok, _cursor, 0} = EctoRequestWriter.backfill_batch(0, 100)
+    assert {:ok, _cursor, 0} = EctoIdentificationRepository.backfill_batch(0, 100)
 
     assert {:ok, 0} =
              Repo.transaction(fn ->
-               EctoRequestWriter.request_batch!(Repo, [
+               EctoIdentificationRepository.request_batch!(Repo, [
                  %{file_id: fixture.file.id, revision: 1, requested?: true}
                ])
              end)
@@ -25,7 +26,8 @@ defmodule Bolognesa.Movies.RequestBackfillTest do
 
     assert Repo.all(
              from(j in Oban.Job,
-               where: j.worker == "Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker"
+               where:
+                 j.worker == "Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker"
              )
            ) == []
   end
@@ -34,17 +36,18 @@ defmodule Bolognesa.Movies.RequestBackfillTest do
     first = file_fixture("first.mp4")
     second = file_fixture("second.mp4", first.library_id)
 
-    assert {:ok, first_id, 1} = EctoRequestWriter.backfill_batch(0, 1)
+    assert {:ok, first_id, 1} = EctoIdentificationRepository.backfill_batch(0, 1)
     assert first_id == first.id
-    assert {:ok, second_id, 1} = EctoRequestWriter.backfill_batch(first_id, 1)
+    assert {:ok, second_id, 1} = EctoIdentificationRepository.backfill_batch(first_id, 1)
     assert second_id == second.id
-    assert {:ok, ^second_id, 0} = EctoRequestWriter.backfill_batch(second_id, 1)
-    assert {:ok, ^second_id, 0} = EctoRequestWriter.backfill_batch(0, 100)
+    assert {:ok, ^second_id, 0} = EctoIdentificationRepository.backfill_batch(second_id, 1)
+    assert {:ok, ^second_id, 0} = EctoIdentificationRepository.backfill_batch(0, 100)
     assert Repo.aggregate(MovieIdentificationSchema, :count, :id) == 2
 
     assert Repo.aggregate(
              from(j in Oban.Job,
-               where: j.worker == "Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker"
+               where:
+                 j.worker == "Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker"
              ),
              :count,
              :id
@@ -55,7 +58,7 @@ defmodule Bolognesa.Movies.RequestBackfillTest do
     file = file_fixture("missing.mp4")
     file |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
 
-    assert {:ok, _cursor, 0} = EctoRequestWriter.backfill_batch(0, 10)
+    assert {:ok, _cursor, 0} = EctoIdentificationRepository.backfill_batch(0, 10)
     assert Repo.aggregate(MovieIdentificationSchema, :count, :id) == 0
   end
 
@@ -64,11 +67,11 @@ defmodule Bolognesa.Movies.RequestBackfillTest do
     details = %MovieDetails{provider_id: 81_001, title: "Manual"}
     assert {:ok, manual} = Repository.correct(file.id, file.revision, details)
 
-    assert {:ok, _cursor, 0} = EctoRequestWriter.backfill_batch(0, 100)
+    assert {:ok, _cursor, 0} = EctoIdentificationRepository.backfill_batch(0, 100)
 
     assert {:ok, 0} =
              Repo.transaction(fn ->
-               EctoRequestWriter.request_batch!(Repo, [
+               EctoIdentificationRepository.request_batch!(Repo, [
                  %{file_id: file.id, revision: 2, requested?: true}
                ])
              end)
@@ -77,7 +80,8 @@ defmodule Bolognesa.Movies.RequestBackfillTest do
 
     assert Repo.aggregate(
              from(j in Oban.Job,
-               where: j.worker == "Bolognesa.Movies.Infrastructure.Jobs.IdentificationWorker"
+               where:
+                 j.worker == "Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker"
              ),
              :count
            ) == 0
