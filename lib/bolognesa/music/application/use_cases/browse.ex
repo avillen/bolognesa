@@ -4,6 +4,7 @@ defmodule Bolognesa.Music.Application.UseCases.Browse do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Dto.BrowsePage
   alias Bolognesa.Music.Application.Ports.Readers.BrowseReader
+  alias Bolognesa.Music.Domain.Entities.Artist
 
   @type result ::
           {:ok, BrowsePage.t()}
@@ -11,7 +12,7 @@ defmodule Bolognesa.Music.Application.UseCases.Browse do
   @spec call(
           AuthenticatedUser.t() | nil,
           BrowseReader.kind(),
-          pos_integer() | nil,
+          Artist.id() | nil,
           String.t(),
           pos_integer(),
           pos_integer() | nil,

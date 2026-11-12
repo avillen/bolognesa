@@ -13,6 +13,7 @@ defmodule Bolognesa.Movies do
   alias Bolognesa.Movies.Application.UseCases.RetryIdentification
   alias Bolognesa.Movies.Application.UseCases.SearchMovieCandidates
   alias Bolognesa.Movies.Domain.Entities.Identification
+  alias Bolognesa.Movies.Domain.ReadModels.Movie
   alias Bolognesa.Movies.Infrastructure.Providers.TmdbMovieProvider
   alias Bolognesa.Movies.Infrastructure.Readers.EctoMovieReviewReader
   alias Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader
@@ -44,7 +45,7 @@ defmodule Bolognesa.Movies do
   def list_movies(actor, query, page, library_id \\ nil),
     do: ListMovies.call(actor, query, page, EctoMoviesReader, library_id)
 
-  @spec get_movie(AuthenticatedUser.t(), pos_integer()) ::
+  @spec get_movie(AuthenticatedUser.t(), Movie.id()) ::
           {:ok, MovieDetail.t()} | {:error, reason()}
   def get_movie(actor, id), do: GetMovie.call(actor, id, EctoMoviesReader)
 

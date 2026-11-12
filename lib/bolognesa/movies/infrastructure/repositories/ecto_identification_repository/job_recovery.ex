@@ -9,7 +9,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   alias Oban.Job
 
   @spec interrupted(DecisionStore.repo(), DateTime.t()) ::
-          [{pos_integer(), Identification.token(), binary() | nil}]
+          [{pos_integer(), Identification.token(), String.t() | nil}]
   def interrupted(repo, now) do
     cutoff = DateTime.add(now, -60, :second)
 

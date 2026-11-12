@@ -17,7 +17,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
   alias Bolognesa.Repo
 
   @impl true
-  def find_video_source({:movie, id}, file_id) when is_integer(id) and id > 0 do
+  def fetch_video_source({:movie, id}, file_id) when is_integer(id) and id > 0 do
     base =
       from identification in MovieIdentificationSchema,
         where: identification.movie_id == ^id,
@@ -26,7 +26,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
     video_source(base, :movie, file_id)
   end
 
-  def find_video_source({:episode, id}, file_id) when is_integer(id) and id > 0 do
+  def fetch_video_source({:episode, id}, file_id) when is_integer(id) and id > 0 do
     base =
       from identification in SeriesIdentificationSchema,
         join: relation in SeriesIdentificationEpisodeSchema,
@@ -37,7 +37,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
     video_source(base, :series, file_id)
   end
 
-  def find_video_source(_, _), do: {:error, :not_found}
+  def fetch_video_source(_, _), do: :not_found
 
   defp video_source(base, content_type, file_id) do
     query =
@@ -60,7 +60,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  defp video_result(nil), do: {:error, :not_found}
+  defp video_result(nil), do: :not_found
   defp video_result({%{availability: :missing}, _, _}), do: {:error, :missing}
 
   defp video_result({file, path, inspection}) do
@@ -78,7 +78,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
   end
 
   @impl true
-  def find_track_source(track_id, file_id) do
+  def fetch_track_source(track_id, file_id) do
     query =
       from(track in MusicTrackSchema,
         join: file in MediaFileSchema,
@@ -112,7 +112,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  defp music_source(nil), do: {:error, :not_found}
+  defp music_source(nil), do: :not_found
   defp music_source({%{availability: :missing}, _path, _inspection}), do: {:error, :missing}
 
   defp music_source({file, path, inspection}) do
@@ -131,7 +131,7 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
          tracks: source_tracks
        }}
     else
-      {:error, :not_found}
+      :not_found
     end
   end
 

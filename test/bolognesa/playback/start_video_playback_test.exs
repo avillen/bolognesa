@@ -11,6 +11,7 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
   alias Bolognesa.Playback
   alias Bolognesa.Playback.Domain.Policies.Negotiation
   alias Bolognesa.Playback.Domain.ReadModels.Source
+  alias Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository
 
   test "authorizes only a currently linked available version" do
     actor = %AuthenticatedUser{id: 1, role: :admin}
@@ -34,6 +35,7 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
 
     assert {:error, :forbidden} = Playback.start_video(nil, {:movie, movie.id}, file.id)
     assert {:error, :not_found} = Playback.start_video(actor, {:movie, other.id}, file.id)
+    assert :not_found = EctoPlaybackRepository.fetch_video_source({:movie, other.id}, file.id)
     assert {:error, :missing} = Playback.start_video(actor, {:movie, movie.id}, missing.id)
     assert {:error, :not_found} = Playback.start_video(actor, {:movie, movie.id}, 0)
 

@@ -4,12 +4,13 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Dto.{Track, TrackPage}
   alias Bolognesa.Music.Application.Ports.Readers.TracksReader
+  alias Bolognesa.Music.Domain.Entities.Album
   @type error :: :forbidden | :invalid_query | :not_found | :unavailable | :album_too_large
   @type result :: {:ok, TrackPage.t()} | {:error, error()}
   @type queue_result :: {:ok, [Track.t()]} | {:error, error()}
   @spec call(
           AuthenticatedUser.t() | nil,
-          pos_integer(),
+          Album.id(),
           String.t(),
           pos_integer(),
           pos_integer() | nil,
@@ -24,7 +25,7 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
 
   @spec queue(
           AuthenticatedUser.t() | nil,
-          pos_integer(),
+          Album.id(),
           pos_integer() | nil,
           TracksReader.adapter()
         ) ::

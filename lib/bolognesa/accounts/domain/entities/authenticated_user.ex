@@ -8,7 +8,7 @@ defmodule Bolognesa.Accounts.Domain.Entities.AuthenticatedUser do
           id: User.id(),
           name: User.name(),
           email: User.email(),
-          role: :admin | :member,
+          role: User.role(),
           locale: Locale.t()
         }
 

@@ -5,5 +5,5 @@ defmodule Bolognesa.Libraries.Application.Ports.Repositories.LibraryRepository d
   @type adapter :: module()
   @callback insert(NewLibrary.t()) ::
               {:ok, Library.t()} | {:error, :duplicate_source | :unavailable}
-  @callback list() :: {:ok, [Library.t()]} | {:error, :unavailable}
+  @callback list_libraries() :: {:ok, [Library.t()]} | {:error, :unavailable}
 end

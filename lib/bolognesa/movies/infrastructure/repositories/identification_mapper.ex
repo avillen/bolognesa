@@ -11,7 +11,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.IdentificationMapper do
           observed_revision: pos_integer(),
           token: Identification.token(),
           needs_review: boolean(),
-          failure_reason: binary() | nil,
+          failure_reason: String.t() | nil,
           candidate_data: Identification.candidate_data(),
           job_id: pos_integer() | nil,
           started_at: DateTime.t() | nil,

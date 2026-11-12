@@ -15,7 +15,10 @@ defmodule Bolognesa.Playback.Application.UseCases.StartVideoPlayback do
          true <-
            ContentRef.valid?(content_ref) and is_integer(file_id) and
              file_id > 0 do
-      repository.find_video_source(content_ref, file_id)
+      case repository.fetch_video_source(content_ref, file_id) do
+        :not_found -> {:error, :not_found}
+        result -> result
+      end
     else
       false -> {:error, :not_found}
       error -> error

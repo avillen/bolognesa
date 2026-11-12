@@ -26,7 +26,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository 
   end
 
   @impl true
-  def list do
+  def list_libraries do
     libraries = Repo.all(from_library_query())
     {:ok, Enum.map(libraries, &LibraryMapper.to_library/1)}
   rescue

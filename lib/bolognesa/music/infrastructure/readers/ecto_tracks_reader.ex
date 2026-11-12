@@ -114,7 +114,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   defp library_scope(nil), do: :ok
 
   defp library_scope(id) do
-    case Repo.get(LibrarySchema, id) do
+    case Repo.get(LibrarySchema, id, log: false) do
       %{content_type: :music} -> :ok
       _ -> {:error, :not_found}
     end

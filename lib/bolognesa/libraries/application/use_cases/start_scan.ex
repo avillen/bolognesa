@@ -9,7 +9,7 @@ defmodule Bolognesa.Libraries.Application.UseCases.StartScan do
   alias Bolognesa.Libraries.Domain.Entities.Scan
 
   @spec call(
-          AuthenticatedUser.t(),
+          AuthenticatedUser.t() | nil,
           Library.id(),
           ScanRepository.adapter(),
           LibraryStatusNotifier.adapter(),

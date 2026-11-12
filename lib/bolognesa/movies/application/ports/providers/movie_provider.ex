@@ -14,6 +14,7 @@ defmodule Bolognesa.Movies.Application.Ports.Providers.MovieProvider do
 
   @type adapter :: atom()
 
-  @callback search(binary(), integer() | nil) :: {:ok, [MovieCandidate.t()]} | {:error, reason()}
+  @callback search(String.t(), integer() | nil) ::
+              {:ok, [MovieCandidate.t()]} | {:error, reason()}
   @callback details(pos_integer()) :: {:ok, MovieDetails.t()} | {:error, reason()}
 end

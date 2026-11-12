@@ -5,9 +5,9 @@ defmodule Bolognesa.Libraries.Application.UseCases.ListLibraries do
   alias Bolognesa.Libraries.Application.Ports.Repositories.LibraryRepository
   alias Bolognesa.Libraries.Domain.Entities.Library
 
-  @spec call(AuthenticatedUser.t(), LibraryRepository.adapter()) ::
+  @spec call(AuthenticatedUser.t() | nil, LibraryRepository.adapter()) ::
           {:ok, [Library.t()]} | {:error, :forbidden | :unavailable}
   def call(actor, repository) do
-    with :ok <- Accounts.authorize(actor, :admin), do: repository.list()
+    with :ok <- Accounts.authorize(actor, :admin), do: repository.list_libraries()
   end
 end

@@ -13,6 +13,7 @@ defmodule Bolognesa.Music do
     RetryImport
   }
 
+  alias Bolognesa.Music.Domain.Entities.{Album, Artist}
   alias Bolognesa.Music.Infrastructure.Readers.{EctoObservationsReader, EctoTracksReader}
   alias Bolognesa.Music.Infrastructure.Repositories.{EctoImportRepository, EctoMusicRepository}
   @type transaction_repository :: atom()
@@ -78,7 +79,7 @@ defmodule Bolognesa.Music do
   @spec browse(
           AuthenticatedUser.t() | nil,
           :artists | :albums,
-          pos_integer() | nil,
+          Artist.id() | nil,
           String.t(),
           pos_integer(),
           pos_integer() | nil
@@ -97,7 +98,7 @@ defmodule Bolognesa.Music do
 
   @spec list_album_tracks(
           AuthenticatedUser.t() | nil,
-          pos_integer(),
+          Album.id(),
           String.t(),
           pos_integer(),
           pos_integer() | nil
@@ -105,7 +106,7 @@ defmodule Bolognesa.Music do
   def list_album_tracks(actor, album, query, page, library),
     do: AlbumTracks.call(actor, album, query, page, library, EctoTracksReader)
 
-  @spec album_queue(AuthenticatedUser.t() | nil, pos_integer(), pos_integer() | nil) ::
+  @spec album_queue(AuthenticatedUser.t() | nil, Album.id(), pos_integer() | nil) ::
           AlbumTracks.queue_result()
   def album_queue(actor, album, library),
     do: AlbumTracks.queue(actor, album, library, EctoTracksReader)

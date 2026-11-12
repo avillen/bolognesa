@@ -10,6 +10,7 @@ defmodule Bolognesa.Libraries do
   }
 
   alias Bolognesa.Libraries.Domain.Entities.Library
+  alias Bolognesa.Libraries.Domain.Entities.MediaFile
   alias Bolognesa.Libraries.Domain.Entities.Scan
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
@@ -26,7 +27,7 @@ defmodule Bolognesa.Libraries do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
-  @spec request_inspection_refresh(AuthenticatedUser.t() | nil, pos_integer(), pos_integer()) ::
+  @spec request_inspection_refresh(AuthenticatedUser.t() | nil, MediaFile.id(), pos_integer()) ::
           Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository.refresh_result()
           | {:error, :forbidden}
   def request_inspection_refresh(actor, file_id, expected_revision),
@@ -40,7 +41,7 @@ defmodule Bolognesa.Libraries do
     end
   end
 
-  @spec create_library(AuthenticatedUser.t(), NewLibrary.attrs()) ::
+  @spec create_library(AuthenticatedUser.t() | nil, NewLibrary.attrs()) ::
           {:ok, Library.t()}
           | {:error,
              NewLibrary.error()
@@ -52,21 +53,21 @@ defmodule Bolognesa.Libraries do
   def create_library(actor, attrs),
     do: CreateLibrary.call(actor, attrs, EctoLibraryRepository, LocalFileSource)
 
-  @spec list_libraries(AuthenticatedUser.t()) ::
+  @spec list_libraries(AuthenticatedUser.t() | nil) ::
           {:ok, [Library.t()]} | {:error, :forbidden | :unavailable}
   def list_libraries(actor), do: ListLibraries.call(actor, EctoLibraryRepository)
 
-  @spec start_scan(AuthenticatedUser.t(), Library.id(), keyword()) ::
+  @spec start_scan(AuthenticatedUser.t() | nil, Library.id(), keyword()) ::
           {:ok, Scan.t()} | {:error, :forbidden | :not_found | :scan_in_progress | :unavailable}
   def start_scan(actor, library_id, opts \\ []),
     do: StartScan.call(actor, library_id, EctoScanRepository, LibraryStatusNotifications, opts)
 
-  @spec fetch_scan_status(AuthenticatedUser.t(), Library.id()) ::
+  @spec fetch_scan_status(AuthenticatedUser.t() | nil, Library.id()) ::
           {:ok, ScanStatus.t()} | {:error, :forbidden | :not_found | :unavailable}
   def fetch_scan_status(actor, library_id),
     do: FetchScanStatus.call(actor, library_id, EctoScanRepository)
 
-  @spec fetch_inspection_counts(AuthenticatedUser.t(), Library.id()) ::
+  @spec fetch_inspection_counts(AuthenticatedUser.t() | nil, Library.id()) ::
           {:ok, InspectionCounts.t()} | {:error, :forbidden | :not_found | :unavailable}
   def fetch_inspection_counts(actor, library_id),
     do: FetchInspectionCounts.call(actor, library_id, EctoInspectionRepository)

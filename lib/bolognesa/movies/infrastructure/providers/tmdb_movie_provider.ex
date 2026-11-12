@@ -8,7 +8,7 @@ defmodule Bolognesa.Movies.Infrastructure.Providers.TmdbMovieProvider do
   @impl true
   def search(query, year), do: search(query, year, [])
 
-  @spec search(binary(), integer() | nil, keyword()) ::
+  @spec search(String.t(), integer() | nil, keyword()) ::
           {:ok, [Bolognesa.Movies.Domain.ValueObjects.MovieCandidate.t()]}
           | {:error, Bolognesa.Movies.Application.Ports.Providers.MovieProvider.reason()}
   def search(query, year, opts) when is_binary(query) do

@@ -5,12 +5,12 @@ defmodule Bolognesa.Movies.Domain.ValueObjects.MovieDetails do
 
   @type t :: %__MODULE__{
           provider_id: pos_integer(),
-          title: binary(),
-          original_title: binary() | nil,
+          title: String.t(),
+          original_title: String.t() | nil,
           year: integer() | nil,
-          overview: binary() | nil,
-          poster_path: binary() | nil,
-          backdrop_path: binary() | nil
+          overview: String.t() | nil,
+          poster_path: String.t() | nil,
+          backdrop_path: String.t() | nil
         }
 
   defstruct [

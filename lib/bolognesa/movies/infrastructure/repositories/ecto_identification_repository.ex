@@ -8,8 +8,6 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Movies.Domain.Entities.Identification
   alias Bolognesa.Movies.Domain.ReadModels.FileToIdentify
-  alias Bolognesa.Movies.Domain.ValueObjects.MovieCandidate
-  alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.JobRecovery
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoRequestWriter
@@ -50,8 +48,6 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  @spec begin_identification(pos_integer(), Identification.token(), integer() | nil) ::
-          {:ok, :stale} | {:ok, FileToIdentify.t()} | {:error, :unavailable}
   @impl true
   def begin_identification(file_id, token, job_id) do
     transaction(fn ->
@@ -65,14 +61,6 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     end)
   end
 
-  @spec complete(
-          pos_integer(),
-          Identification.token(),
-          [MovieCandidate.t()],
-          MovieDetails.t() | nil,
-          boolean()
-        ) ::
-          :ok | {:ok, :stale} | {:error, :unavailable}
   @impl true
   def complete(file_id, token, candidates, details, needs_review) do
     transaction(fn ->
@@ -86,12 +74,6 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     end)
   end
 
-  @spec fail(
-          pos_integer(),
-          Identification.token(),
-          Bolognesa.Movies.Application.Ports.Repositories.IdentificationRepository.failure_reason()
-        ) ::
-          :ok | {:ok, :stale} | {:error, :unavailable}
   @impl true
   def fail(file_id, token, reason) do
     transaction(fn ->
@@ -114,8 +96,6 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     end)
   end
 
-  @spec correct(pos_integer(), pos_integer(), :unidentified | MovieDetails.t()) ::
-          {:ok, Identification.t()} | {:error, :not_found | :unavailable}
   @impl true
   def correct(file_id, expected_revision, choice) do
     transaction(fn ->
@@ -132,8 +112,6 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     end)
   end
 
-  @spec retry(pos_integer()) ::
-          {:ok, Identification.t()} | {:error, :not_found | :manual_locked | :unavailable}
   @impl true
   def retry(file_id) do
     transaction(fn ->
@@ -171,8 +149,6 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     end
   end
 
-  @spec reconcile_jobs_result(DateTime.t()) ::
-          {:ok, non_neg_integer()} | {:error, :unavailable, non_neg_integer()}
   @impl true
   def reconcile_jobs_result(now) do
     JobRecovery.interrupted(Repo, now)

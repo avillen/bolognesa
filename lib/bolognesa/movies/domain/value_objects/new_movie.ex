@@ -4,23 +4,23 @@ defmodule Bolognesa.Movies.Domain.ValueObjects.NewMovie do
   @type attrs :: %{
           required(:provider) => :tmdb,
           required(:provider_id) => pos_integer(),
-          required(:title) => binary(),
-          optional(:original_title) => binary() | nil,
+          required(:title) => String.t(),
+          optional(:original_title) => String.t() | nil,
           optional(:year) => integer() | nil,
-          optional(:overview) => binary() | nil,
-          optional(:poster_path) => binary() | nil,
-          optional(:backdrop_path) => binary() | nil
+          optional(:overview) => String.t() | nil,
+          optional(:poster_path) => String.t() | nil,
+          optional(:backdrop_path) => String.t() | nil
         }
 
   @type t :: %__MODULE__{
           provider: :tmdb,
           provider_id: pos_integer(),
-          title: binary(),
-          original_title: binary() | nil,
+          title: String.t(),
+          original_title: String.t() | nil,
           year: integer() | nil,
-          overview: binary() | nil,
-          poster_path: binary() | nil,
-          backdrop_path: binary() | nil
+          overview: String.t() | nil,
+          poster_path: String.t() | nil,
+          backdrop_path: String.t() | nil
         }
 
   defstruct [

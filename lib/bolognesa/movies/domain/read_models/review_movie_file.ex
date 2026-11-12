@@ -4,7 +4,7 @@ defmodule Bolognesa.Movies.Domain.ReadModels.ReviewMovieFile do
   @type availability :: :available | :missing
   @type t :: %__MODULE__{
           id: pos_integer(),
-          relative_path: binary(),
+          relative_path: String.t(),
           availability: availability()
         }
 

@@ -63,7 +63,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository do
   defp current?(_file, nil, _observation), do: false
 
   defp current?(file, inspection, observation) do
-    library = Repo.get!(LibrarySchema, file.library_id)
+    library = Repo.get!(LibrarySchema, file.library_id, log: false)
 
     library.content_type == :music and file.availability == :available and
       file.revision == observation.revision and file.library_id == observation.library_id and

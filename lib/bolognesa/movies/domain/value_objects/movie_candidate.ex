@@ -3,10 +3,10 @@ defmodule Bolognesa.Movies.Domain.ValueObjects.MovieCandidate do
 
   @type t :: %__MODULE__{
           provider_id: pos_integer(),
-          title: binary(),
-          original_title: binary() | nil,
+          title: String.t(),
+          original_title: String.t() | nil,
           year: integer() | nil,
-          poster_path: binary() | nil
+          poster_path: String.t() | nil
         }
 
   defstruct [:provider_id, :title, :original_title, :year, :poster_path]
@@ -30,7 +30,7 @@ defmodule Bolognesa.Movies.Domain.ValueObjects.MovieCandidate do
 
   def new(_attrs), do: {:error, :invalid_candidate}
 
-  @spec image_path(binary() | nil) :: binary() | nil
+  @spec image_path(String.t() | nil) :: String.t() | nil
   def image_path(path) when is_binary(path) do
     if byte_size(path) <= 200 and Regex.match?(~r{^/[A-Za-z0-9._/-]+$}, path) and
          not String.contains?(path, ["..", "//"]),

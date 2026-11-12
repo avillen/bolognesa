@@ -7,12 +7,13 @@ defmodule Bolognesa.Music.Application.Ports.Readers.BrowseReader do
   nil without activity and does not indicate album completion. Artist items have
   no activity date. Aggregation is independent of browsing filters and pagination.
   """
+  alias Bolognesa.Music.Domain.Entities.Artist
   alias Bolognesa.Music.Domain.ReadModels.{BrowsePage, RecentAlbum}
   @type adapter :: atom()
   @type kind :: :artists | :albums
   @callback browse(
               kind(),
-              artist_id :: pos_integer() | nil,
+              Artist.id() | nil,
               String.t(),
               pos_integer(),
               library_id :: pos_integer() | nil,

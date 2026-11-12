@@ -8,7 +8,7 @@ defmodule Bolognesa.Movies.Domain.Entities.Identification do
   @type result :: %{
           candidate_data: candidate_data(),
           needs_review?: boolean(),
-          failure_reason: binary() | nil
+          failure_reason: String.t() | nil
         }
   @type t :: %__MODULE__{
           media_file_id: pos_integer(),
@@ -18,7 +18,7 @@ defmodule Bolognesa.Movies.Domain.Entities.Identification do
           observed_revision: pos_integer(),
           token: token(),
           needs_review?: boolean(),
-          failure_reason: binary() | nil,
+          failure_reason: String.t() | nil,
           candidate_data: candidate_data(),
           job_id: pos_integer() | nil,
           started_at: DateTime.t() | nil,
@@ -114,7 +114,7 @@ defmodule Bolognesa.Movies.Domain.Entities.Identification do
 
   def complete(_decision, _ids, _result, _now), do: {:error, :invalid_transition}
 
-  @spec fail(t(), binary(), DateTime.t()) :: {:ok, t()} | {:error, :invalid_transition}
+  @spec fail(t(), String.t(), DateTime.t()) :: {:ok, t()} | {:error, :invalid_transition}
   def fail(%__MODULE__{state: :pending, origin: origin} = decision, reason, %DateTime{} = now)
       when origin != :manual and is_binary(reason) and byte_size(reason) > 0 do
     {:ok,

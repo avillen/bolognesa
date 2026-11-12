@@ -14,7 +14,10 @@ defmodule Bolognesa.Playback.Application.UseCases.StartTrackPlayback do
          true <-
            is_integer(track_id) and track_id > 0 and is_integer(file_id) and
              file_id > 0 do
-      repository.find_track_source(track_id, file_id)
+      case repository.fetch_track_source(track_id, file_id) do
+        :not_found -> {:error, :not_found}
+        result -> result
+      end
     else
       false -> {:error, :not_found}
       error -> error

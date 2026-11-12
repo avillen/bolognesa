@@ -8,7 +8,7 @@ defmodule Bolognesa.Libraries.Application.UseCases.CreateLibrary do
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewLibrary
 
   @spec call(
-          AuthenticatedUser.t(),
+          AuthenticatedUser.t() | nil,
           NewLibrary.attrs(),
           LibraryRepository.adapter(),
           FileSource.adapter()
