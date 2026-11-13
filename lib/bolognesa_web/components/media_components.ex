@@ -8,7 +8,12 @@ defmodule BolognesaWeb.MediaComponents do
   @spec synopsis(map()) :: Phoenix.LiveView.Rendered.t()
   def synopsis(assigns) do
     ~H"""
-    <details id={@id} class="media-expandable-synopsis" phx-mounted={JS.ignore_attributes("open")}>
+    <details
+      id={@id}
+      class="media-expandable-synopsis"
+      phx-hook="ExpandableSynopsis"
+      phx-mounted={JS.ignore_attributes("open")}
+    >
       <summary>
         <span class="media-expandable-synopsis-text">{@text}</span>
         <span class="media-read-more">{gettext("Leer más")}</span>

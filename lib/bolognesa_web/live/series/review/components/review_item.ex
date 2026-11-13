@@ -12,14 +12,12 @@ defmodule BolognesaWeb.Series.Review.Components.ReviewItem do
     ~H"""
     <article
       id={@id}
-      class="rounded-2xl border border-border bg-surface p-4"
+      class="rounded-xl border border-border bg-surface p-4"
     >
       <p class="font-semibold break-all">{@item.filename}</p>
       <p>{state_label(@item.state)} · {failure_label(@item.failure_reason)}</p>
       <p :if={@item.episode_numbers != []}>
-        {@item.series_title} {gettext("· temporada")} {@item.season_number} {gettext(
-          "· episodios"
-        )} {Enum.join(
+        {@item.series_title} {gettext("· temporada")} {@item.season_number} {gettext("· episodios")} {Enum.join(
           @item.episode_numbers,
           ", "
         )}
@@ -28,14 +26,14 @@ defmodule BolognesaWeb.Series.Review.Components.ReviewItem do
       <.link
         :if={!@saving?}
         patch={~p"/series/review?page=#{@page}&file_id=#{@item.file_id}"}
-        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 border border-border-strong text-accent-soft"
+        class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
         aria-disabled={@saving?}
       >{gettext("Corregir")}</.link>
       <button
         phx-click="retry"
         phx-value-file_id={@item.file_id}
         disabled={@saving?}
-        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 text-accent-soft hover:bg-raised"
+        class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
       >{gettext("Reintentar identificación")}</button>
     </article>
     """

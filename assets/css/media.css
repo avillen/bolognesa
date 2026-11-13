@@ -58,3 +58,9 @@
 .media-read-more, .media-read-less { display: block; margin-top: 6px; color: var(--color-accent-soft); font-size: 12px; }
 .media-read-less, .media-expandable-synopsis[open] .media-read-more { display: none; }
 .media-expandable-synopsis[open] .media-read-less { display: block; }
+
+.media-expandable-synopsis[data-expandable="false"] summary { cursor: default; }
+.media-expandable-synopsis[data-expandable="false"] .media-read-more,
+.media-expandable-synopsis[data-expandable="false"] .media-read-less { display: none; }
+.media-expandable-synopsis summary:hover .media-read-more,
+.media-expandable-synopsis summary:hover .media-read-less { color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; }

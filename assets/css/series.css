@@ -14,7 +14,7 @@
 .series-episode-number { position: absolute; bottom: 5px; left: 5px; padding: 1px 5px; border-radius: 4px; background: var(--color-canvas); color: var(--color-ink); font-size: 10px; font-variant-numeric: tabular-nums; }
 .series-episode-copy { min-width: 0; overflow-wrap: anywhere; }
 .series-episode-copy h2 { font-size: 14px; }
-.series-episode-overview { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; margin-top: 5px; color: var(--color-muted); font-size: 11px; line-height: 1.65; }
+.series-episode-overview { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; margin-top: 5px; color: var(--color-muted); font-size: 13px; line-height: 1.5; }
 .series-episode-play { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; width: fit-content; max-width: 100%; padding: 9px 12px; border: 1px solid #e4775540; border-radius: 7px; background: #e4775519; color: var(--color-accent-soft); font-size: 12px; font-weight: 600; }
 .series-episode-card > .series-episode-play { grid-column: 2; margin-top: 10px; }
 .series-breadcrumbs { display: none; }
@@ -76,3 +76,10 @@
 .episode-navigation a { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
 .episode-navigation #episode-next { margin-left: auto; color: var(--color-accent-soft); }
 .episode-navigation a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+/* Size catalog columns from the available content width, including the sidebar. */
+.series-catalog { container-type: inline-size; }
+.series-catalog .media-poster-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, clamp(130px, 25cqi, 180px)), 1fr)); }
+.series-episode-play:hover { border-color: var(--color-accent-soft); background: var(--color-raised); color: var(--color-ink); }
+.series-options-toggle:hover, .series-library-options[open] > .series-options-toggle { border-color: var(--color-border-strong); background: var(--color-raised); color: var(--color-accent-soft); }
+.series-breadcrumbs a:hover { color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; }

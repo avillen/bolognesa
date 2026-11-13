@@ -6,19 +6,19 @@
   current_scope={@current_scope}
   active_section={:series}
 >
-  <div class="mx-auto max-w-5xl space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <h1 class="text-3xl font-bold">{gettext("Revisión de series")}</h1>
+  <div class="series-screen mx-auto max-w-6xl space-y-6">
+    <div class="media-catalog-heading">
+      <h1 class="text-4xl font-semibold text-ink">{gettext("Revisión de series")}</h1>
       <.link
         navigate={~p"/series"}
-        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 text-accent-soft hover:bg-raised"
+        class="media-back-link"
       >{gettext("Volver a series")}</.link>
     </div>
     <p :if={@loading?} role="status">{gettext("Cargando archivos…")}</p>
     <div :if={@error} role="alert" class="rounded-xl border border-red-300/30 p-4 text-red-200">
       {@error}<.link
         patch={~p"/series/review?page=#{@page}&file_id=#{@selected_file_id}"}
-        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 border border-border-strong text-accent-soft"
+        class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
       >{gettext("Reintentar")}</.link>
     </div>
     <p :if={!@loading? && @total == 0}>{gettext("No hay archivos pendientes de revisión.")}</p>
@@ -73,7 +73,7 @@
           disabled={@saving?}
         />
         <button
-          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 bg-accent text-canvas hover:bg-accent-hover"
+          class="media-primary-action disabled:cursor-wait disabled:opacity-50"
           disabled={@saving? || @searching?}
         >{gettext("Buscar")}</button>
       </.form>
@@ -85,7 +85,7 @@
           phx-click="choose"
           phx-value-id={candidate.provider_id}
           disabled={@saving?}
-          class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 border border-border-strong text-accent-soft hover:border-accent"
+          class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
         >{candidate.title} {candidate.year}</button>
       </div>
       <div :if={@series_id} class="space-y-4">
@@ -104,7 +104,7 @@
             disabled={@saving?}
           />
           <button
-            class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 border border-border-strong text-accent-soft"
+            class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
             disabled={@saving? || @season_loading?}
           >{gettext("Cargar episodios")}</button>
         </.form>
@@ -133,7 +133,7 @@
             </label>
           </div>
           <button
-            class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 bg-accent text-canvas hover:bg-accent-hover"
+            class="media-primary-action disabled:cursor-wait disabled:opacity-50"
             disabled={@saving? || @season_number == nil || @episode_numbers == []}
           >{if @saving?, do: gettext("Guardando…"), else: gettext("Guardar selección completa")}</button>
         </.form>
@@ -141,7 +141,7 @@
       <button
         phx-click="unidentified"
         disabled={@saving?}
-        class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 text-accent-soft hover:bg-raised"
+        class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
       >{gettext("Marcar sin identificar")}</button>
     </section>
     <p

@@ -12,6 +12,7 @@ import topbar from "../vendor/topbar.js"
 import ImageFallback from "./shared/hooks/image_fallback.js"
 import VideoPlayer from "./video/hooks/video_player.js"
 import NavigationMenu from "./shared/hooks/navigation_menu.js"
+import ExpandableSynopsis from "./shared/hooks/expandable_synopsis.js"
 import BrowsePosition from "./shared/hooks/browse_position.js"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
@@ -19,7 +20,7 @@ window.bolognesaRuntime = initializeBrowserRuntime(document, {transport: createM
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {AudioPlayer, ...colocatedHooks, ImageFallback, VideoPlayer, NavigationMenu, BrowsePosition},
+  hooks: {AudioPlayer, ...colocatedHooks, ImageFallback, VideoPlayer, NavigationMenu, BrowsePosition, ExpandableSynopsis},
 })
 
 connectTransportDiagnostics(liveSocket.getSocket())
