@@ -1,6 +1,15 @@
 defmodule BolognesaWeb.Music.Index.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
+
+  alias BolognesaWeb.Music.Index.Components.{
+    BrowseCard,
+    BrowseControls,
+    DetailHeading,
+    Home,
+    TrackRow
+  }
+
   alias BolognesaWeb.Music.Index.Forms.Filters
 
   alias BolognesaWeb.Music.Index.Reducer.{

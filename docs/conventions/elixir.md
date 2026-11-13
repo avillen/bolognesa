@@ -37,6 +37,7 @@ Always write the struct body in `@type t` across multiple lines, with one field 
 
 ## Control flow and language rules
 
+- Alias nested module names at the top of the module and use the alias in code, including calls, structs, and typespecs. Use an explicit `as:` name when short names collide or need context; module declarations and alias directives retain their full names. See [frontend conventions](frontend.md#templates-components-and-browser-code) for HEEx components.
 - Prefer pattern-matched clauses, guards, and `with` for clear success/error flow. Keep branching shallow; extract a named helper when it clarifies a decision, rather than forbidding all nesting.
 - Keep the expected path visible. Separate validation, errors, and side effects when a branch or anonymous function hides the flow.
 - Bind the result of block expressions when it is needed afterward; rebinding a variable inside an `if` or `case` branch does not update the outer binding.

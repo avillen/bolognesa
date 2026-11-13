@@ -50,6 +50,10 @@ Put presentation-only models and changesets in `forms/`, using embedded schemas 
 
 The screen template lives beside its LiveView. Function components receive attributes and emit events; they do not query the backend. Use LiveComponents only when their own state or lifecycle is needed. Keep components within the screen until real reuse justifies a shared location.
 
+Extract coherent parts of a screen into function components when a named interface makes their responsibility easier to understand or change. Group closely related components in a screen-local module; use private function components for parts used only by their owning component. Do not extract solely to meet a line count or assume every component needs its own file.
+
+Alias screen component modules in the LiveView and use the aliases in its HEEx template, for example `<MovieCard.card ... />`. Keep the component's explicit attributes and the rendered DOM contracts intact when extracting it, including stream child IDs and selectors used by hooks or browser code. Follow the [Phoenix stream and hook rules](phoenix.md#liveview-and-hooks) and verify affected interactions.
+
 LiveView templates start with `<Layouts.app flash={@flash} ...>`. Follow [Phoenix conventions](phoenix.md) for HEEx, hooks, forms, and accessible interactions.
 
 The browser owns immediate player state such as position, volume, and fullscreen. The server owns authorization and durable business state.
