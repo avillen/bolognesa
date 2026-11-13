@@ -1,4 +1,6 @@
 defmodule Bolognesa.Infrastructure.OperationalEventsTest do
+  alias BolognesaWeb.Telemetry, as: BolognesaWebTelemetry
+  alias ExUnit.CaptureLog
   use ExUnit.Case, async: false
 
   import ExUnit.CaptureLog
@@ -79,7 +81,7 @@ defmodule Bolognesa.Infrastructure.OperationalEventsTest do
 
   test "catalogue metrics never tag diagnostic identifiers" do
     events = Events.events()
-    metrics = BolognesaWeb.Telemetry.metrics()
+    metrics = BolognesaWebTelemetry.metrics()
 
     for event <- events do
       assert Enum.any?(metrics, &(&1.event_name == event and &1.measurement == :count))

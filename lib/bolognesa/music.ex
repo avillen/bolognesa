@@ -2,20 +2,21 @@ defmodule Bolognesa.Music do
   @moduledoc "Local music identities, import and authorized listening reads."
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
 
-  alias Bolognesa.Music.Application.UseCases.{
-    AlbumTracks,
-    Browse,
-    FetchTrack,
-    ListRecentAlbums,
-    ListTracks,
-    RecordListening,
-    RefreshTrack,
-    RetryImport
-  }
+  alias Bolognesa.Music.Application.UseCases.AlbumTracks
+  alias Bolognesa.Music.Application.UseCases.Browse
+  alias Bolognesa.Music.Application.UseCases.FetchTrack
+  alias Bolognesa.Music.Application.UseCases.ListRecentAlbums
+  alias Bolognesa.Music.Application.UseCases.ListTracks
+  alias Bolognesa.Music.Application.UseCases.RecordListening
+  alias Bolognesa.Music.Application.UseCases.RefreshTrack
+  alias Bolognesa.Music.Application.UseCases.RetryImport
 
-  alias Bolognesa.Music.Domain.Entities.{Album, Artist}
-  alias Bolognesa.Music.Infrastructure.Readers.{EctoObservationsReader, EctoTracksReader}
-  alias Bolognesa.Music.Infrastructure.Repositories.{EctoImportRepository, EctoMusicRepository}
+  alias Bolognesa.Music.Domain.Entities.Album
+  alias Bolognesa.Music.Domain.Entities.Artist
+  alias Bolognesa.Music.Infrastructure.Readers.EctoObservationsReader
+  alias Bolognesa.Music.Infrastructure.Readers.EctoTracksReader
+  alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository
+  alias Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository
   @type transaction_repository :: atom()
   @type import_request :: %{
           required(:file_id) => pos_integer(),

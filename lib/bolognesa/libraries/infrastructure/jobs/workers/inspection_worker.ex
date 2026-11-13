@@ -7,7 +7,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker do
   alias Bolognesa.Infrastructure.Observability.Events
 
   alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
-  alias Bolognesa.Libraries.Application.Ports.Services.{LibraryStatusNotifier, MediaProbe}
+  alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
+  alias Bolognesa.Libraries.Application.Ports.Services.MediaProbe
   alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe

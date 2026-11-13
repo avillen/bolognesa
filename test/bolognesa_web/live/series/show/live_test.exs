@@ -1,4 +1,8 @@
 defmodule BolognesaWeb.Series.Show.LiveTest do
+  alias Bolognesa.Repo
+  alias Ecto.Changeset
+  alias Phoenix.ConnTest
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
   alias BolognesaWeb.SeriesFixtures
@@ -22,7 +26,7 @@ defmodule BolognesaWeb.Series.Show.LiveTest do
   end
 
   test "rejects anonymous visitors", %{conn: _conn} do
-    assert {:error, {:redirect, %{to: "/login"}}} = live(Phoenix.ConnTest.build_conn(), "/series")
+    assert {:error, {:redirect, %{to: "/login"}}} = live(ConnTest.build_conn(), "/series")
   end
 
   test "malformed page input does not crash the view", ctx do
@@ -31,9 +35,9 @@ defmodule BolognesaWeb.Series.Show.LiveTest do
   end
 
   test "a long synopsis starts collapsed below the hero", ctx do
-    Bolognesa.Repo.get!(Bolognesa.Infrastructure.Persistence.SeriesSchema, ctx.series_id)
-    |> Ecto.Changeset.change(overview: String.duplicate("Series overview. ", 30))
-    |> Bolognesa.Repo.update!()
+    Repo.get!(Bolognesa.Infrastructure.Persistence.SeriesSchema, ctx.series_id)
+    |> Changeset.change(overview: String.duplicate("Series overview. ", 30))
+    |> Repo.update!()
 
     {:ok, view, _} = live(ctx.conn, "/series/#{ctx.series_id}")
     render_async(view)

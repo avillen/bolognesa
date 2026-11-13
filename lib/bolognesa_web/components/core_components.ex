@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.CoreComponents do
+  alias Phoenix.Component
+
   @moduledoc """
   Provides core UI components.
 
@@ -17,7 +19,7 @@ defmodule BolognesaWeb.CoreComponents do
 
     * [Heroicons](https://heroicons.com) - see `icon/1` for usage.
 
-    * [Phoenix.Component](https://phoenix-live-view.hexdocs.pm/Phoenix.Component.html) -
+    * [Component](https://phoenix-live-view.hexdocs.pm/Component.html) -
       the component system used by Phoenix. Some components, such as `<.link>`
       and `<.form>`, are defined there.
 
@@ -148,7 +150,7 @@ defmodule BolognesaWeb.CoreComponents do
 
     * `type="checkbox"` is used exclusively to render boolean values
 
-    * For live file uploads, see `Phoenix.Component.live_file_input/1`
+    * For live file uploads, see `Component.live_file_input/1`
 
   See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
   for more information. Unsupported types, such as radio, are best
@@ -200,7 +202,7 @@ defmodule BolognesaWeb.CoreComponents do
 
   @spec input(map()) :: Phoenix.LiveView.Rendered.t()
   def input(%{field: %FormField{} = field} = assigns) do
-    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
+    errors = if Component.used_input?(field), do: field.errors, else: []
 
     assigns
     |> assign(field: nil, id: assigns.id || field.id)

@@ -1,4 +1,5 @@
 defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository do
+  alias Bolognesa.Music
   @moduledoc false
   @behaviour Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
 
@@ -203,7 +204,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
 
   defp refresh_music(file, inspection) do
     if Repo.get!(LibrarySchema, file.library_id).content_type == :music do
-      Bolognesa.Music.request_import_in_transaction!(Repo, %{
+      Music.request_import_in_transaction!(Repo, %{
         file_id: file.id,
         revision: file.revision,
         inspection_token: inspection.token

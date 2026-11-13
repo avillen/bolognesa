@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.Login.Forms.Login do
+  alias Ecto.Changeset
+
   @moduledoc "Input model for the browser login form."
   use Ecto.Schema
   import Ecto.Changeset
@@ -9,7 +11,7 @@ defmodule BolognesaWeb.Login.Forms.Login do
     field :password, :string, virtual: true, redact: true
   end
 
-  @spec changeset() :: Ecto.Changeset.t()
+  @spec changeset() :: Changeset.t()
   def changeset do
     %__MODULE__{}
     |> change()

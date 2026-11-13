@@ -13,6 +13,7 @@ defmodule Bolognesa.Series.IdentifySeriesFileTest do
   alias Bolognesa.Test.SyntheticSeriesProvider, as: Provider
   alias Ecto.Adapters.SQL
   alias Ecto.Adapters.SQL.Sandbox
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: false
 
   setup do
@@ -177,7 +178,7 @@ defmodule Bolognesa.Series.IdentifySeriesFileTest do
     library =
       Repo.insert!(%LibrarySchema{
         name: "Series",
-        path: "/synthetic/#{Ecto.UUID.generate()}",
+        path: "/synthetic/#{UUID.generate()}",
         content_type: :series
       })
 
@@ -189,10 +190,10 @@ defmodule Bolognesa.Series.IdentifySeriesFileTest do
         modified_at: DateTime.utc_now(),
         availability: :available,
         revision: 1,
-        last_seen_generation: Ecto.UUID.generate()
+        last_seen_generation: UUID.generate()
       })
 
-    token = Ecto.UUID.generate()
+    token = UUID.generate()
 
     Repo.insert!(%SeriesIdentificationSchema{
       media_file_id: file.id,

@@ -1,4 +1,6 @@
 defmodule Bolognesa.Infrastructure.PromExTest do
+  alias BolognesaWeb.Endpoint
+  alias ExUnit.CaptureLog
   use ExUnit.Case, async: false
 
   import Plug.Conn
@@ -30,7 +32,7 @@ defmodule Bolognesa.Infrastructure.PromExTest do
     assert Application.fetch_env!(:bolognesa, Metrics)[:disabled]
     assert Metrics.start_link([]) == :ignore
 
-    conn = BolognesaWeb.Endpoint.call(conn(:get, "/metrics"), [])
+    conn = Endpoint.call(conn(:get, "/metrics"), [])
     assert conn.status == 404
     refute conn.resp_body =~ "# TYPE"
   end
@@ -41,7 +43,7 @@ defmodule Bolognesa.Infrastructure.PromExTest do
     for headers <- [[], ["Bearer wrong"], ["Bearer " <> @token, "Bearer " <> @token]] do
       conn = conn(:get, "/metrics")
       conn = %{conn | req_headers: Enum.map(headers, &{"authorization", &1})}
-      response = BolognesaWeb.Endpoint.call(conn, [])
+      response = Endpoint.call(conn, [])
       assert response.status == 401
       refute response.resp_body =~ "# TYPE"
     end
@@ -78,7 +80,7 @@ defmodule Bolognesa.Infrastructure.PromExTest do
     response =
       conn(:get, "/metrics")
       |> put_req_header("authorization", "Bearer " <> @token)
-      |> BolognesaWeb.Endpoint.call([])
+      |> Endpoint.call([])
 
     assert response.status == 200
     assert response.resp_body =~ "bolognesa_libraries_scan_completed_count"
@@ -148,7 +150,7 @@ defmodule Bolognesa.Infrastructure.PromExTest do
   test "playback diagnostics distinguish buffer waits and failed FFmpeg exits with bounded labels" do
     enable_metrics()
 
-    ExUnit.CaptureLog.capture_log(fn ->
+    CaptureLog.capture_log(fn ->
       for diagnostic <- [:waiting, :recovered, :error, "private-diagnostic"] do
         :telemetry.execute([:bolognesa, :playback, :browser, :diagnostic], %{count: 1}, %{
           diagnostic: diagnostic,
@@ -177,7 +179,7 @@ defmodule Bolognesa.Infrastructure.PromExTest do
   test "preparation exports stage timing and optional progress without inventing missing samples" do
     enable_metrics()
 
-    ExUnit.CaptureLog.capture_log(fn ->
+    CaptureLog.capture_log(fn ->
       :telemetry.execute(
         [:bolognesa, :playback, :session, :started],
         %{count: 1, prelaunch_ms: 12, spawn_ms: 3},

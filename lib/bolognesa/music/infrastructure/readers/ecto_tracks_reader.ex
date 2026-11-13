@@ -2,17 +2,20 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   @moduledoc false
   @behaviour Bolognesa.Music.Application.Ports.Readers.TracksReader
   import Ecto.Query
-  alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, LibrarySchema, MediaFileSchema}
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
 
-  alias Bolognesa.Infrastructure.Persistence.{
-    MusicAlbumSchema,
-    MusicArtistSchema,
-    MusicImportSchema,
-    MusicTrackSchema
-  }
+  alias Bolognesa.Infrastructure.Persistence.MusicAlbumSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicArtistSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicImportSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicTrackSchema
 
-  alias Bolognesa.Music.Domain.ReadModels.{TrackPage, TrackRow}
-  alias Bolognesa.Music.Domain.ValueObjects.{CatalogMetadata, FileTags, Observation}
+  alias Bolognesa.Music.Domain.ReadModels.TrackPage
+  alias Bolognesa.Music.Domain.ReadModels.TrackRow
+  alias Bolognesa.Music.Domain.ValueObjects.CatalogMetadata
+  alias Bolognesa.Music.Domain.ValueObjects.FileTags
+  alias Bolognesa.Music.Domain.ValueObjects.Observation
   alias Bolognesa.Repo
   @impl true
   def fetch_track(track_id) do

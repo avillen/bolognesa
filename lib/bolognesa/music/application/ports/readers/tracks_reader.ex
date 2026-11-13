@@ -1,6 +1,7 @@
 defmodule Bolognesa.Music.Application.Ports.Readers.TracksReader do
   @moduledoc "Bounded, library-scoped local music reads."
-  alias Bolognesa.Music.Domain.Entities.{Album, Track}
+  alias Bolognesa.Music.Domain.Entities.Album
+  alias Bolognesa.Music.Domain.Entities.Track
   alias Bolognesa.Music.Domain.ReadModels.TrackPage
   @type adapter :: atom()
   @callback fetch_track(Track.id()) ::

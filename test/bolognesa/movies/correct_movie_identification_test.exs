@@ -1,4 +1,6 @@
 defmodule Bolognesa.Movies.CorrectIdentificationTest do
+  alias Ecto.Changeset
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
@@ -73,7 +75,7 @@ defmodule Bolognesa.Movies.CorrectIdentificationTest do
     assert {:ok, %{movie_id: ^id}} = Repository.correct(first.id, first.revision, details)
     assert {:ok, %{movie_id: ^id}} = Repository.correct(second.id, second.revision, details)
 
-    second |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+    second |> Changeset.change(availability: :missing) |> Repo.update!()
     assert {:ok, _} = Repository.correct(first.id, first.revision, :unidentified)
     assert Repo.get(MovieSchema, id)
     assert Repo.get(MovieSchema, id)
@@ -95,7 +97,7 @@ defmodule Bolognesa.Movies.CorrectIdentificationTest do
           relative_path: "movie.mkv",
           size_bytes: 1,
           modified_at: DateTime.utc_now(),
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
@@ -103,7 +105,7 @@ defmodule Bolognesa.Movies.CorrectIdentificationTest do
       MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{
         media_file_id: file.id,
         observed_revision: 1,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         state: :pending
       })
     )

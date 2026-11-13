@@ -2,14 +2,14 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository do
   @moduledoc false
   @behaviour Bolognesa.Music.Application.Ports.Repositories.MusicRepository
   import Ecto.Query
-  alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, LibrarySchema, MediaFileSchema}
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
 
-  alias Bolognesa.Infrastructure.Persistence.{
-    MusicAlbumSchema,
-    MusicArtistSchema,
-    MusicImportSchema,
-    MusicTrackSchema
-  }
+  alias Bolognesa.Infrastructure.Persistence.MusicAlbumSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicArtistSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicImportSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicTrackSchema
 
   alias Bolognesa.Music.Domain.Policies.Grouping
   alias Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository.MusicMapper

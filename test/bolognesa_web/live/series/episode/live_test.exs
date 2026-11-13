@@ -1,4 +1,9 @@
 defmodule BolognesaWeb.Series.Episode.LiveTest do
+  alias Bolognesa.Playback, as: PlaybackContext
+  alias Bolognesa.Repo
+  alias Ecto.Changeset
+  alias Phoenix.ConnTest
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
@@ -140,7 +145,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     render_async(view)
     if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert_patch(view, "/episodes/#{ctx.episode_id}?part=2")
-    assert :not_found = Bolognesa.Playback.video_transcode_status(session)
+    assert :not_found = PlaybackContext.video_transcode_status(session)
   end
 
   test "a playback error keeps the player mounted for retry", ctx do
@@ -189,7 +194,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
     assert has_element?(view, "#episode-error")
     refute has_element?(view, "#episode-title")
-    assert :not_found = Bolognesa.Playback.video_transcode_status(session)
+    assert :not_found = PlaybackContext.video_transcode_status(session)
     render_patch(view, "/episodes/0?part=1")
     assert has_element?(view, "#episode-error")
     refute has_element?(view, "#episode-video-frame")
@@ -198,9 +203,9 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
   test "compact heading and localized air date below the synopsis", ctx do
     alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
 
-    Bolognesa.Repo.get!(EpisodeSchema, ctx.episode_id)
-    |> Ecto.Changeset.change(air_date: ~D[2008-01-20])
-    |> Bolognesa.Repo.update!()
+    Repo.get!(EpisodeSchema, ctx.episode_id)
+    |> Changeset.change(air_date: ~D[2008-01-20])
+    |> Repo.update!()
 
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
@@ -225,10 +230,10 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     other = Bolognesa.SeriesFixtures.file(ctx.library.id, "other-season.mp4")
     Bolognesa.SeriesFixtures.identify(other, 1, [1])
 
-    Bolognesa.Repo.get_by!(Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema,
+    Repo.get_by!(Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema,
       episode_id: last
     )
-    |> Bolognesa.Repo.delete!()
+    |> Repo.delete!()
 
     {:ok, view, _} = live(ctx.conn, "/episodes/#{first}?season_page=3")
     render_async(view)
@@ -265,7 +270,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     assert response(conn, 404) == ""
 
     conn =
-      get(Phoenix.ConnTest.build_conn(), "/episodes/#{ctx.episode_id}/media/#{ctx.media_file.id}")
+      get(ConnTest.build_conn(), "/episodes/#{ctx.episode_id}/media/#{ctx.media_file.id}")
 
     assert response(conn, 401) == ""
   end
@@ -471,7 +476,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
              "#episode-video-frame[data-src='/episodes/#{next}/media/#{next_file.id}']"
            )
 
-    assert :not_found = Bolognesa.Playback.video_transcode_status(session)
+    assert :not_found = PlaybackContext.video_transcode_status(session)
   end
 
   test "stale completion and the final episode do not navigate", ctx do
@@ -532,7 +537,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
       |> Map.put(:relative_path, name)
       |> Map.put(:modified_at, DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond))
       |> then(&struct!(Bolognesa.Infrastructure.Persistence.MediaFileSchema, &1))
-      |> Bolognesa.Repo.insert!()
+      |> Repo.insert!()
 
     Bolognesa.SeriesFixtures.identify(file, 0, [1, 2])
     inspect!(file)
@@ -552,10 +557,8 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     file = Bolognesa.SeriesFixtures.file(ctx.library.id, name)
 
     file
-    |> Ecto.Changeset.change(
-      modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond)
-    )
-    |> Bolognesa.Repo.update!()
+    |> Changeset.change(modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond))
+    |> Repo.update!()
     |> then(fn file ->
       inspect!(file)
       file
@@ -564,8 +567,8 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
 
   defp mark_unavailable(file) do
     file
-    |> Ecto.Changeset.change(availability: :missing)
-    |> Bolognesa.Repo.update!()
+    |> Changeset.change(availability: :missing)
+    |> Repo.update!()
   end
 
   defp playback_attempt(view) do

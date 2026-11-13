@@ -1,4 +1,7 @@
 defmodule BolognesaWeb.MusicPlaybackControllerTest do
+  alias Bolognesa.Music, as: BolognesaMusic
+  alias Bolognesa.MusicFixtures
+  alias Bolognesa.Repo
   use BolognesaWeb.ConnCase, async: false
   import Bolognesa.MusicFixtures
   alias Bolognesa.Accounts
@@ -96,15 +99,15 @@ defmodule BolognesaWeb.MusicPlaybackControllerTest do
     end
 
     assert %{rows: [[played_at]]} =
-             Bolognesa.Repo.query!(
+             Repo.query!(
                "SELECT last_played_at FROM music_listening_activity WHERE track_id = $1",
                [fixture.track.id]
              )
 
-    assert :ok = Bolognesa.Music.refresh_track(fixture.file.id, fixture.file.revision)
+    assert :ok = BolognesaMusic.refresh_track(fixture.file.id, fixture.file.revision)
 
     assert %{rows: [[^played_at]]} =
-             Bolognesa.Repo.query!(
+             Repo.query!(
                "SELECT last_played_at FROM music_listening_activity WHERE track_id = $1",
                [fixture.track.id]
              )
@@ -133,7 +136,7 @@ defmodule BolognesaWeb.MusicPlaybackControllerTest do
            }).status == 200
 
     %{rows: [[other_id]]} =
-      Bolognesa.Repo.query!("""
+      Repo.query!("""
       INSERT INTO accounts_users (name, email, role, hashed_password, locale, inserted_at, updated_at)
       VALUES ('Other', 'other@example.com', 'member', 'unused', 'en', now(), now()) RETURNING id
       """)
@@ -151,7 +154,7 @@ defmodule BolognesaWeb.MusicPlaybackControllerTest do
              )
 
     assert %{rows: [[2]]} =
-             Bolognesa.Repo.query!(
+             Repo.query!(
                "SELECT count(*) FROM music_listening_activity WHERE track_id = $1",
                [fixture.track.id]
              )

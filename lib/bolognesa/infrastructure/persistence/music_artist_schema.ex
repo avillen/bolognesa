@@ -1,4 +1,6 @@
 defmodule Bolognesa.Infrastructure.Persistence.MusicArtistSchema do
+  alias Ecto.Changeset
+
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
@@ -10,7 +12,7 @@ defmodule Bolognesa.Infrastructure.Persistence.MusicArtistSchema do
     timestamps(type: :utc_datetime_usec)
   end
 
-  @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
+  @spec changeset(%__MODULE__{}, map()) :: Changeset.t()
   def changeset(row, attrs) do
     row
     |> change(attrs)

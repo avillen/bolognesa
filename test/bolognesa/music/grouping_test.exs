@@ -1,7 +1,9 @@
 defmodule Bolognesa.Music.GroupingTest do
   use ExUnit.Case, async: true
   alias Bolognesa.Music.Domain.Policies.Grouping
-  alias Bolognesa.Music.Domain.ValueObjects.{CatalogMetadata, FileTags, Observation}
+  alias Bolognesa.Music.Domain.ValueObjects.CatalogMetadata
+  alias Bolognesa.Music.Domain.ValueObjects.FileTags
+  alias Bolognesa.Music.Domain.ValueObjects.Observation
 
   test "folder and library boundaries separate otherwise identical albums" do
     first = Grouping.album_key(1, "a", " Sample Album ", nil)

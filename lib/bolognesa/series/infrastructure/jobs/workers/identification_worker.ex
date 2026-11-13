@@ -2,6 +2,7 @@ defmodule Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker do
   @moduledoc "Runs a token-protected series identification."
   use Oban.Worker, queue: :identifications, max_attempts: 3
   alias Bolognesa.Infrastructure.Observability.Events
+  alias Bolognesa.Series, as: BolognesaSeries
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Series.Application.Ports.Repositories.IdentificationRepository
   alias Bolognesa.Series.Application.UseCases.IdentifySeriesFile
@@ -12,7 +13,7 @@ defmodule Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"file_id" => id, "token" => token}, attempt: attempt} = job)
       when is_integer(id) and id > 0 and is_binary(token) do
-    Bolognesa.Series.identify_file(id, token, attempt, job.id)
+    BolognesaSeries.identify_file(id, token, attempt, job.id)
   rescue
     _ -> unexpected_failure(id, job.id, attempt)
   catch

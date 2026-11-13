@@ -1,7 +1,8 @@
 defmodule Bolognesa.Music.Application.Dto.BrowseItem do
   @moduledoc "Bounded local music browsing projection."
 
-  alias Bolognesa.Music.Domain.Entities.{Album, Artist}
+  alias Bolognesa.Music.Domain.Entities.Album
+  alias Bolognesa.Music.Domain.Entities.Artist
 
   @type t :: %__MODULE__{
           id: Artist.id() | Album.id(),

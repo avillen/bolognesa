@@ -1,4 +1,7 @@
 defmodule BolognesaWeb.Movie.Index.LiveTest do
+  alias Bolognesa.SeriesFixtures
+  alias Ecto.Changeset
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
@@ -63,10 +66,10 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     conn: conn,
     token: token
   } do
-    movies = Bolognesa.SeriesFixtures.library(:movie)
-    series = Bolognesa.SeriesFixtures.library(:series)
-    Repo.update!(Ecto.Changeset.change(movies, name: "Family movies"))
-    Repo.update!(Ecto.Changeset.change(series, name: "Documentaries"))
+    movies = SeriesFixtures.library(:movie)
+    series = SeriesFixtures.library(:series)
+    Repo.update!(Changeset.change(movies, name: "Family movies"))
+    Repo.update!(Changeset.change(series, name: "Documentaries"))
 
     {:ok, view, _} =
       live(init_test_session(conn, user_token: token), "/movies?library_id=#{movies.id}")
@@ -94,7 +97,7 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     conn: conn,
     token: token
   } do
-    series = Bolognesa.SeriesFixtures.library(:series)
+    series = SeriesFixtures.library(:series)
 
     for id <- ["invalid", "9999999", "#{series.id}"] do
       assert {:error, {:live_redirect, %{to: "/libraries"}}} =

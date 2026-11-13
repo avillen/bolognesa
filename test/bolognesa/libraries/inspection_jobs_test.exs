@@ -1,6 +1,7 @@
 defmodule Bolognesa.Libraries.InspectionJobsTest do
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, LibrarySchema}
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Ecto.Adapters.SQL

@@ -2,6 +2,7 @@ defmodule Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker do
   @moduledoc "Runs a token-protected movie identification."
   use Oban.Worker, queue: :identifications, max_attempts: 3
   alias Bolognesa.Infrastructure.Observability.Events
+  alias Bolognesa.Movies, as: BolognesaMovies
   alias Bolognesa.Movies.Application.Ports.Providers.MovieProvider
   alias Bolognesa.Movies.Application.Ports.Repositories.IdentificationRepository
   alias Bolognesa.Movies.Application.UseCases.IdentifyMovieFile
@@ -12,7 +13,7 @@ defmodule Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"file_id" => id, "token" => token}, attempt: attempt} = job)
       when is_integer(id) and id > 0 and is_binary(token) do
-    Bolognesa.Movies.identify_file(id, token, attempt, job.id)
+    BolognesaMovies.identify_file(id, token, attempt, job.id)
   rescue
     _ -> unexpected_failure(id, job.id, attempt)
   catch

@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.DashboardTest do
+  alias Bolognesa.Repo
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
@@ -33,7 +35,7 @@ defmodule BolognesaWeb.DashboardTest do
   end
 
   test "members cannot access the dashboard", %{conn: conn, token: token} do
-    Bolognesa.Repo.update_all(UserSchema, set: [role: "member"])
+    Repo.update_all(UserSchema, set: [role: "member"])
     assert conn |> init_test_session(user_token: token) |> get("/dev/dashboard") |> response(403)
   end
 

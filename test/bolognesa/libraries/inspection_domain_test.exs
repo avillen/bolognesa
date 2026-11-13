@@ -1,7 +1,8 @@
 defmodule Bolognesa.Libraries.InspectionDomainTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Libraries.Domain.Entities.{Inspection, MediaFile}
+  alias Bolognesa.Libraries.Domain.Entities.Inspection
+  alias Bolognesa.Libraries.Domain.Entities.MediaFile
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
 

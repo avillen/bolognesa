@@ -1,11 +1,14 @@
 defmodule BolognesaWeb.LibraryNavigationTest do
+  alias Bolognesa.SeriesFixtures
+  alias Phoenix.Component
+  alias Phoenix.Flash
   use Bolognesa.DataCase, async: false
   alias BolognesaWeb.LibraryNavigation
   alias Phoenix.LiveView.Lifecycle
 
   test "a failed library read preserves navigation and explains a scoped redirect" do
     Gettext.put_locale(BolognesaWeb.Gettext, "en")
-    library = Bolognesa.SeriesFixtures.library(:movie)
+    library = SeriesFixtures.library(:movie)
 
     socket = %Phoenix.LiveView.Socket{
       router: BolognesaWeb.Router,
@@ -17,7 +20,7 @@ defmodule BolognesaWeb.LibraryNavigationTest do
     {:cont, socket} = LibraryNavigation.on_mount(:default, %{}, %{}, socket)
 
     socket =
-      Phoenix.Component.assign(socket, :navigation_libraries, [
+      Component.assign(socket, :navigation_libraries, [
         %{id: library.id, name: library.name, content_type: :movie}
       ])
 
@@ -35,6 +38,6 @@ defmodule BolognesaWeb.LibraryNavigationTest do
            ]
 
     assert {:live, :redirect, %{to: "/libraries"}} = socket.redirected
-    assert Phoenix.Flash.get(socket.assigns.flash, :error) =~ "Libraries"
+    assert Flash.get(socket.assigns.flash, :error) =~ "Libraries"
   end
 end

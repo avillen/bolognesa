@@ -1,4 +1,5 @@
 defmodule Bolognesa.Accounts.SessionTest do
+  alias Ecto.Changeset
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Accounts
@@ -81,7 +82,7 @@ defmodule Bolognesa.Accounts.SessionTest do
     session = Repo.one!(SessionSchema)
 
     session
-    |> Ecto.Changeset.change(expires_at: DateTime.add(DateTime.utc_now(), -1, :second))
+    |> Changeset.change(expires_at: DateTime.add(DateTime.utc_now(), -1, :second))
     |> Repo.update!()
 
     assert {:error, :unauthenticated} = Accounts.fetch_authenticated_user(token)

@@ -1,14 +1,16 @@
 defmodule Bolognesa.Libraries.ReconcileLibraryJobsTest do
+  alias Task.Supervisor, as: TaskSupervisor
   use ExUnit.Case, async: false
 
-  alias Bolognesa.Libraries.Application.UseCases.{ReconcileInspections, ReconcileScans}
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
   alias Bolognesa.Libraries.Support.ControlledScanRepository
 
   setup do
     Process.register(self(), :scan_reconciliation_owner)
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     :ok = LibraryStatusNotifications.subscribe()
     %{supervisor: supervisor}
   end
@@ -20,7 +22,7 @@ defmodule Bolognesa.Libraries.ReconcileLibraryJobsTest do
       now = ~U[2026-10-12 12:00:00Z]
 
       task =
-        Task.Supervisor.async_nolink(supervisor, fn ->
+        TaskSupervisor.async_nolink(supervisor, fn ->
           unquote(use_case).call(now, ControlledScanRepository, LibraryStatusNotifications)
         end)
 
@@ -42,7 +44,7 @@ defmodule Bolognesa.Libraries.ReconcileLibraryJobsTest do
       now = ~U[2026-10-12 12:00:00Z]
 
       task =
-        Task.Supervisor.async_nolink(supervisor, fn ->
+        TaskSupervisor.async_nolink(supervisor, fn ->
           unquote(use_case).call(now, ControlledScanRepository, LibraryStatusNotifications)
         end)
 

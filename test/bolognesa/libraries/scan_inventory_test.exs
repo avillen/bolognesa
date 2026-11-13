@@ -1,9 +1,9 @@
 defmodule Bolognesa.Libraries.ScanInventoryTest do
-  use Bolognesa.DataCase, async: false
-
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  use Bolognesa.DataCase, async: false
+
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.ScanSchema
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
@@ -14,16 +14,19 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
   alias Bolognesa.Libraries.Support.ControlledFileDiscovery
   alias Ecto.Adapters.SQL
+  alias Ecto.Changeset
+  alias Ecto.UUID
   alias EctoScanRepository.MediaFileMapper
   alias EctoScanRepository.ScanMapper
   alias SQL.Sandbox
+  alias Task.Supervisor, as: TaskSupervisor
 
   @modified ~U[2026-10-03 00:00:00Z]
 
   @tag committed: true
   test "application scan hints expose committed completion to another connection" do
     parent = self()
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
 
     with_committed_scan(fn scan ->
@@ -31,7 +34,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       refute_receive {:library_status_changed, _}
 
       scanner =
-        Task.Supervisor.async_nolink(supervisor, fn ->
+        TaskSupervisor.async_nolink(supervisor, fn ->
           Sandbox.unboxed_run(Repo, fn ->
             ControlledFileDiscovery.configure(parent)
 
@@ -52,7 +55,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       assert_receive {:library_status_changed, ^library_id}
 
       reader =
-        Task.Supervisor.async_nolink(supervisor, fn ->
+        TaskSupervisor.async_nolink(supervisor, fn ->
           Sandbox.unboxed_run(Repo, fn ->
             :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
             send(parent, :status_reader_ready)
@@ -91,7 +94,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       with_committed_scans(2, fn [first, second] ->
         for scan <- [first, second] do
           Repo.get!(Oban.Job, scan.job_id)
-          |> Ecto.Changeset.change(state: "discarded")
+          |> Changeset.change(state: "discarded")
           |> Repo.update!()
         end
 
@@ -134,7 +137,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
         job_ids = [first_inspection.job_id, second_inspection.job_id]
 
         for id <- job_ids do
-          Repo.get!(Oban.Job, id) |> Ecto.Changeset.change(state: "discarded") |> Repo.update!()
+          Repo.get!(Oban.Job, id) |> Changeset.change(state: "discarded") |> Repo.update!()
         end
 
         SQL.query!(Repo, """
@@ -283,7 +286,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
   test "series handoff failure rolls back inventory inspection requests and owner jobs" do
     with_committed_scan(fn scan ->
       library = Repo.get!(LibrarySchema, scan.library_id)
-      Repo.update!(Ecto.Changeset.change(library, content_type: :series))
+      Repo.update!(Changeset.change(library, content_type: :series))
       running = start(scan)
       save(running, [entry("existing.mkv")])
       [file] = files(scan.library_id)
@@ -369,7 +372,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
     assert {:error, _changeset} =
              struct(InspectionSchema)
-             |> InspectionSchema.changeset(%{attrs | token: Ecto.UUID.generate()})
+             |> InspectionSchema.changeset(%{attrs | token: UUID.generate()})
              |> Repo.insert()
 
     job = Repo.get!(Oban.Job, inspection(file.id).job_id)
@@ -648,7 +651,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
   @tag committed: true
   test "concurrent duplicate and distinct batches on independent connections preserve progress" do
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     parent = self()
 
     with_committed_scan(fn scan ->
@@ -656,7 +659,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
       tasks =
         for path <- ["same.mp4", "same.mp4", "other.mp4"] do
-          Task.Supervisor.async_nolink(supervisor, fn ->
+          TaskSupervisor.async_nolink(supervisor, fn ->
             Sandbox.unboxed_run(Repo, fn ->
               send(parent, {:ready, self()})
 
@@ -689,7 +692,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
   @tag committed: true
   test "inspection cannot publish after a concurrent absence commits" do
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     parent = self()
 
     with_committed_scan(fn scan ->
@@ -704,7 +707,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       {:ok, media} = TechnicalMedia.new(%{tracks: []})
 
       absent =
-        Task.Supervisor.async_nolink(supervisor, fn ->
+        TaskSupervisor.async_nolink(supervisor, fn ->
           Sandbox.unboxed_run(Repo, fn ->
             Repo.transaction(fn ->
               Repo.update_all(from(row in MediaFileSchema, where: row.id == ^file.id),
@@ -723,7 +726,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
       assert_receive {:absence_locked, absent_pid}, 1_000
 
       completion =
-        Task.Supervisor.async_nolink(supervisor, fn ->
+        TaskSupervisor.async_nolink(supervisor, fn ->
           Sandbox.unboxed_run(Repo, fn ->
             send(parent, :completion_started)
             result = EctoInspectionRepository.complete_inspection(file.id, token, media)
@@ -844,7 +847,7 @@ defmodule Bolognesa.Libraries.ScanInventoryTest do
 
   test "music inventory schedules inspection without identification" do
     library = library_fixture()
-    Repo.update!(Ecto.Changeset.change(library, content_type: :music))
+    Repo.update!(Changeset.change(library, content_type: :music))
     running = next_scan(library.id)
     save(running, [entry("song.mp3")])
     [file] = files(library.id)

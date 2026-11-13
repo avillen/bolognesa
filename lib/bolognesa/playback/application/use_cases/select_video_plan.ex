@@ -5,12 +5,10 @@ defmodule Bolognesa.Playback.Application.UseCases.SelectVideoPlan do
   alias Bolognesa.Playback.Application.UseCases.StartVideoPlayback
   alias Bolognesa.Playback.Domain.Policies.Negotiation
 
-  alias Bolognesa.Playback.Domain.ValueObjects.{
-    CapabilityReport,
-    ContentRef,
-    DeliveryPlan,
-    PlaybackCandidate
-  }
+  alias Bolognesa.Playback.Domain.ValueObjects.CapabilityReport
+  alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
+  alias Bolognesa.Playback.Domain.ValueObjects.PlaybackCandidate
 
   @type error ::
           :forbidden

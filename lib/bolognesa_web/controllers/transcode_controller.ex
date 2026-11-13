@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.TranscodeController do
+  alias Ecto.UUID
   use BolognesaWeb, :controller
 
   alias Bolognesa.Playback
@@ -66,7 +67,7 @@ defmodule BolognesaWeb.TranscodeController do
   end
 
   defp safe_session_id(value) do
-    case Ecto.UUID.cast(value) do
+    case UUID.cast(value) do
       {:ok, id} -> id
       _ -> nil
     end

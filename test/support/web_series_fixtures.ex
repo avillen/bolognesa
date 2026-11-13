@@ -8,6 +8,8 @@ defmodule BolognesaWeb.SeriesFixtures do
   alias Bolognesa.Infrastructure.Persistence.SeasonSchema
   alias Bolognesa.Repo
   alias Bolognesa.SeriesFixtures
+  alias Ecto.UUID
+  alias Plug.Test, as: PlugTest
 
   @spec setup(Plug.Conn.t()) :: map()
   def setup(conn) do
@@ -36,7 +38,7 @@ defmodule BolognesaWeb.SeriesFixtures do
         modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond),
         availability: :available,
         revision: 1,
-        last_seen_generation: Ecto.UUID.generate()
+        last_seen_generation: UUID.generate()
       })
 
     decision = SeriesFixtures.identify(file, 0, [1, 2])
@@ -44,7 +46,7 @@ defmodule BolognesaWeb.SeriesFixtures do
     season = Repo.get!(SeasonSchema, episode.season_id)
 
     %{
-      conn: Plug.Test.init_test_session(conn, user_token: token),
+      conn: PlugTest.init_test_session(conn, user_token: token),
       token: token,
       actor: actor,
       library: library,

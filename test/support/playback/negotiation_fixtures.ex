@@ -1,4 +1,6 @@
 defmodule Bolognesa.PlaybackNegotiationFixtures do
+  alias Ecto.UUID
+  alias Phoenix.LiveViewTest
   @moduledoc false
   import Phoenix.LiveViewTest
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
@@ -13,7 +15,7 @@ defmodule Bolognesa.PlaybackNegotiationFixtures do
     Repo.insert_or_update!(
       InspectionSchema.changeset(inspection, %{
         media_file_id: file.id,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         observed_revision: file.revision,
         state: :succeeded,
         format: format,
@@ -56,7 +58,7 @@ defmodule Bolognesa.PlaybackNegotiationFixtures do
     )
   end
 
-  @spec report(Phoenix.LiveViewTest.View.t(), String.t() | nil) :: map()
+  @spec report(LiveViewTest.View.t(), String.t() | nil) :: map()
   def report(view, only \\ nil) do
     [encoded] =
       render(view)
@@ -81,7 +83,7 @@ defmodule Bolognesa.PlaybackNegotiationFixtures do
     }
   end
 
-  @spec negotiate(Phoenix.LiveViewTest.View.t(), String.t() | nil) :: String.t()
+  @spec negotiate(LiveViewTest.View.t(), String.t() | nil) :: String.t()
   def negotiate(view, only \\ nil),
     do: render_hook(view, "playback_capabilities", report(view, only))
 

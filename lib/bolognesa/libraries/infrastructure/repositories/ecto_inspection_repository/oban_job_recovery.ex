@@ -2,7 +2,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   @moduledoc "Reconciles inspection state against its linked jobs."
   import Ecto.Query
 
-  alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, MediaFileSchema}
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.InspectionPolicy
   alias Bolognesa.Repo

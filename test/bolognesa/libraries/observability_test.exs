@@ -1,12 +1,10 @@
 defmodule Bolognesa.Libraries.ObservabilityTest do
   use ExUnit.Case, async: false
 
-  alias Bolognesa.Libraries.Application.UseCases.{
-    DiscoverFiles,
-    InspectMediaFile,
-    ReconcileInspections,
-    ReconcileScans
-  }
+  alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
+  alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
 
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker

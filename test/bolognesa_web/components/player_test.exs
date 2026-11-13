@@ -1,10 +1,12 @@
 defmodule BolognesaWeb.PlayerTest do
+  alias BolognesaWeb.Player, as: BolognesaWebPlayer
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: true
   import Phoenix.LiveViewTest
 
   test "checking mounts the stable frame without any delivery URL or autoplay" do
     html =
-      render_component(&BolognesaWeb.Player.player/1,
+      render_component(&BolognesaWebPlayer.player/1,
         prefix: "movie",
         kind: :movie,
         entry_id: 1,

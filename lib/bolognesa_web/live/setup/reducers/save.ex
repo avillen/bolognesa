@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.Setup.Reducers.Save do
+  alias Ecto.Changeset
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
@@ -36,7 +37,7 @@ defmodule BolognesaWeb.Setup.Reducers.Save do
   end
 
   defp save(socket, changeset) do
-    attrs = Map.take(Ecto.Changeset.apply_changes(changeset), [:name, :email, :password])
+    attrs = Map.take(Changeset.apply_changes(changeset), [:name, :email, :password])
 
     case Accounts.install_admin(attrs) do
       {:ok, _actor} ->
@@ -48,7 +49,7 @@ defmodule BolognesaWeb.Setup.Reducers.Save do
       {:error, {:invalid, errors}} ->
         changeset =
           Enum.reduce(errors, changeset, fn {field, message}, acc ->
-            Ecto.Changeset.add_error(acc, field, message)
+            Changeset.add_error(acc, field, message)
           end)
 
         assign(socket, :form, to_form(%{changeset | action: :insert}))

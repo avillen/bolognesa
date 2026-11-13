@@ -1,4 +1,8 @@
 defmodule BolognesaWeb.Series.Season.LiveTest do
+  alias Bolognesa.Repo
+  alias Ecto.Changeset
+  alias Phoenix.ConnTest
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
   alias BolognesaWeb.SeriesFixtures
@@ -42,7 +46,7 @@ defmodule BolognesaWeb.Series.Season.LiveTest do
   end
 
   test "rejects anonymous visitors", %{conn: _conn} do
-    assert {:error, {:redirect, %{to: "/login"}}} = live(Phoenix.ConnTest.build_conn(), "/series")
+    assert {:error, {:redirect, %{to: "/login"}}} = live(ConnTest.build_conn(), "/series")
   end
 
   test "malformed page input does not crash the view", ctx do
@@ -66,8 +70,8 @@ defmodule BolognesaWeb.Series.Season.LiveTest do
 
   test "unavailable episodes keep their detail link without a play action", ctx do
     ctx.media_file
-    |> Ecto.Changeset.change(availability: :missing)
-    |> Bolognesa.Repo.update!()
+    |> Changeset.change(availability: :missing)
+    |> Repo.update!()
 
     {:ok, view, _} = live(ctx.conn, "/series/seasons/#{ctx.season_id}")
     render_async(view)

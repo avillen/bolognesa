@@ -1,10 +1,15 @@
 defmodule Bolognesa.Music.ObservabilityTest do
+  alias Bolognesa.MusicFixtures
+  alias Ecto.Changeset
   use Bolognesa.DataCase, async: true
   import Bolognesa.MusicFixtures
 
-  alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, MusicImportSchema}
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicImportSchema
   alias Bolognesa.Music
-  alias Bolognesa.Music.Application.UseCases.{ReconcileImports, RefreshTrack, RetryImport}
+  alias Bolognesa.Music.Application.UseCases.ReconcileImports
+  alias Bolognesa.Music.Application.UseCases.RefreshTrack
+  alias Bolognesa.Music.Application.UseCases.RetryImport
   alias Bolognesa.Music.Infrastructure.Jobs.Workers.RefreshWorker
   alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository
 
@@ -32,7 +37,7 @@ defmodule Bolognesa.Music.ObservabilityTest do
   defmodule StalingReader do
     def current(file_id, _) do
       file = Repo.get!(MediaFileSchema, file_id)
-      Repo.update!(Ecto.Changeset.change(file, revision: file.revision + 1))
+      Repo.update!(Changeset.change(file, revision: file.revision + 1))
       {:error, :unavailable}
     end
   end

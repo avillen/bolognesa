@@ -1,4 +1,5 @@
 defmodule Bolognesa.Application do
+  alias BolognesaWeb.Endpoint
   # See https://elixir.hexdocs.pm/Application.html
   # for more information on OTP Applications
   @moduledoc false
@@ -19,7 +20,7 @@ defmodule Bolognesa.Application do
       # Start a worker by calling: Bolognesa.Worker.start_link(arg)
       # {Bolognesa.Worker, arg},
       # Start to serve requests, typically the last entry
-      BolognesaWeb.Endpoint
+      Endpoint
     ]
 
     # See https://elixir.hexdocs.pm/Supervisor.html
@@ -65,7 +66,7 @@ defmodule Bolognesa.Application do
   # whenever the application is updated.
   @impl true
   def config_change(changed, _new, removed) do
-    BolognesaWeb.Endpoint.config_change(changed, removed)
+    Endpoint.config_change(changed, removed)
     :ok
   end
 end

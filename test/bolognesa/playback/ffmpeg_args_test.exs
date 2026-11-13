@@ -1,7 +1,8 @@
 defmodule Bolognesa.Playback.FfmpegArgsTest do
   use ExUnit.Case, async: true
 
-  alias Bolognesa.Playback.Domain.ValueObjects.{DeliveryPlan, MediaConfiguration}
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
+  alias Bolognesa.Playback.Domain.ValueObjects.MediaConfiguration
   alias Bolognesa.Playback.Infrastructure.FfmpegArgs
 
   test "audio strategy copies video and converts audio to AAC" do

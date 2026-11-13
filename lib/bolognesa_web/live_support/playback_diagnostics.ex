@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
+  alias Ecto.UUID
   @moduledoc "Validate bounded, untrusted browser observations without affecting playback."
   import Phoenix.Component, only: [assign: 3]
 
@@ -66,7 +67,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
     with true <- is_integer(file_id) and params["file_id"] == Integer.to_string(file_id),
          {:ok, extra} <- extra_fields(params),
          true <- valid_session?(params["session_id"], expected_session, extra),
-         {:ok, tab_id} <- Ecto.UUID.cast(params["tab_id"]),
+         {:ok, tab_id} <- UUID.cast(params["tab_id"]),
          {:ok, diagnostic} <- Map.fetch(@diagnostics, params["diagnostic"]),
          position when is_integer(position) and position >= 0 and position <= 2_147_483_647 <-
            params["position_ms"],
@@ -101,7 +102,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
 
   defp valid_session?(session, _expected, %{replayed: true, page_id: page_id})
        when not is_nil(page_id),
-       do: is_nil(session) or match?({:ok, _}, Ecto.UUID.cast(session))
+       do: is_nil(session) or match?({:ok, _}, UUID.cast(session))
 
   defp valid_session?(_session, _expected, _extra), do: false
 
@@ -128,7 +129,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
   end
 
   defp valid_extra?(:page_id, nil), do: true
-  defp valid_extra?(:page_id, value), do: match?({:ok, _}, Ecto.UUID.cast(value))
+  defp valid_extra?(:page_id, value), do: match?({:ok, _}, UUID.cast(value))
   defp valid_extra?(key, value) when key in [:replayed, :ws_clean, :online], do: is_boolean(value)
 
   defp valid_extra?(:ws_code, value),

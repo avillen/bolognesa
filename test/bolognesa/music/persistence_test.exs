@@ -1,12 +1,11 @@
 defmodule Bolognesa.Music.PersistenceTest do
+  alias Bolognesa.MusicFixtures
   use Bolognesa.DataCase, async: true
   import Bolognesa.MusicFixtures
 
-  alias Bolognesa.Infrastructure.Persistence.{
-    MusicAlbumSchema,
-    MusicArtistSchema,
-    MusicTrackSchema
-  }
+  alias Bolognesa.Infrastructure.Persistence.MusicAlbumSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicArtistSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicTrackSchema
 
   test "unique file association and bounded numbers" do
     fixture = music_fixture()

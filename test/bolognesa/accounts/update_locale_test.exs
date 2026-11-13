@@ -1,4 +1,5 @@
 defmodule Bolognesa.Accounts.UpdateLocaleTest do
+  alias Ecto.Changeset
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Accounts
@@ -58,8 +59,8 @@ defmodule Bolognesa.Accounts.UpdateLocaleTest do
   test "database rejects unsupported locales", %{actor: actor} do
     changeset =
       Repo.get!(UserSchema, actor.id)
-      |> Ecto.Changeset.change(locale: "fr")
-      |> Ecto.Changeset.check_constraint(:locale, name: :accounts_users_locale_valid)
+      |> Changeset.change(locale: "fr")
+      |> Changeset.check_constraint(:locale, name: :accounts_users_locale_valid)
 
     assert {:error, changeset} = Repo.update(changeset)
     assert Keyword.has_key?(changeset.errors, :locale)

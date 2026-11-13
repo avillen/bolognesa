@@ -1,4 +1,8 @@
 defmodule BolognesaWeb.Music.Index.LiveTest do
+  alias Bolognesa.Music
+  alias Bolognesa.MusicFixtures
+  alias Ecto.Changeset
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
   import Bolognesa.MusicFixtures
@@ -102,10 +106,10 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
         tags: %{"album" => "Record", "track" => "2"}
       )
 
-    Repo.update!(Ecto.Changeset.change(second.file, library_id: fixture.library.id))
-    :ok = Bolognesa.Music.refresh_track(second.file.id, 1)
+    Repo.update!(Changeset.change(second.file, library_id: fixture.library.id))
+    :ok = Music.refresh_track(second.file.id, 1)
     {:ok, actor} = Accounts.fetch_authenticated_admin()
-    :ok = Bolognesa.Music.record_listening(actor, fixture.track.id, fixture.file.id)
+    :ok = Music.record_listening(actor, fixture.track.id, fixture.file.id)
 
     {:ok, view, _} =
       live(init_test_session(conn, user_token: token), "/music?library_id=#{fixture.library.id}")
@@ -141,7 +145,7 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     render_async(view)
     assert has_element?(view, "#music-heading", "Record")
     refute has_element?(view, "#music-last-listened")
-    Repo.update!(Ecto.Changeset.change(fixture.file, availability: :missing))
+    Repo.update!(Changeset.change(fixture.file, availability: :missing))
     view |> element("#music-home-link") |> render_click()
     render_async(view)
     assert has_element?(view, "#{selector}[disabled]")
@@ -304,8 +308,8 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
         tags: %{"title" => "Second", "album" => "Record"}
       )
 
-    Repo.update!(Ecto.Changeset.change(second.file, library_id: fixture.library.id))
-    :ok = Bolognesa.Music.refresh_track(second.file.id, 1)
+    Repo.update!(Changeset.change(second.file, library_id: fixture.library.id))
+    :ok = Music.refresh_track(second.file.id, 1)
 
     %{rows: [[user_id]]} =
       Repo.query!("SELECT id FROM accounts_users WHERE email = $1", ["music@example.com"])
@@ -449,7 +453,7 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     render_async(view)
     assert has_element?(view, "#tracks-#{pending.file.id}[data-state=pending]")
     assert has_element?(view, "#tracks-#{failed.file.id}[data-state=inspection_failed]")
-    Repo.update!(Ecto.Changeset.change(ready.file, revision: 2))
+    Repo.update!(Changeset.change(ready.file, revision: 2))
     assert has_element?(view, "#play-track-#{ready.track.id}[data-music-action=track]")
   end
 
@@ -465,8 +469,8 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
         tags: %{"artist" => "Ensemble", "album" => "First", "title" => "Finale", "track" => "2"}
       )
 
-    Repo.update!(Ecto.Changeset.change(second.file, library_id: f.library.id))
-    :ok = Bolognesa.Music.refresh_track(second.file.id, 1)
+    Repo.update!(Changeset.change(second.file, library_id: f.library.id))
+    :ok = Music.refresh_track(second.file.id, 1)
 
     {:ok, view, _} =
       live(
@@ -513,9 +517,9 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
         }
       )
 
-    Repo.update!(Ecto.Changeset.change(second.file, library_id: f.library.id))
-    :ok = Bolognesa.Music.refresh_track(second.file.id, 1)
-    Repo.update!(Ecto.Changeset.change(f.file, revision: 2))
+    Repo.update!(Changeset.change(second.file, library_id: f.library.id))
+    :ok = Music.refresh_track(second.file.id, 1)
+    Repo.update!(Changeset.change(f.file, revision: 2))
 
     {:ok, view, _} =
       live(

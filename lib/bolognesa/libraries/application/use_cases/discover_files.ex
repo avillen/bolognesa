@@ -4,7 +4,8 @@ defmodule Bolognesa.Libraries.Application.UseCases.DiscoverFiles do
   alias Bolognesa.Infrastructure.Observability.Events
 
   alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
-  alias Bolognesa.Libraries.Application.Ports.Services.{FileDiscovery, LibraryStatusNotifier}
+  alias Bolognesa.Libraries.Application.Ports.Services.FileDiscovery
+  alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
   alias Bolognesa.Libraries.Domain.Entities.Scan
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.DiscoveryRequest
 

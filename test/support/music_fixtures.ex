@@ -1,7 +1,11 @@
 defmodule Bolognesa.MusicFixtures do
+  alias Bolognesa.Music
+  alias Ecto.UUID
   @moduledoc false
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
-  alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, LibrarySchema, MediaFileSchema}
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
   alias Bolognesa.Repo
   @spec music_fixture(keyword()) :: map()
@@ -25,7 +29,7 @@ defmodule Bolognesa.MusicFixtures do
           modified_at: ~U[2026-10-03 00:00:00.000000Z],
           availability: Keyword.get(opts, :availability, :available),
           revision: Keyword.get(opts, :revision, 1),
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         }),
         log: false
       )
@@ -36,7 +40,7 @@ defmodule Bolognesa.MusicFixtures do
       Repo.insert!(
         InspectionSchema.changeset(%InspectionSchema{}, %{
           media_file_id: file.id,
-          token: Ecto.UUID.generate(),
+          token: UUID.generate(),
           observed_revision: file.revision,
           state: Keyword.get(opts, :inspection_state, :succeeded),
           format: "mp3",
@@ -58,7 +62,7 @@ defmodule Bolognesa.MusicFixtures do
   @spec refresh_fixture(keyword()) :: map()
   def refresh_fixture(opts \\ []) do
     fixture = music_fixture(opts)
-    :ok = Bolognesa.Music.refresh_track(fixture.file.id, fixture.file.revision)
+    :ok = Music.refresh_track(fixture.file.id, fixture.file.revision)
 
     Map.put(
       fixture,

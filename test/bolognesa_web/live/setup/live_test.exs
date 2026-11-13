@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.Setup.LiveTest do
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 

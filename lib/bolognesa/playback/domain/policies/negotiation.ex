@@ -1,13 +1,12 @@
 defmodule Bolognesa.Playback.Domain.Policies.Negotiation do
   @moduledoc "Choose the least expensive positively tested, source-safe delivery."
-  alias Bolognesa.Playback.Domain.ReadModels.{Source, TechnicalTrack}
+  alias Bolognesa.Playback.Domain.ReadModels.Source
+  alias Bolognesa.Playback.Domain.ReadModels.TechnicalTrack
 
-  alias Bolognesa.Playback.Domain.ValueObjects.{
-    CapabilityReport,
-    DeliveryPlan,
-    MediaConfiguration,
-    PlaybackCandidate
-  }
+  alias Bolognesa.Playback.Domain.ValueObjects.CapabilityReport
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
+  alias Bolognesa.Playback.Domain.ValueObjects.MediaConfiguration
+  alias Bolognesa.Playback.Domain.ValueObjects.PlaybackCandidate
 
   @type error ::
           :metadata_required

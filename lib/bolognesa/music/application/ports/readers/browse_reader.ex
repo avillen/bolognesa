@@ -8,7 +8,8 @@ defmodule Bolognesa.Music.Application.Ports.Readers.BrowseReader do
   no activity date. Aggregation is independent of browsing filters and pagination.
   """
   alias Bolognesa.Music.Domain.Entities.Artist
-  alias Bolognesa.Music.Domain.ReadModels.{BrowsePage, RecentAlbum}
+  alias Bolognesa.Music.Domain.ReadModels.BrowsePage
+  alias Bolognesa.Music.Domain.ReadModels.RecentAlbum
   @type adapter :: atom()
   @type kind :: :artists | :albums
   @callback browse(

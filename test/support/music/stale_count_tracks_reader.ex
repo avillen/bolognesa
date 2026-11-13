@@ -1,7 +1,8 @@
 defmodule Bolognesa.Music.StaleCountTracksReader do
   @moduledoc false
   @behaviour Bolognesa.Music.Application.Ports.Readers.TracksReader
-  alias Bolognesa.Music.Domain.ReadModels.{TrackPage, TrackRow}
+  alias Bolognesa.Music.Domain.ReadModels.TrackPage
+  alias Bolognesa.Music.Domain.ReadModels.TrackRow
   @impl true
   def fetch_track(_), do: {:error, :not_found}
   @impl true

@@ -1,24 +1,26 @@
 defmodule Bolognesa.Libraries.StartScanTest do
-  use Bolognesa.DataCase, async: false
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
-  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
-
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
-  alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  use Bolognesa.DataCase, async: false
+  alias Bolognesa.Infrastructure.Persistence.ScanSchema
   alias Bolognesa.Libraries
 
-  alias Bolognesa.Libraries.Application.UseCases.{
-    FetchInspectionCounts,
-    FetchScanStatus,
-    StartScan
-  }
-
+  alias Bolognesa.Libraries.Application.UseCases.FetchInspectionCounts
+  alias Bolognesa.Libraries.Application.UseCases.FetchScanStatus
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
+  alias Bolognesa.Libraries.Application.UseCases.StartScan
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
+
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
   alias Ecto.Adapters.SQL
+
+  alias Ecto.UUID
   alias EctoScanRepository.MediaFileMapper
+  alias ExUnit.CaptureLog
   alias SQL.Sandbox
+  alias Task.Supervisor, as: TaskSupervisor
 
   use Oban.Testing, repo: Bolognesa.Repo
 
@@ -85,7 +87,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
 
   test "unavailable notifications do not change a committed scan request", %{library: library} do
     log =
-      ExUnit.CaptureLog.capture_log(fn ->
+      CaptureLog.capture_log(fn ->
         assert {:ok, scan} =
                  StartScan.call(
                    @admin,
@@ -225,13 +227,13 @@ defmodule Bolognesa.Libraries.StartScanTest do
   end
 
   test "simultaneous requests persist one scan and one matching job", %{path: path} do
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     parent = self()
 
     with_committed_library(path, fn library ->
       tasks =
         for _ <- 1..2 do
-          Task.Supervisor.async_nolink(supervisor, fn ->
+          TaskSupervisor.async_nolink(supervisor, fn ->
             Sandbox.unboxed_run(Repo, fn ->
               send(parent, {:ready, self()})
 
@@ -269,7 +271,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
       relative_path: <<255, 47, 254, 46, 109, 107, 118>>,
       size_bytes: 0,
       modified_at: DateTime.utc_now(),
-      last_seen_generation: Ecto.UUID.generate()
+      last_seen_generation: UUID.generate()
     }
 
     stored = %MediaFileSchema{} |> MediaFileSchema.changeset(attrs) |> Repo.insert!()
@@ -289,7 +291,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
       relative_path: "movie.mkv",
       size_bytes: 0,
       modified_at: DateTime.utc_now(),
-      last_seen_generation: Ecto.UUID.generate()
+      last_seen_generation: UUID.generate()
     }
 
     file = %MediaFileSchema{} |> MediaFileSchema.changeset(attrs) |> Repo.insert!()

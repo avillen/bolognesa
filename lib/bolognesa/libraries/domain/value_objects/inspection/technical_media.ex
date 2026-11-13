@@ -1,7 +1,8 @@
 defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia do
   @moduledoc "Normalized technical media properties from a probe."
 
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.{MusicTags, TechnicalTrack}
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack
 
   @type t :: %__MODULE__{
           format: String.t() | nil,

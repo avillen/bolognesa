@@ -1,9 +1,12 @@
 defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
+  alias ExUnit.CaptureLog
   use ExUnit.Case, async: false
   alias Bolognesa.Infrastructure.LocalSourcePath
 
-  alias Bolognesa.Libraries.Domain.Entities.{Library, MediaFile}
-  alias Bolognesa.Libraries.Infrastructure.Services.{BoundedCommand, FfprobeMediaProbe}
+  alias Bolognesa.Libraries.Domain.Entities.Library
+  alias Bolognesa.Libraries.Domain.Entities.MediaFile
+  alias Bolognesa.Libraries.Infrastructure.Services.BoundedCommand
+  alias Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe
 
   setup do
     root = Path.join(System.tmp_dir!(), "probe-#{System.unique_integer([:positive])}")
@@ -201,7 +204,7 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
     formatter = Application.fetch_env!(:logger, :default_formatter)
 
     log =
-      ExUnit.CaptureLog.capture_log(formatter ++ [level: :warning], fn ->
+      CaptureLog.capture_log(formatter ++ [level: :warning], fn ->
         assert {:error, :unreadable} =
                  FfprobeMediaProbe.inspect(library(root), %{observed | id: 42},
                    executable: executable

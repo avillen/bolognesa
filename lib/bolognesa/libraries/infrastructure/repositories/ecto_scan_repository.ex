@@ -1,4 +1,6 @@
 defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
+  alias Ecto.Multi
+  alias Ecto.UUID
   @moduledoc false
   @behaviour Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
 
@@ -28,9 +30,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
 
   @impl true
   def request(library_id, force_inspection?) when is_boolean(force_inspection?) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.run(:library, fn repo, _changes -> find_library(repo, library_id) end)
-    |> Ecto.Multi.insert(
+    Multi.new()
+    |> Multi.run(:library, fn repo, _changes -> find_library(repo, library_id) end)
+    |> Multi.insert(
       :scan,
       ScanSchema.changeset(%ScanSchema{}, %{
         library_id: library_id,
@@ -39,7 +41,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
       })
     )
     |> ObanScanJob.insert()
-    |> Ecto.Multi.update(:referenced_scan, fn %{scan: scan, job: job} ->
+    |> Multi.update(:referenced_scan, fn %{scan: scan, job: job} ->
       ScanSchema.changeset(scan, %{job_id: job.id})
     end)
     |> Repo.transaction()
@@ -177,7 +179,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   defp begin_locked_attempt(scan, attempt) do
     library = attempt_library!(scan.library_id)
     running = transition!(scan, :running, nil)
-    running = %{running | generation: Ecto.UUID.generate(), attempt: attempt, files_discovered: 0}
+    running = %{running | generation: UUID.generate(), attempt: attempt, files_discovered: 0}
     {:ok, save_scan(scan, running), LibraryMapper.to_library(library)}
   end
 

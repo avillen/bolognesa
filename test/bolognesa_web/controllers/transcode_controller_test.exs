@@ -1,4 +1,7 @@
 defmodule BolognesaWeb.TranscodeControllerTest do
+  alias Bolognesa.MovieIdentificationFixtures
+  alias Bolognesa.PlaybackNegotiationFixtures
+  alias Ecto.UUID
   use BolognesaWeb.ConnCase, async: false
 
   alias Bolognesa.Accounts
@@ -71,16 +74,16 @@ defmodule BolognesaWeb.TranscodeControllerTest do
           relative_path: "film.avi",
           size_bytes: 8,
           modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond),
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
     identification =
-      Bolognesa.MovieIdentificationFixtures.insert_decision!(
+      MovieIdentificationFixtures.insert_decision!(
         %{
           media_file_id: file.id,
           observed_revision: file.revision,
-          token: Ecto.UUID.generate(),
+          token: UUID.generate(),
           state: :manual,
           origin: :manual
         },
@@ -104,7 +107,7 @@ defmodule BolognesaWeb.TranscodeControllerTest do
     end)
 
     assert {:ok, :transcode, session} =
-             Bolognesa.PlaybackNegotiationFixtures.prepare_transcode(
+             PlaybackNegotiationFixtures.prepare_transcode(
                actor,
                {:movie, movie.id},
                file.id,
@@ -171,7 +174,7 @@ defmodule BolognesaWeb.TranscodeControllerTest do
     Repo.update!(MediaFileSchema.changeset(file, %{revision: file.revision}))
 
     assert {:ok, :transcode, next_session} =
-             Bolognesa.PlaybackNegotiationFixtures.prepare_transcode(
+             PlaybackNegotiationFixtures.prepare_transcode(
                actor,
                {:movie, movie.id},
                file.id,

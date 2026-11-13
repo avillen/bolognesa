@@ -3,7 +3,8 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream: 4]
-  alias Bolognesa.Music.Application.UseCases.{Browse, ListTracks}
+  alias Bolognesa.Music.Application.UseCases.Browse
+  alias Bolognesa.Music.Application.UseCases.ListTracks
   alias BolognesaWeb.Music.Index.State.Track
   @type async_result :: {:ok, ListTracks.result() | Browse.result()} | {:exit, term()}
   @spec call(Phoenix.LiveView.Socket.t(), reference(), async_result()) ::

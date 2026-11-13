@@ -1,7 +1,8 @@
 defmodule Bolognesa.Libraries.Support.SuccessfulMusicProbe do
   @moduledoc false
   @behaviour Bolognesa.Libraries.Application.Ports.Services.MediaProbe
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.{MusicTags, TechnicalMedia}
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
   @impl true
   def inspect(_library, _file),
     do:

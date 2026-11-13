@@ -1,9 +1,9 @@
 defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
-  use Bolognesa.DataCase, async: false
-
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  use Bolognesa.DataCase, async: false
+
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.SeasonSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
@@ -19,6 +19,9 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
   alias Bolognesa.Test.SyntheticSeriesProvider
   alias Ecto.Adapters.SQL
   alias Ecto.Adapters.SQL.Sandbox
+  alias Ecto.Changeset
+  alias Ecto.UUID
+  alias Task.Supervisor, as: TaskSupervisor
 
   @actor %AuthenticatedUser{id: 1, role: :admin}
 
@@ -100,7 +103,7 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
     [id] = original.episode_ids
     assert {:ok, %{episode_ids: [^id]}} = correct(@actor, first.id, choice)
     assert {:ok, %{episode_ids: [^id]}} = correct(@actor, second.id, choice)
-    second |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+    second |> Changeset.change(availability: :missing) |> Repo.update!()
 
     assert {:ok, _} = correct(@actor, first.id, :unidentified)
     episode = Repo.get!(EpisodeSchema, id)
@@ -131,12 +134,12 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
 
   test "manual set survives an older automatic completion" do
     Sandbox.mode(Repo, {:shared, self()})
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     {file, token} = pending(:series)
     owner = self()
 
     task =
-      Task.Supervisor.async_nolink(supervisor, fn ->
+      TaskSupervisor.async_nolink(supervisor, fn ->
         Process.put(:series_test_owner, owner)
         IdentifySeriesFile.call(file.id, token, 1, Repository, BlockingSeriesProvider)
       end)
@@ -152,12 +155,12 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
 
   test "file revision changing during manual provider lookup rejects the stale result" do
     Sandbox.mode(Repo, {:shared, self()})
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     {file, _} = pending(:series)
     owner = self()
 
     task =
-      Task.Supervisor.async_nolink(supervisor, fn ->
+      TaskSupervisor.async_nolink(supervisor, fn ->
         Process.put(:series_test_owner, owner)
 
         CorrectSeriesIdentification.call(
@@ -170,7 +173,7 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
       end)
 
     assert_receive {:series_waiting, worker}, 2000
-    file |> Ecto.Changeset.change(revision: 2) |> Repo.update!()
+    file |> Changeset.change(revision: 2) |> Repo.update!()
     send(worker, :continue)
     assert {:error, :source_changed} = Task.await(task)
     assert {:ok, %{episode_ids: []}} = Repository.get(file.id)
@@ -238,7 +241,7 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
     library =
       Repo.insert!(%LibrarySchema{
         name: "Source",
-        path: "/synthetic/#{Ecto.UUID.generate()}",
+        path: "/synthetic/#{UUID.generate()}",
         content_type: type
       })
 
@@ -250,10 +253,10 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
         modified_at: DateTime.utc_now(),
         availability: :available,
         revision: 1,
-        last_seen_generation: Ecto.UUID.generate()
+        last_seen_generation: UUID.generate()
       })
 
-    token = Ecto.UUID.generate()
+    token = UUID.generate()
 
     Repo.insert!(%SeriesIdentificationSchema{
       media_file_id: file.id,

@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.Settings.Reducer.Save do
+  alias Ecto.Changeset
   @moduledoc false
   import Phoenix.Component, only: [assign: 3, to_form: 2]
   import Phoenix.LiveView, only: [put_flash: 3, redirect: 2]
@@ -15,7 +16,7 @@ defmodule BolognesaWeb.Settings.Reducer.Save do
   def call(socket, params, operation \\ &Accounts.update_locale/2) do
     changeset = Preferences.changeset(socket.assigns.current_scope.actor.locale, params)
 
-    case Ecto.Changeset.apply_action(changeset, :update) do
+    case Changeset.apply_action(changeset, :update) do
       {:ok, %{locale: locale}} -> save(socket, locale, changeset, operation)
       {:error, changeset} -> assign(socket, :form, to_form(changeset, as: :preferences))
     end

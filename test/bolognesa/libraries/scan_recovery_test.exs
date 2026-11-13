@@ -1,26 +1,32 @@
 defmodule Bolognesa.Libraries.ScanRecoveryTest do
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.ScanSchema
+  alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
+  alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
-
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
-  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
-
-  alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
-  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.ScanPolicy
+
   alias Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.ScanReconciler
   alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker
+
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
+  alias Bolognesa.Libraries.Support.BlockingScanWorker
+  alias Bolognesa.Libraries.Support.ControlledFileDiscovery
+  alias Bolognesa.Libraries.Support.ControlledScanRepository
+  alias Config.Reader, as: ConfigReader
 
-  alias Bolognesa.Libraries.Support.{
-    BlockingScanWorker,
-    ControlledFileDiscovery,
-    ControlledScanRepository
-  }
+  alias Ecto.Changeset
+  alias Ecto.Query
+  alias ExUnit.CaptureLog
 
-  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
-  alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
+  alias Oban.Worker, as: ObanWorker
+  alias Postgrex.Error, as: PostgrexError
+  alias Task.Supervisor, as: TaskSupervisor
 
   setup do
     library =
@@ -43,14 +49,14 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     assert first.error == nil
     assert length(first.changed_library_ids) == 100
 
-    assert Repo.aggregate(Ecto.Query.from(s in ScanSchema, where: s.state == :queued), :count) ==
+    assert Repo.aggregate(Query.from(s in ScanSchema, where: s.state == :queued), :count) ==
              1
 
     second = EctoScanRepository.reconcile_jobs(DateTime.utc_now())
     assert second.error == nil
     assert length(second.changed_library_ids) == 1
 
-    assert Repo.aggregate(Ecto.Query.from(s in ScanSchema, where: s.state == :queued), :count) ==
+    assert Repo.aggregate(Query.from(s in ScanSchema, where: s.state == :queued), :count) ==
              0
   end
 
@@ -195,7 +201,7 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
   end
 
   test "policy agrees with production configuration and worker options", %{scan: scan} do
-    config = Config.Reader.read!("config/config.exs", env: :prod, target: :host)
+    config = ConfigReader.read!("config/config.exs", env: :prod, target: :host)
     oban = config[:bolognesa][Oban]
 
     assert oban[:queues] == [
@@ -221,10 +227,10 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
   test "Lifeline rescues interrupted execution after a confirmed batch and a new generation repeats safely",
        %{scan: scan} do
     owner = self()
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
 
     task =
-      Task.Supervisor.async_nolink(supervisor, fn ->
+      TaskSupervisor.async_nolink(supervisor, fn ->
         ControlledFileDiscovery.configure(owner)
 
         DiscoverFiles.call(
@@ -243,7 +249,7 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     old = Repo.get!(ScanSchema, scan.id)
     [before] = Repo.all(MediaFileSchema)
     monitor = Process.monitor(pid)
-    :ok = Task.Supervisor.terminate_child(supervisor, pid)
+    :ok = TaskSupervisor.terminate_child(supervisor, pid)
     assert_receive {:DOWN, ^monitor, :process, ^pid, :shutdown}
 
     prepare_job(scan, "normal",
@@ -282,7 +288,7 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     assert_receive {:walking, ^worker}
 
     log =
-      ExUnit.CaptureLog.capture_log(fn ->
+      CaptureLog.capture_log(fn ->
         send(worker, {:batch, [entry()]})
         assert_receive {:batch_result, ^worker, {:error, :unavailable}}
         assert_job_event(scan.job_id, :exception)
@@ -391,11 +397,11 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     on_exit(fn -> Logger.configure(level: level) end)
 
     log =
-      ExUnit.CaptureLog.capture_log([level: :debug], fn ->
+      CaptureLog.capture_log([level: :debug], fn ->
         Oban.resume_queue(:ScanRecoveryOban, queue: :library_scans)
         assert_receive {:engine_started, _, worker, 3}, 2_000
         assert_receive {:walking, ^worker}
-        send(worker, {:raise, Postgrex.Error.exception(message: private)})
+        send(worker, {:raise, PostgrexError.exception(message: private)})
         assert_job_event(scan.job_id, :exception)
       end)
 
@@ -423,7 +429,7 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     assert_receive {:reconciliation, ^pid, %DateTime{}}, 1_000
 
     log =
-      ExUnit.CaptureLog.capture_log(fn ->
+      CaptureLog.capture_log(fn ->
         send(pid, {:reconciled, %ReconciliationResult{error: :unavailable}})
         assert_receive {:reconciliation, ^pid, %DateTime{}}, 1_000
       end)
@@ -450,8 +456,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     }
 
     Repo.get!(Oban.Job, scan.job_id)
-    |> Ecto.Changeset.change(
-      Keyword.merge([worker: Oban.Worker.to_string(BlockingScanWorker), args: args], attrs)
+    |> Changeset.change(
+      Keyword.merge([worker: ObanWorker.to_string(BlockingScanWorker), args: args], attrs)
     )
     |> Repo.update!()
   end
@@ -505,6 +511,6 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
   end
 
   defp job_state(scan, state) do
-    Repo.get!(Oban.Job, scan.job_id) |> Ecto.Changeset.change(state: state) |> Repo.update!()
+    Repo.get!(Oban.Job, scan.job_id) |> Changeset.change(state: state) |> Repo.update!()
   end
 end

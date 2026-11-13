@@ -1,4 +1,5 @@
 defmodule Bolognesa.Music.BrowseTest do
+  alias Bolognesa.MusicFixtures
   use Bolognesa.DataCase, async: true
   import Bolognesa.MusicFixtures
   alias Bolognesa.Music

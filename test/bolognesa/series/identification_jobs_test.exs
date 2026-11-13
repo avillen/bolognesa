@@ -14,6 +14,7 @@ defmodule Bolognesa.Series.IdentificationJobsTest do
 
   alias Bolognesa.Test.SyntheticSeriesProvider
   alias Ecto.Adapters.SQL
+  alias Oban.Notifier
   alias SQL.Sandbox
   use Bolognesa.DataCase, async: false
   use Oban.Testing, repo: Bolognesa.Repo
@@ -179,14 +180,14 @@ defmodule Bolognesa.Series.IdentificationJobsTest do
   @tag committed: true
   test "committed requests notify the identification queue" do
     Sandbox.unboxed_run(Repo, fn ->
-      :ok = Oban.Notifier.listen(:insert)
+      :ok = Notifier.listen(:insert)
       {request, scan} = pending_request()
 
       try do
         assert_receive {:notification, :insert, %{"queue" => "identifications"}}, 1000
         assert Repo.get!(Oban.Job, request.job_id)
       after
-        Oban.Notifier.unlisten(:insert)
+        Notifier.unlisten(:insert)
         cleanup(scan)
       end
     end)

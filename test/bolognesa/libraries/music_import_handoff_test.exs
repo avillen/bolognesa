@@ -1,13 +1,18 @@
 defmodule Bolognesa.Libraries.MusicImportHandoffTest do
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicImportSchema
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   use Bolognesa.DataCase, async: false
   use Oban.Testing, repo: Bolognesa.Repo
   import Bolognesa.MusicFixtures
-  alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, MusicImportSchema}
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
-  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Music
+  alias Bolognesa.MusicFixtures
   alias Ecto.Adapters.SQL
+  alias Ecto.UUID
+  alias Oban.Notifier
   alias SQL.Sandbox
+  alias Task.Supervisor, as: TaskSupervisor
 
   test "accepted audio inspection commits its pending import and job immediately" do
     fixture = music_fixture(inspection_state: :running)
@@ -15,7 +20,7 @@ defmodule Bolognesa.Libraries.MusicImportHandoffTest do
     assert {:ok, :stale} =
              EctoInspectionRepository.complete_inspection(
                fixture.file.id,
-               Ecto.UUID.generate(),
+               UUID.generate(),
                media()
              )
 
@@ -43,7 +48,7 @@ defmodule Bolognesa.Libraries.MusicImportHandoffTest do
 
   test "handoff rejects stale observations, other content types and audio-free inspections" do
     fixture = music_fixture()
-    assert {:ok, :stale} = request(fixture, %{inspection_token: Ecto.UUID.generate()})
+    assert {:ok, :stale} = request(fixture, %{inspection_token: UUID.generate()})
     assert {:ok, :stale} = request(fixture, %{revision: 2})
     Repo.update!(change(fixture.library, content_type: :movie))
     assert {:ok, :stale} = request(fixture)
@@ -60,7 +65,7 @@ defmodule Bolognesa.Libraries.MusicImportHandoffTest do
         Music.request_import_in_transaction!(Repo, %{
           file_id: 1,
           revision: 1,
-          inspection_token: Ecto.UUID.generate()
+          inspection_token: UUID.generate()
         })
       end
     end)
@@ -112,7 +117,7 @@ defmodule Bolognesa.Libraries.MusicImportHandoffTest do
 
   @tag committed: true
   test "concurrent handoffs create one request and one job" do
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
 
     Sandbox.unboxed_run(Repo, fn ->
       fixture = music_fixture()
@@ -120,7 +125,7 @@ defmodule Bolognesa.Libraries.MusicImportHandoffTest do
 
       tasks =
         for _ <- 1..2 do
-          Task.Supervisor.async_nolink(supervisor, fn ->
+          TaskSupervisor.async_nolink(supervisor, fn ->
             Sandbox.unboxed_run(Repo, fn ->
               send(parent, {:ready, self()})
 
@@ -162,13 +167,13 @@ defmodule Bolognesa.Libraries.MusicImportHandoffTest do
   test "committed requests notify Oban so work does not wait for periodic staging" do
     Sandbox.unboxed_run(Repo, fn ->
       fixture = music_fixture()
-      :ok = Oban.Notifier.listen(:insert)
+      :ok = Notifier.listen(:insert)
 
       try do
         assert {:ok, :requested} = request(fixture)
         assert_receive {:notification, :insert, %{"queue" => "music_imports"}}, 1000
       after
-        Oban.Notifier.unlisten(:insert)
+        Notifier.unlisten(:insert)
 
         Repo.delete_all(
           from row in MusicImportSchema, where: row.media_file_id == ^fixture.file.id

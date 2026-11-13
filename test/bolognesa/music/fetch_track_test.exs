@@ -1,4 +1,6 @@
 defmodule Bolognesa.Music.FetchTrackTest do
+  alias Bolognesa.MusicFixtures
+  alias Ecto.Changeset
   use Bolognesa.DataCase, async: true
   import Bolognesa.MusicFixtures
   alias Bolognesa.Music
@@ -13,7 +15,7 @@ defmodule Bolognesa.Music.FetchTrackTest do
     assert track.artist == "Example"
     assert {:error, :forbidden} = Music.fetch_track(nil, fixture.track.id)
     assert {:error, :not_found} = Music.fetch_track(fixture.actor, -1)
-    Repo.update!(Ecto.Changeset.change(fixture.file, availability: :missing))
+    Repo.update!(Changeset.change(fixture.file, availability: :missing))
     assert {:error, :not_found} = Music.fetch_track(fixture.actor, fixture.track.id)
     assert {:error, :not_found} = Music.fetch_track(fixture.actor, 999_999)
   end

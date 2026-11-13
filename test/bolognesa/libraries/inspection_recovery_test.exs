@@ -1,4 +1,6 @@
 defmodule Bolognesa.Libraries.InspectionRecoveryTest do
+  alias Ecto.Changeset
+  alias ExUnit.CaptureLog
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
@@ -14,7 +16,9 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
-  alias Bolognesa.Libraries.Support.{BlockingMediaProbe, RaisingMediaProbe, SuccessfulMediaProbe}
+  alias Bolognesa.Libraries.Support.BlockingMediaProbe
+  alias Bolognesa.Libraries.Support.RaisingMediaProbe
+  alias Bolognesa.Libraries.Support.SuccessfulMediaProbe
 
   setup do
     library =
@@ -55,7 +59,7 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
 
   test "reconciles a completed job with no domain result", %{inspection: inspection} do
     Repo.get!(Oban.Job, inspection.job_id)
-    |> Ecto.Changeset.change(state: "completed")
+    |> Changeset.change(state: "completed")
     |> Repo.update!()
 
     :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
@@ -87,7 +91,7 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
 
   test "reconciles an exhausted job and leaves success intact", %{inspection: inspection} do
     Repo.get!(Oban.Job, inspection.job_id)
-    |> Ecto.Changeset.change(state: "discarded")
+    |> Changeset.change(state: "discarded")
     |> Repo.update!()
 
     pid =
@@ -124,11 +128,11 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
       DateTime.add(DateTime.utc_now(), -InspectionPolicy.rescue_after_ms() - 1_000, :millisecond)
 
     Repo.get!(Oban.Job, inspection.job_id)
-    |> Ecto.Changeset.change(state: "executing", attempted_at: old)
+    |> Changeset.change(state: "executing", attempted_at: old)
     |> Repo.update!()
 
     Repo.get!(InspectionSchema, inspection.id)
-    |> Ecto.Changeset.change(state: :running, started_at: old)
+    |> Changeset.change(state: :running, started_at: old)
     |> Repo.update!()
 
     assert :ok =
@@ -149,7 +153,7 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
       DateTime.add(DateTime.utc_now(), -InspectionPolicy.rescue_after_ms() - 1_000, :millisecond)
 
     Repo.get!(Oban.Job, inspection.job_id)
-    |> Ecto.Changeset.change(
+    |> Changeset.change(
       state: "retryable",
       attempted_at: old,
       scheduled_at: DateTime.add(DateTime.utc_now(), 30)
@@ -157,7 +161,7 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     |> Repo.update!()
 
     Repo.get!(InspectionSchema, inspection.id)
-    |> Ecto.Changeset.change(state: :running, started_at: old)
+    |> Changeset.change(state: :running, started_at: old)
     |> Repo.update!()
 
     :ok = LibraryStatusNotifications.subscribe()
@@ -202,11 +206,11 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
       DateTime.add(DateTime.utc_now(), -InspectionPolicy.rescue_after_ms() - 1_000, :millisecond)
 
     Repo.get!(Oban.Job, inspection.job_id)
-    |> Ecto.Changeset.change(state: "executing", attempted_at: DateTime.utc_now())
+    |> Changeset.change(state: "executing", attempted_at: DateTime.utc_now())
     |> Repo.update!()
 
     Repo.get!(InspectionSchema, inspection.id)
-    |> Ecto.Changeset.change(state: :running, started_at: old)
+    |> Changeset.change(state: :running, started_at: old)
     |> Repo.update!()
 
     assert :ok =
@@ -229,7 +233,7 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     }
 
     log =
-      ExUnit.CaptureLog.capture_log(fn ->
+      CaptureLog.capture_log(fn ->
         assert {:error, :unexpected_failure} =
                  InspectionWorker.perform(job, EctoInspectionRepository, RaisingMediaProbe)
       end)

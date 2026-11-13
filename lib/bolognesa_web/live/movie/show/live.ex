@@ -3,14 +3,15 @@ defmodule BolognesaWeb.Movie.Show.Live do
   # Capability reports are untrusted; only sanitized playback diagnostics may be logged.
   use BolognesaWeb, {:live_view, log: false}
   alias BolognesaWeb.LiveSupport.PlaybackEvents
-  alias BolognesaWeb.Movie.Show.Reducer
+  alias BolognesaWeb.Movie.Show.Reducer.ApplyResult
+  alias BolognesaWeb.Movie.Show.Reducer.Initialize
   @impl true
   def mount(%{"id" => id}, _session, socket),
-    do: {:ok, Reducer.Initialize.call(socket, socket.assigns.current_scope.actor, parse_id(id))}
+    do: {:ok, Initialize.call(socket, socket.assigns.current_scope.actor, parse_id(id))}
 
   @impl true
   def handle_async({:movie, request_id}, result, socket),
-    do: {:noreply, Reducer.ApplyResult.call(socket, request_id, result)}
+    do: {:noreply, ApplyResult.call(socket, request_id, result)}
 
   @impl true
   def handle_event(event, params, socket), do: PlaybackEvents.handle_event(event, params, socket)

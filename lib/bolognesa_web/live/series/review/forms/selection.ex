@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.Series.Review.Forms.Selection do
+  alias Ecto.Changeset
+
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   use Ecto.Schema
@@ -8,7 +10,7 @@ defmodule BolognesaWeb.Series.Review.Forms.Selection do
     field :episode_numbers, {:array, :integer}, default: []
   end
 
-  @spec changeset(map()) :: Ecto.Changeset.t()
+  @spec changeset(map()) :: Changeset.t()
   def changeset(params) do
     %__MODULE__{}
     |> cast(normalize(params), [:episode_numbers])

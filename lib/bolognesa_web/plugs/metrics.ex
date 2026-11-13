@@ -1,17 +1,21 @@
 defmodule BolognesaWeb.Plugs.Metrics do
+  alias Bolognesa.Infrastructure.Observability.PromEx, as: Metrics
+  alias Plug.Conn, as: PlugConn
+  alias Plug.Crypto, as: PlugCrypto
+
   @moduledoc "Serves optional metrics using a runtime bearer credential, outside browser sessions."
 
   @behaviour Plug
 
   import Plug.Conn
 
-  alias Bolognesa.Infrastructure.Observability.PromEx, as: Metrics
+  alias PromEx.Plug, as: PromExPlug
 
   @impl true
   def init(opts), do: opts
 
   @impl true
-  def call(%Plug.Conn{request_path: "/metrics"} = conn, _opts) do
+  def call(%PlugConn{request_path: "/metrics"} = conn, _opts) do
     respond(conn, Application.get_env(:bolognesa, :metrics_token))
   end
 
@@ -24,8 +28,8 @@ defmodule BolognesaWeb.Plugs.Metrics do
   defp respond(conn, _token), do: conn |> send_resp(404, "Not Found") |> halt()
 
   defp authorize(conn, token, ["Bearer " <> supplied]) do
-    if Plug.Crypto.secure_compare(token, supplied) do
-      PromEx.Plug.call(conn, PromEx.Plug.init(prom_ex_module: Metrics))
+    if PlugCrypto.secure_compare(token, supplied) do
+      PromExPlug.call(conn, PromExPlug.init(prom_ex_module: Metrics))
     else
       deny(conn)
     end

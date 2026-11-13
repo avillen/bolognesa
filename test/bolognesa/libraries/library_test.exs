@@ -1,9 +1,11 @@
 defmodule Bolognesa.Libraries.LibraryTest do
-  use Bolognesa.DataCase, async: false
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  use Bolognesa.DataCase, async: false
   alias Bolognesa.Libraries
   alias Ecto.Adapters.SQL.Sandbox
+  alias ExUnit.CaptureLog
+  alias Task.Supervisor, as: TaskSupervisor
 
   @admin %AuthenticatedUser{id: 1, name: "Ada", email: "ada@example.com", role: :admin}
   @member %AuthenticatedUser{id: 2, name: "Joe", email: "joe@example.com", role: :member}
@@ -23,7 +25,7 @@ defmodule Bolognesa.Libraries.LibraryTest do
     on_exit(fn -> Logger.configure(level: level) end)
 
     log =
-      ExUnit.CaptureLog.capture_log([level: :debug], fn ->
+      CaptureLog.capture_log([level: :debug], fn ->
         assert {:ok, _} =
                  Libraries.create_library(@admin, %{
                    name: "Sensitive source name",
@@ -154,13 +156,13 @@ defmodule Bolognesa.Libraries.LibraryTest do
   end
 
   test "simultaneous registrations create one library", %{path: path} do
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     parent = self()
 
     try do
       tasks =
         for name <- ["One", "Two"] do
-          Task.Supervisor.async_nolink(supervisor, fn ->
+          TaskSupervisor.async_nolink(supervisor, fn ->
             Sandbox.unboxed_run(Repo, fn ->
               send(parent, {:ready, self()})
 

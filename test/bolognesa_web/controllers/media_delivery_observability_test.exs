@@ -22,6 +22,7 @@ defmodule BolognesaWeb.MediaDeliveryObservationAdapter do
 end
 
 defmodule BolognesaWeb.MediaDeliveryObservabilityTest do
+  alias Plug.Test, as: PlugTest
   use ExUnit.Case, async: true
 
   import Plug.Conn
@@ -67,11 +68,11 @@ defmodule BolognesaWeb.MediaDeliveryObservabilityTest do
     source: source,
     event: event
   } do
-    conn = Plug.Test.conn(:get, "/") |> MediaDelivery.with_resource(:movie, "42")
+    conn = PlugTest.conn(:get, "/") |> MediaDelivery.with_resource(:movie, "42")
     assert MediaDelivery.serve(conn, source, "video/mp4").status == 200
     refute_receive {^event, _, _}
 
-    conn = Plug.Test.conn(:get, "/") |> MediaDelivery.with_resource(:music, "43")
+    conn = PlugTest.conn(:get, "/") |> MediaDelivery.with_resource(:music, "43")
     conn = put_req_header(conn, "range", "bytes=secret")
     assert MediaDelivery.serve(conn, source, "audio/mpeg").status == 400
 
@@ -93,7 +94,7 @@ defmodule BolognesaWeb.MediaDeliveryObservabilityTest do
     event: event
   } do
     File.rm!(path)
-    conn = Plug.Test.conn(:get, "/") |> MediaDelivery.with_resource(:episode, "44")
+    conn = PlugTest.conn(:get, "/") |> MediaDelivery.with_resource(:episode, "44")
     assert MediaDelivery.serve(conn, source, "video/mp4").status == 404
     assert_receive {^event, %{count: 1}, metadata}
 
@@ -121,7 +122,7 @@ defmodule BolognesaWeb.MediaDeliveryObservabilityTest do
         ] do
       File.write!(path, "abcdefgh")
       source = %{source | modified_at: DateTime.from_unix!(File.stat!(path, time: :posix).mtime)}
-      conn = Plug.Test.conn(:get, "/") |> MediaDelivery.with_resource(:music, 45)
+      conn = PlugTest.conn(:get, "/") |> MediaDelivery.with_resource(:music, 45)
       {_, state} = conn.adapter
 
       conn = %{
@@ -147,7 +148,7 @@ defmodule BolognesaWeb.MediaDeliveryObservabilityTest do
   end
 
   test "invalid resource identifiers are excluded before telemetry", %{event: event} do
-    conn = Plug.Test.conn(:get, "/") |> MediaDelivery.with_resource(:movie, "private@example.com")
+    conn = PlugTest.conn(:get, "/") |> MediaDelivery.with_resource(:movie, "private@example.com")
     assert MediaDelivery.error_response(conn, :not_found).status == 404
     assert_receive {^event, %{count: 1}, metadata}
 

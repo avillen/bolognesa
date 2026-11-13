@@ -1,13 +1,12 @@
 defmodule Bolognesa.Libraries do
   @moduledoc "Configure and read media libraries."
-  alias Bolognesa.Libraries.Application.UseCases.{
-    CreateLibrary,
-    FetchInspectionCounts,
-    FetchScanStatus,
-    ListLibraries,
-    RequestInspectionRefresh,
-    StartScan
-  }
+  alias Bolognesa.Accounts, as: BolognesaAccounts
+  alias Bolognesa.Libraries.Application.UseCases.CreateLibrary
+  alias Bolognesa.Libraries.Application.UseCases.FetchInspectionCounts
+  alias Bolognesa.Libraries.Application.UseCases.FetchScanStatus
+  alias Bolognesa.Libraries.Application.UseCases.ListLibraries
+  alias Bolognesa.Libraries.Application.UseCases.RequestInspectionRefresh
+  alias Bolognesa.Libraries.Application.UseCases.StartScan
 
   alias Bolognesa.Libraries.Domain.Entities.Library
   alias Bolognesa.Libraries.Domain.Entities.MediaFile
@@ -18,11 +17,9 @@ defmodule Bolognesa.Libraries do
 
   alias Bolognesa.Libraries.Infrastructure.Services.LocalFileSource
 
-  alias Bolognesa.Libraries.Infrastructure.Repositories.{
-    EctoInspectionRepository,
-    EctoLibraryRepository,
-    EctoScanRepository
-  }
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
@@ -36,7 +33,7 @@ defmodule Bolognesa.Libraries do
   @spec subscribe_status_updates(AuthenticatedUser.t() | nil) ::
           :ok | {:error, :forbidden | :unavailable}
   def subscribe_status_updates(actor) do
-    with :ok <- Bolognesa.Accounts.authorize(actor, :admin) do
+    with :ok <- BolognesaAccounts.authorize(actor, :admin) do
       LibraryStatusNotifications.subscribe()
     end
   end

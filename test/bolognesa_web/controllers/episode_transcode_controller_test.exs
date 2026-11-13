@@ -1,4 +1,7 @@
 defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
+  alias Bolognesa.MovieIdentificationFixtures
+  alias Bolognesa.PlaybackNegotiationFixtures
+  alias Ecto.UUID
   use BolognesaWeb.ConnCase, async: false
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Playback
@@ -36,7 +39,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
     file = ctx.media_file
 
     assert {:ok, :transcode, session} =
-             Bolognesa.PlaybackNegotiationFixtures.prepare_transcode(
+             PlaybackNegotiationFixtures.prepare_transcode(
                ctx.actor,
                {:episode, first},
                file.id,
@@ -74,7 +77,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
     assert response(get(ctx.conn, "/episodes/#{second}/media/#{file.id}"), 200) == "abcdefgh"
 
     assert {:ok, :transcode, next} =
-             Bolognesa.PlaybackNegotiationFixtures.prepare_transcode(
+             PlaybackNegotiationFixtures.prepare_transcode(
                ctx.actor,
                {:episode, second},
                file.id,
@@ -135,14 +138,14 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
         modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond),
         revision: 1,
         availability: :available,
-        last_seen_generation: Ecto.UUID.generate()
+        last_seen_generation: UUID.generate()
       })
 
-    Bolognesa.MovieIdentificationFixtures.insert_decision!(
+    MovieIdentificationFixtures.insert_decision!(
       %{
         media_file_id: file.id,
         observed_revision: 1,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         state: :manual,
         origin: :manual
       },
@@ -170,7 +173,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
           {:episode, ctx.media_file, :movie}
         ] do
       assert {:ok, :transcode, session} =
-               Bolognesa.PlaybackNegotiationFixtures.prepare_transcode(
+               PlaybackNegotiationFixtures.prepare_transcode(
                  ctx.actor,
                  {kind, id},
                  source_file.id,

@@ -1,13 +1,11 @@
 defmodule Bolognesa.Accounts do
   @moduledoc "Public accounts and access facade."
-  alias Bolognesa.Accounts.Application.UseCases.{
-    EndSession,
-    FetchAuthenticatedAdmin,
-    InstallAdmin,
-    ResolveSession,
-    StartSession,
-    UpdateLocale
-  }
+  alias Bolognesa.Accounts.Application.UseCases.EndSession
+  alias Bolognesa.Accounts.Application.UseCases.FetchAuthenticatedAdmin
+  alias Bolognesa.Accounts.Application.UseCases.InstallAdmin
+  alias Bolognesa.Accounts.Application.UseCases.ResolveSession
+  alias Bolognesa.Accounts.Application.UseCases.StartSession
+  alias Bolognesa.Accounts.Application.UseCases.UpdateLocale
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Accounts.Domain.Entities.Session

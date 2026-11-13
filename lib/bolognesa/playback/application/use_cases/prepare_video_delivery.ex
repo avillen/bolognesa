@@ -6,7 +6,8 @@ defmodule Bolognesa.Playback.Application.UseCases.PrepareVideoDelivery do
   alias Bolognesa.Playback.Application.UseCases.StartVideoPlayback
   alias Bolognesa.Playback.Domain.Policies.Negotiation
   alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
-  alias Bolognesa.Playback.Domain.ValueObjects.{ContentRef, DeliveryPlan}
+  alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
 
   @spec call(
           AuthenticatedUser.t() | nil,

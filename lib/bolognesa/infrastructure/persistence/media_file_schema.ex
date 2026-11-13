@@ -1,4 +1,6 @@
 defmodule Bolognesa.Infrastructure.Persistence.MediaFileSchema do
+  alias Ecto.Changeset
+
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
@@ -24,7 +26,7 @@ defmodule Bolognesa.Infrastructure.Persistence.MediaFileSchema do
     field :last_seen_generation, Ecto.UUID
   end
 
-  @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
+  @spec changeset(%__MODULE__{}, map()) :: Changeset.t()
   def changeset(file, attrs) do
     file
     |> change(attrs)

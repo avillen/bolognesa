@@ -1,24 +1,19 @@
 defmodule BolognesaWeb.Music.Index.Live do
+  alias BolognesaWeb.Music.Index.Components.BrowseCard
+  alias BolognesaWeb.Music.Index.Components.BrowseControls
+  alias BolognesaWeb.Music.Index.Components.DetailHeading
+  alias BolognesaWeb.Music.Index.Components.Home
+  alias BolognesaWeb.Music.Index.Components.TrackRow
   @moduledoc false
   use BolognesaWeb, :live_view
 
-  alias BolognesaWeb.Music.Index.Components.{
-    BrowseCard,
-    BrowseControls,
-    DetailHeading,
-    Home,
-    TrackRow
-  }
-
   alias BolognesaWeb.Music.Index.Forms.Filters
 
-  alias BolognesaWeb.Music.Index.Reducer.{
-    ApplyPage,
-    LastListened,
-    Load,
-    RefreshListening,
-    RetryImport
-  }
+  alias BolognesaWeb.Music.Index.Reducer.ApplyPage
+  alias BolognesaWeb.Music.Index.Reducer.LastListened
+  alias BolognesaWeb.Music.Index.Reducer.Load
+  alias BolognesaWeb.Music.Index.Reducer.RefreshListening
+  alias BolognesaWeb.Music.Index.Reducer.RetryImport
 
   @impl true
   def mount(_params, _session, socket) do

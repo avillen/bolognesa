@@ -1,4 +1,6 @@
 defmodule Bolognesa.Infrastructure.Persistence.SeasonSchema do
+  alias Ecto.Changeset
+
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
@@ -15,7 +17,7 @@ defmodule Bolognesa.Infrastructure.Persistence.SeasonSchema do
     timestamps(type: :utc_datetime_usec)
   end
 
-  @spec changeset(t(), map()) :: Ecto.Changeset.t()
+  @spec changeset(t(), map()) :: Changeset.t()
   def changeset(row, attrs) do
     row
     |> change(attrs)

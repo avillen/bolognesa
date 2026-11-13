@@ -2,11 +2,17 @@ defmodule BolognesaWeb.Movie.Review.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
   alias Bolognesa.Movies
-  alias BolognesaWeb.Movie.Review.Reducer
+  alias BolognesaWeb.Movie.Review.Reducer.ApplyCandidatesResult
+  alias BolognesaWeb.Movie.Review.Reducer.ApplyCorrectionResult
+  alias BolognesaWeb.Movie.Review.Reducer.ApplyReviewsResult
+  alias BolognesaWeb.Movie.Review.Reducer.BeginCorrection
+  alias BolognesaWeb.Movie.Review.Reducer.Initialize
+  alias BolognesaWeb.Movie.Review.Reducer.Load
+  alias BolognesaWeb.Movie.Review.Reducer.SelectFile
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, Reducer.Initialize.call(socket)}
+    {:ok, Initialize.call(socket)}
   end
 
   @impl true
@@ -25,17 +31,17 @@ defmodule BolognesaWeb.Movie.Review.Live do
 
     socket =
       if selected_file_id != socket.assigns.selected_file_id,
-        do: Reducer.SelectFile.call(socket, selected_file_id),
+        do: SelectFile.call(socket, selected_file_id),
         else: socket
 
-    {:noreply, socket |> assign(:page, page) |> Reducer.Load.call()}
+    {:noreply, socket |> assign(:page, page) |> Load.call()}
   end
 
   @impl true
   def handle_event("select", %{"file_id" => id}, socket) do
     case positive_id(id) do
       {:ok, file_id} ->
-        {:noreply, Reducer.SelectFile.call(socket, file_id)}
+        {:noreply, SelectFile.call(socket, file_id)}
 
       :error ->
         {:noreply, assign(socket, :feedback, gettext("Archivo inválido."))}
@@ -75,7 +81,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
   def handle_event("correct", %{"correction" => %{"tmdb_id" => id}}, socket) do
     case {socket.assigns.selected_file_id, positive_id(id)} do
       {file_id, {:ok, tmdb_id}} when is_integer(file_id) ->
-        {:noreply, Reducer.BeginCorrection.call(socket, file_id, {:tmdb, tmdb_id})}
+        {:noreply, BeginCorrection.call(socket, file_id, {:tmdb, tmdb_id})}
 
       _ ->
         {:noreply, assign(socket, :feedback, gettext("Selecciona una película válida."))}
@@ -88,7 +94,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
         {:noreply, assign(socket, :feedback, gettext("Selecciona un archivo."))}
 
       file_id ->
-        {:noreply, Reducer.BeginCorrection.call(socket, file_id, :unidentified)}
+        {:noreply, BeginCorrection.call(socket, file_id, :unidentified)}
     end
   end
 
@@ -102,7 +108,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
         {:noreply,
          socket
          |> assign(:feedback, gettext("Identificación solicitada de nuevo."))
-         |> Reducer.Load.call()}
+         |> Load.call()}
 
       _ ->
         {:noreply, assign(socket, :feedback, gettext("No se pudo reintentar."))}
@@ -111,13 +117,13 @@ defmodule BolognesaWeb.Movie.Review.Live do
 
   @impl true
   def handle_async({:reviews, request_id}, result, socket),
-    do: {:noreply, Reducer.ApplyReviewsResult.call(socket, request_id, result)}
+    do: {:noreply, ApplyReviewsResult.call(socket, request_id, result)}
 
   def handle_async({:candidates, request_id}, result, socket),
-    do: {:noreply, Reducer.ApplyCandidatesResult.call(socket, request_id, result)}
+    do: {:noreply, ApplyCandidatesResult.call(socket, request_id, result)}
 
   def handle_async({:correction, request_id}, result, socket),
-    do: {:noreply, Reducer.ApplyCorrectionResult.call(socket, request_id, result)}
+    do: {:noreply, ApplyCorrectionResult.call(socket, request_id, result)}
 
   defp positive_id(id) when is_binary(id) do
     case Integer.parse(id) do

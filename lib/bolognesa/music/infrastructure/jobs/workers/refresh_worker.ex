@@ -5,10 +5,12 @@ defmodule Bolognesa.Music.Infrastructure.Jobs.Workers.RefreshWorker do
 
   alias Bolognesa.Infrastructure.Observability.Events
   alias Bolognesa.Music.Application.Ports.Readers.ObservationsReader
-  alias Bolognesa.Music.Application.Ports.Repositories.{ImportRepository, MusicRepository}
+  alias Bolognesa.Music.Application.Ports.Repositories.ImportRepository
+  alias Bolognesa.Music.Application.Ports.Repositories.MusicRepository
   alias Bolognesa.Music.Application.UseCases.RefreshTrack
   alias Bolognesa.Music.Infrastructure.Readers.EctoObservationsReader
-  alias Bolognesa.Music.Infrastructure.Repositories.{EctoImportRepository, EctoMusicRepository}
+  alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository
+  alias Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository
 
   @impl Oban.Worker
   def timeout(_job), do: ImportPolicy.timeout_ms()

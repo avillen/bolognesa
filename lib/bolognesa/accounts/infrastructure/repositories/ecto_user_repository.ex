@@ -5,12 +5,11 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
   import Ecto.Query
   alias Bolognesa.Repo
 
-  alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository.{
-    SessionMapper,
-    UserMapper
-  }
+  alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository.SessionMapper
+  alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository.UserMapper
 
-  alias Bolognesa.Infrastructure.Persistence.{SessionSchema, UserSchema}
+  alias Bolognesa.Infrastructure.Persistence.SessionSchema
+  alias Bolognesa.Infrastructure.Persistence.UserSchema
 
   @impl true
   def update_locale(user_id, locale) do

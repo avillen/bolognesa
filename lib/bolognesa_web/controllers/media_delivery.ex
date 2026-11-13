@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.MediaDelivery do
+  alias Plug.Conn, as: PlugConn
   @moduledoc "Authorized-source byte responses using one validated file descriptor."
   import Plug.Conn
   alias Bolognesa.Infrastructure.Observability.Events
@@ -18,8 +19,8 @@ defmodule BolognesaWeb.MediaDelivery do
   @chunk_size 65_536
 
   @doc "Carry only resource kind and a parsed file reference into delivery diagnostics."
-  @spec with_resource(Plug.Conn.t(), :movie | :episode | :music, String.t() | pos_integer()) ::
-          Plug.Conn.t()
+  @spec with_resource(PlugConn.t(), :movie | :episode | :music, String.t() | pos_integer()) ::
+          PlugConn.t()
   def with_resource(conn, resource_type, file_id) do
     put_private(conn, :media_observation, %{
       resource_type: resource_type,
@@ -27,7 +28,7 @@ defmodule BolognesaWeb.MediaDelivery do
     })
   end
 
-  @spec serve(Plug.Conn.t(), Source.t(), String.t()) :: Plug.Conn.t()
+  @spec serve(PlugConn.t(), Source.t(), String.t()) :: PlugConn.t()
   def serve(conn, source, mime_type) do
     case LocalMediaFile.open(source) do
       {:ok, opened} ->
@@ -110,7 +111,7 @@ defmodule BolognesaWeb.MediaDelivery do
     end
   end
 
-  @spec error_response(Plug.Conn.t(), error()) :: Plug.Conn.t()
+  @spec error_response(PlugConn.t(), error()) :: PlugConn.t()
   def error_response(conn, reason), do: reject(conn, reason, :selection)
 
   defp reject(conn, reason, stage) do

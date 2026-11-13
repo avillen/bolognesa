@@ -2,13 +2,11 @@ defmodule Bolognesa.Accounts.ObservabilityTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Accounts
 
-  alias Bolognesa.Accounts.Application.UseCases.{
-    EndSession,
-    InstallAdmin,
-    ResolveSession,
-    StartSession,
-    UpdateLocale
-  }
+  alias Bolognesa.Accounts.Application.UseCases.EndSession
+  alias Bolognesa.Accounts.Application.UseCases.InstallAdmin
+  alias Bolognesa.Accounts.Application.UseCases.ResolveSession
+  alias Bolognesa.Accounts.Application.UseCases.StartSession
+  alias Bolognesa.Accounts.Application.UseCases.UpdateLocale
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
 

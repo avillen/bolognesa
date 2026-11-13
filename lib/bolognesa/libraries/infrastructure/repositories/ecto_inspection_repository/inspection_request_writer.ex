@@ -1,12 +1,14 @@
 defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.InspectionRequestWriter do
+  alias Ecto.UUID
   @moduledoc "Persist an inspection and its durable job inside the caller's transaction."
-  alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, MediaFileSchema}
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries.Infrastructure.Jobs.Oban.ObanInspectionJob
   alias Bolognesa.Repo
 
   @spec enqueue!(MediaFileSchema.t(), InspectionSchema.t() | nil) :: InspectionSchema.t()
   def enqueue!(file, current) do
-    token = Ecto.UUID.generate()
+    token = UUID.generate()
 
     attrs = %{
       media_file_id: file.id,

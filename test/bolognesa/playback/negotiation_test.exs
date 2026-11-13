@@ -1,7 +1,8 @@
 defmodule Bolognesa.Playback.NegotiationTest do
   use ExUnit.Case, async: true
   alias Bolognesa.Playback.Domain.Policies.Negotiation
-  alias Bolognesa.Playback.Domain.ReadModels.{Source, TechnicalTrack}
+  alias Bolognesa.Playback.Domain.ReadModels.Source
+  alias Bolognesa.Playback.Domain.ReadModels.TechnicalTrack
   alias Bolognesa.Playback.Domain.ValueObjects.CapabilityReport
 
   test "selects the cheapest positively supported transformation with absolute indexes" do

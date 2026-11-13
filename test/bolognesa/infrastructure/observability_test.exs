@@ -1,4 +1,5 @@
 defmodule Bolognesa.Infrastructure.ObservabilityTest do
+  alias ExUnit.CaptureLog
   use ExUnit.Case, async: false
   import ExUnit.CaptureLog
   alias Bolognesa.Infrastructure.Observability

@@ -1,16 +1,22 @@
 defmodule Bolognesa.Libraries.DiscoverFilesTest do
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.ScanSchema
+  alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
-  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
-
-  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
-  alias Bolognesa.Infrastructure.Persistence.{MediaFileSchema, ScanSchema}
-  alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
+
   alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
-  alias Bolognesa.Libraries.Support.{ControlledFileDiscovery, UnavailableScanRepository}
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
+  alias Bolognesa.Libraries.Support.ControlledFileDiscovery
+  alias Bolognesa.Libraries.Support.UnavailableScanRepository
   alias Ecto.Adapters.SQL.Sandbox
+  alias Ecto.Changeset
+  alias ExUnit.CaptureLog
+  alias Postgrex.Error, as: PostgrexError
+  alias Task.Supervisor, as: TaskSupervisor
   @moduletag capture_log: true
   require Logger
 
@@ -24,7 +30,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
       |> Repo.insert!()
 
     {:ok, scan} = EctoScanRepository.request(library.id)
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     %{scan: scan, supervisor: supervisor}
   end
 
@@ -79,7 +85,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
     end
 
     Repo.get!(Oban.Job, context.scan.job_id)
-    |> Ecto.Changeset.change(state: "discarded")
+    |> Changeset.change(state: "discarded")
     |> Repo.update!()
 
     assert :ok =
@@ -113,12 +119,12 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
 
     for command <- [
           {:raise, RuntimeError.exception(private)},
-          {:raise, Postgrex.Error.exception(message: private)},
+          {:raise, PostgrexError.exception(message: private)},
           {:throw, private},
           {:exit, private}
         ] do
       log =
-        ExUnit.CaptureLog.capture_log(fn ->
+        CaptureLog.capture_log(fn ->
           task = start_worker(context)
           send(task.pid, command)
           assert {:error, :unexpected_failure} = Task.await(task)
@@ -142,7 +148,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
       })
 
     log =
-      ExUnit.CaptureLog.capture_log([level: :debug], fn ->
+      CaptureLog.capture_log([level: :debug], fn ->
         task = start_worker(context)
         send(task.pid, {:batch, [entry]})
         assert_receive {:batch_result, _, :ok}, 1_000
@@ -160,7 +166,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
     formatter = Application.fetch_env!(:logger, :default_formatter)
 
     log =
-      ExUnit.CaptureLog.capture_log(formatter ++ [level: :info], fn ->
+      CaptureLog.capture_log(formatter ++ [level: :info], fn ->
         Logger.info("Scan formatter context", request_id: "scan-test-request")
         task = start_worker(context)
         send(task.pid, {:batch, [entry()]})
@@ -204,7 +210,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
     owner = self()
 
     task =
-      Task.Supervisor.async_nolink(context.supervisor, fn ->
+      TaskSupervisor.async_nolink(context.supervisor, fn ->
         ControlledFileDiscovery.configure(owner)
         callback.()
       end)

@@ -2,9 +2,17 @@ defmodule BolognesaWeb.Series.Review.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
   alias Bolognesa.Series
-  alias BolognesaWeb.Series.Review.Reducer
+  alias BolognesaWeb.Series.Review.Reducer.ApplyResult
+  alias BolognesaWeb.Series.Review.Reducer.BeginCorrection
+  alias BolognesaWeb.Series.Review.Reducer.ChooseSeries
+  alias BolognesaWeb.Series.Review.Reducer.Initialize
+  alias BolognesaWeb.Series.Review.Reducer.Load
+  alias BolognesaWeb.Series.Review.Reducer.LoadSeason
+  alias BolognesaWeb.Series.Review.Reducer.ResetSelection
+  alias BolognesaWeb.Series.Review.Reducer.Save
+  alias BolognesaWeb.Series.Review.Reducer.Search
   @impl true
-  def mount(_, _, socket), do: {:ok, Reducer.Initialize.call(socket)}
+  def mount(_, _, socket), do: {:ok, Initialize.call(socket)}
   @impl true
   def handle_params(_, _, %{assigns: %{saving?: true}} = socket), do: {:noreply, socket}
 
@@ -14,31 +22,31 @@ defmodule BolognesaWeb.Series.Review.Live do
 
     socket =
       if file_id != socket.assigns.selected_file_id,
-        do: socket |> Reducer.ResetSelection.call() |> assign(:selected_item, nil),
+        do: socket |> ResetSelection.call() |> assign(:selected_item, nil),
         else: socket
 
-    {:noreply, Reducer.Load.call(socket, page, file_id)}
+    {:noreply, Load.call(socket, page, file_id)}
   end
 
   @impl true
   def handle_event("search", %{"search" => %{"query" => query}}, socket),
-    do: {:noreply, Reducer.Search.call(socket, query)}
+    do: {:noreply, Search.call(socket, query)}
 
   def handle_event("choose", %{"id" => id}, socket),
-    do: {:noreply, Reducer.ChooseSeries.call(socket, integer(id, 1, nil))}
+    do: {:noreply, ChooseSeries.call(socket, integer(id, 1, nil))}
 
   def handle_event("season", %{"season" => %{"number" => number}}, socket) do
     case integer(number, 0, nil) do
       nil -> {:noreply, assign(socket, :feedback, gettext("Temporada inválida."))}
-      value -> {:noreply, Reducer.LoadSeason.call(socket, value)}
+      value -> {:noreply, LoadSeason.call(socket, value)}
     end
   end
 
   def handle_event("correct", params, socket),
-    do: {:noreply, Reducer.BeginCorrection.call(socket, Map.get(params, "selection", %{}))}
+    do: {:noreply, BeginCorrection.call(socket, Map.get(params, "selection", %{}))}
 
   def handle_event("unidentified", _, socket),
-    do: {:noreply, Reducer.Save.call(socket, :unidentified)}
+    do: {:noreply, Save.call(socket, :unidentified)}
 
   def handle_event("retry", _, %{assigns: %{saving?: true}} = socket), do: {:noreply, socket}
 
@@ -54,7 +62,7 @@ defmodule BolognesaWeb.Series.Review.Live do
         {:ok, _} ->
           socket
           |> assign(:feedback, gettext("Identificación solicitada de nuevo."))
-          |> Reducer.Load.call(socket.assigns.page, socket.assigns.selected_file_id)
+          |> Load.call(socket.assigns.page, socket.assigns.selected_file_id)
 
         _ ->
           assign(socket, :feedback, gettext("No se pudo reintentar."))
@@ -65,7 +73,7 @@ defmodule BolognesaWeb.Series.Review.Live do
 
   @impl true
   def handle_async({kind, ref}, result, socket),
-    do: {:noreply, Reducer.ApplyResult.call(socket, kind, ref, result)}
+    do: {:noreply, ApplyResult.call(socket, kind, ref, result)}
 
   defp integer(value, min, default) when is_binary(value) do
     case Integer.parse(value) do

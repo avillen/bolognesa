@@ -2,7 +2,8 @@ defmodule BolognesaWeb.Movie.Review.Reducer.ApplyCorrectionResult do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
-  alias BolognesaWeb.Movie.Review.Reducer.{Load, SelectFile}
+  alias BolognesaWeb.Movie.Review.Reducer.Load
+  alias BolognesaWeb.Movie.Review.Reducer.SelectFile
 
   @spec call(Phoenix.LiveView.Socket.t(), reference(), term()) :: Phoenix.LiveView.Socket.t()
   def call(socket, request_id, result) do

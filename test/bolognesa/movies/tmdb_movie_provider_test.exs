@@ -1,4 +1,5 @@
 defmodule Bolognesa.Movies.TmdbMovieProviderTest do
+  alias Plug.Conn, as: PlugConn
   use ExUnit.Case, async: true
 
   alias Bolognesa.Movies.Infrastructure.Providers.TmdbMovieProvider
@@ -34,7 +35,7 @@ defmodule Bolognesa.Movies.TmdbMovieProviderTest do
           ]
         })
 
-      Plug.Conn.resp(conn, 200, body)
+      PlugConn.resp(conn, 200, body)
     end
 
     assert {:ok, [candidate]} =
@@ -52,7 +53,7 @@ defmodule Bolognesa.Movies.TmdbMovieProviderTest do
 
   test "details accept absent optional values and reject unsafe image paths" do
     plug = fn conn ->
-      Plug.Conn.resp(
+      PlugConn.resp(
         conn,
         200,
         Jason.encode!(%{
@@ -72,7 +73,7 @@ defmodule Bolognesa.Movies.TmdbMovieProviderTest do
 
   test "ignores malformed search items while keeping the first valid result" do
     plug = fn conn ->
-      Plug.Conn.resp(
+      PlugConn.resp(
         conn,
         200,
         Jason.encode!(%{results: ["unexpected", %{id: 42, title: "Película", adult: false}]})
@@ -84,7 +85,7 @@ defmodule Bolognesa.Movies.TmdbMovieProviderTest do
   end
 
   test "rejects details for a different provider ID" do
-    plug = fn conn -> Plug.Conn.resp(conn, 200, Jason.encode!(%{id: 43, title: "Otra"})) end
+    plug = fn conn -> PlugConn.resp(conn, 200, Jason.encode!(%{id: 43, title: "Otra"})) end
 
     assert {:error, :invalid_response} =
              TmdbMovieProvider.details(42, token: "test-token", plug: plug)
@@ -99,7 +100,7 @@ defmodule Bolognesa.Movies.TmdbMovieProviderTest do
           {429, :rate_limited},
           {503, :provider_unavailable}
         ] do
-      plug = fn conn -> Plug.Conn.resp(conn, status, "private-title-and-token") end
+      plug = fn conn -> PlugConn.resp(conn, status, "private-title-and-token") end
 
       assert {:error, ^reason} =
                TmdbMovieProvider.search("Film", nil, token: "secret", plug: plug)
@@ -107,8 +108,8 @@ defmodule Bolognesa.Movies.TmdbMovieProviderTest do
   end
 
   test "rejects oversized or malformed responses without returning raw data" do
-    oversized = fn conn -> Plug.Conn.resp(conn, 200, String.duplicate("x", 1_048_577)) end
-    malformed = fn conn -> Plug.Conn.resp(conn, 200, "private-broken-json") end
+    oversized = fn conn -> PlugConn.resp(conn, 200, String.duplicate("x", 1_048_577)) end
+    malformed = fn conn -> PlugConn.resp(conn, 200, "private-broken-json") end
 
     assert {:error, :invalid_response} =
              TmdbMovieProvider.search("Film", nil, token: "secret", plug: oversized)

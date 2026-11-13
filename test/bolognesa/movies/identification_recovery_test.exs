@@ -1,4 +1,7 @@
 defmodule Bolognesa.Movies.IdentificationRecoveryTest do
+  alias Ecto.Changeset
+  alias Ecto.UUID
+  alias Oban.Job
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
@@ -85,7 +88,7 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
           Repo.delete!(Repo.get!(LibrarySchema, file.library_id))
         end)
 
-        Repo.delete_all(from job in Oban.Job, where: job.id in ^job_ids)
+        Repo.delete_all(from job in Job, where: job.id in ^job_ids)
       end
     end)
   end
@@ -169,13 +172,13 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
 
     job =
       Repo.insert!(
-        Oban.Job.new(%{file_id: file.id, token: token},
+        Job.new(%{file_id: file.id, token: token},
           worker: IdentificationWorker,
           queue: :identifications
         )
       )
 
-    Repo.update_all(from(row in Oban.Job, where: row.id == ^job.id), set: [state: "discarded"])
+    Repo.update_all(from(row in Job, where: row.id == ^job.id), set: [state: "discarded"])
 
     Repo.update_all(from(row in MovieIdentificationSchema, where: row.media_file_id == ^file.id),
       set: [job_id: job.id]
@@ -192,14 +195,14 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
 
     job =
       Repo.insert!(
-        Oban.Job.new(%{file_id: file.id, token: token},
+        Job.new(%{file_id: file.id, token: token},
           worker: IdentificationWorker,
           queue: :identifications
         )
       )
 
     assert {:ok, corrected} = Repository.correct(file.id, file.revision, :unidentified)
-    job = Repo.get!(Oban.Job, job.id)
+    job = Repo.get!(Job, job.id)
     assert job.args == %{"file_id" => file.id, "token" => token}
     assert :ok = IdentificationWorker.perform(job)
     assert {:ok, current} = Repository.get(file.id)
@@ -222,11 +225,11 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
           relative_path: "Film.mkv",
           size_bytes: 1,
           modified_at: DateTime.utc_now(),
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
-    token = Ecto.UUID.generate()
+    token = UUID.generate()
 
     Repo.insert!(
       MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{
@@ -243,7 +246,7 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
   defp link_job(file, token, state, started_at, attempted_at) do
     job =
       Repo.insert!(
-        Oban.Job.new(%{file_id: file.id, token: token},
+        Job.new(%{file_id: file.id, token: token},
           worker: IdentificationWorker,
           queue: :identifications
         )
@@ -259,16 +262,16 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
   defp set_job_state("missing", job, _attempted_at), do: Repo.delete!(job)
 
   defp set_job_state(state, job, attempted_at) do
-    Repo.update_all(from(row in Oban.Job, where: row.id == ^job.id),
+    Repo.update_all(from(row in Job, where: row.id == ^job.id),
       set: [state: state, attempted_at: attempted_at]
     )
   end
 
   defp change_file(:missing, file),
-    do: file |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+    do: file |> Changeset.change(availability: :missing) |> Repo.update!()
 
   defp change_file(:revision, file),
-    do: file |> Ecto.Changeset.change(revision: 2) |> Repo.update!()
+    do: file |> Changeset.change(revision: 2) |> Repo.update!()
 
   defp change_file(:manual, file), do: Repository.correct(file.id, file.revision, :unidentified)
 end

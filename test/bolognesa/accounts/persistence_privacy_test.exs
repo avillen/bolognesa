@@ -1,4 +1,5 @@
 defmodule Bolognesa.Accounts.PersistencePrivacyTest do
+  alias ExUnit.CaptureLog
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Accounts.Domain.Entities.Session
@@ -17,7 +18,7 @@ defmodule Bolognesa.Accounts.PersistencePrivacyTest do
       NewAdmin.new(%{name: "Sample", email: "sample@example.com", password: "Long password 123!"})
 
     log =
-      ExUnit.CaptureLog.capture_log([level: :debug], fn ->
+      CaptureLog.capture_log([level: :debug], fn ->
         assert {:ok, user} = Repository.insert_initial_admin(admin, password_hash)
         assert {:ok, {_, ^password_hash}} = Repository.fetch_user_by_email(admin.email)
         session = Session.new(user.id, token_hash, DateTime.utc_now())

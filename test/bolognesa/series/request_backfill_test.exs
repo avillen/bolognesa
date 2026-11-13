@@ -1,4 +1,8 @@
 defmodule Bolognesa.Series.RequestBackfillTest do
+  alias Bolognesa.MusicFixtures
+  alias Bolognesa.SeriesFixtures
+  alias Ecto.Changeset
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: true
 
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
@@ -9,7 +13,7 @@ defmodule Bolognesa.Series.RequestBackfillTest do
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository
 
   test "music is excluded at explicit and backfill request boundaries" do
-    fixture = Bolognesa.MusicFixtures.music_fixture()
+    fixture = MusicFixtures.music_fixture()
     assert {:ok, _cursor, 0} = EctoIdentificationRepository.backfill_batch(0, 100)
 
     assert {:ok, 0} =
@@ -55,7 +59,7 @@ defmodule Bolognesa.Series.RequestBackfillTest do
 
   test "backfill skips unavailable files" do
     file = file_fixture("missing.mp4")
-    file |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+    file |> Changeset.change(availability: :missing) |> Repo.update!()
 
     assert {:ok, _cursor, 0} = EctoIdentificationRepository.backfill_batch(0, 10)
     assert Repo.aggregate(SeriesIdentificationSchema, :count, :id) == 0
@@ -63,7 +67,7 @@ defmodule Bolognesa.Series.RequestBackfillTest do
 
   test "backfill and explicit requests preserve an existing manual choice" do
     file = file_fixture("manual.mp4")
-    manual = Bolognesa.SeriesFixtures.identify(file, 1, [1])
+    manual = SeriesFixtures.identify(file, 1, [1])
 
     assert {:ok, _cursor, 0} = EctoIdentificationRepository.backfill_batch(0, 100)
 
@@ -101,7 +105,7 @@ defmodule Bolognesa.Series.RequestBackfillTest do
       modified_at: ~U[2026-10-07 00:00:00.000000Z],
       availability: :available,
       revision: 1,
-      last_seen_generation: Ecto.UUID.generate()
+      last_seen_generation: UUID.generate()
     })
   end
 end

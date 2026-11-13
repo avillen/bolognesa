@@ -1,16 +1,15 @@
 defmodule Bolognesa.Music.RescanActivityTest do
+  alias Bolognesa.MusicFixtures
   use Bolognesa.DataCase, async: true
 
   import Bolognesa.MusicFixtures
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
 
-  alias Bolognesa.Infrastructure.Persistence.{
-    InspectionSchema,
-    MediaFileSchema,
-    MusicTrackSchema,
-    UserSchema
-  }
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicTrackSchema
+  alias Bolognesa.Infrastructure.Persistence.UserSchema
 
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository

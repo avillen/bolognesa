@@ -1,4 +1,7 @@
 defmodule Bolognesa.Series.SeriesReviewQueriesTest do
+  alias Bolognesa.Movies
+  alias Ecto.Changeset
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
@@ -12,7 +15,7 @@ defmodule Bolognesa.Series.SeriesReviewQueriesTest do
     SeriesFixtures.identify(double, 1, [1, 2])
 
     Repo.get_by!(SeriesIdentificationSchema, media_file_id: double.id)
-    |> Ecto.Changeset.change(needs_review: true)
+    |> Changeset.change(needs_review: true)
     |> Repo.update!()
 
     pending = SeriesFixtures.file(library.id, "Unusable.mkv")
@@ -20,7 +23,7 @@ defmodule Bolognesa.Series.SeriesReviewQueriesTest do
     Repo.insert!(%SeriesIdentificationSchema{
       media_file_id: pending.id,
       observed_revision: 1,
-      token: Ecto.UUID.generate(),
+      token: UUID.generate(),
       state: :unmatched,
       needs_review: true,
       failure_reason: "unusable_name"
@@ -32,7 +35,7 @@ defmodule Bolognesa.Series.SeriesReviewQueriesTest do
     Repo.insert!(%Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema{
       media_file_id: movie.id,
       observed_revision: 1,
-      token: Ecto.UUID.generate(),
+      token: UUID.generate(),
       state: :pending
     })
 
@@ -41,7 +44,7 @@ defmodule Bolognesa.Series.SeriesReviewQueriesTest do
     assert length(page.items) == 2
     assert hd(page.items).episode_numbers == [1, 2]
     assert List.last(page.items).failure_reason == "unusable_name"
-    assert {:ok, %{total: 1}} = Bolognesa.Movies.list_review_items(@actor, 1)
+    assert {:ok, %{total: 1}} = Movies.list_review_items(@actor, 1)
     assert {:error, :forbidden} = Series.list_review_items(nil, 1)
     assert {:error, :invalid_page} = Series.list_review_items(@actor, 0)
   end
@@ -69,7 +72,7 @@ defmodule Bolognesa.Series.SeriesReviewQueriesTest do
     SeriesFixtures.identify(file, 1, numbers)
 
     Repo.get_by!(SeriesIdentificationSchema, media_file_id: file.id)
-    |> Ecto.Changeset.change(needs_review: true)
+    |> Changeset.change(needs_review: true)
     |> Repo.update!()
 
     file

@@ -1,4 +1,5 @@
 defmodule Bolognesa.Movies.OwnershipTest do
+  alias Bolognesa.SeriesFixtures
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -11,8 +12,8 @@ defmodule Bolognesa.Movies.OwnershipTest do
 
   test "public corrections and retries authorize first and reject both foreign content types without writes" do
     for type <- [:series, :music] do
-      library = Bolognesa.SeriesFixtures.library(type)
-      file = Bolognesa.SeriesFixtures.file(library.id, "Synthetic.mp4")
+      library = SeriesFixtures.library(type)
+      file = SeriesFixtures.file(library.id, "Synthetic.mp4")
       assert {:error, :forbidden} = Movies.correct(nil, file.id, :unidentified)
       assert {:error, :forbidden} = Movies.retry(nil, file.id)
       assert {:error, :wrong_content_type} = Movies.correct(@actor, file.id, :unidentified)
@@ -31,10 +32,10 @@ defmodule Bolognesa.Movies.OwnershipTest do
   end
 
   test "mixed requests and backfill filter type before their batch limit" do
-    foreign = Bolognesa.SeriesFixtures.library(:series)
-    for n <- 1..101, do: Bolognesa.SeriesFixtures.file(foreign.id, "Foreign #{n}.mkv")
-    library = Bolognesa.SeriesFixtures.library(:movie)
-    file = Bolognesa.SeriesFixtures.file(library.id, "Owned.mkv")
+    foreign = SeriesFixtures.library(:series)
+    for n <- 1..101, do: SeriesFixtures.file(foreign.id, "Foreign #{n}.mkv")
+    library = SeriesFixtures.library(:movie)
+    file = SeriesFixtures.file(library.id, "Owned.mkv")
 
     foreign_file =
       Repo.one!(from row in MediaFileSchema, where: row.library_id == ^foreign.id, limit: 1)
@@ -46,7 +47,7 @@ defmodule Bolognesa.Movies.OwnershipTest do
              Repo.transaction(fn -> Movies.request_batch_in_transaction!(Repo, entries) end)
 
     assert Repo.get_by(MovieIdentificationSchema, media_file_id: foreign_file.id) == nil
-    second = Bolognesa.SeriesFixtures.file(library.id, "Second.mkv")
+    second = SeriesFixtures.file(library.id, "Second.mkv")
     assert {:ok, cursor, 0} = EctoIdentificationRepository.backfill_batch(0, 1)
     assert cursor == file.id
     assert {:ok, next, 1} = EctoIdentificationRepository.backfill_batch(cursor, 1)

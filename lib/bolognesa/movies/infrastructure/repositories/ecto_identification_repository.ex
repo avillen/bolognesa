@@ -1,4 +1,5 @@
 defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository do
+  alias Ecto.UUID
   @moduledoc false
   import Ecto.Query
 
@@ -267,7 +268,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   end
 
   defp save_correction(existing, file, ids) do
-    token = Ecto.UUID.generate()
+    token = UUID.generate()
     base = correction_base(existing, file, token)
     removed_ids = List.wrap(base.movie_id) -- List.wrap(ids)
     {:ok, corrected} = Identification.correct(base, file.revision, token, ids, DateTime.utc_now())

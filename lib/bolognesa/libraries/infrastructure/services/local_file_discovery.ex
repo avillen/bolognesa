@@ -10,7 +10,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery do
 
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Libraries.Domain.Policies.MediaExtensions
-  alias Bolognesa.Libraries.Domain.ValueObjects.Files.{DiscoveryRequest, NewMediaFile}
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.DiscoveryRequest
+  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
   @batch_size Bolognesa.Libraries.Infrastructure.Jobs.Policies.ScanPolicy.batch_size()
 

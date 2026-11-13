@@ -2,7 +2,8 @@ defmodule Bolognesa.Libraries.Domain.Entities.Inspection do
   @moduledoc "Rules for requesting and recording technical media inspection."
   alias Bolognesa.Libraries.Domain.Entities.MediaFile
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.{MusicTags, TechnicalTrack}
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack
 
   @type reason ::
           :source_changed

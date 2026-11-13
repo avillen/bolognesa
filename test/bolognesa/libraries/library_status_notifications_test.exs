@@ -1,4 +1,5 @@
 defmodule Bolognesa.Libraries.LibraryStatusNotificationsTest do
+  alias ExUnit.CaptureLog
   use ExUnit.Case, async: true
 
   import ExUnit.CaptureLog

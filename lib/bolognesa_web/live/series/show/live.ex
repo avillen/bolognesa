@@ -2,24 +2,26 @@ defmodule BolognesaWeb.Series.Show.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
   alias BolognesaWeb.Series.Navigation
-  alias BolognesaWeb.Series.Show.Reducer
+  alias BolognesaWeb.Series.Show.Reducer.ApplyResult
+  alias BolognesaWeb.Series.Show.Reducer.Initialize
+  alias BolognesaWeb.Series.Show.Reducer.Load
   @impl true
-  def mount(_params, _session, socket), do: {:ok, Reducer.Initialize.call(socket)}
+  def mount(_params, _session, socket), do: {:ok, Initialize.call(socket)}
   @impl true
   def handle_params(%{"id" => text} = params, _uri, socket) do
     id = parse(text, 0)
     page = parse(Map.get(params, "page", "1"), 1)
     socket = Navigation.assign_context(socket, params)
-    {:noreply, Reducer.Load.call(socket, id, page)}
+    {:noreply, Load.call(socket, id, page)}
   end
 
   @impl true
   def handle_event("retry", _params, socket),
-    do: {:noreply, Reducer.Load.call(socket, socket.assigns.content_id, socket.assigns.page)}
+    do: {:noreply, Load.call(socket, socket.assigns.content_id, socket.assigns.page)}
 
   @impl true
   def handle_async({:series_detail, request}, result, socket),
-    do: {:noreply, Reducer.ApplyResult.call(socket, request, result)}
+    do: {:noreply, ApplyResult.call(socket, request, result)}
 
   defp parse(text, default) when is_binary(text) do
     case Integer.parse(text) do

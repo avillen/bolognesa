@@ -1,4 +1,9 @@
 defmodule BolognesaWeb.Library.Index.LiveTest do
+  alias BolognesaWeb.LibraryNavigation, as: BolognesaWebLibraryNavigation
+  alias Ecto.Changeset
+  alias Phoenix.Component
+  alias Phoenix.ConnTest
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
@@ -14,10 +19,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
   alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker
 
-  alias Bolognesa.Libraries.Infrastructure.Repositories.{
-    EctoInspectionRepository,
-    EctoScanRepository
-  }
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
 
   alias Bolognesa.Libraries.Support.SuccessfulMediaProbe
   alias Bolognesa.Repo
@@ -82,7 +85,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     actor: actor
   } do
     socket = status_socket(actor)
-    socket = Phoenix.Component.assign(socket, :current_scope, %{actor: nil})
+    socket = Component.assign(socket, :current_scope, %{actor: nil})
     socket = Initialize.call(socket)
     {:noreply, socket} = Live.handle_event("open_library_form", %{}, socket)
     {:noreply, socket} = Live.handle_event("close_library_form", %{}, socket)
@@ -93,7 +96,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   end
 
   test "refresh errors are independent of scan feedback and clear on recovery", %{actor: actor} do
-    alias BolognesaWeb.Library.Index.Reducers.{ApplyScanStatuses, StartScan}
+    alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
+    alias BolognesaWeb.Library.Index.Reducers.StartScan
     socket = status_socket(actor) |> StartScan.call("invalid")
     request = socket.assigns.scan_request_id
     socket = ApplyScanStatuses.call(socket, request, {:ok, {:error, :unavailable}})
@@ -171,7 +175,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     assert has_element?(reopened, "#library-list [data-library-name='Películas']")
 
     {:ok, new_token} = Accounts.start_session("ada@example.com", "correct horse battery staple")
-    new_conn = Phoenix.ConnTest.build_conn() |> init_test_session(user_token: new_token)
+    new_conn = ConnTest.build_conn() |> init_test_session(user_token: new_token)
     {:ok, new_session, _} = live(new_conn, ~p"/libraries")
     assert has_element?(new_session, "#library-list [data-library-name='Películas']")
   end
@@ -537,7 +541,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     await_status_updates(view)
 
     Repo.get!(Oban.Job, inspection.job_id)
-    |> Ecto.Changeset.change(state: "discarded")
+    |> Changeset.change(state: "discarded")
     |> Repo.update!()
 
     assert :ok =
@@ -567,7 +571,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     {:ok, counts} = Libraries.fetch_inspection_counts(actor, library.id)
     socket = status_socket(actor)
     socket = %{socket | transport_pid: self()}
-    socket = Phoenix.Component.assign(socket, :scan_loading?, true)
+    socket = Component.assign(socket, :scan_loading?, true)
     old_request = socket.assigns.scan_request_id
     {:noreply, socket} = Live.handle_info({:library_status_changed, library.id}, socket)
     {:noreply, socket} = Live.handle_info({:library_status_changed, library.id}, socket)
@@ -605,8 +609,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
     socket = status_socket(actor)
     socket = %{socket | transport_pid: self()}
-    socket = Phoenix.Component.assign(socket, :current_scope, %{actor: nil})
-    socket = Phoenix.Component.assign(socket, :scan_loading?, true)
+    socket = Component.assign(socket, :current_scope, %{actor: nil})
+    socket = Component.assign(socket, :scan_loading?, true)
     request = socket.assigns.scan_request_id
     {:noreply, socket} = Live.handle_info({:library_status_changed, 1}, socket)
     socket = ApplyScanStatuses.call(socket, request, {:ok, {:error, :unavailable}})
@@ -643,7 +647,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path: path,
     actor: actor
   } do
-    alias BolognesaWeb.Library.Index.Reducers.{ApplyScanStatuses, Initialize}
+    alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
+    alias BolognesaWeb.Library.Index.Reducers.Initialize
     alias Live
 
     {:ok, library} =
@@ -659,7 +664,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
         private: %{live_temp: %{}, lifecycle: %Phoenix.LiveView.Lifecycle{}},
         assigns: %{__changed__: %{}, flash: %{}}
       }
-      |> Phoenix.Component.assign(:current_scope, %{actor: actor})
+      |> Component.assign(:current_scope, %{actor: actor})
       |> with_navigation()
       |> Initialize.call()
 
@@ -683,7 +688,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path: path,
     actor: actor
   } do
-    alias BolognesaWeb.Library.Index.Reducers.{Initialize, StartScan}
+    alias BolognesaWeb.Library.Index.Reducers.Initialize
+    alias BolognesaWeb.Library.Index.Reducers.StartScan
 
     {:ok, library} =
       Libraries.create_library(actor, %{name: "Authorized", path: path, content_type: :movie})
@@ -694,10 +700,10 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
         private: %{live_temp: %{}, lifecycle: %Phoenix.LiveView.Lifecycle{}},
         assigns: %{__changed__: %{}, flash: %{}}
       }
-      |> Phoenix.Component.assign(:current_scope, %{actor: actor})
+      |> Component.assign(:current_scope, %{actor: actor})
       |> with_navigation()
       |> Initialize.call()
-      |> Phoenix.Component.assign(:current_scope, %{actor: nil})
+      |> Component.assign(:current_scope, %{actor: nil})
       |> StartScan.call(Integer.to_string(library.id))
 
     html =
@@ -714,7 +720,9 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   end
 
   test "saving a new source invalidates an older status response", %{path: path, actor: actor} do
-    alias BolognesaWeb.Library.Index.Reducers.{ApplyScanStatuses, Initialize, Save}
+    alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
+    alias BolognesaWeb.Library.Index.Reducers.Initialize
+    alias BolognesaWeb.Library.Index.Reducers.Save
 
     socket =
       %Phoenix.LiveView.Socket{
@@ -722,7 +730,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
         private: %{live_temp: %{}, lifecycle: %Phoenix.LiveView.Lifecycle{}},
         assigns: %{__changed__: %{}, flash: %{}}
       }
-      |> Phoenix.Component.assign(:current_scope, %{actor: actor})
+      |> Component.assign(:current_scope, %{actor: actor})
       |> with_navigation()
       |> Initialize.call()
 
@@ -744,7 +752,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
 
   # render_async/1 waits for a snapshot; an incoming hint can start a following read.
   defp await_status_updates(view) do
-    html = Phoenix.LiveViewTest.render_async(view)
+    html = LiveViewTest.render_async(view)
 
     case Channel.async_pids(view.pid) do
       {:ok, []} -> html
@@ -758,14 +766,14 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
       private: %{live_temp: %{}, lifecycle: %Phoenix.LiveView.Lifecycle{}},
       assigns: %{__changed__: %{}, flash: %{}}
     }
-    |> Phoenix.Component.assign(:current_scope, %{actor: actor})
+    |> Component.assign(:current_scope, %{actor: actor})
     |> with_navigation()
     |> Initialize.call()
   end
 
   defp with_navigation(socket) do
     {:cont, socket} =
-      BolognesaWeb.LibraryNavigation.on_mount(:default, %{}, %{}, %{
+      BolognesaWebLibraryNavigation.on_mount(:default, %{}, %{}, %{
         socket
         | router: BolognesaWeb.Router
       })

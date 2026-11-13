@@ -4,11 +4,12 @@ defmodule BolognesaWeb.TranslationsTest do
   alias Expo.Message
   alias Expo.Message.Plural
   alias Expo.Message.Singular
+  alias Expo.PO, as: ExpoPO
 
   test "both languages cover every extracted message, plural and interpolation" do
     for domain <- ["default", "errors"], locale <- ["es", "en"] do
-      template = Expo.PO.parse_file!("priv/gettext/#{domain}.pot")
-      catalog = Expo.PO.parse_file!("priv/gettext/#{locale}/LC_MESSAGES/#{domain}.po")
+      template = ExpoPO.parse_file!("priv/gettext/#{domain}.pot")
+      catalog = ExpoPO.parse_file!("priv/gettext/#{locale}/LC_MESSAGES/#{domain}.po")
       messages = Enum.reject(catalog.messages, & &1.obsolete)
       assert MapSet.new(messages, &key/1) == MapSet.new(template.messages, &key/1)
 

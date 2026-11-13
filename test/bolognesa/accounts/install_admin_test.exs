@@ -1,4 +1,5 @@
 defmodule Bolognesa.Accounts.InstallAdminTest do
+  alias Task.Supervisor, as: TaskSupervisor
   use Bolognesa.DataCase, async: false
   alias Ecto.Adapters.SQL.Sandbox
 
@@ -91,7 +92,7 @@ defmodule Bolognesa.Accounts.InstallAdminTest do
   end
 
   test "two simultaneous setup submissions create exactly one administrator" do
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     parent = self()
 
     # Each unboxed task gets a separate committed database connection. Shared
@@ -101,7 +102,7 @@ defmodule Bolognesa.Accounts.InstallAdminTest do
     try do
       tasks =
         for email <- ["one@example.com", "two@example.com"] do
-          Task.Supervisor.async_nolink(supervisor, fn ->
+          TaskSupervisor.async_nolink(supervisor, fn ->
             Sandbox.unboxed_run(Repo, fn ->
               send(parent, {:ready, self()})
 

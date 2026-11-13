@@ -1,4 +1,7 @@
 defmodule Bolognesa.Series.SeriesQueriesTest do
+  alias Bolognesa.Movies
+  alias Ecto.Changeset
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
@@ -48,7 +51,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     assert {:ok, %{id: ^next_id, part_number: 1}} =
              Series.fetch_next_playable_episode(@actor, episode_id, whole.id)
 
-    second |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+    second |> Changeset.change(availability: :missing) |> Repo.update!()
 
     assert {:error, :part_unavailable} =
              Series.fetch_next_playable_episode(@actor, episode_id, first.id)
@@ -92,7 +95,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     decision = SeriesFixtures.identify(first, 1, [1, 2])
     missing = SeriesFixtures.file(library.id, "missing.mkv")
     SeriesFixtures.identify(missing, 2, [1])
-    missing |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+    missing |> Changeset.change(availability: :missing) |> Repo.update!()
     next = SeriesFixtures.file(library.id, "next.mkv")
     next_decision = SeriesFixtures.identify(next, 2, [2])
 
@@ -185,7 +188,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     assert episode.series.title == "Serie"
     assert length(episode.versions) == 2
     assert Enum.map(episode.versions, & &1.episode_numbers) == [[1, 2], [1]]
-    single |> Ecto.Changeset.change(availability: :missing) |> Repo.update!()
+    single |> Changeset.change(availability: :missing) |> Repo.update!()
     assert {:ok, episodes} = Series.list_episodes(@actor, season.id, 1)
     assert hd(episodes.items).available_version_count == 1
     assert {:ok, %{total: 2, items: []}} = Series.list_episodes(@actor, season.id, 2)
@@ -216,7 +219,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
 
     Repo.insert!(%MovieSchema{provider: :tmdb, provider_id: 201, title: "Movie"})
     assert {:ok, %{total: 1}} = Series.search_series(@actor, "", 1)
-    assert {:ok, %{total: 1}} = Bolognesa.Movies.list_movies(@actor, "", 1)
+    assert {:ok, %{total: 1}} = Movies.list_movies(@actor, "", 1)
   end
 
   test "queries authorize validate and distinguish empty pages from missing parents" do
@@ -241,7 +244,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     inspection =
       Repo.insert!(%InspectionSchema{
         media_file_id: file.id,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         observed_revision: file.revision,
         state: :succeeded,
         format: "matroska",
@@ -260,7 +263,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     assert version.format == "matroska"
     assert version.duration_ms == 120_000
     assert version.codecs == ["h264", "ac3"]
-    Repo.update!(Ecto.Changeset.change(inspection, observed_revision: file.revision + 1))
+    Repo.update!(Changeset.change(inspection, observed_revision: file.revision + 1))
 
     assert {:ok, %{versions: [version]}} =
              Series.fetch_episode(@actor, hd(decision.episode_ids))

@@ -3,12 +3,10 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   @behaviour Bolognesa.Music.Application.Ports.Repositories.ImportRepository
   import Ecto.Query
 
-  alias Bolognesa.Infrastructure.Persistence.{
-    InspectionSchema,
-    LibrarySchema,
-    MediaFileSchema,
-    MusicImportSchema
-  }
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicImportSchema
 
   alias Bolognesa.Music.Domain.Entities.ImportState
   alias Bolognesa.Music.Infrastructure.Jobs.Oban.ObanImportJob

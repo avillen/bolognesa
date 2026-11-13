@@ -1,4 +1,7 @@
 defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
+  alias Bolognesa.Libraries, as: BolognesaLibraries
+  alias Ecto.UUID
+  alias Phoenix.Component
   @moduledoc "Shared LiveView lifecycle for authorized direct and HLS playback."
   alias Bolognesa.Infrastructure.Observability
   alias Bolognesa.Playback
@@ -56,11 +59,11 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
 
           {:noreply,
            socket
-           |> Phoenix.Component.assign(:playback_attempt_id, Ecto.UUID.generate())
-           |> Phoenix.Component.assign(:capability_report, nil)
-           |> Phoenix.Component.assign(:compatible_playback_available?, false)
-           |> Phoenix.Component.assign(:recovery_used?, true)
-           |> Phoenix.Component.assign(:delivery_plan, nil)
+           |> Component.assign(:playback_attempt_id, UUID.generate())
+           |> Component.assign(:capability_report, nil)
+           |> Component.assign(:compatible_playback_available?, false)
+           |> Component.assign(:recovery_used?, true)
+           |> Component.assign(:delivery_plan, nil)
            |> PlaybackState.direct(socket.assigns.selected_file_id)}
 
         {:error, reason} ->
@@ -74,7 +77,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   def handle_event("playback_refresh", _params, socket) do
     if socket.assigns.selected_file_id && !socket.assigns.inspection_refresh_used? do
       actor = socket.assigns.current_scope.actor
-      socket = Phoenix.Component.assign(socket, :inspection_refresh_used?, true)
+      socket = Component.assign(socket, :inspection_refresh_used?, true)
 
       with {:ok, source} <-
              Playback.start_video(
@@ -83,12 +86,12 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
                socket.assigns.selected_file_id
              ),
            {:ok, _} <-
-             Bolognesa.Libraries.request_inspection_refresh(
+             BolognesaLibraries.request_inspection_refresh(
                actor,
                socket.assigns.selected_file_id,
                source.revision
              ) do
-        {:noreply, Phoenix.Component.assign(socket, :inspection_refresh_requested?, true)}
+        {:noreply, Component.assign(socket, :inspection_refresh_requested?, true)}
       else
         {:error, reason} -> {:noreply, PlaybackState.preparation_failed(socket, reason)}
       end
@@ -123,8 +126,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
         next =
           PlaybackControl.deliver(socket, offset, :seek)
 
-        {:noreply,
-         Phoenix.Component.assign(next, :transcode_autoplay?, params["playing"] == "true")}
+        {:noreply, Component.assign(next, :transcode_autoplay?, params["playing"] == "true")}
 
       _ ->
         {:noreply, socket}
@@ -230,7 +232,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
       Process.send_after(self(), {:transcode_poll, id}, 500)
 
       {:noreply,
-       Phoenix.Component.assign(
+       Component.assign(
          socket,
          :transcode_poll_attempts,
          socket.assigns.transcode_poll_attempts + 1

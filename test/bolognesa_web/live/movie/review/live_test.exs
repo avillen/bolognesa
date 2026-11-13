@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.Movie.Review.LiveTest do
+  alias Ecto.UUID
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
@@ -45,7 +47,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
           relative_path: "Film.mkv",
           size_bytes: 1,
           modified_at: DateTime.utc_now(),
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
@@ -53,7 +55,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
       MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{
         media_file_id: file.id,
         observed_revision: 1,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         state: :pending
       })
     )
@@ -94,7 +96,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
           relative_path: "Film.mkv",
           size_bytes: 1,
           modified_at: DateTime.utc_now(),
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
@@ -102,7 +104,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
       MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{
         media_file_id: file.id,
         observed_revision: 1,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         state: :failed,
         failure_reason: "not_configured"
       })
@@ -139,7 +141,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
               relative_path: name,
               size_bytes: 1,
               modified_at: DateTime.utc_now(),
-              last_seen_generation: Ecto.UUID.generate()
+              last_seen_generation: UUID.generate()
             })
           )
 
@@ -147,7 +149,7 @@ defmodule BolognesaWeb.Movie.Review.LiveTest do
           MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{
             media_file_id: file.id,
             observed_revision: 1,
-            token: Ecto.UUID.generate(),
+            token: UUID.generate(),
             state: :pending
           })
         )

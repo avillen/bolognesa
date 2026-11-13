@@ -1,7 +1,8 @@
 defmodule Bolognesa.Music.Domain.Entities.Track do
   @moduledoc "Local musical track."
 
-  alias Bolognesa.Music.Domain.Entities.{Album, Artist}
+  alias Bolognesa.Music.Domain.Entities.Album
+  alias Bolognesa.Music.Domain.Entities.Artist
 
   @type id :: pos_integer()
 

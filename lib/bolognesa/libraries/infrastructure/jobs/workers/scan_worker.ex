@@ -6,7 +6,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker do
 
   alias Bolognesa.Infrastructure.Observability.Events
   alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
-  alias Bolognesa.Libraries.Application.Ports.Services.{FileDiscovery, LibraryStatusNotifier}
+  alias Bolognesa.Libraries.Application.Ports.Services.FileDiscovery
+  alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications

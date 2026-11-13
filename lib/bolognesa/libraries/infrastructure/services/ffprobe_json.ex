@@ -1,7 +1,8 @@
 defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeJson do
   @moduledoc false
 
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.{MusicTags, TechnicalMedia}
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
 
   alias Bolognesa.Libraries.Infrastructure.Services.CodecConfiguration
 

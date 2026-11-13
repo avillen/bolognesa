@@ -1,4 +1,6 @@
 defmodule Bolognesa.Infrastructure.Persistence.UserSchema do
+  alias Ecto.Changeset
+
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
@@ -21,7 +23,7 @@ defmodule Bolognesa.Infrastructure.Persistence.UserSchema do
     timestamps(type: :utc_datetime_usec)
   end
 
-  @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
+  @spec changeset(%__MODULE__{}, map()) :: Changeset.t()
   def changeset(user, attrs) do
     user
     |> cast(attrs, [:name, :email])

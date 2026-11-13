@@ -1,4 +1,5 @@
 defmodule Bolognesa.Music.Infrastructure.Jobs.Oban.ObanImportJob do
+  alias Ecto.Multi
   @moduledoc "Inserts a music import job using the caller's transaction repository."
 
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -7,7 +8,7 @@ defmodule Bolognesa.Music.Infrastructure.Jobs.Oban.ObanImportJob do
   @spec insert!(Bolognesa.Music.transaction_repository(), MediaFileSchema.t()) :: Oban.Job.t()
   def insert!(repo, file) do
     {:ok, %{job: job}} =
-      Ecto.Multi.new()
+      Multi.new()
       |> Oban.insert(:job, RefreshWorker.new(%{file_id: file.id, revision: file.revision}))
       |> repo.transaction()
 

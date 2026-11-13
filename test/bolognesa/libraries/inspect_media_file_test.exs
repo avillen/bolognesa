@@ -1,24 +1,24 @@
 defmodule Bolognesa.Libraries.InspectMediaFileTest do
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
-
   alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
+
   alias Bolognesa.Libraries.Domain.Entities.Inspection
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
+  alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
-  alias Bolognesa.Libraries.Support.{
-    BlockingMediaProbe,
-    FailingMediaProbe,
-    SuccessfulMediaProbe,
-    TimeoutMediaProbe
-  }
+  alias Bolognesa.Libraries.Support.BlockingMediaProbe
+  alias Bolognesa.Libraries.Support.FailingMediaProbe
+  alias Bolognesa.Libraries.Support.SuccessfulMediaProbe
+  alias Bolognesa.Libraries.Support.TimeoutMediaProbe
 
-  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
-  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Ecto.UUID
+  alias Task.Supervisor, as: TaskSupervisor
 
   setup do
     library =
@@ -83,7 +83,7 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
     assert :ok =
              InspectMediaFile.call(
                inspection.media_file_id,
-               Ecto.UUID.generate(),
+               UUID.generate(),
                1,
                EctoInspectionRepository,
                FailingMediaProbe,
@@ -142,10 +142,10 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
     running: running
   } do
     Process.register(self(), :inspection_probe_owner)
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
 
     task =
-      Task.Supervisor.async_nolink(supervisor, fn ->
+      TaskSupervisor.async_nolink(supervisor, fn ->
         InspectMediaFile.call(
           inspection.media_file_id,
           inspection.token,

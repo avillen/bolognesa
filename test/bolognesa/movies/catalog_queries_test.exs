@@ -1,4 +1,8 @@
 defmodule Bolognesa.Movies.CatalogQueriesTest do
+  alias Bolognesa.MovieIdentificationFixtures
+  alias Bolognesa.SeriesFixtures
+  alias Ecto.Changeset
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
@@ -40,15 +44,15 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
             size_bytes: 1,
             modified_at: DateTime.utc_now(),
             availability: availability,
-            last_seen_generation: Ecto.UUID.generate()
+            last_seen_generation: UUID.generate()
           })
         )
 
-      Bolognesa.MovieIdentificationFixtures.insert_decision!(
+      MovieIdentificationFixtures.insert_decision!(
         %{
           media_file_id: file.id,
           observed_revision: 1,
-          token: Ecto.UUID.generate(),
+          token: UUID.generate(),
           state: :automatic,
           origin: :automatic
         },
@@ -87,8 +91,8 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
 
   test "library catalogs isolate titles, counts and pagination while retaining missing files" do
     actor = %AuthenticatedUser{id: 1, role: :admin}
-    first = Bolognesa.SeriesFixtures.library(:movie)
-    second = Bolognesa.SeriesFixtures.library(:movie)
+    first = SeriesFixtures.library(:movie)
+    second = SeriesFixtures.library(:movie)
     shared = Repo.insert!(movie_changeset(%{provider_id: 901, title: "Shared"}))
     other = Repo.insert!(movie_changeset(%{provider_id: 902, title: "Other"}))
 
@@ -97,14 +101,14 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
           {second, shared, :available},
           {second, other, :available}
         ] do
-      file = Bolognesa.SeriesFixtures.file(library.id, "#{movie.id}.mkv")
-      Repo.update!(Ecto.Changeset.change(file, availability: availability))
+      file = SeriesFixtures.file(library.id, "#{movie.id}.mkv")
+      Repo.update!(Changeset.change(file, availability: availability))
 
-      Bolognesa.MovieIdentificationFixtures.insert_decision!(
+      MovieIdentificationFixtures.insert_decision!(
         %{
           media_file_id: file.id,
           observed_revision: 1,
-          token: Ecto.UUID.generate(),
+          token: UUID.generate(),
           state: :manual,
           origin: :manual
         },
@@ -125,7 +129,7 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
 
   test "movie details reject more than one hundred versions without returning a partial list" do
     actor = %AuthenticatedUser{id: 1, role: :admin}
-    library = Bolognesa.SeriesFixtures.library(:movie)
+    library = SeriesFixtures.library(:movie)
     movie = Repo.insert!(movie_changeset(%{provider_id: 903, title: "Many versions"}))
 
     for index <- 1..100 do
@@ -141,13 +145,13 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
   end
 
   defp insert_version(library_id, movie_id, index) do
-    file = Bolognesa.SeriesFixtures.file(library_id, "version-#{index}.mkv")
+    file = SeriesFixtures.file(library_id, "version-#{index}.mkv")
 
-    Bolognesa.MovieIdentificationFixtures.insert_decision!(
+    MovieIdentificationFixtures.insert_decision!(
       %{
         media_file_id: file.id,
         observed_revision: 1,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         state: :automatic,
         origin: :automatic
       },

@@ -1,4 +1,5 @@
 defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
+  alias Ecto.UUID
   @moduledoc "Own one FFmpeg process and its private sliding HLS directory."
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Infrastructure.Observability
@@ -258,7 +259,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
          {:ok, root} <- root(),
          {:ok, executable} <- executable(),
          :ok <- LocalMediaFile.validate(source),
-         id = Ecto.UUID.generate(),
+         id = UUID.generate(),
          {:ok, directory} <- create_directory(root, id) do
       session = %TranscodeSession{
         id: id,

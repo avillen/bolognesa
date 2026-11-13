@@ -1,9 +1,9 @@
 defmodule Bolognesa.Movies.IdentificationRaceTest do
-  use Bolognesa.DataCase, async: false
-
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  use Bolognesa.DataCase, async: false
+
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Movies.Application.UseCases.CorrectMovieIdentification
@@ -13,6 +13,9 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
   alias Ecto.Adapters.SQL
   alias Ecto.Adapters.SQL.Sandbox
+  alias Ecto.Changeset
+  alias Ecto.UUID
+  alias Task.Supervisor, as: TaskSupervisor
 
   defmodule BlockedProvider do
     def search(_title, _year) do
@@ -42,12 +45,12 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
 
   test "a revision change during manual lookup cannot create a movie or choice" do
     Sandbox.mode(Repo, {:shared, self()})
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     {file, _} = fixture()
     owner = self()
 
     task =
-      Task.Supervisor.async_nolink(supervisor, fn ->
+      TaskSupervisor.async_nolink(supervisor, fn ->
         Process.put(:owner, owner)
 
         CorrectMovieIdentification.call(
@@ -60,7 +63,7 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
       end)
 
     assert_receive {:details_waiting, worker}, 2_000
-    Repo.update!(Ecto.Changeset.change(file, revision: 2))
+    Repo.update!(Changeset.change(file, revision: 2))
     send(worker, :continue)
     assert {:error, :source_changed} = Task.await(task)
     assert Repo.get_by(MovieSchema, provider_id: 9184) == nil
@@ -69,18 +72,18 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
 
   test "a revision change during automatic lookup cannot create a movie" do
     Sandbox.mode(Repo, {:shared, self()})
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     {file, token} = fixture()
     owner = self()
 
     task =
-      Task.Supervisor.async_nolink(supervisor, fn ->
+      TaskSupervisor.async_nolink(supervisor, fn ->
         Process.put(:owner, owner)
         IdentifyMovieFile.call(file.id, token, 1, Repository, BlockedProvider)
       end)
 
     assert_receive {:search_waiting, worker}, 2_000
-    Repo.update!(Ecto.Changeset.change(file, revision: 2))
+    Repo.update!(Changeset.change(file, revision: 2))
     send(worker, :continue)
     assert :ok = Task.await(task)
     assert Repo.get_by(MovieSchema, provider_id: 71) == nil
@@ -100,14 +103,14 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
 
   test "manual movie and manual unidentified survive an in-flight result" do
     Sandbox.mode(Repo, {:shared, self()})
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
 
     for choice <- [{:tmdb, 72}, :unidentified] do
       {file, token} = fixture()
       owner = self()
 
       task =
-        Task.Supervisor.async_nolink(supervisor, fn ->
+        TaskSupervisor.async_nolink(supervisor, fn ->
           Process.put(:owner, owner)
           IdentifyMovieFile.call(file.id, token, 1, Repository, BlockedProvider)
         end)
@@ -173,13 +176,13 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
     Sandbox.unboxed_run(Repo, fn ->
       {first, _} = fixture()
       {second, _} = fixture()
-      supervisor = start_supervised!(Task.Supervisor)
+      supervisor = start_supervised!(TaskSupervisor)
       details = %MovieDetails{provider_id: 9182, title: "Shared movie"}
 
       try do
         tasks =
           for file <- [first, second] do
-            Task.Supervisor.async_nolink(supervisor, fn ->
+            TaskSupervisor.async_nolink(supervisor, fn ->
               Sandbox.unboxed_run(Repo, fn ->
                 Repository.correct(file.id, file.revision, details)
               end)
@@ -240,11 +243,11 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
           relative_path: "Film.mkv",
           size_bytes: 1,
           modified_at: DateTime.utc_now(),
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
-    token = Ecto.UUID.generate()
+    token = UUID.generate()
 
     Repo.insert!(
       MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{

@@ -1,4 +1,6 @@
 defmodule Bolognesa.Movies.MovieReviewQueriesTest do
+  alias Bolognesa.MovieIdentificationFixtures
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
@@ -30,7 +32,7 @@ defmodule Bolognesa.Movies.MovieReviewQueriesTest do
             relative_path: name,
             size_bytes: 1,
             modified_at: DateTime.utc_now(),
-            last_seen_generation: Ecto.UUID.generate()
+            last_seen_generation: UUID.generate()
           })
         )
 
@@ -38,7 +40,7 @@ defmodule Bolognesa.Movies.MovieReviewQueriesTest do
         MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{
           media_file_id: file.id,
           observed_revision: 1,
-          token: Ecto.UUID.generate(),
+          token: UUID.generate(),
           state: state,
           origin: if(state == :manual_unidentified, do: :manual, else: nil)
         })
@@ -61,15 +63,15 @@ defmodule Bolognesa.Movies.MovieReviewQueriesTest do
           relative_path: "d.mkv",
           size_bytes: 1,
           modified_at: DateTime.utc_now(),
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
-    Bolognesa.MovieIdentificationFixtures.insert_decision!(
+    MovieIdentificationFixtures.insert_decision!(
       %{
         media_file_id: linked_file.id,
         observed_revision: 1,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         state: :automatic,
         origin: :automatic,
         needs_review: true

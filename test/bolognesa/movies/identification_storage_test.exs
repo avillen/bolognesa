@@ -1,13 +1,14 @@
 defmodule Bolognesa.Movies.IdentificationStorageTest do
+  alias Bolognesa.SeriesFixtures
+  alias Ecto.Changeset
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: true
 
-  alias Bolognesa.Infrastructure.Persistence.{
-    MovieIdentificationSchema,
-    MovieSchema
-  }
+  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
 
   test "provider identities and file decisions are unique and missing files retain their work" do
-    file = Bolognesa.SeriesFixtures.file(Bolognesa.SeriesFixtures.library(:movie).id, "Movie.mp4")
+    file = SeriesFixtures.file(SeriesFixtures.library(:movie).id, "Movie.mp4")
     attrs = %{provider: :tmdb, provider_id: 42, title: "Synthetic movie"}
     movie = Repo.insert!(MovieSchema.changeset(%MovieSchema{}, attrs))
     assert {:error, duplicate} = Repo.insert(MovieSchema.changeset(%MovieSchema{}, attrs))
@@ -18,7 +19,7 @@ defmodule Bolognesa.Movies.IdentificationStorageTest do
       state: :manual,
       origin: :manual,
       observed_revision: 1,
-      token: Ecto.UUID.generate(),
+      token: UUID.generate(),
       movie_id: movie.id
     }
 
@@ -31,18 +32,18 @@ defmodule Bolognesa.Movies.IdentificationStorageTest do
              )
 
     assert Keyword.has_key?(duplicate.errors, :media_file_id)
-    Repo.update!(Ecto.Changeset.change(file, availability: :missing))
+    Repo.update!(Changeset.change(file, availability: :missing))
     assert Repo.get!(MovieIdentificationSchema, decision.id).movie_id == movie.id
     assert Repo.get!(MovieSchema, movie.id)
   end
 
   test "database rejects invalid choices revisions references" do
-    file = Bolognesa.SeriesFixtures.file(Bolognesa.SeriesFixtures.library(:movie).id, "Movie.mp4")
+    file = SeriesFixtures.file(SeriesFixtures.library(:movie).id, "Movie.mp4")
 
     attrs = %{
       media_file_id: file.id,
       observed_revision: 1,
-      token: Ecto.UUID.generate(),
+      token: UUID.generate(),
       state: :manual,
       movie_id: nil
     }

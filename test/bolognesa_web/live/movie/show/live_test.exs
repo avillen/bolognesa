@@ -1,4 +1,8 @@
 defmodule BolognesaWeb.Movie.Show.LiveTest do
+  alias Bolognesa.MovieIdentificationFixtures
+  alias Ecto.Changeset
+  alias Ecto.UUID
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
@@ -78,15 +82,15 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
           relative_path: "Film.mkv",
           size_bytes: 1,
           modified_at: DateTime.utc_now(),
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
-    Bolognesa.MovieIdentificationFixtures.insert_decision!(
+    MovieIdentificationFixtures.insert_decision!(
       %{
         media_file_id: file.id,
         observed_revision: 1,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         state: :automatic,
         origin: :automatic
       },
@@ -236,7 +240,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         )
 
       inspection
-      |> Ecto.Changeset.change(updated_at: DateTime.add(DateTime.utc_now(), -31, :second))
+      |> Changeset.change(updated_at: DateTime.add(DateTime.utc_now(), -31, :second))
       |> Repo.update!()
 
       send(ctx.view.pid, {:capability_timeout, report(ctx.view)["generation"]})
@@ -550,7 +554,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
           end)
         end)
 
-      Repo.update!(Ecto.Changeset.change(inspection, tracks: tracks))
+      Repo.update!(Changeset.change(inspection, tracks: tracks))
       render_click(element(ctx.view, "#movie-play-#{ctx.first.id}"))
       negotiate(ctx.view)
       assert has_element?(ctx.view, "#movie-video-frame[data-playback-phase='ready']")
@@ -834,15 +838,15 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
           size_bytes: 8,
           modified_at: modified_at,
           availability: availability,
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
-    Bolognesa.MovieIdentificationFixtures.insert_decision!(
+    MovieIdentificationFixtures.insert_decision!(
       %{
         media_file_id: file.id,
         observed_revision: 1,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         state: :automatic,
         origin: :automatic
       },
@@ -875,7 +879,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
   defp mark_unavailable(file) do
     file
-    |> Ecto.Changeset.change(availability: :missing)
+    |> Changeset.change(availability: :missing)
     |> Repo.update!()
   end
 end

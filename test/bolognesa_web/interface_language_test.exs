@@ -1,11 +1,15 @@
 defmodule BolognesaWeb.InterfaceLanguageTest do
-  use BolognesaWeb.ConnCase, async: false
-  import Phoenix.LiveViewTest
   alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
+  use BolognesaWeb.ConnCase, async: false
+  import Phoenix.LiveViewTest
   alias Bolognesa.Repo
+  alias Bolognesa.SeriesFixtures
+  alias BolognesaWeb.Player, as: BolognesaWebPlayer
+  alias Ecto.UUID
+  alias Phoenix.LiveViewTest
 
   setup %{conn: conn} do
     {:ok, actor} =
@@ -60,7 +64,7 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
 
   test "LiveView navigation retains the negotiated locale", %{conn: conn} do
     conn = put_req_header(conn, "accept-language", "en")
-    library = Bolognesa.SeriesFixtures.library(:movie)
+    library = SeriesFixtures.library(:movie)
     {:ok, view, _} = live(conn, "/settings")
     result = view |> element("#nav-library-#{library.id}") |> render_click()
     {:ok, movies, _} = follow_redirect(result, conn, "/movies?library_id=#{library.id}")
@@ -92,7 +96,7 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
             relative_path: "Film.mkv",
             size_bytes: 1,
             modified_at: DateTime.utc_now(),
-            last_seen_generation: Ecto.UUID.generate()
+            last_seen_generation: UUID.generate()
           })
         )
 
@@ -105,7 +109,7 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
         schema.changeset(struct(schema), %{
           media_file_id: file.id,
           observed_revision: 1,
-          token: Ecto.UUID.generate(),
+          token: UUID.generate(),
           state: :pending
         })
       )
@@ -119,7 +123,7 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
   test "playback browser errors are translated in the page process" do
     rendered =
       Gettext.with_locale(BolognesaWeb.Gettext, "en", fn ->
-        render_component(&BolognesaWeb.Player.player/1,
+        render_component(&BolognesaWebPlayer.player/1,
           prefix: "movie",
           kind: :movie,
           entry_id: 1,

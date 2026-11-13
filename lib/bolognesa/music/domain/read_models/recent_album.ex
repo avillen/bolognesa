@@ -1,6 +1,7 @@
 defmodule Bolognesa.Music.Domain.ReadModels.RecentAlbum do
   @moduledoc "An album's latest account activity and current continuation selection."
-  alias Bolognesa.Music.Domain.Entities.{Album, Track}
+  alias Bolognesa.Music.Domain.Entities.Album
+  alias Bolognesa.Music.Domain.Entities.Track
 
   @type t :: %__MODULE__{
           id: Album.id(),

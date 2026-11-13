@@ -1,4 +1,6 @@
 defmodule Bolognesa.Playback.TranscodeManagerTest do
+  alias Bolognesa.Playback, as: PlaybackContext
+  alias Phoenix.Component
   use ExUnit.Case, async: false
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Playback.Domain.Policies.Negotiation
@@ -143,7 +145,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     {:ok, session} =
       TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :audio_conversion), 0)
 
-    assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+    assert PlaybackContext.video_transcode_status(session.id) == :waiting
     File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
 
     File.write!(
@@ -151,7 +153,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
       "#EXTM3U\n#EXTINF:3.999,\nseg-000000.ts\n"
     )
 
-    assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+    assert PlaybackContext.video_transcode_status(session.id) == :waiting
 
     assert_receive {[:bolognesa, :playback, :session, :preparation], first,
                     %{stage: :first_segment}}
@@ -180,7 +182,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     socket = PlaybackState.preparing(socket, session)
 
     socket =
-      Phoenix.Component.assign(
+      Component.assign(
         socket,
         :preparation_deadline,
         socket.assigns.preparation_deadline - 45_000
@@ -193,7 +195,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     assert id == session.id
 
     expired =
-      Phoenix.Component.assign(
+      Component.assign(
         waiting,
         :preparation_deadline,
         socket.assigns.preparation_deadline - 15_001
@@ -251,9 +253,9 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
 
       path = Path.join(session.directory, "index.m3u8")
       File.write!(path, "#EXTM3U\n#EXTINF:4.0,\nseg-000000.ts\n")
-      assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+      assert PlaybackContext.video_transcode_status(session.id) == :waiting
       File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
-      assert Bolognesa.Playback.video_transcode_status(session.id) == :ready
+      assert PlaybackContext.video_transcode_status(session.id) == :ready
 
       assert_receive {[:bolognesa, :playback, :session, :preparation], measurements,
                       %{stage: :ready}}
@@ -262,7 +264,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
       assert measurements.published_ms == 4000
 
       File.rm!(Path.join(session.directory, "seg-000000.ts"))
-      assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+      assert PlaybackContext.video_transcode_status(session.id) == :waiting
     end
   end
 
@@ -273,7 +275,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
     path = Path.join(session.directory, "index.m3u8")
     File.write!(path, "#EXTM3U\n#EXTINF:10.427,\nseg-000000.ts\n")
-    assert Bolognesa.Playback.video_transcode_status(session.id) == :ready
+    assert PlaybackContext.video_transcode_status(session.id) == :ready
   end
 
   test "short segments accumulate four seconds and every referenced file must exist", %{
@@ -285,11 +287,11 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     path = Path.join(session.directory, "index.m3u8")
     File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
     File.write!(path, "#EXTM3U\n#EXTINF:2.0,\nseg-000000.ts\n")
-    assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+    assert PlaybackContext.video_transcode_status(session.id) == :waiting
     File.write!(path, "#EXTM3U\n#EXTINF:2.0,\nseg-000000.ts\n#EXTINF:2.0,\nseg-000001.ts\n")
-    assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+    assert PlaybackContext.video_transcode_status(session.id) == :waiting
     File.write!(Path.join(session.directory, "seg-000001.ts"), "segment")
-    assert Bolognesa.Playback.video_transcode_status(session.id) == :ready
+    assert PlaybackContext.video_transcode_status(session.id) == :ready
   end
 
   test "a short completed playlist can start without three segments", %{source: source} do
@@ -298,10 +300,10 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
 
     path = Path.join(session.directory, "index.m3u8")
     File.write!(path, "#EXTM3U\n#EXT-X-ENDLIST\n")
-    assert Bolognesa.Playback.video_transcode_status(session.id) == :waiting
+    assert PlaybackContext.video_transcode_status(session.id) == :waiting
     File.write!(Path.join(session.directory, "seg-000000.ts"), "segment")
     File.write!(path, "#EXTM3U\n#EXTINF:1.0,\nseg-000000.ts\n#EXT-X-ENDLIST\n")
-    assert Bolognesa.Playback.video_transcode_status(session.id) == :ready
+    assert PlaybackContext.video_transcode_status(session.id) == :ready
   end
 
   test "rejects malformed or untyped video references", %{source: source} do

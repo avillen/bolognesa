@@ -2,12 +2,10 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository.ObanJ
   @moduledoc "Finds interrupted music imports and interprets their job state."
   import Ecto.Query
 
-  alias Bolognesa.Infrastructure.Persistence.{
-    InspectionSchema,
-    LibrarySchema,
-    MediaFileSchema,
-    MusicImportSchema
-  }
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicImportSchema
 
   alias Bolognesa.Repo
 

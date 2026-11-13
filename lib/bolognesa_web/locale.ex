@@ -1,8 +1,10 @@
 defmodule BolognesaWeb.Locale do
-  @moduledoc "Resolve and install the interface language for each request and LiveView process."
-  import Plug.Conn
   alias Bolognesa.Accounts
   alias BolognesaWeb.Gettext, as: Backend
+  @moduledoc "Resolve and install the interface language for each request and LiveView process."
+  import Plug.Conn
+  alias Phoenix.Component
+  alias Plug.Conn, as: PlugConn
   @supported ["es", "en"]
 
   @spec negotiate(String.t() | nil) :: String.t()
@@ -37,14 +39,14 @@ defmodule BolognesaWeb.Locale do
   defp available(language, _excluded) when language in @supported, do: language
   defp available(_, _), do: nil
 
-  @spec fetch_browser_locale(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
+  @spec fetch_browser_locale(PlugConn.t(), keyword()) :: PlugConn.t()
   def fetch_browser_locale(conn, _opts) do
     locale = negotiate(List.first(get_req_header(conn, "accept-language")))
     Gettext.put_locale(Backend, locale)
     conn |> put_session(:browser_locale, locale) |> assign(:locale, locale)
   end
 
-  @spec apply_user_locale(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
+  @spec apply_user_locale(PlugConn.t(), keyword()) :: PlugConn.t()
   def apply_user_locale(conn, _opts) do
     locale = effective(conn.assigns[:current_scope], conn.assigns.locale)
     Gettext.put_locale(Backend, locale)
@@ -60,7 +62,7 @@ defmodule BolognesaWeb.Locale do
     scope = Map.get(socket.assigns, :current_scope) || session_scope(session)
     locale = effective(scope, browser)
     Gettext.put_locale(Backend, locale)
-    {:cont, Phoenix.Component.assign(socket, locale: locale, browser_locale: browser)}
+    {:cont, Component.assign(socket, locale: locale, browser_locale: browser)}
   end
 
   defp session_scope(session) do

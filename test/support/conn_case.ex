@@ -1,9 +1,13 @@
 defmodule BolognesaWeb.ConnCase do
+  alias Bolognesa.DataCase, as: BolognesaDataCase
+
+  alias Phoenix.ConnTest
+
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
 
-  Such tests rely on `Phoenix.ConnTest` and also
+  Such tests rely on `ConnTest` and also
   import other functionality to make it easier
   to build common data structures and query the data layer.
 
@@ -32,7 +36,7 @@ defmodule BolognesaWeb.ConnCase do
   end
 
   setup tags do
-    Bolognesa.DataCase.setup_sandbox(tags)
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    BolognesaDataCase.setup_sandbox(tags)
+    {:ok, conn: ConnTest.build_conn()}
   end
 end

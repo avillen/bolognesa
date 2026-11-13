@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.MediaControllerTest do
+  alias Bolognesa.MovieIdentificationFixtures
+  alias Ecto.UUID
   use BolognesaWeb.ConnCase, async: false
 
   alias Bolognesa.Accounts
@@ -41,16 +43,16 @@ defmodule BolognesaWeb.MediaControllerTest do
           relative_path: "film.mp4",
           size_bytes: 8,
           modified_at: modified_at,
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
     identification =
-      Bolognesa.MovieIdentificationFixtures.insert_decision!(
+      MovieIdentificationFixtures.insert_decision!(
         %{
           media_file_id: file.id,
           observed_revision: 1,
-          token: Ecto.UUID.generate(),
+          token: UUID.generate(),
           state: :automatic,
           origin: :automatic
         },

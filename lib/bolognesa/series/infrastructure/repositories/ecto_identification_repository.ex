@@ -1,4 +1,5 @@
 defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository do
+  alias Ecto.UUID
   @moduledoc false
   import Ecto.Query
 
@@ -281,7 +282,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   end
 
   defp save_correction(existing, file, ids, part) do
-    token = Ecto.UUID.generate()
+    token = UUID.generate()
     base = correction_base(existing, file, token)
     removed_ids = base.episode_ids -- ids
 

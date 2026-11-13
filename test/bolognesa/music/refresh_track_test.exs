@@ -1,7 +1,11 @@
 defmodule Bolognesa.Music.RefreshTrackTest do
+  alias Bolognesa.MusicFixtures
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: true
   import Bolognesa.MusicFixtures
-  alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, MediaFileSchema, MusicTrackSchema}
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicTrackSchema
   alias Bolognesa.Music
   alias Bolognesa.Music.Domain.ValueObjects.CatalogMetadata
   alias Bolognesa.Music.Infrastructure.Readers.EctoObservationsReader
@@ -15,7 +19,7 @@ defmodule Bolognesa.Music.RefreshTrackTest do
     assert first.id == Repo.get_by!(MusicTrackSchema, media_file_id: fixture.file.id).id
 
     Repo.update!(
-      change(fixture.inspection, token: Ecto.UUID.generate(), music_tags: %{"title" => "Second"})
+      change(fixture.inspection, token: UUID.generate(), music_tags: %{"title" => "Second"})
     )
 
     assert :ok = Music.refresh_track(fixture.file.id, fixture.file.revision)
@@ -29,7 +33,7 @@ defmodule Bolognesa.Music.RefreshTrackTest do
       {:ok, observation} = EctoObservationsReader.current(fixture.file.id, 1)
 
       case change_kind do
-        :token -> Repo.update!(change(fixture.inspection, token: Ecto.UUID.generate()))
+        :token -> Repo.update!(change(fixture.inspection, token: UUID.generate()))
         :revision -> Repo.update!(change(fixture.file, revision: 2))
         :missing -> Repo.update!(change(fixture.file, availability: :missing))
       end

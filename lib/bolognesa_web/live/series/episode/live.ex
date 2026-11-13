@@ -3,11 +3,14 @@ defmodule BolognesaWeb.Series.Episode.Live do
   # Capability reports are untrusted; only sanitized playback diagnostics may be logged.
   use BolognesaWeb, {:live_view, log: false}
   alias BolognesaWeb.LiveSupport.PlaybackEvents
-  alias BolognesaWeb.Series.Episode.Reducer
+  alias BolognesaWeb.Series.Episode.Reducer.Advance
+  alias BolognesaWeb.Series.Episode.Reducer.ApplyResult
+  alias BolognesaWeb.Series.Episode.Reducer.Initialize
+  alias BolognesaWeb.Series.Episode.Reducer.SelectPart
   alias BolognesaWeb.Series.Navigation
   @impl true
   def mount(%{"id" => id}, _session, socket),
-    do: {:ok, Reducer.Initialize.call(socket, socket.assigns.current_scope.actor, parse_id(id))}
+    do: {:ok, Initialize.call(socket, socket.assigns.current_scope.actor, parse_id(id))}
 
   @impl true
   def handle_params(params, _uri, socket) do
@@ -19,10 +22,10 @@ defmodule BolognesaWeb.Series.Episode.Live do
     socket =
       cond do
         socket.assigns.requested_episode_id != id ->
-          Reducer.Initialize.load(socket, socket.assigns.current_scope.actor, id)
+          Initialize.load(socket, socket.assigns.current_scope.actor, id)
 
         changed && socket.assigns.detail && !socket.assigns.loading? ->
-          Reducer.SelectPart.call(socket, part)
+          SelectPart.call(socket, part)
 
         true ->
           socket
@@ -33,14 +36,14 @@ defmodule BolognesaWeb.Series.Episode.Live do
 
   @impl true
   def handle_async({:next_episode, request}, result, socket),
-    do: {:noreply, Reducer.Advance.apply_result(socket, request, result)}
+    do: {:noreply, Advance.apply_result(socket, request, result)}
 
   def handle_async({:episode, request_id}, result, socket),
-    do: {:noreply, Reducer.ApplyResult.call(socket, request_id, result)}
+    do: {:noreply, ApplyResult.call(socket, request_id, result)}
 
   @impl true
   def handle_event("playback_ended", params, socket),
-    do: {:noreply, Reducer.Advance.call(socket, params)}
+    do: {:noreply, Advance.call(socket, params)}
 
   def handle_event("play", %{"file_id" => text} = params, socket) do
     version = Enum.find(socket.assigns.playback_versions, &(to_string(&1.id) == text))
@@ -50,7 +53,7 @@ defmodule BolognesaWeb.Series.Episode.Live do
 
       updated =
         if updated.assigns.selected_file_id == version.id,
-          do: Reducer.SelectPart.metadata(updated, version.part_number),
+          do: SelectPart.metadata(updated, version.part_number),
           else: updated
 
       {:noreply, updated}

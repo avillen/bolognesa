@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
+  alias Ecto.UUID
+  alias ExUnit.CaptureLog
   use ExUnit.Case, async: false
   import ExUnit.CaptureLog
   require Logger
@@ -6,7 +8,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
   alias Phoenix.LiveView.Logger, as: LiveViewLogger
 
   test "a queued preparation poll cannot replace a terminal failure" do
-    id = Ecto.UUID.generate()
+    id = UUID.generate()
 
     socket = %Phoenix.LiveView.Socket{
       assigns: %{

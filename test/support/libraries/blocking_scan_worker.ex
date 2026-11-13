@@ -4,7 +4,8 @@ defmodule Bolognesa.Libraries.Support.BlockingScanWorker do
 
   alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
-  alias Bolognesa.Libraries.Support.{ControlledFileDiscovery, UnavailableScanRepository}
+  alias Bolognesa.Libraries.Support.ControlledFileDiscovery
+  alias Bolognesa.Libraries.Support.UnavailableScanRepository
 
   @impl Oban.Worker
   def timeout(%Oban.Job{args: %{"mode" => "timeout"}}), do: 100

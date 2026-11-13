@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.ErrorHTMLTest do
+  alias BolognesaWeb.ErrorHTML
   use BolognesaWeb.ConnCase, async: true
 
   # Bring render_to_string/4 for testing custom views
@@ -14,9 +15,9 @@ defmodule BolognesaWeb.ErrorHTMLTest do
 
   test "HTTP error text follows the browser locale", %{conn: conn} do
     conn = put_req_header(conn, "accept-language", "es-ES")
-    assert BolognesaWeb.ErrorHTML.render("404.html", %{conn: conn}) == "Página no encontrada"
+    assert ErrorHTML.render("404.html", %{conn: conn}) == "Página no encontrada"
 
-    assert BolognesaWeb.ErrorHTML.render("500.html", %{conn: conn}) ==
+    assert ErrorHTML.render("500.html", %{conn: conn}) ==
              "Error interno del servidor"
   end
 end

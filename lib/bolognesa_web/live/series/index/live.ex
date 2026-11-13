@@ -1,11 +1,13 @@
 defmodule BolognesaWeb.Series.Index.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
-  alias BolognesaWeb.Series.Index.Reducer
+  alias BolognesaWeb.Series.Index.Reducer.ApplyResult
+  alias BolognesaWeb.Series.Index.Reducer.Initialize
+  alias BolognesaWeb.Series.Index.Reducer.Load
   alias BolognesaWeb.Series.Navigation
 
   @impl true
-  def mount(_params, _session, socket), do: {:ok, Reducer.Initialize.call(socket)}
+  def mount(_params, _session, socket), do: {:ok, Initialize.call(socket)}
 
   @impl true
   def handle_params(params, _uri, socket) do
@@ -14,7 +16,7 @@ defmodule BolognesaWeb.Series.Index.Live do
 
     socket =
       socket
-      |> Reducer.Load.call(query, page)
+      |> Load.call(query, page)
       |> Navigation.assign_context(%{
         "catalog_query" => query,
         "catalog_page" => page
@@ -31,7 +33,7 @@ defmodule BolognesaWeb.Series.Index.Live do
 
   @impl true
   def handle_async({:series, request_id}, result, socket) do
-    {:noreply, Reducer.ApplyResult.call(socket, request_id, result)}
+    {:noreply, ApplyResult.call(socket, request_id, result)}
   end
 
   defp parse_page(value) when is_binary(value) do

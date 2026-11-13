@@ -1,4 +1,5 @@
 defmodule Bolognesa.SeriesFixtures do
+  alias Ecto.UUID
   @moduledoc false
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
@@ -14,7 +15,7 @@ defmodule Bolognesa.SeriesFixtures do
     do:
       Repo.insert!(%LibrarySchema{
         name: "Synthetic source",
-        path: "/synthetic/#{Ecto.UUID.generate()}",
+        path: "/synthetic/#{UUID.generate()}",
         content_type: type
       })
 
@@ -28,7 +29,7 @@ defmodule Bolognesa.SeriesFixtures do
         modified_at: DateTime.utc_now(),
         availability: :available,
         revision: 1,
-        last_seen_generation: Ecto.UUID.generate()
+        last_seen_generation: UUID.generate()
       })
 
   @spec identify(MediaFileSchema.t(), non_neg_integer(), [pos_integer()]) :: Identification.t()

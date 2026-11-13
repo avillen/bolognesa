@@ -1,7 +1,9 @@
 defmodule Bolognesa.Playback.Application.Ports.Services.DeliveryExecutor do
   @moduledoc "Validate physical delivery and start an authorized server-owned plan."
-  alias Bolognesa.Playback.Domain.ReadModels.{Source, TranscodeSession}
-  alias Bolognesa.Playback.Domain.ValueObjects.{ContentRef, DeliveryPlan}
+  alias Bolognesa.Playback.Domain.ReadModels.Source
+  alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
+  alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
 
   @type adapter :: module()
   @type error ::

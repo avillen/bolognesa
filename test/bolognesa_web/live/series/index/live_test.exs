@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.Series.Index.LiveTest do
+  alias Phoenix.ConnTest
+  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
   alias BolognesaWeb.SeriesFixtures
@@ -19,7 +21,7 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
   end
 
   test "rejects anonymous visitors", %{conn: _conn} do
-    assert {:error, {:redirect, %{to: "/login"}}} = live(Phoenix.ConnTest.build_conn(), "/series")
+    assert {:error, {:redirect, %{to: "/login"}}} = live(ConnTest.build_conn(), "/series")
   end
 
   test "library search and detail navigation retain the selected library", ctx do

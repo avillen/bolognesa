@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.Setup.Forms.Admin do
+  alias Ecto.Changeset
+
   @moduledoc "Validation for the first administrator form."
   use Gettext, backend: BolognesaWeb.Gettext
   use Ecto.Schema
@@ -12,7 +14,7 @@ defmodule BolognesaWeb.Setup.Forms.Admin do
     field :password_confirmation, :string, virtual: true, redact: true
   end
 
-  @spec changeset(map()) :: Ecto.Changeset.t()
+  @spec changeset(map()) :: Changeset.t()
   def changeset(params \\ %{}) do
     %__MODULE__{}
     |> cast(params, [:name, :email, :password, :password_confirmation])

@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.MusicMediaControllerTest do
+  alias Bolognesa.MusicFixtures
+  alias Ecto.Changeset
   use BolognesaWeb.ConnCase, async: false
 
   alias Bolognesa.Accounts
@@ -26,10 +28,10 @@ defmodule BolognesaWeb.MusicMediaControllerTest do
     File.write!(physical_file, "abcdefgh")
     stat = File.stat!(physical_file, time: :posix)
     modified_at = DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond)
-    Repo.update!(Ecto.Changeset.change(fixture.library, path: physical))
+    Repo.update!(Changeset.change(fixture.library, path: physical))
 
     file =
-      Repo.update!(Ecto.Changeset.change(fixture.file, size_bytes: 8, modified_at: modified_at))
+      Repo.update!(Changeset.change(fixture.file, size_bytes: 8, modified_at: modified_at))
 
     {:ok, token: token, movie: fixture.track, media_file: file, physical_file: physical_file}
   end
@@ -157,7 +159,7 @@ defmodule BolognesaWeb.MusicMediaControllerTest do
         DateTime.to_unix(file.modified_at)
       )
 
-      Repo.update!(Ecto.Changeset.change(file, relative_path: name))
+      Repo.update!(Changeset.change(file, relative_path: name))
 
       result =
         conn
@@ -168,7 +170,7 @@ defmodule BolognesaWeb.MusicMediaControllerTest do
       assert get_resp_header(result, "content-type") == [mime]
     end
 
-    Repo.update!(Ecto.Changeset.change(file, relative_path: "sample.mp4"))
+    Repo.update!(Changeset.change(file, relative_path: "sample.mp4"))
 
     assert conn
            |> init_test_session(user_token: token)
@@ -189,7 +191,7 @@ defmodule BolognesaWeb.MusicMediaControllerTest do
     File.ln_s!("/etc/hosts", physical_file)
     unsafe = conn |> init_test_session(user_token: token) |> get(path)
     assert unsafe.status in [404, 409]
-    Repo.update!(Ecto.Changeset.change(file, revision: 2))
+    Repo.update!(Changeset.change(file, revision: 2))
     assert conn |> init_test_session(user_token: token) |> get(path) |> response(404) == ""
   end
 

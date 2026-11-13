@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.Library.Index.Reducers.Save do
+  alias BolognesaWeb.LibraryNavigation, as: BolognesaWebLibraryNavigation
+  alias Ecto.Changeset
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
@@ -19,12 +21,12 @@ defmodule BolognesaWeb.Library.Index.Reducers.Save do
   end
 
   defp save(socket, changeset) do
-    attrs = Map.take(Ecto.Changeset.apply_changes(changeset), [:name, :path, :content_type])
+    attrs = Map.take(Changeset.apply_changes(changeset), [:name, :path, :content_type])
 
     case Libraries.create_library(socket.assigns.current_scope.actor, attrs) do
       {:ok, library} ->
         socket
-        |> BolognesaWeb.LibraryNavigation.refresh()
+        |> BolognesaWebLibraryNavigation.refresh()
         |> CancelScanStatuses.call()
         |> assign(:form, to_form(Library.changeset()))
         |> assign(:show_library_form?, false)

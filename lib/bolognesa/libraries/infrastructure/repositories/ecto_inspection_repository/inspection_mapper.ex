@@ -3,7 +3,8 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
 
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
   alias Bolognesa.Libraries.Domain.Entities.Inspection
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.{MusicTags, TechnicalTrack}
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.MusicTags
+  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack
 
   @spec to_inspection(InspectionSchema.t()) :: Inspection.t()
   def to_inspection(schema) do

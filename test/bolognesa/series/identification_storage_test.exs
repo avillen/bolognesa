@@ -1,4 +1,7 @@
 defmodule Bolognesa.Series.IdentificationStorageTest do
+  alias Bolognesa.SeriesFixtures
+  alias Ecto.Changeset
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: true
 
   alias Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification
@@ -6,16 +9,14 @@ defmodule Bolognesa.Series.IdentificationStorageTest do
 
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository
 
-  alias Bolognesa.Infrastructure.Persistence.{
-    EpisodeSchema,
-    SeriesIdentificationEpisodeSchema,
-    SeriesIdentificationSchema
-  }
+  alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
+  alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema
+  alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
 
   test "manual corrections persist a part and reject a part containing multiple episodes" do
-    library = Bolognesa.SeriesFixtures.library()
-    file = Bolognesa.SeriesFixtures.file(library.id, "Example S01E01-part2.mp4")
-    decision = Bolognesa.SeriesFixtures.identify(file, 1, [1])
+    library = SeriesFixtures.library()
+    file = SeriesFixtures.file(library.id, "Example S01E01-part2.mp4")
+    decision = SeriesFixtures.identify(file, 1, [1])
     assert Map.fetch!(decision, :part_number) == 2
     row = Repo.get_by!(SeriesIdentificationSchema, media_file_id: file.id)
     assert Map.fetch!(row, :part_number) == 2
@@ -34,7 +35,7 @@ defmodule Bolognesa.Series.IdentificationStorageTest do
 
     assert Repo.get_by!(SeriesIdentificationSchema, media_file_id: file.id).part_number == 2
 
-    file |> Ecto.Changeset.change(revision: 2) |> Repo.update!()
+    file |> Changeset.change(revision: 2) |> Repo.update!()
 
     assert {:ok, 0} =
              Repo.transaction(fn ->
@@ -50,9 +51,9 @@ defmodule Bolognesa.Series.IdentificationStorageTest do
   end
 
   test "associations require confirmed decisions unique episodes and positive unique positions" do
-    library = Bolognesa.SeriesFixtures.library()
-    file = Bolognesa.SeriesFixtures.file(library.id, "Serie S01E01.mkv")
-    decision = Bolognesa.SeriesFixtures.identify(file, 1, [1, 2])
+    library = SeriesFixtures.library()
+    file = SeriesFixtures.file(library.id, "Serie S01E01.mkv")
+    decision = SeriesFixtures.identify(file, 1, [1, 2])
     [first, second] = decision.episode_ids
     row = Repo.get_by!(SeriesIdentificationSchema, media_file_id: file.id)
     assert Repo.get!(EpisodeSchema, first).season_id == Repo.get!(EpisodeSchema, second).season_id
@@ -73,12 +74,12 @@ defmodule Bolognesa.Series.IdentificationStorageTest do
                )
              )
 
-    file2 = Bolognesa.SeriesFixtures.file(library.id, "Pending.mkv")
+    file2 = SeriesFixtures.file(library.id, "Pending.mkv")
 
     attrs = %{
       media_file_id: file2.id,
       observed_revision: 1,
-      token: Ecto.UUID.generate(),
+      token: UUID.generate(),
       state: :pending
     }
 

@@ -1,4 +1,5 @@
 defmodule Bolognesa.Series.TmdbSeriesProviderTest do
+  alias Plug.Conn, as: PlugConn
   use ExUnit.Case, async: true
   alias Bolognesa.Series.Infrastructure.Providers.TmdbSeriesProvider
 
@@ -11,7 +12,7 @@ defmodule Bolognesa.Series.TmdbSeriesProviderTest do
       results =
         for id <- 1..8, do: %{id: id, name: "Serie", first_air_date: "2001-01-01", adult: false}
 
-      Plug.Conn.resp(
+      PlugConn.resp(
         conn,
         200,
         Jason.encode!(%{results: results ++ [%{id: 99, name: "Adult", adult: true}]})
@@ -51,7 +52,7 @@ defmodule Bolognesa.Series.TmdbSeriesProviderTest do
 
     plug = fn conn ->
       send(parent, {:season_path, conn.request_path})
-      Plug.Conn.resp(conn, 200, Jason.encode!(body))
+      PlugConn.resp(conn, 200, Jason.encode!(body))
     end
 
     assert {:ok, season} = TmdbSeriesProvider.season(201, 0, token: "test", plug: plug)
@@ -89,14 +90,14 @@ defmodule Bolognesa.Series.TmdbSeriesProviderTest do
           {429, :rate_limited},
           {500, :provider_unavailable}
         ] do
-      plug = fn conn -> Plug.Conn.resp(conn, status, "private-body") end
+      plug = fn conn -> PlugConn.resp(conn, status, "private-body") end
 
       assert {:error, ^reason} =
                TmdbSeriesProvider.search("Serie", nil, token: "test", plug: plug)
     end
 
     for body <- ["broken", String.duplicate("x", 1_048_577)] do
-      plug = fn conn -> Plug.Conn.resp(conn, 200, body) end
+      plug = fn conn -> PlugConn.resp(conn, 200, body) end
 
       assert {:error, :invalid_response} =
                TmdbSeriesProvider.search("Serie", nil, token: "test", plug: plug)
@@ -108,5 +109,5 @@ defmodule Bolognesa.Series.TmdbSeriesProviderTest do
              TmdbSeriesProvider.search("Serie", nil, token: "test", plug: plug)
   end
 
-  defp json(body), do: fn conn -> Plug.Conn.resp(conn, 200, Jason.encode!(body)) end
+  defp json(body), do: fn conn -> PlugConn.resp(conn, 200, Jason.encode!(body)) end
 end

@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.LiveSupport.PlaybackControl do
+  alias Ecto.UUID
   @moduledoc "Coordinates authorized playback preparation and temporary sessions for the UI."
   import Phoenix.Component, only: [assign: 3]
   alias Bolognesa.Playback
@@ -23,7 +24,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
 
     socket =
       socket
-      |> assign(:playback_attempt_id, Ecto.UUID.generate())
+      |> assign(:playback_attempt_id, UUID.generate())
       |> assign(:playback_duration_ms, nil)
       |> assign(:capability_report, nil)
       |> assign(:compatible_playback_available?, false)
@@ -35,7 +36,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
 
     case Playback.video_candidates(actor, socket.assigns.content_ref, file_id) do
       {:ok, source, candidates} ->
-        generation = Ecto.UUID.generate()
+        generation = UUID.generate()
         Process.send_after(self(), {:capability_timeout, generation}, 5_000)
         probe = %{generation: generation, candidates: Enum.map(candidates, &probe_candidate/1)}
 
@@ -152,7 +153,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
     if socket.assigns[:compatible_playback_available?] and
          socket.assigns.playback_phase in [:ready, :error] and !socket.assigns[:loading?] do
       socket
-      |> assign(:playback_attempt_id, Ecto.UUID.generate())
+      |> assign(:playback_attempt_id, UUID.generate())
       |> assign(:recovery_used?, false)
       |> recover(0)
     else

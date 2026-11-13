@@ -1,11 +1,11 @@
 defmodule Bolognesa.Music.ImportRecoveryTest do
+  alias Bolognesa.MusicFixtures
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: true
   import Bolognesa.MusicFixtures
 
-  alias Bolognesa.Infrastructure.Persistence.{
-    InspectionSchema,
-    MusicImportSchema
-  }
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicImportSchema
 
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
@@ -56,7 +56,7 @@ defmodule Bolognesa.Music.ImportRecoveryTest do
   test "an old attempt cannot refresh a new inspection at the same revision" do
     fixture = music_fixture()
     old_token = fixture.inspection.token
-    Repo.update!(change(fixture.inspection, token: Ecto.UUID.generate()))
+    Repo.update!(change(fixture.inspection, token: UUID.generate()))
     assert :ok = Music.refresh_track(fixture.file.id, 1, old_token)
     assert Repo.all(Bolognesa.Infrastructure.Persistence.MusicTrackSchema) == []
   end
@@ -127,7 +127,7 @@ defmodule Bolognesa.Music.ImportRecoveryTest do
     inspection =
       Repo.update!(
         change(fixture.inspection,
-          token: Ecto.UUID.generate(),
+          token: UUID.generate(),
           music_tags: %{"title" => "Current"}
         )
       )

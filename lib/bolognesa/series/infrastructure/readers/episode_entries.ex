@@ -1,4 +1,5 @@
 defmodule Bolognesa.Series.Infrastructure.Readers.EpisodeEntries do
+  alias Ecto.Query
   @moduledoc false
   import Ecto.Query
   alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
@@ -6,7 +7,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EpisodeEntries do
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
 
-  @spec query() :: Ecto.Query.t()
+  @spec query() :: Query.t()
   def query do
     tagged =
       from relation in SeriesIdentificationEpisodeSchema,

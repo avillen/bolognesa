@@ -1,4 +1,5 @@
 defmodule Bolognesa.Movies.IdentifyMediaFileTest do
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
@@ -59,11 +60,11 @@ defmodule Bolognesa.Movies.IdentifyMediaFileTest do
           relative_path: "Mi.pelicula.(2001).mkv",
           size_bytes: 1,
           modified_at: DateTime.utc_now(),
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
-    token = Ecto.UUID.generate()
+    token = UUID.generate()
 
     Repo.insert!(
       MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{
@@ -131,7 +132,7 @@ defmodule Bolognesa.Movies.IdentifyMediaFileTest do
   defp pending_file(name) do
     library =
       Repo.insert!(
-        LibrarySchema.changeset(%LibrarySchema{}, %{name: name, path: "/#{Ecto.UUID.generate()}"})
+        LibrarySchema.changeset(%LibrarySchema{}, %{name: name, path: "/#{UUID.generate()}"})
       )
 
     file =
@@ -141,11 +142,11 @@ defmodule Bolognesa.Movies.IdentifyMediaFileTest do
           relative_path: name,
           size_bytes: 1,
           modified_at: DateTime.utc_now(),
-          last_seen_generation: Ecto.UUID.generate()
+          last_seen_generation: UUID.generate()
         })
       )
 
-    token = Ecto.UUID.generate()
+    token = UUID.generate()
 
     Repo.insert!(
       MovieIdentificationSchema.changeset(%MovieIdentificationSchema{}, %{

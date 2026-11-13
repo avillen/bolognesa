@@ -1,4 +1,6 @@
 defmodule Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema do
+  alias Ecto.Changeset
+
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
@@ -9,7 +11,7 @@ defmodule Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema
     field :position, :integer
   end
 
-  @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
+  @spec changeset(%__MODULE__{}, map()) :: Changeset.t()
   def changeset(row, attrs) do
     row
     |> change(attrs)

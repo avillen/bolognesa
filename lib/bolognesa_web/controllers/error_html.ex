@@ -1,4 +1,8 @@
 defmodule BolognesaWeb.ErrorHTML do
+  alias BolognesaWeb.Locale
+  alias Phoenix.Controller
+  alias Plug.Conn, as: PlugConn
+
   @moduledoc """
   This module is invoked by your endpoint in case of errors on HTML requests.
 
@@ -25,11 +29,11 @@ defmodule BolognesaWeb.ErrorHTML do
 
   defp message("404.html"), do: gettext("Página no encontrada")
   defp message("500.html"), do: gettext("Error interno del servidor")
-  defp message(template), do: Phoenix.Controller.status_message_from_template(template)
+  defp message(template), do: Controller.status_message_from_template(template)
 
   defp locale(%{conn: conn}) do
     conn.assigns[:locale] ||
-      BolognesaWeb.Locale.negotiate(List.first(Plug.Conn.get_req_header(conn, "accept-language")))
+      Locale.negotiate(List.first(PlugConn.get_req_header(conn, "accept-language")))
   end
 
   defp locale(_), do: Gettext.get_locale(BolognesaWeb.Gettext)

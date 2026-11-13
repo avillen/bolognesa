@@ -3,8 +3,10 @@ defmodule Bolognesa.Libraries.Application.UseCases.InspectMediaFile do
 
   alias Bolognesa.Infrastructure.Observability.Events
   alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
-  alias Bolognesa.Libraries.Application.Ports.Services.{LibraryStatusNotifier, MediaProbe}
-  alias Bolognesa.Libraries.Domain.Entities.{Inspection, MediaFile}
+  alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
+  alias Bolognesa.Libraries.Application.Ports.Services.MediaProbe
+  alias Bolognesa.Libraries.Domain.Entities.Inspection
+  alias Bolognesa.Libraries.Domain.Entities.MediaFile
 
   @permanent [
     :source_changed,

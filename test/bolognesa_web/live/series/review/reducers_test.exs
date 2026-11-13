@@ -1,16 +1,15 @@
 defmodule BolognesaWeb.Series.Review.ReducersTest do
+  alias Phoenix.Component
   use ExUnit.Case, async: true
   alias BolognesaWeb.Series.Review.Forms.Selection
 
-  alias BolognesaWeb.Series.Review.Reducer.{
-    ApplyResult,
-    BeginCorrection,
-    ChooseSeries,
-    Initialize,
-    LoadSeason,
-    Save,
-    Search
-  }
+  alias BolognesaWeb.Series.Review.Reducer.ApplyResult
+  alias BolognesaWeb.Series.Review.Reducer.BeginCorrection
+  alias BolognesaWeb.Series.Review.Reducer.ChooseSeries
+  alias BolognesaWeb.Series.Review.Reducer.Initialize
+  alias BolognesaWeb.Series.Review.Reducer.LoadSeason
+  alias BolognesaWeb.Series.Review.Reducer.Save
+  alias BolognesaWeb.Series.Review.Reducer.Search
 
   test "empty episode selections are invalid before calling the provider" do
     changeset = Selection.changeset(%{"episode_numbers" => [""]})
@@ -28,7 +27,7 @@ defmodule BolognesaWeb.Series.Review.ReducersTest do
     newer = make_ref()
 
     socket =
-      Phoenix.Component.assign(socket,
+      Component.assign(socket,
         requests: %{candidates: newer, season: newer},
         series_id: 202
       )
@@ -45,7 +44,7 @@ defmodule BolognesaWeb.Series.Review.ReducersTest do
       })
 
     ref = make_ref()
-    socket = Phoenix.Component.assign(socket, requests: %{correction: ref}, saving?: true)
+    socket = Component.assign(socket, requests: %{correction: ref}, saving?: true)
     completed = ApplyResult.call(socket, :correction, ref, {:ok, {:error, :source_changed}})
     assert completed.assigns.saving? == false
     assert completed.assigns.requests == %{}
@@ -59,7 +58,7 @@ defmodule BolognesaWeb.Series.Review.ReducersTest do
         private: %{live_temp: %{}, lifecycle: %Phoenix.LiveView.Lifecycle{}}
       })
 
-    socket = Phoenix.Component.assign(socket, saving?: true)
+    socket = Component.assign(socket, saving?: true)
     assert BeginCorrection.call(socket, %{"episode_numbers" => ["2"]}) == socket
     assert Save.call(socket, :unidentified) == socket
     assert Search.call(socket, "Another") == socket

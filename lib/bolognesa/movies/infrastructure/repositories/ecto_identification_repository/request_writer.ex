@@ -1,4 +1,7 @@
 defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.RequestWriter do
+  alias Ecto.Changeset
+  alias Ecto.Multi
+  alias Ecto.UUID
   @moduledoc "Writes identification requests in the inventory transaction."
 
   import Ecto.Query
@@ -98,7 +101,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   end
 
   defp insert_request!(repo, file_id, revision) do
-    token = Ecto.UUID.generate()
+    token = UUID.generate()
     {:ok, requested} = Identification.new(file_id, revision, token)
     saved = DecisionStore.save!(repo, nil, requested)
     insert_job!(repo, saved)
@@ -106,7 +109,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   end
 
   defp update_request!(repo, existing, revision) do
-    token = Ecto.UUID.generate()
+    token = UUID.generate()
     decision = IdentificationMapper.to_domain(existing)
     {:ok, requested} = Identification.request(decision, revision, token)
     saved = DecisionStore.save!(repo, existing, requested)
@@ -116,10 +119,10 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
 
   defp insert_job!(repo, decision) do
     {:ok, %{job: job}} =
-      Ecto.Multi.new()
+      Multi.new()
       |> ObanIdentificationJob.insert(decision)
       |> repo.transaction()
 
-    decision |> Ecto.Changeset.change(job_id: job.id) |> repo.update!(log: false)
+    decision |> Changeset.change(job_id: job.id) |> repo.update!(log: false)
   end
 end

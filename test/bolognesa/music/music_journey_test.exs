@@ -1,7 +1,8 @@
 defmodule Bolognesa.Music.MusicJourneyTest do
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
-  alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, MediaFileSchema}
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker
 

@@ -1,8 +1,12 @@
 defmodule Bolognesa.Libraries.RequestInspectionRefreshTest do
+  alias Ecto.Changeset
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
-  alias Bolognesa.Infrastructure.Persistence.{InspectionSchema, LibrarySchema, MediaFileSchema}
+  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries
   alias Bolognesa.Libraries.Application.UseCases.RequestInspectionRefresh
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
@@ -20,7 +24,7 @@ defmodule Bolognesa.Libraries.RequestInspectionRefreshTest do
     file = file()
     assert {:error, :not_found} = Libraries.request_inspection_refresh(@admin, 0, 1)
     assert {:error, :source_changed} = Libraries.request_inspection_refresh(@admin, file.id, 2)
-    Repo.update!(Ecto.Changeset.change(file, availability: :missing))
+    Repo.update!(Changeset.change(file, availability: :missing))
     assert {:error, :missing} = Libraries.request_inspection_refresh(@admin, file.id, 1)
     music = file(:music)
     assert {:error, :not_found} = Libraries.request_inspection_refresh(@admin, music.id, 1)
@@ -76,7 +80,7 @@ defmodule Bolognesa.Libraries.RequestInspectionRefreshTest do
     file = file()
     assert {:ok, :enqueued} = Libraries.request_inspection_refresh(@admin, file.id, 1)
     old = Repo.get_by!(InspectionSchema, media_file_id: file.id)
-    Repo.update!(Ecto.Changeset.change(file, revision: 2))
+    Repo.update!(Changeset.change(file, revision: 2))
     assert {:ok, :enqueued} = Libraries.request_inspection_refresh(@admin, file.id, 2)
     current = Repo.get!(InspectionSchema, old.id)
     assert current.observed_revision == 2
@@ -146,7 +150,7 @@ defmodule Bolognesa.Libraries.RequestInspectionRefreshTest do
       old = Repo.get_by!(InspectionSchema, media_file_id: file.id)
 
       Repo.update!(
-        Ecto.Changeset.change(old,
+        Changeset.change(old,
           state: :failed,
           updated_at: DateTime.add(DateTime.utc_now(), -60)
         )
@@ -216,7 +220,7 @@ defmodule Bolognesa.Libraries.RequestInspectionRefreshTest do
       relative_path: "synthetic.mp4",
       size_bytes: 5,
       modified_at: ~U[2026-10-03 00:00:00.000000Z],
-      last_seen_generation: Ecto.UUID.generate()
+      last_seen_generation: UUID.generate()
     })
   end
 end

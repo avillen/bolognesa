@@ -1,4 +1,6 @@
 defmodule BolognesaWeb.Library.Index.Forms.Library do
+  alias Ecto.Changeset
+
   @moduledoc "Web input for a library source."
   use Ecto.Schema
   use Gettext, backend: BolognesaWeb.Gettext
@@ -11,7 +13,7 @@ defmodule BolognesaWeb.Library.Index.Forms.Library do
     field :content_type, Ecto.Enum, values: [:movie, :series, :music], default: :movie
   end
 
-  @spec changeset(map()) :: Ecto.Changeset.t()
+  @spec changeset(map()) :: Changeset.t()
   def changeset(params \\ %{}) do
     %__MODULE__{}
     |> cast(params, [:name, :path, :content_type])

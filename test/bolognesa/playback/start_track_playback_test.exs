@@ -1,4 +1,6 @@
 defmodule Bolognesa.Playback.StartTrackPlaybackTest do
+  alias Bolognesa.MusicFixtures
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: true
   import Bolognesa.MusicFixtures
   alias Bolognesa.Playback
@@ -17,7 +19,7 @@ defmodule Bolognesa.Playback.StartTrackPlaybackTest do
     assert :not_found =
              EctoPlaybackRepository.fetch_track_source(first.track.id, second.file.id)
 
-    Repo.update!(change(first.inspection, token: Ecto.UUID.generate()))
+    Repo.update!(change(first.inspection, token: UUID.generate()))
     assert {:error, :not_found} = Playback.start_track(first.actor, first.track.id, first.file.id)
   end
 end

@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.Series.Review.Reducer.BeginCorrection do
+  alias Ecto.Changeset
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2, to_form: 2]
@@ -13,7 +14,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.BeginCorrection do
     socket =
       assign(socket, selection_form: to_form(%{changeset | action: :validate}, as: :selection))
 
-    with {:ok, selection} <- Ecto.Changeset.apply_action(changeset, :insert),
+    with {:ok, selection} <- Changeset.apply_action(changeset, :insert),
          :ok <- ready(socket, selection.episode_numbers) do
       Save.call(
         socket,

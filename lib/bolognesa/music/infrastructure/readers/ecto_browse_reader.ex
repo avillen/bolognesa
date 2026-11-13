@@ -3,15 +3,15 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
   @behaviour Bolognesa.Music.Application.Ports.Readers.BrowseReader
   import Ecto.Query
 
-  alias Bolognesa.Infrastructure.Persistence.{
-    LibrarySchema,
-    MediaFileSchema,
-    MusicAlbumSchema,
-    MusicArtistSchema,
-    MusicTrackSchema
-  }
+  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
+  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicAlbumSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicArtistSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicTrackSchema
 
-  alias Bolognesa.Music.Domain.ReadModels.{BrowseItem, BrowsePage, RecentAlbum}
+  alias Bolognesa.Music.Domain.ReadModels.BrowseItem
+  alias Bolognesa.Music.Domain.ReadModels.BrowsePage
+  alias Bolognesa.Music.Domain.ReadModels.RecentAlbum
   alias Bolognesa.Repo
 
   @impl true

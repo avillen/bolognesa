@@ -1,13 +1,16 @@
 defmodule BolognesaWeb.UserAuth do
+  alias Bolognesa.Accounts
+  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
+  alias Phoenix.Component
   use Gettext, backend: BolognesaWeb.Gettext
   @moduledoc "Resolve the verified actor for browser and LiveView requests."
   import Plug.Conn
   import Phoenix.Controller, only: [redirect: 2]
 
-  alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
+  alias Phoenix.LiveView
+  alias Plug.Conn, as: PlugConn
 
-  @spec fetch_current_scope(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
+  @spec fetch_current_scope(PlugConn.t(), keyword()) :: PlugConn.t()
   def fetch_current_scope(conn, _opts) do
     case get_session(conn, :user_token) do
       nil -> assign(conn, :current_scope, nil)
@@ -16,9 +19,9 @@ defmodule BolognesaWeb.UserAuth do
   end
 
   @spec assign_scope_result(
-          Plug.Conn.t(),
+          PlugConn.t(),
           {:ok, AuthenticatedUser.t()} | {:error, :unauthenticated | :unavailable}
-        ) :: Plug.Conn.t()
+        ) :: PlugConn.t()
   def assign_scope_result(conn, {:ok, actor}), do: assign(conn, :current_scope, %{actor: actor})
   def assign_scope_result(conn, {:error, :unauthenticated}), do: assign(conn, :current_scope, nil)
 
@@ -28,7 +31,7 @@ defmodule BolognesaWeb.UserAuth do
     |> halt()
   end
 
-  @spec require_authenticated_user(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
+  @spec require_authenticated_user(PlugConn.t(), keyword()) :: PlugConn.t()
   def require_authenticated_user(conn, _opts) do
     if conn.assigns.current_scope do
       conn
@@ -37,7 +40,7 @@ defmodule BolognesaWeb.UserAuth do
     end
   end
 
-  @spec require_admin_user(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
+  @spec require_admin_user(PlugConn.t(), keyword()) :: PlugConn.t()
   def require_admin_user(conn, _opts) do
     case conn.assigns.current_scope do
       %{actor: %AuthenticatedUser{role: :admin}} -> conn
@@ -45,7 +48,7 @@ defmodule BolognesaWeb.UserAuth do
     end
   end
 
-  @spec require_authenticated_media(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
+  @spec require_authenticated_media(PlugConn.t(), keyword()) :: PlugConn.t()
   def require_authenticated_media(conn, _opts) do
     if conn.assigns.current_scope do
       conn
@@ -61,9 +64,9 @@ defmodule BolognesaWeb.UserAuth do
           :require_authenticated | :require_admin,
           map(),
           map(),
-          Phoenix.LiveView.Socket.t()
+          LiveView.Socket.t()
         ) ::
-          {:cont, Phoenix.LiveView.Socket.t()} | {:halt, Phoenix.LiveView.Socket.t()}
+          {:cont, LiveView.Socket.t()} | {:halt, LiveView.Socket.t()}
   def on_mount(:require_authenticated, _params, session, socket) do
     browser =
       if session["browser_locale"] in ["es", "en"], do: session["browser_locale"], else: "es"
@@ -78,20 +81,20 @@ defmodule BolognesaWeb.UserAuth do
 
     case result do
       {:ok, actor} ->
-        {:cont, Phoenix.Component.assign(socket, :current_scope, %{actor: actor})}
+        {:cont, Component.assign(socket, :current_scope, %{actor: actor})}
 
       {:error, :unauthenticated} ->
-        {:halt, Phoenix.LiveView.redirect(socket, to: unauthenticated_path())}
+        {:halt, LiveView.redirect(socket, to: unauthenticated_path())}
 
       {:error, :unavailable} ->
         socket =
-          Phoenix.LiveView.put_flash(
+          LiveView.put_flash(
             socket,
             :error,
             gettext("Servicio temporalmente no disponible")
           )
 
-        {:halt, Phoenix.LiveView.redirect(socket, to: "/login")}
+        {:halt, LiveView.redirect(socket, to: "/login")}
     end
   end
 
@@ -101,7 +104,7 @@ defmodule BolognesaWeb.UserAuth do
         {:cont, socket}
 
       {:cont, socket} ->
-        {:halt, Phoenix.LiveView.redirect(socket, to: "/")}
+        {:halt, LiveView.redirect(socket, to: "/")}
 
       {:halt, socket} ->
         {:halt, socket}

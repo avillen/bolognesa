@@ -4,7 +4,8 @@ defmodule Bolognesa.Libraries.LocalFileDiscoveryTest do
   alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Libraries.Domain.Entities.Library
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.DiscoveryRequest
-  alias Bolognesa.Libraries.Infrastructure.Services.{LocalFileDiscovery, LocalFileSource}
+  alias Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery
+  alias Bolognesa.Libraries.Infrastructure.Services.LocalFileSource
 
   setup do
     root = Application.fetch_env!(:bolognesa, :library_roots) |> hd()

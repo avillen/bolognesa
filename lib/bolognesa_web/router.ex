@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.Router do
+  alias BolognesaWeb.Locale
   use BolognesaWeb, :router
   import BolognesaWeb.UserAuth
   import Phoenix.LiveDashboard.Router
@@ -43,7 +44,7 @@ defmodule BolognesaWeb.Router do
     post "/music/playback/activity", MusicPlaybackController, :activity
     post "/music/playback/album", MusicPlaybackController, :album
 
-    live_session :public_access, on_mount: [{BolognesaWeb.Locale, :default}] do
+    live_session :public_access, on_mount: [{Locale, :default}] do
       live "/setup", Setup.Live, :new
       live "/login", Login.Live, :new
     end
@@ -57,7 +58,7 @@ defmodule BolognesaWeb.Router do
     live_session :authenticated,
       on_mount: [
         {BolognesaWeb.UserAuth, :require_authenticated},
-        {BolognesaWeb.Locale, :default},
+        {Locale, :default},
         {BolognesaWeb.LibraryNavigation, :default}
       ] do
       live "/", Home.Live, :index

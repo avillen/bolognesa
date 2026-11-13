@@ -1,4 +1,5 @@
 defmodule Bolognesa.Series.IdentifiedSeriesWriterTest do
+  alias Task.Supervisor, as: TaskSupervisor
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
@@ -42,13 +43,13 @@ defmodule Bolognesa.Series.IdentifiedSeriesWriterTest do
 
   @tag committed: true
   test "concurrent selections reuse every identity" do
-    supervisor = start_supervised!(Task.Supervisor)
+    supervisor = start_supervised!(TaskSupervisor)
     owner = self()
 
     try do
       tasks =
         for _ <- 1..2 do
-          Task.Supervisor.async_nolink(supervisor, fn ->
+          TaskSupervisor.async_nolink(supervisor, fn ->
             Sandbox.unboxed_run(Repo, fn ->
               send(owner, {:ready, self()})
 

@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.PlaybackDiagnosticsTest do
+  alias Ecto.UUID
   use ExUnit.Case, async: true
   alias BolognesaWeb.LiveSupport.PlaybackEvents
 
@@ -7,8 +8,8 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
     event = [:bolognesa, :playback, :browser, :diagnostic]
     :ok = :telemetry.attach(handler, event, &__MODULE__.handle_telemetry/4, self())
     on_exit(fn -> :telemetry.detach(handler) end)
-    id = Ecto.UUID.generate()
-    tab = Ecto.UUID.generate()
+    id = UUID.generate()
+    tab = UUID.generate()
 
     socket = %Phoenix.LiveView.Socket{
       assigns: %{
@@ -53,7 +54,7 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
     assert_receive {^event, %{count: 1},
                     %{diagnostic: :recovered, buffered_ms: 8000, stall_duration_ms: 1600}}
 
-    page = Ecto.UUID.generate()
+    page = UUID.generate()
 
     lifecycle =
       Map.merge(params, %{
@@ -73,7 +74,7 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
     assert_receive {^event, %{count: 1}, %{page_id: ^page, replayed: true, ws_code: 1006}}
 
     for invalid <- [
-          Map.put(params, "session_id", Ecto.UUID.generate()),
+          Map.put(params, "session_id", UUID.generate()),
           Map.put(params, "file_id", "4"),
           Map.put(params, "diagnostic", "injected"),
           Map.put(params, "position_ms", -1),
@@ -129,7 +130,7 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
              PlaybackEvents.handle_event(
                "playback_restore",
                %{
-                 "session_id" => Ecto.UUID.generate(),
+                 "session_id" => UUID.generate(),
                  "position_ms" => "400000",
                  "playing" => "true"
                },
@@ -142,7 +143,7 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
       assigns: %{
         __changed__: %{},
         transcode_session: %{
-          id: Ecto.UUID.generate(),
+          id: UUID.generate(),
           duration_ms: nil
         }
       }
@@ -152,7 +153,7 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
              PlaybackEvents.handle_event(
                "playback_restore",
                %{
-                 "session_id" => Ecto.UUID.generate(),
+                 "session_id" => UUID.generate(),
                  "position_ms" => "400000",
                  "playing" => "true"
                },

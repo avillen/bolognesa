@@ -1,4 +1,5 @@
 defmodule Bolognesa.Movies.IdentificationJobsTest do
+  alias Oban.Notifier
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
@@ -177,14 +178,14 @@ defmodule Bolognesa.Movies.IdentificationJobsTest do
   @tag committed: true
   test "committed requests notify the identification queue" do
     Sandbox.unboxed_run(Repo, fn ->
-      :ok = Oban.Notifier.listen(:insert)
+      :ok = Notifier.listen(:insert)
       {request, scan} = pending_request()
 
       try do
         assert_receive {:notification, :insert, %{"queue" => "identifications"}}, 1000
         assert Repo.get!(Oban.Job, request.job_id)
       after
-        Oban.Notifier.unlisten(:insert)
+        Notifier.unlisten(:insert)
         cleanup(scan)
       end
     end)

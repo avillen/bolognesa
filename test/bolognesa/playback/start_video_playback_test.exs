@@ -1,4 +1,7 @@
 defmodule Bolognesa.Playback.StartVideoPlaybackTest do
+  alias Bolognesa.MovieIdentificationFixtures
+  alias Ecto.Changeset
+  alias Ecto.UUID
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
@@ -78,7 +81,7 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
       Repo.insert!(
         InspectionSchema.changeset(%InspectionSchema{}, %{
           media_file_id: file.id,
-          token: Ecto.UUID.generate(),
+          token: UUID.generate(),
           observed_revision: file.revision,
           state: :succeeded,
           format: "avi",
@@ -138,9 +141,7 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
 
     file =
       file(library.id, "film.mp4", :available)
-      |> Ecto.Changeset.change(
-        modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond)
-      )
+      |> Changeset.change(modified_at: DateTime.from_unix!(stat.mtime * 1_000_000, :microsecond))
       |> Repo.update!()
 
     identify(file.id, movie.id)
@@ -148,7 +149,7 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
     Repo.insert!(
       InspectionSchema.changeset(%InspectionSchema{}, %{
         media_file_id: file.id,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         observed_revision: 1,
         state: :succeeded,
         format: "mp4",
@@ -182,7 +183,7 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
     assert {:error, :source_changed} =
              Playback.prepare_video(actor, {:movie, movie.id}, file.id, plan)
 
-    Repo.update!(Ecto.Changeset.change(file, revision: 2))
+    Repo.update!(Changeset.change(file, revision: 2))
 
     assert {:error, :source_changed} =
              Playback.prepare_video(actor, {:movie, movie.id}, file.id, plan)
@@ -206,17 +207,17 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
         size_bytes: 8,
         modified_at: DateTime.utc_now(),
         availability: availability,
-        last_seen_generation: Ecto.UUID.generate()
+        last_seen_generation: UUID.generate()
       })
     )
   end
 
   defp identify(file_id, movie_id) do
-    Bolognesa.MovieIdentificationFixtures.insert_decision!(
+    MovieIdentificationFixtures.insert_decision!(
       %{
         media_file_id: file_id,
         observed_revision: 1,
-        token: Ecto.UUID.generate(),
+        token: UUID.generate(),
         state: :automatic,
         origin: :automatic
       },

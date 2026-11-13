@@ -1,6 +1,7 @@
 defmodule Bolognesa.Playback.Domain.ValueObjects.CapabilityReport do
   @moduledoc "Closed version-one observations for server-issued configurations."
-  alias Bolognesa.Playback.Domain.ValueObjects.{DeliveryPlan, PlaybackCandidate}
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
+  alias Bolognesa.Playback.Domain.ValueObjects.PlaybackCandidate
 
   @type observation :: %{
           transport: DeliveryPlan.transport(),
