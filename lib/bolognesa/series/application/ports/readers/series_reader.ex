@@ -40,8 +40,4 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReader do
               {:ok, Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t()}
               | :not_found
               | {:error, :unavailable | :part_unavailable}
-
-  @doc "Next available episode in season/episode order, after all episodes in the completed file."
-  @callback fetch_next_available_episode(Episode.id(), file_id :: pos_integer()) ::
-              {:ok, Episode.t()} | :not_found | {:error, :unavailable}
 end

@@ -191,8 +191,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  @impl true
-  def fetch_next_available_episode(episode_id, file_id) do
+  defp fetch_next_available_episode(episode_id, file_id) do
     completed =
       from relation in SeriesIdentificationEpisodeSchema,
         join: decision in SeriesIdentificationSchema,

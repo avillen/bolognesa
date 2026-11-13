@@ -100,12 +100,12 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     next_decision = SeriesFixtures.identify(next, 2, [2])
 
     assert {:ok, episode} =
-             Series.fetch_next_available_episode(@actor, hd(decision.episode_ids), first.id)
+             Series.fetch_next_playable_episode(@actor, hd(decision.episode_ids), first.id)
 
     assert episode.id == hd(next_decision.episode_ids)
-    assert :not_found = Series.fetch_next_available_episode(@actor, episode.id, next.id)
-    assert :not_found = Series.fetch_next_available_episode(@actor, episode.id, first.id)
-    assert {:error, :forbidden} = Series.fetch_next_available_episode(nil, episode.id, next.id)
+    assert :not_found = Series.fetch_next_playable_episode(@actor, episode.id, next.id)
+    assert :not_found = Series.fetch_next_playable_episode(@actor, episode.id, first.id)
+    assert {:error, :forbidden} = Series.fetch_next_playable_episode(nil, episode.id, next.id)
   end
 
   test "next episode follows episode number within the same season" do
@@ -116,14 +116,14 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     earlier_decision = SeriesFixtures.identify(earlier, 1, [1])
 
     assert {:ok, episode} =
-             Series.fetch_next_available_episode(
+             Series.fetch_next_playable_episode(
                @actor,
                hd(earlier_decision.episode_ids),
                earlier.id
              )
 
     assert episode.id == hd(later_decision.episode_ids)
-    assert :not_found = Series.fetch_next_available_episode(@actor, episode.id, later.id)
+    assert :not_found = Series.fetch_next_playable_episode(@actor, episode.id, later.id)
   end
 
   test "detail neighbors use episode order rather than insertion order and stay in the season" do

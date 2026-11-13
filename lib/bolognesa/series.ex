@@ -6,7 +6,6 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification
   alias Bolognesa.Series.Application.UseCases.FetchEpisode
   alias Bolognesa.Series.Application.UseCases.FetchEpisode.Response, as: EpisodeDetail
-  alias Bolognesa.Series.Application.UseCases.FetchNextAvailableEpisode
   alias Bolognesa.Series.Application.UseCases.FetchNextPlayableEpisode
   alias Bolognesa.Series.Application.UseCases.FetchSeries
   alias Bolognesa.Series.Application.UseCases.FetchSeries.Response, as: SeriesDetail
@@ -77,17 +76,6 @@ defmodule Bolognesa.Series do
   def fetch_next_playable_episode(actor, episode_id, file_id),
     do:
       FetchNextPlayableEpisode.call(
-        actor,
-        episode_id,
-        file_id,
-        EctoSeriesReader
-      )
-
-  @spec fetch_next_available_episode(AuthenticatedUser.t(), pos_integer(), pos_integer()) ::
-          {:ok, Bolognesa.Series.Domain.ReadModels.Episode.t()} | :not_found | {:error, reason()}
-  def fetch_next_available_episode(actor, episode_id, file_id),
-    do:
-      FetchNextAvailableEpisode.call(
         actor,
         episode_id,
         file_id,
