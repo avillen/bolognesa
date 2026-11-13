@@ -7,10 +7,18 @@ defmodule Bolognesa.Music.Application.Dto.TrackPage do
           total: non_neg_integer(),
           page: pos_integer(),
           page_size: pos_integer(),
-          heading: String.t() | nil
+          heading: String.t() | nil,
+          album_artist: String.t() | nil,
+          album_year: pos_integer() | nil
         }
 
-  defstruct items: [], total: 0, page: 1, page_size: 50, heading: nil
+  defstruct items: [],
+            total: 0,
+            page: 1,
+            page_size: 50,
+            heading: nil,
+            album_artist: nil,
+            album_year: nil
 
   @spec from_domain(Bolognesa.Music.Domain.ReadModels.TrackPage.t()) :: t()
   def from_domain(page),
@@ -19,6 +27,8 @@ defmodule Bolognesa.Music.Application.Dto.TrackPage do
       total: page.total,
       page: page.page,
       page_size: page.page_size,
-      heading: page.heading
+      heading: page.heading,
+      album_artist: page.album_artist,
+      album_year: page.album_year
     }
 end

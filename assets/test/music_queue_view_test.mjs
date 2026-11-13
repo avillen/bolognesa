@@ -29,10 +29,10 @@ test("rendering shows the current track and upcoming album without interpreting 
   const menu = list.children[0].children[1].children[0].children[1]
   assert.equal(menu.tag, "details")
   assert.equal(menu.children[0].tag, "summary")
-  assert.equal(menu.children[1].disabled, true)
-  assert.equal(menu.children[2].disabled, true)
-  assert.equal(menu.children[1].dataset.entryId, "42")
-  const removeButton = menu.children[3]
+  assert.equal(menu.children[1].children[0].disabled, true)
+  assert.equal(menu.children[1].children[1].disabled, true)
+  assert.equal(menu.children[1].children[0].dataset.entryId, "42")
+  const removeButton = menu.children[1].children[2]
   assert.equal(removeButton.dataset.entryId, "42")
   assert.equal(removeButton.title, "Remove")
   assert.equal(removeButton.children[0].className, "hero-x-mark size-4")

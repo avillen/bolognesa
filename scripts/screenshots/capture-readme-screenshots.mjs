@@ -417,6 +417,38 @@ try {
     if (!audioState.paused || Math.abs(audioState.position - 2) > 0.1 || audioState.error) {
       throw new Error(`Music playback/refresh verification failed: ${JSON.stringify(audioState)}`);
     }
+    // Keep the dock, its seek target, and row actions inside every layout boundary.
+    for (const width of [320, 390, 640, 641, 959, 960, 1079, 1080, 1440]) {
+      await page.setViewportSize({width, height: 1000});
+      const layout = await page.evaluate(() => {
+        const dock = document.querySelector("#music-player-host").getBoundingClientRect();
+        const seek = document.querySelector("#music-player-seek").getBoundingClientRect();
+        const row = document.querySelector(".music-track-row");
+        const play = row.querySelector(".music-track-play").getBoundingClientRect();
+        const copy = row.querySelector(".music-track-copy").getBoundingClientRect();
+        return {overflow: document.documentElement.scrollWidth > innerWidth,
+          seekContained: seek.top >= dock.top && seek.bottom <= dock.bottom && seek.left >= dock.left && seek.right <= dock.right,
+          playFirst: play.right <= copy.left};
+      });
+      if (layout.overflow || !layout.seekContained || !layout.playFirst) {
+        throw new Error(`Music layout failed at ${width}px: ${JSON.stringify(layout)}`);
+      }
+      await player.locator('[data-player-action="expand"]').click();
+      for (const queueOpen of [false, true]) {
+        if (queueOpen) await player.locator('[data-player-action="queue"]').click();
+        const overflow = await player.evaluate(element => element.scrollWidth > element.clientWidth);
+        if (overflow) throw new Error(`Expanded music layout overflows at ${width}px (queue: ${queueOpen}).`);
+      }
+      await player.locator('[data-player-action="collapse"]').click();
+    }
+    await page.setViewportSize({width: 390, height: 844});
+    await player.locator('[data-player-action="expand"]').click();
+    await page.screenshot({animations: "disabled", path: screenshotPath("music-player-mobile.png")});
+    await player.locator('[data-player-action="queue"]').click();
+    await page.screenshot({animations: "disabled", path: screenshotPath("music-queue-mobile.png")});
+    await player.locator('[data-player-action="queue"]').click();
+    await player.locator('[data-player-action="collapse"]').click();
+    await page.setViewportSize({width: 1440, height: 1000});
     await player.locator('[data-player-action="expand"]').click();
     await waitForStablePage();
     await page.evaluate(() => document.activeElement?.blur());

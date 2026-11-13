@@ -9,6 +9,8 @@ defmodule BolognesaWeb.Music.Index.Components.DetailHeading do
   attr :active_library_id, :integer, default: nil
   attr :loading?, :boolean, required: true
   attr :heading, :string, default: nil
+  attr :album_artist, :string, default: nil
+  attr :album_year, :integer, default: nil
   attr :total, :integer, required: true
   attr :error, :any, default: nil
 
@@ -33,7 +35,11 @@ defmodule BolognesaWeb.Music.Index.Components.DetailHeading do
       </div>
       <div class="music-album-copy">
         <h2 :if={!@loading? && @heading} id="music-heading">{@heading}</h2>
+        <p :if={@browse_kind == :album && !@loading? && @album_artist} class="music-album-artist">
+          {@album_artist}
+        </p>
         <p :if={@browse_kind == :album && !@loading?}>
+          <span :if={@album_year} class="music-album-year">{@album_year} · </span>
           {ngettext("%{count} canción", "%{count} canciones", @total, count: @total)}
         </p>
       </div>

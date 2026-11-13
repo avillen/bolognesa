@@ -5,8 +5,8 @@ defmodule BolognesaWeb.Setup.Reducer.Save do
   import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
 
   alias Bolognesa.Accounts
-  alias Ecto.Changeset
   alias BolognesaWeb.Setup.Forms.Admin
+  alias Ecto.Changeset
 
   @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
   def call(socket, params) do

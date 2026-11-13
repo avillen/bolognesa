@@ -25,7 +25,8 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     conn: conn,
     token: token
   } do
-    fixture = refresh_fixture(tags: %{"album" => "Record", "artist" => "Ensemble"})
+    fixture =
+      refresh_fixture(tags: %{"album" => "Record", "artist" => "Ensemble", "date" => "2024"})
 
     %{rows: [[user_id]]} =
       Repo.query!("SELECT id FROM accounts_users WHERE email = $1", ["music@example.com"])
@@ -91,6 +92,8 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
 
     render_async(view)
     assert has_element?(view, "#music-heading", "Record")
+    assert has_element?(view, ".music-album-artist", "Ensemble")
+    assert has_element?(view, ".music-album-year", "2024")
     refute has_element?(view, "#music-last-listened")
   end
 

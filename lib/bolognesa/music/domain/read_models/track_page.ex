@@ -7,8 +7,16 @@ defmodule Bolognesa.Music.Domain.ReadModels.TrackPage do
           total: non_neg_integer(),
           page: pos_integer(),
           page_size: pos_integer(),
-          heading: String.t() | nil
+          heading: String.t() | nil,
+          album_artist: String.t() | nil,
+          album_year: pos_integer() | nil
         }
 
-  defstruct items: [], total: 0, page: 1, page_size: 50, heading: nil
+  defstruct items: [],
+            total: 0,
+            page: 1,
+            page_size: 50,
+            heading: nil,
+            album_artist: nil,
+            album_year: nil
 end

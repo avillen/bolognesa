@@ -42,9 +42,15 @@ export function renderQueue(panel, state) {
       const actions = document.createElement("details")
       actions.className = "music-action-menu"
       const summary = document.createElement("summary")
-      summary.textContent = "⋯"
+      const moreIcon = document.createElement("span")
+      moreIcon.className = "hero-ellipsis-horizontal size-5"
+      moreIcon.setAttribute("aria-hidden", "true")
+      summary.append(moreIcon)
       summary.setAttribute("aria-label", panel.dataset.optionsLabel || "Options")
       actions.append(summary)
+      const menuItems = document.createElement("div")
+      menuItems.className = "music-menu-items"
+      actions.append(menuItems)
       for (const [action, label, disabled] of [["move-up", panel.dataset.upLabel, position === 0], ["move-down", panel.dataset.downLabel, position === upcoming.length - 1]]) {
         const button = document.createElement("button")
         button.type = "button"
@@ -54,7 +60,7 @@ export function renderQueue(panel, state) {
         button.title = label
         button.disabled = disabled
         button.setAttribute("aria-label", `${label}: ${track.title || ""}`)
-        actions.append(button)
+        menuItems.append(button)
       }
       const remove = document.createElement("button")
       remove.type = "button"
@@ -68,7 +74,7 @@ export function renderQueue(panel, state) {
       remove.title = panel.dataset.removeLabel
       remove.setAttribute("aria-label", `${panel.dataset.removeLabel}: ${track.title || ""}`)
       item.append(title)
-      actions.append(remove)
+      menuItems.append(remove)
       item.append(actions)
       tracks.append(item)
       position++

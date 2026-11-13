@@ -61,7 +61,15 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
 
       result = read_page(base, page, limit, :album)
       album = Repo.get!(MusicAlbumSchema, album_id, log: false)
-      {:ok, %{result | heading: album.title}}
+      artist = if album.artist_id, do: Repo.get(MusicArtistSchema, album.artist_id, log: false)
+
+      {:ok,
+       %{
+         result
+         | heading: album.title,
+           album_artist: artist && artist.name,
+           album_year: album.year
+       }}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}

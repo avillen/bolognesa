@@ -24,7 +24,7 @@ defmodule BolognesaWeb.MusicPlayer do
           title={gettext("Ampliar")}
           aria-expanded="false"
         >
-          <img src={~p"/images/bolognesa-cat.svg"} alt="" />
+          <img src={~p"/images/bolognesa-cat.svg"} alt="" width="64" height="64" />
         </button>
         <div class="music-player-track">
           <p id="now-playing" class="music-player-title">{gettext("Nada en reproducción")}</p>
@@ -131,7 +131,7 @@ defmodule BolognesaWeb.MusicPlayer do
         <h2>{gettext("Sonando")}</h2>
         <div class="music-queue-current">
           <div class="music-queue-art" aria-hidden="true">
-            <img src={~p"/images/bolognesa-cat.svg"} alt="" />
+            <img src={~p"/images/bolognesa-cat.svg"} alt="" width="64" height="64" />
           </div><div>
             <p data-queue-current></p><p data-queue-artist></p>
           </div>

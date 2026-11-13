@@ -4,8 +4,6 @@ defmodule BolognesaWeb.Library.Index.Reducer.Save do
   import Phoenix.Component, only: [assign: 3, to_form: 1]
 
   alias Bolognesa.Libraries
-  alias BolognesaWeb.LibraryNavigation, as: BolognesaWebLibraryNavigation
-  alias Ecto.Changeset
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
 
   alias BolognesaWeb.Library.Index.Forms.Library
@@ -13,6 +11,8 @@ defmodule BolognesaWeb.Library.Index.Reducer.Save do
   alias BolognesaWeb.Library.Index.Reducer.CancelScanStatuses
   alias BolognesaWeb.Library.Index.Reducer.FetchScanStatuses
   alias BolognesaWeb.Library.Index.State.Library, as: LibraryState
+  alias BolognesaWeb.LibraryNavigation, as: BolognesaWebLibraryNavigation
+  alias Ecto.Changeset
 
   @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
   def call(socket, params) do

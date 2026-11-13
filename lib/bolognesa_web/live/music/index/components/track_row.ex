@@ -110,26 +110,28 @@ defmodule BolognesaWeb.Music.Index.Components.TrackRow do
       <summary aria-label={gettext("Más opciones")} title={gettext("Más opciones")}>
         <.icon name="hero-ellipsis-horizontal" class="size-5" />
       </summary>
-      <button
-        :if={@track.state == :ready}
-        type="button"
-        data-music-action="play-next"
-        data-track-id={@track.track_id}
-        data-file-id={@track.id}
-        class="music-track-queue"
-        aria-label={gettext("Reproducir %{title} a continuación", title: @track.title)}
-        title={gettext("Reproducir a continuación")}
-      ><.icon name="hero-forward-solid" class="size-5" />{gettext("Reproducir a continuación")}</button>
-      <button
-        :if={@browse_kind == :album && @track.state == :ready}
-        type="button"
-        data-music-action="track-only"
-        data-track-id={@track.track_id}
-        data-file-id={@track.id}
-        class="music-track-queue"
-        aria-label={gettext("Reproducir solo %{title}", title: @track.title)}
-        title={gettext("Reproducir solo esta canción")}
-      ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir solo esta canción")}</button>
+      <div class="music-menu-items">
+        <button
+          :if={@track.state == :ready}
+          type="button"
+          data-music-action="play-next"
+          data-track-id={@track.track_id}
+          data-file-id={@track.id}
+          class="music-track-queue"
+          aria-label={gettext("Reproducir %{title} a continuación", title: @track.title)}
+          title={gettext("Reproducir a continuación")}
+        ><.icon name="hero-forward-solid" class="size-5" />{gettext("Reproducir a continuación")}</button>
+        <button
+          :if={@browse_kind == :album && @track.state == :ready}
+          type="button"
+          data-music-action="track-only"
+          data-track-id={@track.track_id}
+          data-file-id={@track.id}
+          class="music-track-queue"
+          aria-label={gettext("Reproducir solo %{title}", title: @track.title)}
+          title={gettext("Reproducir solo esta canción")}
+        ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir solo esta canción")}</button>
+      </div>
     </details>
     """
   end

@@ -31,6 +31,8 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
     |> assign(:error, nil)
     |> assign(:total, page.total)
     |> assign(:page_size, page.page_size)
+    |> assign(:album_artist, page.album_artist)
+    |> assign(:album_year, page.album_year)
     |> assign(:heading, page.heading)
     |> assign(:visible_track_ids, page.items |> Enum.map(& &1.id) |> MapSet.new())
     |> stream(:groups, [], reset: true)

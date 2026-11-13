@@ -69,10 +69,10 @@ export function connectMusicPlayerView(host, session) {
   player.ownerDocument.addEventListener("click", onOutsideClick)
   const observer = typeof ResizeObserver === "function" ? new ResizeObserver(entries => {
     const visible = !host.hidden
-    const height = visible ? entries[0]?.contentRect.height : 0
+    const height = visible ? (entries[0]?.borderBoxSize?.[0]?.blockSize ?? host.getBoundingClientRect().height) : 0
     player.ownerDocument.body.style.setProperty("--music-player-height", `${height || 0}px`)
   }) : null
-  observer?.observe(player)
+  observer?.observe(host)
   const render = state => {
     const queueData = JSON.stringify([state.selected, state.queueIndex, state.queue])
     if (queueData !== queueSnapshot) { renderQueue(queuePanel, state); queueSnapshot = queueData }

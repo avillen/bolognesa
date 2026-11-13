@@ -24,6 +24,8 @@ defmodule BolognesaWeb.Music.Index.Live do
      |> assign(:artist_id, nil)
      |> assign(:album_id, nil)
      |> assign(:heading, nil)
+     |> assign(:album_artist, nil)
+     |> assign(:album_year, nil)
      |> assign(:browse_params, %{})
      |> assign(:query, "")
      |> assign(:page, 1)
