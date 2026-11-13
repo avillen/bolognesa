@@ -2,6 +2,8 @@ defmodule BolognesaWeb.Movie.Review.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
   alias Bolognesa.Movies
+  alias BolognesaWeb.Movie.Review.Components.CorrectionPanel
+  alias BolognesaWeb.Movie.Review.Components.ReviewItem
   alias BolognesaWeb.Movie.Review.Reducer.ApplyCandidatesResult
   alias BolognesaWeb.Movie.Review.Reducer.ApplyCorrectionResult
   alias BolognesaWeb.Movie.Review.Reducer.ApplyReviewsResult
@@ -140,19 +142,4 @@ defmodule BolognesaWeb.Movie.Review.Live do
       :error -> {:error, :invalid_choice}
     end
   end
-
-  defp state_label(:pending), do: gettext("Pendiente")
-  defp state_label(:failed), do: "Error"
-  defp state_label(:unmatched), do: gettext("Sin coincidencia")
-  defp state_label(:manual_unidentified), do: gettext("Sin identificar manualmente")
-  defp state_label(:automatic), do: gettext("Revisar coincidencia")
-  defp state_label(_), do: gettext("Revisión")
-
-  defp failure_label("not_configured"), do: gettext("TMDb sin configurar")
-  defp failure_label("rate_limited"), do: gettext("TMDb limitó las solicitudes")
-  defp failure_label("provider_unavailable"), do: gettext("TMDb no disponible")
-  defp failure_label("unauthorized"), do: gettext("Token de TMDb rechazado")
-  defp failure_label("unusable_name"), do: gettext("Nombre de archivo no interpretable")
-  defp failure_label("attempts_exhausted"), do: gettext("Se agotaron los reintentos")
-  defp failure_label(_), do: gettext("No se pudo identificar")
 end

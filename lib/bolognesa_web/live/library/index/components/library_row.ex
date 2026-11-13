@@ -89,74 +89,7 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryRow do
           <.icon name="hero-arrow-path" class="size-4" />{@library.button_label}
         </button>
       </div>
-      <details
-        id={"library-details-#{@library.id}"}
-        phx-mounted={JS.ignore_attributes("open")}
-        class="library-details"
-      >
-        <summary class="min-h-11 cursor-pointer py-3 text-xs text-muted focus-visible:outline-2 focus-visible:outline-accent">
-          {gettext("Detalles del escaneo")}
-        </summary>
-        <div class="library-scan-details">
-          <div class="min-w-0 flex-1 space-y-3">
-            <div
-              :if={@library.last_completed_at || @library.state != :not_scanned}
-              class="library-scan-meta"
-            >
-              <p
-                :if={@library.last_completed_at}
-                id={"library-scan-completed-#{@library.id}"}
-                class="text-xs text-muted"
-              >
-                {gettext("Último escaneo completo:")} {@library.last_completed_at}
-              </p>
-              <p :if={@library.state != :not_scanned} class="text-xs text-muted">
-                {gettext("Intento %{attempt}", attempt: @library.attempt)}
-              </p>
-            </div>
-            <p
-              id={"library-inspection-counts-#{@library.id}"}
-              role="status"
-              data-pending={@library.inspection_counts.pending}
-              data-running={@library.inspection_counts.running}
-              data-succeeded={@library.inspection_counts.succeeded}
-              data-failed={@library.inspection_counts.failed}
-              class="text-sm leading-6 text-ink"
-            >
-              {@library.inspection_summary}
-            </p>
-            <ul
-              :if={@library.inspection_failure_reasons != []}
-              id={"library-inspection-failures-#{@library.id}"}
-              class="space-y-1 border-l-2 border-red-300/40 pl-3 text-xs leading-5 text-red-200"
-            >
-              <li
-                :for={failure <- @library.inspection_failure_reasons}
-                id={"library-inspection-failure-#{@library.id}-#{failure.reason}"}
-              >
-                {failure.count} · {failure.label}
-              </li>
-            </ul>
-            <p
-              :if={@library.inspection_counts.failed > 0}
-              id={"library-inspection-help-#{@library.id}"}
-              class="max-w-prose text-xs leading-5 text-muted"
-            >
-              {gettext(
-                "El análisis técnico no terminó para esos archivos. Esto no confirma un problema de reproducción."
-              )}
-            </p>
-          </div>
-          <button
-            id={"library-reinspect-#{@library.id}"}
-            type="button"
-            phx-click="prepare_reinspect"
-            phx-value-library_id={@library.id}
-            disabled={@library.active?}
-            class="library-secondary"
-          >{gettext("Reanalizar")}</button>
-        </div>
-      </details>
+      <.scan_details library={@library} />
       <div
         :if={@library.error}
         id={"library-scan-error-#{@library.id}"}
@@ -182,6 +115,81 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryRow do
         </p>
       </div>
     </article>
+    """
+  end
+
+  attr :library, BolognesaWeb.Library.Index.State.Library, required: true
+
+  defp scan_details(assigns) do
+    ~H"""
+    <details
+      id={"library-details-#{@library.id}"}
+      phx-mounted={JS.ignore_attributes("open")}
+      class="library-details"
+    >
+      <summary class="min-h-11 cursor-pointer py-3 text-xs text-muted focus-visible:outline-2 focus-visible:outline-accent">
+        {gettext("Detalles del escaneo")}
+      </summary>
+      <div class="library-scan-details">
+        <div class="min-w-0 flex-1 space-y-3">
+          <div
+            :if={@library.last_completed_at || @library.state != :not_scanned}
+            class="library-scan-meta"
+          >
+            <p
+              :if={@library.last_completed_at}
+              id={"library-scan-completed-#{@library.id}"}
+              class="text-xs text-muted"
+            >
+              {gettext("Último escaneo completo:")} {@library.last_completed_at}
+            </p>
+            <p :if={@library.state != :not_scanned} class="text-xs text-muted">
+              {gettext("Intento %{attempt}", attempt: @library.attempt)}
+            </p>
+          </div>
+          <p
+            id={"library-inspection-counts-#{@library.id}"}
+            role="status"
+            data-pending={@library.inspection_counts.pending}
+            data-running={@library.inspection_counts.running}
+            data-succeeded={@library.inspection_counts.succeeded}
+            data-failed={@library.inspection_counts.failed}
+            class="text-sm leading-6 text-ink"
+          >
+            {@library.inspection_summary}
+          </p>
+          <ul
+            :if={@library.inspection_failure_reasons != []}
+            id={"library-inspection-failures-#{@library.id}"}
+            class="space-y-1 border-l-2 border-red-300/40 pl-3 text-xs leading-5 text-red-200"
+          >
+            <li
+              :for={failure <- @library.inspection_failure_reasons}
+              id={"library-inspection-failure-#{@library.id}-#{failure.reason}"}
+            >
+              {failure.count} · {failure.label}
+            </li>
+          </ul>
+          <p
+            :if={@library.inspection_counts.failed > 0}
+            id={"library-inspection-help-#{@library.id}"}
+            class="max-w-prose text-xs leading-5 text-muted"
+          >
+            {gettext(
+              "El análisis técnico no terminó para esos archivos. Esto no confirma un problema de reproducción."
+            )}
+          </p>
+        </div>
+        <button
+          id={"library-reinspect-#{@library.id}"}
+          type="button"
+          phx-click="prepare_reinspect"
+          phx-value-library_id={@library.id}
+          disabled={@library.active?}
+          class="library-secondary"
+        >{gettext("Reanalizar")}</button>
+      </div>
+    </details>
     """
   end
 end

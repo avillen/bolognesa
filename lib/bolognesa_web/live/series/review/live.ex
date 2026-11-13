@@ -2,6 +2,7 @@ defmodule BolognesaWeb.Series.Review.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
   alias Bolognesa.Series
+  alias BolognesaWeb.Series.Review.Components.ReviewItem
   alias BolognesaWeb.Series.Review.Reducer.ApplyResult
   alias BolognesaWeb.Series.Review.Reducer.BeginCorrection
   alias BolognesaWeb.Series.Review.Reducer.ChooseSeries
@@ -83,17 +84,4 @@ defmodule BolognesaWeb.Series.Review.Live do
   end
 
   defp integer(_, _, default), do: default
-  defp state_label(:pending), do: gettext("Pendiente")
-  defp state_label(:failed), do: "Error"
-  defp state_label(:unmatched), do: gettext("Sin coincidencia")
-  defp state_label(:manual_unidentified), do: gettext("Sin identificar manualmente")
-  defp state_label(_), do: gettext("Revisar identificación")
-
-  defp failure_label("incomplete_episodes"),
-    do: gettext("TMDb no contiene todos los episodios indicados")
-
-  defp failure_label("unusable_name"), do: gettext("Nombre de archivo no interpretable")
-  defp failure_label("not_configured"), do: gettext("TMDb sin configurar")
-  defp failure_label("rate_limited"), do: gettext("TMDb limitó las solicitudes")
-  defp failure_label(_), do: gettext("La identificación necesita revisión")
 end

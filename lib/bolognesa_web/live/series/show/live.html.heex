@@ -24,51 +24,9 @@
       {@error} <button phx-click="retry" class="min-h-11 px-4">{gettext("Reintentar")}</button>
     </p>
     <div :if={@detail} class="media-detail-panel series-detail-panel">
-      <div class="media-hero">
-        <div :if={@detail.series.backdrop_path} class="media-backdrop">
-          <img
-            id={"series-backdrop-#{@detail.series.id}"}
-            phx-hook="ImageFallback"
-            phx-update="ignore"
-            src={"https://image.tmdb.org/t/p/w780#{@detail.series.backdrop_path}"}
-            alt={gettext("Imagen de %{value0}", value0: @detail.series.title)}
-            class="size-full object-cover"
-          />
-        </div>
-        <div class="media-hero-content">
-          <div class="media-hero-poster">
-            <div class="media-art-fallback" aria-hidden="true">
-              <.icon name="hero-tv" class="size-10" />
-            </div>
-            <img
-              :if={@detail.series.poster_path}
-              id={"series-detail-poster-#{@detail.series.id}"}
-              phx-hook="ImageFallback"
-              phx-update="ignore"
-              src={"https://image.tmdb.org/t/p/w342#{@detail.series.poster_path}"}
-              alt={gettext("Cartel de %{value0}", value0: @detail.series.title)}
-              class="absolute inset-0 size-full object-cover"
-            />
-          </div>
-          <div class="media-hero-copy">
-            <p class="media-eyebrow">{gettext("Series")}</p>
-            <h1 id="series-title" class="text-4xl font-semibold text-ink">
-              {@detail.series.title}
-            </h1>
-            <p class="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted">
-              <span>{@detail.series.year || gettext("Año desconocido")}</span>
-              <span aria-hidden="true" class="text-accent">/</span>
-              <span>{ngettext(
-                "%{count} temporada en tu biblioteca",
-                "%{count} temporadas en tu biblioteca",
-                @total
-              )}</span>
-            </p>
-          </div>
-        </div>
-      </div>
+      <SeriesHero.series_hero series={@detail.series} total={@total} />
       <div class="series-seasons-body">
-        <BolognesaWeb.MediaComponents.synopsis
+        <MediaComponents.synopsis
           :if={@detail.series.overview}
           id="series-synopsis"
           text={@detail.series.overview}
@@ -80,41 +38,12 @@
           {gettext("No hay temporadas identificadas.")}
         </p>
         <div id="season-list" phx-update="stream" class="series-season-grid">
-          <article :for={{id, season} <- @streams.seasons} id={id}>
-            <.link
-              navigate={~p"/series/seasons/#{season.id}?#{@series_params}"}
-              class="series-season-card"
-            >
-              <div class="series-season-art">
-                <span aria-hidden="true">{String.pad_leading(to_string(season.number), 2, "0")}</span>
-                <img
-                  :if={season.poster_path}
-                  id={"season-poster-#{season.id}"}
-                  phx-hook="ImageFallback"
-                  phx-update="ignore"
-                  src={"https://image.tmdb.org/t/p/w185#{season.poster_path}"}
-                  alt=""
-                  loading="lazy"
-                  class="absolute inset-0 size-full object-cover"
-                />
-              </div>
-              <div class="min-w-0 flex-1">
-                <h3 class="text-base font-semibold text-ink">
-                  {if season.number == 0,
-                    do: gettext("Especiales"),
-                    else: gettext("Temporada %{value0}", value0: season.number)}
-                </h3>
-                <p class="mt-2 text-sm leading-6 text-muted">
-                  {ngettext(
-                    "%{count} episodio identificado",
-                    "%{count} episodios identificados",
-                    season.episode_count
-                  )}
-                </p>
-              </div>
-              <.icon name="hero-chevron-right" class="size-5 shrink-0 text-accent-soft" />
-            </.link>
-          </article>
+          <SeasonCard.season_card
+            :for={{id, season} <- @streams.seasons}
+            id={id}
+            season={season}
+            series_params={@series_params}
+          />
         </div>
       </div>
     </div>

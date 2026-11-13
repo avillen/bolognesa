@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Library.Index.Reducers.FetchScanStatuses do
+defmodule BolognesaWeb.Library.Index.Reducer.FetchScanStatuses do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [start_async: 3, connected?: 1]

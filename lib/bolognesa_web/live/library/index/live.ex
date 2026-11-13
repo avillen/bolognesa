@@ -1,16 +1,17 @@
 defmodule BolognesaWeb.Library.Index.Live do
-  alias BolognesaWeb.Library.Index.Components.LibraryForm
-  alias BolognesaWeb.Library.Index.Components.LibraryRow
-  alias BolognesaWeb.Library.Index.Components.ReinspectConfirmation
   @moduledoc false
   use BolognesaWeb, :live_view
-  alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
-  alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
-  alias BolognesaWeb.Library.Index.Reducers.Initialize
-  alias BolognesaWeb.Library.Index.Reducers.Reinspect
-  alias BolognesaWeb.Library.Index.Reducers.Save
-  alias BolognesaWeb.Library.Index.Reducers.StartScan
-  alias BolognesaWeb.Library.Index.Reducers.Validate
+
+  alias BolognesaWeb.Library.Index.Components.LibraryForm
+  alias BolognesaWeb.Library.Index.Components.LibraryList
+  alias BolognesaWeb.Library.Index.Components.ReinspectConfirmation
+  alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
+  alias BolognesaWeb.Library.Index.Reducer.FetchScanStatuses
+  alias BolognesaWeb.Library.Index.Reducer.Initialize
+  alias BolognesaWeb.Library.Index.Reducer.Reinspect
+  alias BolognesaWeb.Library.Index.Reducer.Save
+  alias BolognesaWeb.Library.Index.Reducer.StartScan
+  alias BolognesaWeb.Library.Index.Reducer.Validate
 
   @impl true
   def mount(_params, _session, socket), do: {:ok, Initialize.call(socket)}
@@ -32,13 +33,13 @@ defmodule BolognesaWeb.Library.Index.Live do
     do: {:noreply, StartScan.call(socket, id)}
 
   def handle_event("prepare_reinspect", %{"library_id" => id}, socket),
-    do: {:noreply, Reinspect.prepare(socket, id)}
+    do: {:noreply, Reinspect.call(socket, :prepare, id)}
 
   def handle_event("cancel_reinspect", _params, socket),
-    do: {:noreply, Reinspect.cancel(socket)}
+    do: {:noreply, Reinspect.call(socket, :cancel)}
 
   def handle_event("confirm_reinspect", %{"library_id" => id}, socket),
-    do: {:noreply, Reinspect.confirm(socket, id)}
+    do: {:noreply, Reinspect.call(socket, :confirm, id)}
 
   @impl true
   def handle_info({:library_status_changed, _library_id}, socket),

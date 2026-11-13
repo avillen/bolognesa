@@ -1,11 +1,11 @@
-defmodule BolognesaWeb.Setup.Reducers.Save do
-  alias Ecto.Changeset
+defmodule BolognesaWeb.Setup.Reducer.Save do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
 
   alias Bolognesa.Accounts
+  alias Ecto.Changeset
   alias BolognesaWeb.Setup.Forms.Admin
 
   @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()

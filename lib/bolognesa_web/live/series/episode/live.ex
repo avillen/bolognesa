@@ -3,6 +3,10 @@ defmodule BolognesaWeb.Series.Episode.Live do
   # Capability reports are untrusted; only sanitized playback diagnostics may be logged.
   use BolognesaWeb, {:live_view, log: false}
   alias BolognesaWeb.LiveSupport.PlaybackEvents
+  alias BolognesaWeb.MediaComponents
+  alias BolognesaWeb.Player
+  alias BolognesaWeb.Series.Episode.Components.EpisodeNavigation
+  alias BolognesaWeb.Series.Episode.Components.VersionCard
   alias BolognesaWeb.Series.Episode.Reducer.Advance
   alias BolognesaWeb.Series.Episode.Reducer.ApplyResult
   alias BolognesaWeb.Series.Episode.Reducer.Initialize

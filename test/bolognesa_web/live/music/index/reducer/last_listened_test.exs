@@ -16,13 +16,13 @@ defmodule BolognesaWeb.Music.Index.Reducer.LastListenedTest do
     }
 
     album = %RecentAlbum{id: 1, title: "Record"}
-    assert socket == LastListened.apply_result(socket, make_ref(), {:ok, {:ok, [album]}})
-    assert socket == LastListened.apply_result(socket, make_ref(), {:ok, {:ok, []}})
-    assert socket == LastListened.apply_result(socket, make_ref(), {:exit, :shutdown})
+    assert socket == LastListened.call(socket, {:result, make_ref(), {:ok, {:ok, [album]}}})
+    assert socket == LastListened.call(socket, {:result, make_ref(), {:ok, {:ok, []}}})
+    assert socket == LastListened.call(socket, {:result, make_ref(), {:exit, :shutdown}})
 
-    failed = LastListened.apply_result(socket, current, {:ok, {:error, :unavailable}})
+    failed = LastListened.call(socket, {:result, current, {:ok, {:error, :unavailable}}})
     assert failed.assigns.last_listened_status == :error
-    empty = LastListened.apply_result(failed, current, {:ok, {:ok, []}})
+    empty = LastListened.call(failed, {:result, current, {:ok, {:ok, []}}})
     assert empty.assigns.last_listened_status == :empty
     assert empty.assigns.recent_albums == []
   end

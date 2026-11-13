@@ -6,6 +6,7 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
   attr :library_params, :map, required: true
   attr :artist_id, :integer, default: nil
 
+  @spec navigation(map()) :: Phoenix.LiveView.Rendered.t()
   def navigation(assigns) do
     ~H"""
     <nav aria-label={gettext("Explorar música")} class="music-tabs">
@@ -39,6 +40,7 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
 
   attr :form, :any, required: true
 
+  @spec search(map()) :: Phoenix.LiveView.Rendered.t()
   def search(assigns) do
     ~H"""
     <.form
@@ -68,6 +70,7 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
   attr :browse_kind, :atom, required: true
   attr :total, :integer, required: true
 
+  @spec feedback(map()) :: Phoenix.LiveView.Rendered.t()
   def feedback(assigns) do
     ~H"""
     <p :if={@loading?} id="music-loading" role="status" class="music-feedback">
@@ -101,6 +104,7 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
   attr :browse_params, :map, required: true
   attr :query, :string, required: true
 
+  @spec pagination(map()) :: Phoenix.LiveView.Rendered.t()
   def pagination(assigns) do
     ~H"""
     <nav

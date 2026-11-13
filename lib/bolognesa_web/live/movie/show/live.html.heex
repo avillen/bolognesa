@@ -29,7 +29,7 @@
         </h1>
         <p class="mt-1 text-xs text-muted">{@detail.movie.year || gettext("Año desconocido")}</p>
       </header>
-      <BolognesaWeb.Player.player
+      <Player.player
         prefix="movie"
         kind={:movie}
         viewer_id={@current_scope.actor.id}
@@ -59,7 +59,7 @@
       />
       <section id="movie-synopsis" class="movie-synopsis">
         <h2 class="mb-3 text-base font-semibold text-ink">{gettext("Sinopsis")}</h2>
-        <BolognesaWeb.MediaComponents.synopsis
+        <MediaComponents.synopsis
           :if={@detail.movie.overview}
           id="movie-description"
           text={@detail.movie.overview}
@@ -74,7 +74,7 @@
         phx-mounted={JS.ignore_attributes("open")}
       >
         <summary>{gettext("Opciones de reproducción")}</summary>
-        <BolognesaWeb.Player.playback_mode
+        <Player.playback_mode
           playback_phase={@playback_phase}
           selected_file_id={@selected_file_id}
           transcode_session={@transcode_session}
@@ -84,57 +84,11 @@
           {gettext("Versiones en tu biblioteca")}
         </h2>
         <div id="movie-versions" class="mt-4 space-y-3">
-          <div
+          <VersionCard.card
             :for={version <- @detail.versions}
-            id={"movie-version-#{version.id}"}
-            class="movie-version-card"
-          >
-            <div class="movie-version-summary">
-              <span class="movie-version-icon" aria-hidden="true"><.icon
-                name="hero-film"
-                class="size-6"
-              /></span>
-              <div class="min-w-0">
-                <p class="font-semibold text-ink">{gettext("Versión")} {version.id}</p>
-                <span
-                  :if={version.id == @selected_file_id}
-                  id={"movie-selected-#{version.id}"}
-                  class="movie-selected"
-                >{gettext("Seleccionada")}</span>
-                <p class="mt-1 text-xs text-muted">
-                  {if version.origin == :manual,
-                    do: gettext("Identificación manual"),
-                    else: gettext("Identificación automática")}{if version.needs_review,
-                    do: gettext(" · Revisar"),
-                    else: ""}
-                </p>
-              </div>
-            </div>
-            <span class={[
-              "movie-version-availability",
-              version.availability == :available && "is-available"
-            ]}>{if version.availability ==
-                     :available,
-                   do: gettext("Disponible"),
-                   else: gettext("No disponible")}</span>
-            <div class="movie-version-actions">
-              <button
-                :if={version.availability == :available}
-                id={"movie-play-#{version.id}"}
-                type="button"
-                phx-click="play"
-                phx-value-file_id={version.id}
-                class="media-primary-action"
-              >
-                {gettext("Reproducir")}
-              </button>
-              <.link
-                navigate={~p"/movies/review?#{%{file_id: version.id}}"}
-                id={"movie-correct-#{version.id}"}
-                class="media-secondary-action"
-              >{gettext("Corregir")}</.link>
-            </div>
-          </div>
+            version={version}
+            selected_file_id={@selected_file_id}
+          />
         </div>
         <p :if={@detail.versions == []} id="movie-no-versions" class="mt-4 text-sm text-muted">
           {gettext("No hay versiones vinculadas.")}

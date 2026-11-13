@@ -8,6 +8,7 @@ defmodule BolognesaWeb.Music.Index.Components.TrackRow do
   attr :album_id, :integer, default: nil
   attr :active_library_id, :integer, default: nil
 
+  @spec track_row(map()) :: Phoenix.LiveView.Rendered.t()
   def track_row(assigns) do
     ~H"""
     <article
@@ -62,35 +63,7 @@ defmodule BolognesaWeb.Music.Index.Components.TrackRow do
       aria-label={gettext("Añadir %{title} a la cola", title: @track.title)}
       title={gettext("Añadir a la cola")}
     ><.icon name="hero-plus" class="size-5" /></button>
-    <details
-      :if={@track.state == :ready}
-      class="music-action-menu"
-      phx-mounted={JS.ignore_attributes("open")}
-    >
-      <summary aria-label={gettext("Más opciones")} title={gettext("Más opciones")}>
-        <.icon name="hero-ellipsis-horizontal" class="size-5" />
-      </summary>
-      <button
-        :if={@track.state == :ready}
-        type="button"
-        data-music-action="play-next"
-        data-track-id={@track.track_id}
-        data-file-id={@track.id}
-        class="music-track-queue"
-        aria-label={gettext("Reproducir %{title} a continuación", title: @track.title)}
-        title={gettext("Reproducir a continuación")}
-      ><.icon name="hero-forward-solid" class="size-5" />{gettext("Reproducir a continuación")}</button>
-      <button
-        :if={@browse_kind == :album && @track.state == :ready}
-        type="button"
-        data-music-action="track-only"
-        data-track-id={@track.track_id}
-        data-file-id={@track.id}
-        class="music-track-queue"
-        aria-label={gettext("Reproducir solo %{title}", title: @track.title)}
-        title={gettext("Reproducir solo esta canción")}
-      ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir solo esta canción")}</button>
-    </details>
+    <.track_menu track={@track} browse_kind={@browse_kind} />
     <button
       :if={@track.state == :ready}
       id={"play-track-#{@track.track_id}"}
@@ -121,6 +94,43 @@ defmodule BolognesaWeb.Music.Index.Components.TrackRow do
       navigate={~p"/libraries"}
       class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
     >{gettext("Reanalizar en bibliotecas")}</.link>
+    """
+  end
+
+  attr :track, :any, required: true
+  attr :browse_kind, :atom, required: true
+
+  defp track_menu(assigns) do
+    ~H"""
+    <details
+      :if={@track.state == :ready}
+      class="music-action-menu"
+      phx-mounted={JS.ignore_attributes("open")}
+    >
+      <summary aria-label={gettext("Más opciones")} title={gettext("Más opciones")}>
+        <.icon name="hero-ellipsis-horizontal" class="size-5" />
+      </summary>
+      <button
+        :if={@track.state == :ready}
+        type="button"
+        data-music-action="play-next"
+        data-track-id={@track.track_id}
+        data-file-id={@track.id}
+        class="music-track-queue"
+        aria-label={gettext("Reproducir %{title} a continuación", title: @track.title)}
+        title={gettext("Reproducir a continuación")}
+      ><.icon name="hero-forward-solid" class="size-5" />{gettext("Reproducir a continuación")}</button>
+      <button
+        :if={@browse_kind == :album && @track.state == :ready}
+        type="button"
+        data-music-action="track-only"
+        data-track-id={@track.track_id}
+        data-file-id={@track.id}
+        class="music-track-queue"
+        aria-label={gettext("Reproducir solo %{title}", title: @track.title)}
+        title={gettext("Reproducir solo esta canción")}
+      ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir solo esta canción")}</button>
+    </details>
     """
   end
 end

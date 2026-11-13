@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Library.Index.Reducers.Validate do
+defmodule BolognesaWeb.Library.Index.Reducer.Validate do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3, to_form: 1]
 

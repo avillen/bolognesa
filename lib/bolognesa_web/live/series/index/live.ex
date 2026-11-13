@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Series.Index.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
+  alias BolognesaWeb.Series.Index.Components.SeriesCard
   alias BolognesaWeb.Series.Index.Reducer.ApplyResult
   alias BolognesaWeb.Series.Index.Reducer.Initialize
   alias BolognesaWeb.Series.Index.Reducer.Load

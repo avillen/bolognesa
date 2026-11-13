@@ -96,7 +96,7 @@
           {gettext("Parte %{number}", number: part)}
         </.link>
       </nav>
-      <BolognesaWeb.Player.player
+      <Player.player
         prefix="episode"
         kind={:episode}
         viewer_id={@current_scope.actor.id}
@@ -122,41 +122,13 @@
         playback_error={@playback_error}
         playback_error_reason={@playback_error_reason}
       />
-      <nav
+      <EpisodeNavigation.episode_navigation
         :if={@previous_target || @next_target}
-        id="episode-navigation"
-        class="episode-navigation"
-        aria-label={gettext("Navegación entre episodios")}
-      >
-        <.link
-          :if={@previous_target}
-          id="episode-previous"
-          rel="prev"
-          patch={
-            ~p"/episodes/#{@previous_target.id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), @previous_target)}"
-          }
-          aria-label={gettext("Anterior episodio")}
-        >
-          <span aria-hidden="true">←</span>
-          <span class="sm:hidden">{gettext("Anterior")}</span><span class="hidden sm:inline">{gettext(
-            "Anterior episodio"
-          )}</span>
-        </.link>
-        <.link
-          :if={@next_target}
-          id="episode-next"
-          rel="next"
-          patch={
-            ~p"/episodes/#{@next_target.id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), @next_target)}"
-          }
-          aria-label={gettext("Siguiente episodio")}
-        >
-          <span class="sm:hidden">{gettext("Siguiente")}</span><span class="hidden sm:inline">{gettext(
-            "Siguiente episodio"
-          )}</span>
-          <span aria-hidden="true">→</span>
-        </.link>
-      </nav>
+        previous_target={@previous_target}
+        next_target={@next_target}
+        series_params={@series_params}
+        season_params={@season_params}
+      />
       <p
         :if={!Enum.any?(@part_versions, &(&1.availability == :available))}
         id="episode-unavailable"
@@ -172,7 +144,7 @@
       </p>
       <section id="episode-synopsis" class="episode-synopsis">
         <h2 class="mb-3 text-base font-semibold text-ink">{gettext("Sinopsis")}</h2>
-        <BolognesaWeb.MediaComponents.synopsis
+        <MediaComponents.synopsis
           :if={@detail.episode.overview}
           id="episode-description"
           text={@detail.episode.overview}
@@ -203,74 +175,19 @@
         <p class="mb-4 text-xs leading-6 text-muted">
           {gettext("Las versiones pueden proceder de otras bibliotecas.")}
         </p>
-        <BolognesaWeb.Player.playback_mode
+        <Player.playback_mode
           playback_phase={@playback_phase}
           selected_file_id={@selected_file_id}
           transcode_session={@transcode_session}
           playback_error={@playback_error}
         />
         <div id="episode-versions" class="space-y-4">
-          <article
+          <VersionCard.version_card
             :for={version <- @playback_versions}
-            id={"episode-version-#{version.id}"}
-            class="episode-version"
-          >
-            <div class="flex flex-wrap items-center gap-2">
-              <h3 class="text-sm font-semibold text-ink">
-                <span :if={is_nil(version.part_number) && @parts != []}>{gettext("Episodio completo")} · </span>{version.format ||
-                  gettext("Archivo de vídeo")} · {Float.round(
-                  version.size_bytes / 1_048_576,
-                  1
-                )} MB
-              </h3>
-              <span
-                :if={version.id == @selected_file_id}
-                id={"episode-selected-#{version.id}"}
-                class="episode-selected"
-              >{gettext("Seleccionada")}</span>
-              <span :if={version.availability != :available} class="text-xs text-muted">{gettext(
-                "No disponible"
-              )}</span>
-            </div>
-            <details
-              id={"episode-technical-#{version.id}"}
-              class="episode-technical"
-              phx-mounted={JS.ignore_attributes("open")}
-            >
-              <summary>{gettext("Detalles del archivo")}</summary>
-              <p :if={version.codecs != []}>{Enum.join(version.codecs, " / ")}</p>
-              <p :if={version.duration_ms}>
-                {gettext("Duración:")} {div(version.duration_ms, 60_000)} min
-              </p>
-              <p :if={length(version.episode_numbers) > 1}>
-                {gettext("Contiene episodios")} {Enum.join(version.episode_numbers, ", ")}
-              </p>
-              <p>
-                {if version.origin == :manual,
-                  do: gettext("Identificación manual"),
-                  else: gettext("Identificación automática")}{if version.needs_review?,
-                  do: gettext(" · Revisar"),
-                  else: ""}
-              </p>
-              <.link
-                navigate={~p"/series/review?#{%{file_id: version.id}}"}
-                id={"episode-correct-#{version.id}"}
-                class="inline-flex min-h-11 items-center text-accent-soft"
-              >
-                {gettext("Corregir identificación")}
-              </.link>
-            </details>
-            <button
-              :if={version.availability == :available && version.id != @selected_file_id}
-              id={"episode-play-#{version.id}"}
-              type="button"
-              phx-click="play"
-              phx-value-file_id={version.id}
-              class="series-episode-play"
-            >
-              {gettext("Elegir esta versión")}
-            </button>
-          </article>
+            version={version}
+            parts={@parts}
+            selected_file_id={@selected_file_id}
+          />
         </div>
         <p :if={@detail.versions == []} id="episode-no-versions" class="mt-4 text-sm text-muted">
           {gettext("No hay versiones vinculadas.")}

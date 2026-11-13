@@ -5,8 +5,11 @@ defmodule BolognesaWeb.Music.Index.Reducer.LastListened do
   alias Bolognesa.Music
   alias Bolognesa.Music.Application.UseCases.ListRecentAlbums
 
-  @spec reset(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
-  def reset(socket) do
+  @type operation ::
+          :reset | :load | {:result, reference(), {:ok, ListRecentAlbums.result()} | {:exit, term()}}
+
+  @spec call(Phoenix.LiveView.Socket.t(), operation()) :: Phoenix.LiveView.Socket.t()
+  def call(socket, :reset) do
     visible? = socket.assigns.browse_kind == :home
 
     socket
@@ -14,13 +17,12 @@ defmodule BolognesaWeb.Music.Index.Reducer.LastListened do
     |> assign(:recent_albums, [])
     |> assign(:last_listened_request, nil)
     |> assign(:last_listened_status, :loading)
-    |> load()
+    |> call(:load)
   end
 
-  @spec load(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
-  def load(%{assigns: %{last_listened_visible?: false}} = socket), do: socket
+  def call(%{assigns: %{last_listened_visible?: false}} = socket, :load), do: socket
 
-  def load(socket) do
+  def call(socket, :load) do
     actor = socket.assigns.current_scope.actor
     library = socket.assigns.active_library_id
     request = make_ref()
@@ -32,12 +34,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.LastListened do
     end)
   end
 
-  @spec apply_result(
-          Phoenix.LiveView.Socket.t(),
-          reference(),
-          {:ok, ListRecentAlbums.result()} | {:exit, term()}
-        ) :: Phoenix.LiveView.Socket.t()
-  def apply_result(socket, request, result) do
+  def call(socket, {:result, request, result}) do
     if socket.assigns.last_listened_request == request,
       do: apply_current(socket, result),
       else: socket

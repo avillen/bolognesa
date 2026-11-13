@@ -2,9 +2,9 @@ defmodule BolognesaWeb.Setup.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
 
-  alias BolognesaWeb.Setup.Reducers.Initialize
-  alias BolognesaWeb.Setup.Reducers.Save
-  alias BolognesaWeb.Setup.Reducers.Validate
+  alias BolognesaWeb.Setup.Reducer.Initialize
+  alias BolognesaWeb.Setup.Reducer.Save
+  alias BolognesaWeb.Setup.Reducer.Validate
 
   @impl true
   def mount(_params, _session, socket), do: {:ok, Initialize.call(socket)}

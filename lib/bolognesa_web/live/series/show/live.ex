@@ -1,7 +1,10 @@
 defmodule BolognesaWeb.Series.Show.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
+  alias BolognesaWeb.MediaComponents
   alias BolognesaWeb.Series.Navigation
+  alias BolognesaWeb.Series.Show.Components.SeasonCard
+  alias BolognesaWeb.Series.Show.Components.SeriesHero
   alias BolognesaWeb.Series.Show.Reducer.ApplyResult
   alias BolognesaWeb.Series.Show.Reducer.Initialize
   alias BolognesaWeb.Series.Show.Reducer.Load

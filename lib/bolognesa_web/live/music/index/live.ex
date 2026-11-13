@@ -1,11 +1,12 @@
 defmodule BolognesaWeb.Music.Index.Live do
+  @moduledoc false
+  use BolognesaWeb, :live_view
+
   alias BolognesaWeb.Music.Index.Components.BrowseCard
   alias BolognesaWeb.Music.Index.Components.BrowseControls
   alias BolognesaWeb.Music.Index.Components.DetailHeading
   alias BolognesaWeb.Music.Index.Components.Home
   alias BolognesaWeb.Music.Index.Components.TrackRow
-  @moduledoc false
-  use BolognesaWeb, :live_view
 
   alias BolognesaWeb.Music.Index.Forms.Filters
 
@@ -56,7 +57,7 @@ defmodule BolognesaWeb.Music.Index.Live do
      |> assign(:album_id, album)
      |> assign(:browse_params, browse_params)
      |> Load.call(query, page)
-     |> LastListened.reset()}
+     |> LastListened.call(:reset)}
   end
 
   @impl true
@@ -70,7 +71,7 @@ defmodule BolognesaWeb.Music.Index.Live do
     do: {:noreply, RefreshListening.apply_result(socket, request_id, track_id, result)}
 
   def handle_async({:last_listened, request}, result, socket),
-    do: {:noreply, LastListened.apply_result(socket, request, result)}
+    do: {:noreply, LastListened.call(socket, {:result, request, result})}
 
   @impl true
   def handle_event("search", %{"search" => %{"query" => query}}, socket) do
@@ -83,17 +84,17 @@ defmodule BolognesaWeb.Music.Index.Live do
 
   def handle_event("listening-activity", %{"track_id" => track_id}, socket)
       when is_integer(track_id) and track_id > 0 and track_id <= 9_007_199_254_740_991,
-      do: {:noreply, socket |> RefreshListening.call(track_id) |> LastListened.load()}
+      do: {:noreply, socket |> RefreshListening.call(track_id) |> LastListened.call(:load)}
 
   def handle_event("listening-activity", _params, socket), do: {:noreply, socket}
 
   def handle_event("refresh", _params, socket),
     do:
       {:noreply,
-       socket |> Load.call(socket.assigns.query, socket.assigns.page) |> LastListened.load()}
+       socket |> Load.call(socket.assigns.query, socket.assigns.page) |> LastListened.call(:load)}
 
   def handle_event("retry-last-listened", _params, socket),
-    do: {:noreply, LastListened.load(socket)}
+    do: {:noreply, LastListened.call(socket, :load)}
 
   defp optional(params, _key, nil), do: params
   defp optional(params, key, id), do: Map.put(params, key, id)

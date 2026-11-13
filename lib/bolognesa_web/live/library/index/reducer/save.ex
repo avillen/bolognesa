@@ -1,17 +1,17 @@
-defmodule BolognesaWeb.Library.Index.Reducers.Save do
-  alias BolognesaWeb.LibraryNavigation, as: BolognesaWebLibraryNavigation
-  alias Ecto.Changeset
+defmodule BolognesaWeb.Library.Index.Reducer.Save do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
 
   alias Bolognesa.Libraries
+  alias BolognesaWeb.LibraryNavigation, as: BolognesaWebLibraryNavigation
+  alias Ecto.Changeset
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
 
   alias BolognesaWeb.Library.Index.Forms.Library
   alias BolognesaWeb.Library.Index.LibraryRows
-  alias BolognesaWeb.Library.Index.Reducers.CancelScanStatuses
-  alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
+  alias BolognesaWeb.Library.Index.Reducer.CancelScanStatuses
+  alias BolognesaWeb.Library.Index.Reducer.FetchScanStatuses
   alias BolognesaWeb.Library.Index.State.Library, as: LibraryState
 
   @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()

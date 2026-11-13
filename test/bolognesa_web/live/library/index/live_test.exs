@@ -9,7 +9,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
   alias BolognesaWeb.Library.Index.Live
-  alias BolognesaWeb.Library.Index.Reducers.Initialize
+  alias BolognesaWeb.Library.Index.Reducer.Initialize
   alias Phoenix.LiveView.Channel
   import Phoenix.LiveViewTest
 
@@ -96,8 +96,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   end
 
   test "refresh errors are independent of scan feedback and clear on recovery", %{actor: actor} do
-    alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
-    alias BolognesaWeb.Library.Index.Reducers.StartScan
+    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
+    alias BolognesaWeb.Library.Index.Reducer.StartScan
     socket = status_socket(actor) |> StartScan.call("invalid")
     request = socket.assigns.scan_request_id
     socket = ApplyScanStatuses.call(socket, request, {:ok, {:error, :unavailable}})
@@ -561,7 +561,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path: path,
     actor: actor
   } do
-    alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
+    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
 
     {:ok, library} =
       Libraries.create_library(actor, %{name: "Current", path: path, content_type: :movie})
@@ -606,7 +606,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   end
 
   test "a failed refresh consumes a pending hint without retrying indefinitely", %{actor: actor} do
-    alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
+    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
     socket = status_socket(actor)
     socket = %{socket | transport_pid: self()}
     socket = Component.assign(socket, :current_scope, %{actor: nil})
@@ -647,8 +647,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path: path,
     actor: actor
   } do
-    alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
-    alias BolognesaWeb.Library.Index.Reducers.Initialize
+    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
+    alias BolognesaWeb.Library.Index.Reducer.Initialize
     alias Live
 
     {:ok, library} =
@@ -688,8 +688,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path: path,
     actor: actor
   } do
-    alias BolognesaWeb.Library.Index.Reducers.Initialize
-    alias BolognesaWeb.Library.Index.Reducers.StartScan
+    alias BolognesaWeb.Library.Index.Reducer.Initialize
+    alias BolognesaWeb.Library.Index.Reducer.StartScan
 
     {:ok, library} =
       Libraries.create_library(actor, %{name: "Authorized", path: path, content_type: :movie})
@@ -720,9 +720,9 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   end
 
   test "saving a new source invalidates an older status response", %{path: path, actor: actor} do
-    alias BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses
-    alias BolognesaWeb.Library.Index.Reducers.Initialize
-    alias BolognesaWeb.Library.Index.Reducers.Save
+    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
+    alias BolognesaWeb.Library.Index.Reducer.Initialize
+    alias BolognesaWeb.Library.Index.Reducer.Save
 
     socket =
       %Phoenix.LiveView.Socket{

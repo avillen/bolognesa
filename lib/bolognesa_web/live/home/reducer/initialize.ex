@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Home.Reducers.Initialize do
+defmodule BolognesaWeb.Home.Reducer.Initialize do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 2]

@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Library.Index.Reducers.CancelScanStatuses do
+defmodule BolognesaWeb.Library.Index.Reducer.CancelScanStatuses do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [cancel_async: 2]

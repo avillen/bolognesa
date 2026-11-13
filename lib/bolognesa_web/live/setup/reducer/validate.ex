@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Setup.Reducers.Validate do
+defmodule BolognesaWeb.Setup.Reducer.Validate do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   alias BolognesaWeb.Setup.Forms.Admin

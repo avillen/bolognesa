@@ -8,6 +8,7 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseCard do
   attr :library_params, :map, required: true
   attr :browse_params, :map, required: true
 
+  @spec browse_card(map()) :: Phoenix.LiveView.Rendered.t()
   def browse_card(assigns) do
     ~H"""
     <article id={@id}>

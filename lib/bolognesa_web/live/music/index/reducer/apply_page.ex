@@ -3,6 +3,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream: 4]
+  alias Bolognesa.Music.Application.Dto.BrowsePage
   alias Bolognesa.Music.Application.UseCases.Browse
   alias Bolognesa.Music.Application.UseCases.ListTracks
   alias BolognesaWeb.Music.Index.State.Track
@@ -13,7 +14,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
     if socket.assigns.request_id == request_id, do: apply_result(socket, result), else: socket
   end
 
-  defp apply_result(socket, {:ok, {:ok, %Bolognesa.Music.Application.Dto.BrowsePage{} = page}}) do
+  defp apply_result(socket, {:ok, {:ok, %BrowsePage{} = page}}) do
     socket
     |> assign(:loading?, false)
     |> assign(:error, nil)

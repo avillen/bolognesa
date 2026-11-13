@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses do
+defmodule BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
 
@@ -6,7 +6,8 @@ defmodule BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses do
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.ScanStatus
   alias BolognesaWeb.Library.Index.LibraryRows
-  alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
+  alias BolognesaWeb.Library.Index.Reducer.FetchScanStatuses
+  alias BolognesaWeb.Library.Index.State.Library, as: LibraryState
 
   @type result ::
           {:ok, {:ok, [{Library.t(), ScanStatus.t(), InspectionCounts.t()}]} | {:error, atom()}}
@@ -25,7 +26,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.ApplyScanStatuses do
   defp apply_result(socket, {:ok, {:ok, pairs}}) do
     rows =
       Enum.map(pairs, fn {library, status, counts} ->
-        BolognesaWeb.Library.Index.State.Library.from_domain(library, status, counts)
+        LibraryState.from_domain(library, status, counts)
       end)
 
     socket

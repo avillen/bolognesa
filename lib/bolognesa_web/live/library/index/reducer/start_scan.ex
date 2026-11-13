@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
+defmodule BolognesaWeb.Library.Index.Reducer.StartScan do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
@@ -6,8 +6,8 @@ defmodule BolognesaWeb.Library.Index.Reducers.StartScan do
   alias Bolognesa.Libraries
   alias BolognesaWeb.Library.Index.LibraryRows
 
-  alias BolognesaWeb.Library.Index.Reducers.CancelScanStatuses
-  alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
+  alias BolognesaWeb.Library.Index.Reducer.CancelScanStatuses
+  alias BolognesaWeb.Library.Index.Reducer.FetchScanStatuses
   alias BolognesaWeb.Library.Index.State.Library
 
   @spec call(Phoenix.LiveView.Socket.t(), String.t(), keyword()) :: Phoenix.LiveView.Socket.t()

@@ -12,6 +12,7 @@ defmodule BolognesaWeb.Music.Index.Components.DetailHeading do
   attr :total, :integer, required: true
   attr :error, :any, default: nil
 
+  @spec detail_heading(map()) :: Phoenix.LiveView.Rendered.t()
   def detail_heading(assigns) do
     ~H"""
     <div class="music-album-heading">
@@ -36,23 +37,36 @@ defmodule BolognesaWeb.Music.Index.Components.DetailHeading do
           {ngettext("%{count} canción", "%{count} canciones", @total, count: @total)}
         </p>
       </div>
-      <div :if={@browse_kind == :album && !@error && @total > 0} class="music-album-actions">
-        <button
-          id="play-album"
-          type="button"
-          data-music-action="album"
-          data-album-id={@album_id}
-          data-library-id={@active_library_id}
-          aria-label={gettext("Reproducir álbum")}
-        ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir álbum")}</button>
-        <button
-          type="button"
-          data-music-action="append-album"
-          data-album-id={@album_id}
-          data-library-id={@active_library_id}
-          aria-label={gettext("Añadir álbum a la cola")}
-        ><.icon name="hero-plus" class="size-5" />{gettext("Añadir a la cola")}</button>
-      </div>
+      <.album_actions
+        :if={@browse_kind == :album && !@error && @total > 0}
+        album_id={@album_id}
+        active_library_id={@active_library_id}
+      />
+    </div>
+    """
+  end
+
+  attr :album_id, :integer, default: nil
+  attr :active_library_id, :integer, default: nil
+
+  defp album_actions(assigns) do
+    ~H"""
+    <div class="music-album-actions">
+      <button
+        id="play-album"
+        type="button"
+        data-music-action="album"
+        data-album-id={@album_id}
+        data-library-id={@active_library_id}
+        aria-label={gettext("Reproducir álbum")}
+      ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir álbum")}</button>
+      <button
+        type="button"
+        data-music-action="append-album"
+        data-album-id={@album_id}
+        data-library-id={@active_library_id}
+        aria-label={gettext("Añadir álbum a la cola")}
+      ><.icon name="hero-plus" class="size-5" />{gettext("Añadir a la cola")}</button>
     </div>
     """
   end

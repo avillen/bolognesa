@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.Library.Index.Reducers.Initialize do
+defmodule BolognesaWeb.Library.Index.Reducer.Initialize do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
@@ -9,7 +9,7 @@ defmodule BolognesaWeb.Library.Index.Reducers.Initialize do
 
   alias BolognesaWeb.Library.Index.Forms.Library
   alias BolognesaWeb.Library.Index.LibraryRows
-  alias BolognesaWeb.Library.Index.Reducers.FetchScanStatuses
+  alias BolognesaWeb.Library.Index.Reducer.FetchScanStatuses
   alias BolognesaWeb.Library.Index.State.Library, as: LibraryState
 
   @spec call(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()

@@ -1,11 +1,11 @@
-defmodule BolognesaWeb.Setup.Reducers.Initialize do
+defmodule BolognesaWeb.Login.Reducer.Initialize do
   @moduledoc false
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
 
   alias Bolognesa.Accounts
-  alias BolognesaWeb.Setup.Forms.Admin
+  alias BolognesaWeb.Login.Forms.Login
 
   @spec call(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def call(socket) do
@@ -13,15 +13,15 @@ defmodule BolognesaWeb.Setup.Reducers.Initialize do
 
     case Accounts.setup_status() do
       {:ok, :open} ->
-        assign(socket, :form, to_form(Admin.changeset()))
+        redirect(socket, to: "/setup")
 
       {:ok, :closed} ->
-        redirect(socket, to: "/login")
+        assign(socket, :form, to_form(Login.changeset()))
 
       {:error, :unavailable} ->
         socket
-        |> assign(:form, to_form(Admin.changeset()))
-        |> put_flash(:error, gettext("Servicio temporalmente no disponible. Inténtalo de nuevo."))
+        |> assign(:form, to_form(Login.changeset()))
+        |> put_flash(:error, gettext("Servicio temporalmente no disponible"))
     end
   end
 end

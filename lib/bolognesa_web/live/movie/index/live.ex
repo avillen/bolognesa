@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Movie.Index.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
+  alias BolognesaWeb.Movie.Index.Components.MovieCard
   alias BolognesaWeb.Movie.Index.Reducer.ApplyResult
   alias BolognesaWeb.Movie.Index.Reducer.Initialize
   alias BolognesaWeb.Movie.Index.Reducer.Load
