@@ -96,6 +96,7 @@ docker exec "$container_name" pg_isready -h 127.0.0.1 -U postgres -d bolognesa_s
 
 export MIX_ENV=screenshots
 export BOLOGNESA_SCREENSHOT_DB_PORT="$db_port"
+export BOLOGNESA_SCREENSHOT_DB_CONTAINER="$container_name"
 export BOLOGNESA_LIBRARY_ROOTS="$library_root"
 export BOLOGNESA_SCREENSHOT_VIDEO="$video_path"
 export BOLOGNESA_SCREENSHOT_IDS="$ids_path"

@@ -31,6 +31,14 @@ RASTER_LIMITS = {
 }
 
 
+# Measured between two pinned-browser runs of unchanged header elements.
+# Keep these budgets local so content and layout checks retain their limits.
+REGION_LIMITS = {
+    "episode-mobile.png": [((326, 10, 370, 54), (33, 2, 0, 0, 0))],
+    "season.png": [((24, 30, 60, 66), (8, 2, 2, 19, 39))],
+}
+
+
 def _png_rows(path):
     data = path.read_bytes()
     if not data.startswith(b'\x89PNG\r\n\x1a\n'):
@@ -94,26 +102,37 @@ def _raster_matches(
     outlier_pixels=0,
     min_outlier_channel_delta=0,
     max_outlier_channel_delta=0,
+    regions=(),
 ):
     try:
         first, second = _png_rows(expected), _png_rows(actual)
         if first[:3] != second[:3]:
             return False
         width, _, channels, rows = first
-        changed, outliers = 0, 0
-        for left, right in zip(rows, second[3]):
+        budgets = [(max_pixels, max_channel_delta, outlier_pixels,
+                    min_outlier_channel_delta, max_outlier_channel_delta)]
+        budgets.extend(limits for _, limits in regions)
+        counts = [[0, 0] for _ in budgets]
+        for y, (left, right) in enumerate(zip(rows, second[3])):
             for index in range(0, width * channels, channels):
                 a, b = left[index:index + channels], right[index:index + channels]
                 if a == b:
                     continue
+                bucket = 0
+                x = index // channels
+                for number, ((x1, y1, x2, y2), _) in enumerate(regions, start=1):
+                    if x1 <= x < x2 and y1 <= y < y2:
+                        bucket = number
+                        break
+                pixels, delta, outlier_limit, outlier_min, outlier_max = budgets[bucket]
                 channel_delta = max(abs(x - y) for x, y in zip(a, b))
-                if channel_delta <= max_channel_delta:
-                    changed += 1
-                    if changed > max_pixels:
+                if channel_delta <= delta:
+                    counts[bucket][0] += 1
+                    if counts[bucket][0] > pixels:
                         return False
-                elif min_outlier_channel_delta <= channel_delta <= max_outlier_channel_delta:
-                    outliers += 1
-                    if outliers > outlier_pixels:
+                elif outlier_min <= channel_delta <= outlier_max:
+                    counts[bucket][1] += 1
+                    if counts[bucket][1] > outlier_limit:
                         return False
                 else:
                     return False
@@ -131,7 +150,7 @@ def differences(expected, actual):
             changed.append(name)
         elif first[name].read_bytes() != second[name].read_bytes():
             limits = RASTER_LIMITS.get(name)
-            if limits is None or not _raster_matches(first[name], second[name], *limits):
+            if limits is None or not _raster_matches(first[name], second[name], *limits, regions=REGION_LIMITS.get(name, ())):
                 changed.append(name)
     return changed
 

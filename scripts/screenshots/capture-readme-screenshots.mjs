@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { mkdir, readFile } from "node:fs/promises";
 import { chromium } from "playwright";
+import {verifySeriesUI} from "./verify-series-ui.mjs";
 
 const baseUrl = process.env.BOLOGNESA_URL ?? "http://127.0.0.1:4001";
 const phase = process.env.BOLOGNESA_CAPTURE_PHASE ?? "all";
@@ -632,6 +633,7 @@ try {
 
     await capture("settings.png", "/settings");
     await capture("about.png", "/about");
+    await verifySeriesUI(page, {baseUrl, ids, waitForStablePage});
     }
 
     await page.goto(`${baseUrl}/libraries`);

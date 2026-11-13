@@ -25,6 +25,53 @@ class ScreenshotCheckTest(unittest.TestCase):
                 (actual / name).write_bytes(png(2, 2, [101] + [100] * 11))
             self.assertEqual(checker.differences(expected, actual), ['home.png'])
 
+    def test_header_raster_budgets_do_not_apply_to_content(self):
+        for name, origin, count, delta in [
+            ('episode-mobile.png', (326, 10), 33, 2),
+            ('season.png', (24, 30), 8, 2),
+        ]:
+            with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:
+                expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
+                expected.mkdir(); actual.mkdir()
+                width, height = 400, 80
+                pixels = [100] * (width * height * 3)
+                (expected / name).write_bytes(png(width, height, pixels))
+                x, y = origin
+                for index in range(count):
+                    pixels[(y * width + x + index) * 3] += delta
+                (actual / name).write_bytes(png(width, height, pixels))
+                self.assertEqual(checker.differences(expected, actual), [])
+                pixels[((y + 1) * width + x) * 3] += delta
+                (actual / name).write_bytes(png(width, height, pixels))
+                self.assertEqual(checker.differences(expected, actual), [name])
+                pixels = [100] * (width * height * 3)
+                pixels[0] += delta
+                (actual / name).write_bytes(png(width, height, pixels))
+                self.assertEqual(checker.differences(expected, actual), [name])
+
+    def test_logo_outliers_are_bounded_and_local(self):
+        with tempfile.TemporaryDirectory() as folder:
+            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
+            expected.mkdir(); actual.mkdir()
+            name, width, height = 'season.png', 400, 80
+            pixels = [100] * (width * height * 3)
+            (expected / name).write_bytes(png(width, height, pixels))
+            for x in [28, 29]:
+                pixels[(65 * width + x) * 3] += 39
+            (actual / name).write_bytes(png(width, height, pixels))
+            self.assertEqual(checker.differences(expected, actual), [])
+            pixels[(65 * width + 30) * 3] += 39
+            (actual / name).write_bytes(png(width, height, pixels))
+            self.assertEqual(checker.differences(expected, actual), [name])
+            pixels = [100] * (width * height * 3)
+            pixels[(65 * width + 28) * 3] += 40
+            (actual / name).write_bytes(png(width, height, pixels))
+            self.assertEqual(checker.differences(expected, actual), [name])
+            pixels = [100] * (width * height * 3)
+            pixels[0] += 39
+            (actual / name).write_bytes(png(width, height, pixels))
+            self.assertEqual(checker.differences(expected, actual), [name])
+
     def test_catalog_surfaces_allow_only_tiny_antialiasing(self):
         for name in ['music.png', 'music-albums.png', 'season.png', 'about.png']:
             with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:

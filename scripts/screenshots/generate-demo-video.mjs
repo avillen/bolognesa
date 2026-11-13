@@ -45,28 +45,26 @@ try {
     const finished = new Promise((resolve, reject) => {
       recorder.addEventListener("dataavailable", (event) => {
         if (event.data.size > 0) chunks.push(event.data);
+        // Encoder startup can lag behind wall time under load. Stop only once
+        // emitted media covers the seek targets used by the playback checks.
+        if (event.timecode >= 6000 && recorder.state === "recording") recorder.stop();
       });
       recorder.addEventListener("stop", () => resolve(new Blob(chunks, { type: recorder.mimeType })));
       recorder.addEventListener("error", (event) => reject(event.error));
     });
     recorder.start(250);
-    await new Promise((resolve) => {
-      const stopAt = performance.now() + 6000;
-      const renderFrame = (now) => {
-        context.fillStyle = "#e47755";
-        context.fillRect(72, 646, 190, 5);
-
-        if (now >= stopAt) {
-          recorder.stop();
-          resolve();
-        } else {
-          requestAnimationFrame(renderFrame);
-        }
-      };
-
-      requestAnimationFrame(renderFrame);
-    });
+    const renderFrame = () => {
+      context.fillStyle = "#e47755";
+      context.fillRect(72, 646, 190, 5);
+      if (recorder.state === "recording") requestAnimationFrame(renderFrame);
+    };
+    requestAnimationFrame(renderFrame);
+    const deadline = setTimeout(() => {
+      if (recorder.state === "recording") recorder.stop();
+    }, 60_000);
     const blob = await finished;
+    clearTimeout(deadline);
+    stream.getTracks().forEach(track => track.stop());
     const preview = document.createElement("video");
     preview.muted = true;
     preview.src = URL.createObjectURL(blob);
@@ -74,7 +72,18 @@ try {
       preview.addEventListener("loadedmetadata", resolve, { once: true });
       preview.addEventListener("error", () => reject(preview.error), { once: true });
     });
-    if (preview.duration < 1) throw new Error(`Synthetic video is too short: ${preview.duration}s`);
+    // MediaRecorder WebM lacks a duration header; seeking to the end discovers
+    // the actual recorded duration rather than accepting an Infinity placeholder.
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("Synthetic video duration did not settle.")), 15_000);
+      preview.addEventListener("seeked", () => { clearTimeout(timeout); resolve(); }, {once: true});
+      preview.currentTime = Number.MAX_SAFE_INTEGER;
+    });
+    if (!Number.isFinite(preview.duration) || preview.duration < 6) {
+      throw new Error(`Synthetic video is too short: ${preview.duration}s`);
+    }
+    console.log(`Synthetic video duration: ${preview.duration.toFixed(3)}s`);
+    preview.currentTime = 0;
     await preview.play();
     if (preview.paused) throw new Error("Synthetic video did not start playing.");
     preview.pause();
