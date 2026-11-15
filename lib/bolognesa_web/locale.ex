@@ -39,9 +39,17 @@ defmodule BolognesaWeb.Locale do
   defp available(language, _excluded) when language in @supported, do: language
   defp available(_, _), do: nil
 
+  @doc "Returns the browser language from a request header or a stored session."
+  @spec browser(PlugConn.t() | map()) :: String.t()
+  def browser(%PlugConn{} = conn),
+    do: negotiate(List.first(get_req_header(conn, "accept-language")))
+
+  def browser(%{"browser_locale" => locale}) when locale in @supported, do: locale
+  def browser(_session), do: "es"
+
   @spec fetch_browser_locale(PlugConn.t(), keyword()) :: PlugConn.t()
   def fetch_browser_locale(conn, _opts) do
-    locale = negotiate(List.first(get_req_header(conn, "accept-language")))
+    locale = browser(conn)
     Gettext.put_locale(Backend, locale)
     conn |> put_session(:browser_locale, locale) |> assign(:locale, locale)
   end
@@ -56,9 +64,7 @@ defmodule BolognesaWeb.Locale do
   @spec on_mount(:default, map(), map(), Phoenix.LiveView.Socket.t()) ::
           {:cont, Phoenix.LiveView.Socket.t()}
   def on_mount(:default, _params, session, socket) do
-    browser =
-      if session["browser_locale"] in @supported, do: session["browser_locale"], else: "es"
-
+    browser = browser(session)
     scope = Map.get(socket.assigns, :current_scope) || session_scope(session)
     locale = effective(scope, browser)
     Gettext.put_locale(Backend, locale)
