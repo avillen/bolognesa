@@ -67,7 +67,9 @@ defmodule Bolognesa.Libraries.Application.UseCases.InspectMediaFile do
   end
 
   defp inspect_current(context, {:ok, technical_media}) do
-    result = context.repository.complete_inspection(context.file.id, context.token, technical_media)
+    result =
+      context.repository.complete_inspection(context.file.id, context.token, technical_media)
+
     finish(result, context, :completed, nil, :ok)
   end
 

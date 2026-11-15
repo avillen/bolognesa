@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.ScanSchema
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileLibraryJobs
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   use Bolognesa.DataCase, async: false
@@ -91,7 +91,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
       job_state(scan, state)
 
       assert :ok =
-               ReconcileScans.call(
+               ReconcileLibraryJobs.call(
+                 :scan,
                  DateTime.add(current.attempt_started_at, 599),
                  EctoScanRepository,
                  LibraryStatusNotifications
@@ -112,7 +113,15 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
       job_state(scan, unquote(job_state))
       now = DateTime.add(current.attempt_started_at, 600)
       :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
-      assert :ok = ReconcileScans.call(now, EctoScanRepository, LibraryStatusNotifications)
+
+      assert :ok =
+               ReconcileLibraryJobs.call(
+                 :scan,
+                 now,
+                 EctoScanRepository,
+                 LibraryStatusNotifications
+               )
+
       library_id = scan.library_id
       assert_receive {:library_status_changed, ^library_id}
 
@@ -120,7 +129,15 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
                Repo.get!(ScanSchema, scan.id)
 
       assert {:error, :stale_attempt} = EctoScanRepository.complete(scan.id, current.generation)
-      assert :ok = ReconcileScans.call(now, EctoScanRepository, LibraryStatusNotifications)
+
+      assert :ok =
+               ReconcileLibraryJobs.call(
+                 :scan,
+                 now,
+                 EctoScanRepository,
+                 LibraryStatusNotifications
+               )
+
       refute_receive {:library_status_changed, _}
     end
   end
@@ -129,11 +146,17 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     {:ok, current, _} = EctoScanRepository.begin_attempt(scan.id, 1)
     job_state(scan, "executing")
     now = DateTime.add(current.attempt_started_at, 2_000)
-    assert :ok = ReconcileScans.call(now, EctoScanRepository, LibraryStatusNotifications)
+
+    assert :ok =
+             ReconcileLibraryJobs.call(:scan, now, EctoScanRepository, LibraryStatusNotifications)
+
     assert {:ok, %{latest_scan: ^current}} = EctoScanRepository.fetch_status(scan.library_id)
     {:ok, completed} = EctoScanRepository.complete(scan.id, current.generation)
     job_state(scan, "discarded")
-    assert :ok = ReconcileScans.call(now, EctoScanRepository, LibraryStatusNotifications)
+
+    assert :ok =
+             ReconcileLibraryJobs.call(:scan, now, EctoScanRepository, LibraryStatusNotifications)
+
     assert {:ok, %{latest_scan: ^completed}} = EctoScanRepository.fetch_status(scan.library_id)
   end
 
@@ -144,7 +167,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     Repo.delete!(Repo.get!(Oban.Job, scan.job_id))
 
     assert :ok =
-             ReconcileScans.call(
+             ReconcileLibraryJobs.call(
+               :scan,
                current.attempt_started_at,
                EctoScanRepository,
                LibraryStatusNotifications
@@ -153,7 +177,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     assert Repo.get!(ScanSchema, scan.id).state == :running
 
     assert :ok =
-             ReconcileScans.call(
+             ReconcileLibraryJobs.call(
+               :scan,
                DateTime.add(current.attempt_started_at, 600),
                EctoScanRepository,
                LibraryStatusNotifications
@@ -164,7 +189,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     Repo.delete!(Repo.get!(Oban.Job, queued.job_id))
 
     assert :ok =
-             ReconcileScans.call(
+             ReconcileLibraryJobs.call(
+               :scan,
                DateTime.utc_now(),
                EctoScanRepository,
                LibraryStatusNotifications
@@ -177,7 +203,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     job_state(scan, "discarded")
 
     assert :ok =
-             ReconcileScans.call(
+             ReconcileLibraryJobs.call(
+               :scan,
                DateTime.utc_now(),
                EctoScanRepository,
                LibraryStatusNotifications
@@ -190,7 +217,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     job_state(next, "discarded")
 
     assert :ok =
-             ReconcileScans.call(
+             ReconcileLibraryJobs.call(
+               :scan,
                current.attempt_started_at,
                EctoScanRepository,
                LibraryStatusNotifications
@@ -301,7 +329,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     assert Repo.get!(ScanSchema, scan.id).state == :retrying
 
     assert :ok =
-             ReconcileScans.call(
+             ReconcileLibraryJobs.call(
+               :scan,
                DateTime.utc_now(),
                EctoScanRepository,
                LibraryStatusNotifications
@@ -328,7 +357,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     assert id == scan.job_id
 
     assert :ok =
-             ReconcileScans.call(
+             ReconcileLibraryJobs.call(
+               :scan,
                DateTime.add(current.attempt_started_at, 600),
                EctoScanRepository,
                LibraryStatusNotifications
@@ -351,7 +381,8 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
     current = Repo.get!(ScanSchema, scan.id)
 
     assert :ok =
-             ReconcileScans.call(
+             ReconcileLibraryJobs.call(
+               :scan,
                DateTime.add(current.attempt_started_at, 600),
                EctoScanRepository,
                LibraryStatusNotifications

@@ -3,7 +3,7 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
   alias ExUnit.CaptureLog
   use Bolognesa.DataCase, async: false
 
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileLibraryJobs
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
@@ -65,7 +65,8 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     :ok = Phoenix.PubSub.subscribe(Bolognesa.PubSub, "libraries:statuses")
 
     assert :ok =
-             ReconcileInspections.call(
+             ReconcileLibraryJobs.call(
+               :inspection,
                DateTime.utc_now(),
                EctoInspectionRepository,
                LibraryStatusNotifications
@@ -80,7 +81,8 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
              Repo.get!(InspectionSchema, inspection.id)
 
     assert :ok =
-             ReconcileInspections.call(
+             ReconcileLibraryJobs.call(
+               :inspection,
                DateTime.utc_now(),
                EctoInspectionRepository,
                LibraryStatusNotifications
@@ -111,7 +113,8 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     Repo.delete!(Repo.get!(Oban.Job, inspection.job_id))
 
     assert :ok =
-             ReconcileInspections.call(
+             ReconcileLibraryJobs.call(
+               :inspection,
                DateTime.utc_now(),
                EctoInspectionRepository,
                LibraryStatusNotifications
@@ -136,7 +139,8 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     |> Repo.update!()
 
     assert :ok =
-             ReconcileInspections.call(
+             ReconcileLibraryJobs.call(
+               :inspection,
                DateTime.utc_now(),
                EctoInspectionRepository,
                LibraryStatusNotifications
@@ -167,7 +171,8 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     :ok = LibraryStatusNotifications.subscribe()
 
     assert :ok =
-             ReconcileInspections.call(
+             ReconcileLibraryJobs.call(
+               :inspection,
                DateTime.utc_now(),
                EctoInspectionRepository,
                LibraryStatusNotifications
@@ -181,7 +186,8 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     assert_receive {:library_status_changed, ^library_id}
 
     assert :ok =
-             ReconcileInspections.call(
+             ReconcileLibraryJobs.call(
+               :inspection,
                DateTime.utc_now(),
                EctoInspectionRepository,
                LibraryStatusNotifications
@@ -214,7 +220,8 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
     |> Repo.update!()
 
     assert :ok =
-             ReconcileInspections.call(
+             ReconcileLibraryJobs.call(
+               :inspection,
                DateTime.utc_now(),
                EctoInspectionRepository,
                LibraryStatusNotifications

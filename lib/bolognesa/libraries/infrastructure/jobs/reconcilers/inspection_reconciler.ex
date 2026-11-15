@@ -5,7 +5,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.InspectionReconcil
 
   alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
   alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileLibraryJobs
   alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.InspectionPolicy
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
@@ -34,7 +34,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.InspectionReconcil
   end
 
   defp run(repository, notifications) do
-    ReconcileInspections.call(DateTime.utc_now(), repository, notifications)
+    ReconcileLibraryJobs.call(:inspection, DateTime.utc_now(), repository, notifications)
   rescue
     _exception ->
       Events.emit(:libraries, :reconciliation, :failed, %{
