@@ -6,12 +6,6 @@ defmodule Bolognesa.Release do
   installed.
   """
   @app :bolognesa
-  alias Bolognesa.Accounts
-  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
-
-  @spec fetch_authenticated_admin() ::
-          {:ok, AuthenticatedUser.t()} | :not_found | {:error, :unavailable}
-  def fetch_authenticated_admin, do: Accounts.fetch_authenticated_admin()
 
   @spec migrate() :: [{:ok, [integer()], [atom()]}]
   def migrate do
