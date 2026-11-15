@@ -1,8 +1,7 @@
 /** Probe only server-issued configurations. No media URL is needed or attached here. */
 export async function probePlaybackCapabilities({generation, candidates, preference = "auto"}, {
   video, mediaCapabilities = globalThis.navigator?.mediaCapabilities,
-  // iPhone WebKit exposes only ManagedMediaSource (iOS 17.1+), which HLS.js uses too.
-  MediaSource = globalThis.MediaSource ?? globalThis.ManagedMediaSource, Hls, deadlineMs = 3000,
+  MediaSource = globalThis.MediaSource, Hls, deadlineMs = 3000,
 }) {
   const unknown = candidate => ({candidate_id: candidate.id, transport: candidate.transports[0], support: "unknown", smooth: "unknown", power_efficient: "unknown"})
   const results = candidates.slice(0, 6).map(unknown)
@@ -33,8 +32,6 @@ const performance = value => value === true ? "yes" : value === false ? "no" : "
 function safely(effect, fallback) { try { return effect() } catch { return fallback } }
 
 async function probeCandidate(candidate, {video, mediaCapabilities, MediaSource, Hls}) {
-  // WebKit's "media-source" Media Capabilities type describes classic MediaSource only.
-  const managedOnly = !!MediaSource && MediaSource === globalThis.ManagedMediaSource && !globalThis.MediaSource
   const config = candidate.configuration
   const mime = mimeWithCodecs(config.mime, config)
   let transport = candidate.transports[0]
@@ -58,7 +55,7 @@ async function probeCandidate(candidate, {video, mediaCapabilities, MediaSource,
     } else if (mse === false) supported = "unsupported"
   }
   const observation = {candidate_id: candidate.id, transport, support: supported, smooth: "unknown", power_efficient: "unknown"}
-  const decoding = decodingConfiguration(config, transport, MediaSource, managedOnly)
+  const decoding = decodingConfiguration(config, transport, MediaSource)
   if (!decoding || !mediaCapabilities?.decodingInfo) return observation
   try {
     const result = await mediaCapabilities.decodingInfo(decoding)
@@ -69,12 +66,12 @@ async function probeCandidate(candidate, {video, mediaCapabilities, MediaSource,
   return observation
 }
 
-function decodingConfiguration(config, transport, MediaSource, managedOnly = false) {
+function decodingConfiguration(config, transport, MediaSource) {
   const v = config.video, a = config.audio
   if (![v.width, v.height, v.frame_rate, v.bit_rate].every(value => Number.isFinite(value) && value > 0)) return null
   if (a && ![a.sample_rate, a.channels, a.bit_rate].every(value => Number.isFinite(value) && value > 0)) return null
   const mime = transport === "file" ? config.mime : "video/mp4"
-  const decoding = {type: transport === "hls_js" && !managedOnly ? "media-source" : "file",
+  const decoding = {type: transport === "hls_js" ? "media-source" : "file",
     video: {contentType: `${mime}; codecs="${v.codec_string}"`, width: v.width, height: v.height, bitrate: v.bit_rate, framerate: v.frame_rate}}
   const audioType = a && transport === "hls_js" && a.codec_string === MP3 ?
     safely(() => hlsJsMp3SourceBuffer(MediaSource), undefined) :

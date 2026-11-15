@@ -53,10 +53,7 @@ export function createHlsController({video, config, pushEvent, reportPlaybackErr
 
   function attachSource() {
     if (config.transport === "hls_js" && Hls.isSupported()) {
-      // ManagedMediaSource opens only without AirPlay or with an AirPlay alternative source.
-      if (!globalThis.MediaSource && globalThis.ManagedMediaSource) video.disableRemotePlayback = true
-      // Played media stays buffered by default; mobile WebKit discards the page once memory grows.
-      hls = new Hls({lowLatencyMode: false, liveSyncDurationCount: 3, startPosition: 0, backBufferLength: 30})
+      hls = new Hls({lowLatencyMode: false, liveSyncDurationCount: 3, startPosition: 0})
       hls.on(Hls.Events.MANIFEST_PARSED, ready)
       hls.on(Hls.Events.ERROR, (_event, data) => { if (data.fatal) onError(data.type === "mediaError" ? "media" :
         data.type === "networkError" ? "network" : "unknown", true) })
