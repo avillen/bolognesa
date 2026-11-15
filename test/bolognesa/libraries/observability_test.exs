@@ -15,7 +15,7 @@ defmodule Bolognesa.Libraries.ObservabilityTest do
       do: Process.get(:admission, {:ok, %{id: 11, library_id: 17, revision: 2}, %{id: 17}})
 
     def complete_inspection(_, _, _), do: Process.get(:completion, :ok)
-    def fail_inspection(_, _, _, _), do: Process.get(:completion, :ok)
+    def fail_inspection(_, _, _), do: Process.get(:completion, :ok)
     def reconcile_jobs(_), do: Process.get(:recovery, %ReconciliationResult{})
     def begin_attempt(_, _), do: Process.get(:admission, {:ok, :terminal})
   end

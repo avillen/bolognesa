@@ -145,7 +145,7 @@ defmodule Bolognesa.Libraries.Application.UseCases.InspectMediaFile do
 
   defp record_failure(file, token, reason, attempt, repository, notifications, context, result) do
     finish(
-      repository.fail_inspection(file.id, token, reason, attempt),
+      repository.fail_inspection(file.id, token, reason),
       file,
       notifications,
       context,

@@ -156,7 +156,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   end
 
   @impl true
-  def fail_inspection(file_id, token, reason, _attempt) do
+  def fail_inspection(file_id, token, reason) do
     transaction(fn ->
       case current(file_id, token) do
         {:ok, inspection, _file} when inspection.state in [:pending, :running] ->
