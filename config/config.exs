@@ -41,15 +41,6 @@ config :phoenix_live_view,
   # the attribute set on all root tags. Used for Phoenix.LiveView.ColocatedCSS.
   root_tag_attribute: "phx-r"
 
-# Configure the mailer
-#
-# By default it uses the "Local" adapter which stores the emails
-# locally. You can see the emails in your browser, at "/dev/mailbox".
-#
-# For production it's recommended to configure a different adapter
-# at the `config/runtime.exs`.
-config :bolognesa, Bolognesa.Mailer, adapter: Swoosh.Adapters.Local
-
 # Keep eagerly imported player dependencies parseable on iPadOS 16.2 so LiveView can start.
 # Configure esbuild (the version is required)
 config :esbuild,

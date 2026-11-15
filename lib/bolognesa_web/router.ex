@@ -32,10 +32,6 @@ defmodule BolognesaWeb.Router do
     plug :require_authenticated_media
   end
 
-  pipeline :api do
-    plug :accepts, ["json"]
-  end
-
   scope "/", BolognesaWeb do
     pipe_through :browser
 
@@ -101,25 +97,11 @@ defmodule BolognesaWeb.Router do
     get "/movies/:movie_id/media/:file_id/hls/:session_id/:segment", TranscodeController, :segment
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", BolognesaWeb do
-  #   pipe_through :api
-  # end
-
   scope "/dev" do
     pipe_through [:browser, :authenticated, :admin]
 
     live_dashboard "/dashboard",
       metrics: BolognesaWeb.Telemetry,
       on_mount: [{BolognesaWeb.UserAuth, :require_admin}]
-  end
-
-  # Keep the mailbox preview limited to development.
-  if Application.compile_env(:bolognesa, :dev_routes) do
-    scope "/dev" do
-      pipe_through :browser
-
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
-    end
   end
 end

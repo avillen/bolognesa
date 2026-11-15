@@ -35,5 +35,3 @@ config :bolognesa, :inspection_reconciler, false
 config :bolognesa, :identification_reconciler, false
 config :bolognesa, Oban, testing: :manual, queues: false, plugins: false
 config :logger, level: :warning
-
-config :swoosh, :api_client, false
