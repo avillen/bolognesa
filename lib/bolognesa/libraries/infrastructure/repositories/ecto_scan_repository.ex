@@ -26,10 +26,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   alias Bolognesa.Series
 
   @impl true
-  def request(library_id), do: request(library_id, false)
-
-  @impl true
-  def request(library_id, force_inspection?) when is_boolean(force_inspection?) do
+  def request(library_id, force_inspection? \\ false) when is_boolean(force_inspection?) do
     Multi.new()
     |> Multi.run(:library, fn repo, _changes -> find_library(repo, library_id) end)
     |> Multi.insert(

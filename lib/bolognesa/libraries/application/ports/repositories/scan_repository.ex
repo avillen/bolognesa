@@ -8,8 +8,6 @@ defmodule Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository do
 
   @type adapter :: module()
 
-  @callback request(Library.id()) ::
-              {:ok, Scan.t()} | {:error, :not_found | :scan_in_progress | :unavailable}
   @callback request(Library.id(), boolean()) ::
               {:ok, Scan.t()} | {:error, :not_found | :scan_in_progress | :unavailable}
   @callback fetch_status(Library.id()) ::
