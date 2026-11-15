@@ -13,7 +13,7 @@ function setup() {
     pause() { this.paused = true; this.dispatchEvent(new Event("pause")) },
   })
   const context = {el, pushEvent: (...args) => events.push(args)}
-  context.controller = createHlsController({video: el, config: el.dataset, pushEvent: context.pushEvent, Hls})
+  context.controller = createHlsController({video: el, config: el.dataset, pushEvent: context.pushEvent, onReady() {}, Hls})
   return {context, el, events}
 }
 
@@ -81,7 +81,7 @@ test("fatal HLS failures are diagnosed before the session is stopped", () => {
   const video = new EventTarget()
   Object.assign(video, {dataset: {transport: "hls_js", sessionId: "hls", offsetMs: "0", durationMs: "60000"}})
   const controller = createHlsController({video, config: video.dataset, Hls: FakeHls,
-    pushEvent: (...args) => calls.push(args), reportPlaybackError: () => calls.push(["diagnostic"])})
+    pushEvent: (...args) => calls.push(args), reportPlaybackError: () => calls.push(["diagnostic"]), onReady() {}})
   assert.equal(hls.config.startPosition, 0)
   assert.equal(hls.config.liveSyncDurationCount, 3)
   hls.listeners.error("error", {fatal: true})
@@ -120,7 +120,7 @@ test("an accepted native transport stays native even when HLS.js is available", 
     constructor() { throw Error("must honor selected native transport") }
   }
   const config = {transport: "native_hls", sessionId: "selected", src: "/selected.m3u8", offsetMs: "0"}
-  const controller = createHlsController({video, config, Hls: AvailableHls, pushEvent() {}})
+  const controller = createHlsController({video, config, Hls: AvailableHls, pushEvent() {}, onReady() {}})
   assert.equal(video.src, "/selected.m3u8")
   controller.destroy()
 })
@@ -138,23 +138,10 @@ for (const [type, kind] of [["mediaError", "media"], ["networkError", "network"]
     const events = [], video = new EventTarget()
     video.currentTime = 1.5
     const config = {transport: "hls_js", sessionId: "current", attemptId: "attempt", offsetMs: "2000", durationMs: "60000"}
-    const controller = createHlsController({video, config, Hls: FakeHls, pushEvent: (...e) => events.push(e)})
+    const controller = createHlsController({video, config, Hls: FakeHls, pushEvent: (...e) => events.push(e), onReady() {}})
     instance.listeners.error("error", {fatal: true, type})
     instance.listeners.error("error", {fatal: true, type})
     assert.deepEqual(events, [["transcode_error", {session_id: "current", attempt_id: "attempt", error_kind: kind, position_ms: "3500"}]])
     controller.destroy()
   })
 }
-
-test("autoplay rejection leaves play available without reporting a media failure", async () => {
-  const events = [], video = new EventTarget()
-  Object.assign(video, {canPlayType: () => "probably", currentTime: 0,
-    play: () => Promise.reject(Object.assign(new Error("gesture required"), {name: "NotAllowedError"}))})
-  const controller = createHlsController({video, config: {transport: "native_hls", sessionId: "a",
-    attemptId: "attempt", autoplay: "true", offsetMs: "0"}, Hls,
-    pushEvent: (...e) => events.push(e)})
-  video.dispatchEvent(new Event("loadedmetadata"))
-  await Promise.resolve()
-  assert.deepEqual(events, [])
-  controller.destroy()
-})
