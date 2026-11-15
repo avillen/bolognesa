@@ -4,6 +4,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
   import Phoenix.Component, only: [assign: 3]
   alias Bolognesa.Playback
   alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
+  alias Ecto.UUID
 
   @spec initialize(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def initialize(socket) do
@@ -21,6 +22,14 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
     |> assign(:inspection_refresh_requested?, false)
     |> assign(:selected_file_id, nil)
     |> reset()
+  end
+
+  @doc "Starts a new client playback attempt with its single recovery available."
+  @spec new_attempt(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
+  def new_attempt(socket) do
+    socket
+    |> assign(:playback_attempt_id, UUID.generate())
+    |> assign(:recovery_used?, false)
   end
 
   @spec direct(Phoenix.LiveView.Socket.t(), pos_integer()) :: Phoenix.LiveView.Socket.t()

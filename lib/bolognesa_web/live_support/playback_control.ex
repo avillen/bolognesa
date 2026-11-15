@@ -24,11 +24,10 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
 
     socket =
       socket
-      |> assign(:playback_attempt_id, UUID.generate())
+      |> PlaybackState.new_attempt()
       |> assign(:playback_duration_ms, nil)
       |> assign(:capability_report, nil)
       |> assign(:compatible_playback_available?, false)
-      |> assign(:recovery_used?, false)
       |> assign(:inspection_refresh_used?, false)
       |> assign(:inspection_refresh_requested?, false)
 
@@ -45,7 +44,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
         |> assign(:playback_phase, :checking)
         |> assign(:playback_candidates, candidates)
         |> assign(:playback_probe, probe)
-        |> assign(:inspection_refresh_used?, false)
 
       {:error, reason} ->
         PlaybackState.preparation_failed(socket, reason)
@@ -121,14 +119,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
         |> assign(:recovery_used?, true)
         |> assign(:compatible_playback_available?, false)
 
-      case Playback.select_video_plan(
-             socket.assigns.current_scope.actor,
-             socket.assigns.content_ref,
-             socket.assigns.selected_file_id,
-             socket.assigns.playback_candidates,
-             Map.put(raw, "preference", "compatible"),
-             raw["generation"]
-           ) do
+      case compatible_plan(socket, raw) do
         {:ok, plan}
         when plan.mode != :direct and plan != socket.assigns.delivery_plan ->
           stop_transcode(socket, :client_error)
@@ -153,8 +144,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
     if socket.assigns[:compatible_playback_available?] and
          socket.assigns.playback_phase in [:ready, :error] and !socket.assigns[:loading?] do
       socket
-      |> assign(:playback_attempt_id, UUID.generate())
-      |> assign(:recovery_used?, false)
+      |> PlaybackState.new_attempt()
       |> recover(0)
     else
       socket
@@ -162,17 +152,21 @@ defmodule BolognesaWeb.LiveSupport.PlaybackControl do
   end
 
   defp compatible_available?(socket, raw, selected) do
-    case Playback.select_video_plan(
-           socket.assigns.current_scope.actor,
-           socket.assigns.content_ref,
-           socket.assigns.selected_file_id,
-           socket.assigns.playback_candidates,
-           Map.put(raw, "preference", "compatible"),
-           raw["generation"]
-         ) do
+    case compatible_plan(socket, raw) do
       {:ok, plan} -> plan != selected
       _ -> false
     end
+  end
+
+  defp compatible_plan(socket, raw) do
+    Playback.select_video_plan(
+      socket.assigns.current_scope.actor,
+      socket.assigns.content_ref,
+      socket.assigns.selected_file_id,
+      socket.assigns.playback_candidates,
+      Map.put(raw, "preference", "compatible"),
+      raw["generation"]
+    )
   end
 
   defp probe_candidate(candidate) do
