@@ -10,7 +10,7 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
 
   alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.ScanPolicy
 
-  alias Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.ScanReconciler
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.LibraryJobReconciler
   alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker
 
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
@@ -450,8 +450,11 @@ defmodule Bolognesa.Libraries.ScanRecoveryTest do
 
     pid =
       start_supervised!(
-        {ScanReconciler,
-         repository: ControlledScanRepository, name: :controlled_reconciler, interval_ms: 10}
+        {LibraryJobReconciler,
+         operation: :scan,
+         repository: ControlledScanRepository,
+         name: :controlled_reconciler,
+         interval_ms: 10}
       )
 
     assert_receive {:reconciliation, ^pid, %DateTime{}}

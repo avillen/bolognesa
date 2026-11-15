@@ -9,7 +9,7 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
   alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.InspectionPolicy
-  alias Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.InspectionReconciler
+  alias Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.LibraryJobReconciler
   alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker
 
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
@@ -98,7 +98,8 @@ defmodule Bolognesa.Libraries.InspectionRecoveryTest do
 
     pid =
       start_supervised!(
-        {InspectionReconciler, name: :TestInspectionReconciler, interval_ms: 60_000}
+        {LibraryJobReconciler,
+         operation: :inspection, name: :TestInspectionReconciler, interval_ms: 60_000}
       )
 
     _state = :sys.get_state(pid)

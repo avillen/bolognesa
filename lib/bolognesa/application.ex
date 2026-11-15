@@ -29,13 +29,19 @@ defmodule Bolognesa.Application do
 
   defp scan_reconciler_children do
     if Application.get_env(:bolognesa, :scan_reconciler, true),
-      do: [Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.ScanReconciler],
+      do: [
+        {Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.LibraryJobReconciler,
+         operation: :scan}
+      ],
       else: []
   end
 
   defp inspection_reconciler_children do
     if Application.get_env(:bolognesa, :inspection_reconciler, true),
-      do: [Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.InspectionReconciler],
+      do: [
+        {Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.LibraryJobReconciler,
+         operation: :inspection}
+      ],
       else: []
   end
 
