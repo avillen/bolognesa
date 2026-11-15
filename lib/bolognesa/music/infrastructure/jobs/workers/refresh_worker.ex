@@ -80,32 +80,21 @@ defmodule Bolognesa.Music.Infrastructure.Jobs.Workers.RefreshWorker do
     result
   end
 
-  defp observe_exhaustion(:ok, job),
-    do:
-      Events.emit(
-        :music,
-        :import,
-        :failed,
-        Map.merge(metadata(job), %{reason: :attempts_exhausted, failure_stage: :exhaustion})
-      )
+  defp observe_exhaustion(result, job) do
+    {outcome, reason} =
+      case result do
+        :ok -> {:failed, :attempts_exhausted}
+        {:ok, :stale} -> {:stale, :stale_attempt}
+        {:error, :unavailable} -> {:retryable, :storage_unavailable}
+      end
 
-  defp observe_exhaustion({:ok, :stale}, job),
-    do:
-      Events.emit(
-        :music,
-        :import,
-        :stale,
-        Map.merge(metadata(job), %{reason: :stale_attempt, failure_stage: :exhaustion})
-      )
-
-  defp observe_exhaustion({:error, :unavailable}, job),
-    do:
-      Events.emit(
-        :music,
-        :import,
-        :retryable,
-        Map.merge(metadata(job), %{reason: :storage_unavailable, failure_stage: :exhaustion})
-      )
+    Events.emit(
+      :music,
+      :import,
+      outcome,
+      Map.merge(metadata(job), %{reason: reason, failure_stage: :exhaustion})
+    )
+  end
 
   defp unexpected(job) do
     Events.emit(
