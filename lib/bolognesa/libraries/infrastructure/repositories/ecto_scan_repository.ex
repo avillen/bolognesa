@@ -151,7 +151,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   @impl true
   def reconcile_jobs(now), do: ObanJobRecovery.reconcile(now)
 
-  defp transaction(operation) do
+  @doc false
+  @spec transaction((-> result)) :: result | {:error, term()} when result: term()
+  def transaction(operation) do
     case Repo.transaction(operation) do
       {:ok, result} ->
         result
@@ -165,7 +167,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
     Ecto.ConstraintError -> {:error, :unavailable}
   end
 
-  defp locked_scan(scan_id, missing_reason) do
+  @doc false
+  @spec locked_scan(Scan.id(), atom()) :: ScanSchema.t()
+  def locked_scan(scan_id, missing_reason) do
     case Repo.one(from scan in ScanSchema, where: scan.id == ^scan_id, lock: "FOR UPDATE") do
       nil -> Repo.rollback(missing_reason)
       scan -> scan
@@ -209,7 +213,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
     end
   end
 
-  defp save_scan(schema, scan) do
+  @doc false
+  @spec save_scan(ScanSchema.t(), Scan.t()) :: Scan.t()
+  def save_scan(schema, scan) do
     attrs =
       Map.take(scan, [
         :state,

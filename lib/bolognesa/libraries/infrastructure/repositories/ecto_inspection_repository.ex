@@ -208,7 +208,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
     end)
   end
 
-  defp transaction(operation) do
+  @doc false
+  @spec transaction((-> result)) :: result | {:error, :unavailable} when result: term()
+  def transaction(operation) do
     case Repo.transaction(operation) do
       {:ok, result} ->
         result
