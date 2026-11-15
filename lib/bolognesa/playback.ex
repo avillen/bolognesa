@@ -166,56 +166,7 @@ defmodule Bolognesa.Playback do
     do: signal_transcode(actor, session_id, :resume)
 
   @spec video_transcode_status(String.t()) :: :ready | :waiting | :failed | :not_found
-  def video_transcode_status(session_id) do
-    case TranscodeManager.lookup(session_id) do
-      {:ok, %{status: :failed}} -> :failed
-      {:ok, session} -> playlist_status(session)
-      _ -> :not_found
-    end
-  end
-
-  defp playlist_status(session) do
-    directory = session.directory
-    status = if playlist_ready?(directory), do: :ready, else: :waiting
-    {count, published_ms} = playlist_progress(directory)
-    TranscodeManager.observe_preparation(session.id, status, count, published_ms)
-    status
-  end
-
-  defp playlist_progress(directory) do
-    case File.read(Path.join(directory, "index.m3u8")) do
-      {:ok, manifest} ->
-        count = Regex.scan(~r/^seg-[0-9]{6,12}\.ts$/m, manifest) |> length()
-        {count, round(buffered_seconds(manifest) * 1000)}
-
-      _ ->
-        {0, 0}
-    end
-  end
-
-  defp playlist_ready?(directory) do
-    case File.read(Path.join(directory, "index.m3u8")) do
-      {:ok, manifest} -> manifest_ready?(directory, manifest)
-      _ -> false
-    end
-  end
-
-  defp manifest_ready?(directory, manifest) do
-    segments = Regex.scan(~r/^seg-[0-9]{6,12}\.ts$/m, manifest) |> List.flatten()
-    enough? = buffered_seconds(manifest) >= 4 or String.contains?(manifest, "#EXT-X-ENDLIST")
-
-    enough? and segments != [] and
-      Enum.all?(segments, &File.regular?(Path.join(directory, &1)))
-  end
-
-  defp buffered_seconds(manifest) do
-    ~r/^#EXTINF:(\d+(?:\.\d+)?),/m
-    |> Regex.scan(manifest, capture: :all_but_first)
-    |> Enum.reduce(0.0, fn [duration], total ->
-      {seconds, ""} = Float.parse(duration)
-      total + seconds
-    end)
-  end
+  def video_transcode_status(session_id), do: TranscodeManager.status(session_id)
 
   defp signal_transcode(actor, session_id, action) do
     with {:ok, session} <- TranscodeManager.lookup(session_id),

@@ -71,10 +71,8 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @spec lookup(String.t()) :: {:ok, TranscodeSession.t()} | {:error, :not_found}
   def lookup(id), do: GenServer.call(__MODULE__, {:lookup, id})
 
-  @spec observe_preparation(String.t(), :ready | :waiting, non_neg_integer(), non_neg_integer()) ::
-          :ok
-  def observe_preparation(id, status, count, published_ms),
-    do: GenServer.call(__MODULE__, {:observe_preparation, id, status, count, published_ms})
+  @spec status(String.t()) :: :ready | :waiting | :failed | :not_found
+  def status(id), do: GenServer.call(__MODULE__, {:status, id})
 
   @spec touch(String.t()) :: :ok | {:error, :not_found}
   def touch(id), do: GenServer.call(__MODULE__, {:touch, id})
@@ -148,11 +146,15 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   def handle_call({:lookup, _id}, _from, state), do: {:reply, {:error, :not_found}, state}
 
+  def handle_call({:status, id}, _from, %{current: %{id: id, status: :failed}} = state),
+    do: {:reply, :failed, state}
+
   def handle_call(
-        {:observe_preparation, id, status, count, published_ms},
+        {:status, id},
         _from,
-        %{current: %{id: id}, preparation: prep} = state
+        %{current: %{id: id} = session, preparation: prep} = state
       ) do
+    {status, count, published_ms} = playlist_status(session.directory)
     prep = %{prep | count: count, published_ms: published_ms}
 
     prep =
@@ -165,10 +167,10 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
         do: preparation_event(state, prep, :ready),
         else: prep
 
-    {:reply, :ok, %{state | preparation: prep}}
+    {:reply, status, %{state | preparation: prep}}
   end
 
-  def handle_call({:observe_preparation, _, _, _, _}, _from, state), do: {:reply, :ok, state}
+  def handle_call({:status, _id}, _from, state), do: {:reply, :not_found, state}
 
   def handle_call({:touch, id}, _from, %{current: %{id: id}} = state),
     do: {:reply, :ok, %{state | last_activity: now()}}
@@ -248,6 +250,33 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
       too_large?(state) -> clear(state, :storage_limit)
       true -> state
     end
+  end
+
+  defp playlist_status(directory) do
+    case File.read(Path.join(directory, "index.m3u8")) do
+      {:ok, manifest} ->
+        segments = Regex.scan(~r/^seg-[0-9]{6,12}\.ts$/m, manifest) |> List.flatten()
+        seconds = buffered_seconds(manifest)
+        enough? = seconds >= 4 or String.contains?(manifest, "#EXT-X-ENDLIST")
+
+        ready? =
+          enough? and segments != [] and
+            Enum.all?(segments, &File.regular?(Path.join(directory, &1)))
+
+        {if(ready?, do: :ready, else: :waiting), length(segments), round(seconds * 1000)}
+
+      _ ->
+        {:waiting, 0, 0}
+    end
+  end
+
+  defp buffered_seconds(manifest) do
+    ~r/^#EXTINF:(\d+(?:\.\d+)?),/m
+    |> Regex.scan(manifest, capture: :all_but_first)
+    |> Enum.reduce(0.0, fn [duration], total ->
+      {seconds, ""} = Float.parse(duration)
+      total + seconds
+    end)
   end
 
   defp available_slot(%{current: nil}, _actor_id), do: :ok
