@@ -52,8 +52,6 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.LibraryJobReconcil
 
   defp run(operation, repository, notifications) do
     ReconcileLibraryJobs.call(operation, DateTime.utc_now(), repository, notifications)
-  rescue
-    _exception -> failed(operation)
   catch
     _kind, _value -> failed(operation)
   end
