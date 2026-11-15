@@ -79,3 +79,18 @@ test("HLS.js MP3 is probed through the SourceBuffer HLS.js actually uses", async
   assert.equal(none.results[0].transport, "native_hls")
   assert.equal(none.results[0].support, "unsupported")
 })
+
+test("HLS.js probes ManagedMediaSource when MediaSource is absent, as on iPhone WebKit", async t => {
+  const previous = globalThis.ManagedMediaSource
+  t.after(() => { globalThis.ManagedMediaSource = previous })
+  const queried = []
+  globalThis.ManagedMediaSource = {isTypeSupported: type => { queried.push(type); return true }}
+  const hls = {...candidate, transports: ["hls_js", "native_hls"]}
+  const types = []
+  const report = await probe({Hls: {isSupported: () => true},
+    mediaCapabilities: {decodingInfo: async query => { types.push(query.type); return {supported: true} }}}, [hls])
+  assert.deepEqual(types, ["file"])
+  assert.equal(report.results[0].transport, "hls_js")
+  assert.equal(report.results[0].support, "supported")
+  assert.deepEqual(queried, ['video/mp4; codecs="avc1.42C029"'])
+})
