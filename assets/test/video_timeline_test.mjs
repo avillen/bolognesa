@@ -56,3 +56,15 @@ test("unknown duration stays unknown and invalid seeks do not reach the server",
   await feature.state(context).seek(NaN)
   assert.deepEqual(seeks, [])
 })
+
+test("per-frame progress is coalesced while seeks, pauses and durations pass immediately", () => {
+  const updates = []
+  let emit
+  const frames = {name: "time", state: nativeTime.state, attach({set}) { emit = set }}
+  fileTimeFeature(frames).attach({target: {media: {}}, set: value => updates.push(value)})
+  for (let frame = 0; frame <= 60; frame++) emit({currentTime: 10 + frame / 60})
+  assert.equal(updates.length, 5, "one second of 60 Hz progress publishes at most four steps after the first")
+  emit({currentTime: 11.01, duration: 600, seeking: false})
+  emit({currentTime: 300, seeking: true})
+  assert.deepEqual(updates.slice(-2), [{currentTime: 11.01, duration: 600, seeking: false}, {currentTime: 300, seeking: true}])
+})

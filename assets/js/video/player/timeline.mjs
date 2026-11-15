@@ -1,3 +1,6 @@
+// Progress-only updates while playing; seeks, pauses and duration changes pass immediately.
+export const progressStep = 0.25
+
 // Video.js sees file time, while the native video sees only the current FFmpeg session.
 export const fileTimeFeature = native => ({
   ...native,
@@ -14,7 +17,14 @@ export const fileTimeFeature = native => ({
     }}
   },
   attach(context) {
+    let shownTime = null
     return native.attach({...context, set(value) {
+      // Playback polls currentTime every animation frame and each update re-renders the whole
+      // time slider; WebKit retains memory from that churn until iOS discards the page.
+      if ("currentTime" in value) {
+        if (Object.keys(value).length === 1 && Math.abs(value.currentTime - shownTime) < progressStep) return
+        shownTime = value.currentTime
+      }
       const timeline = context.target.media.fileTimeline
       if (!timeline) return context.set(value)
       if (timeline.pending) return
