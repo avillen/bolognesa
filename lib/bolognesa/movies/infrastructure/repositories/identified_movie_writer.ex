@@ -4,17 +4,15 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.IdentifiedMovieWriter do
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
-  alias Bolognesa.Movies.Domain.ValueObjects.NewMovie
   alias Bolognesa.Repo
 
   @spec upsert!(MovieDetails.t()) :: pos_integer()
   def upsert!(%MovieDetails{} = details) do
     attrs = details |> Map.from_struct() |> Map.put(:provider, :tmdb)
-    {:ok, movie} = NewMovie.new(attrs)
 
     row =
-      Repo.insert!(MovieSchema.changeset(%MovieSchema{}, Map.from_struct(movie)),
-        on_conflict: [set: [provider_id: movie.provider_id]],
+      Repo.insert!(MovieSchema.changeset(%MovieSchema{}, attrs),
+        on_conflict: [set: [provider_id: details.provider_id]],
         conflict_target: [:provider, :provider_id],
         returning: true,
         log: false
