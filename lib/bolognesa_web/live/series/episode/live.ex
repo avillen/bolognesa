@@ -4,6 +4,7 @@ defmodule BolognesaWeb.Series.Episode.Live do
   use BolognesaWeb, {:live_view, log: false}
   alias BolognesaWeb.LiveSupport.PlaybackEvents
   alias BolognesaWeb.MediaComponents
+  alias BolognesaWeb.Params
   alias BolognesaWeb.Player
   alias BolognesaWeb.Series.Episode.Components.EpisodeNavigation
   alias BolognesaWeb.Series.Episode.Components.VersionCard
@@ -96,19 +97,6 @@ defmodule BolognesaWeb.Series.Episode.Live do
 
   defp parse_part(nil), do: nil
 
-  defp parse_part(text) when is_binary(text) do
-    case Integer.parse(text) do
-      {part, ""} when part in 1..100 -> part
-      _ -> :invalid
-    end
-  end
-
-  defp parse_part(_), do: :invalid
-
-  defp parse_id(text) do
-    case Integer.parse(text) do
-      {id, ""} when id > 0 -> id
-      _ -> 0
-    end
-  end
+  defp parse_part(text), do: Params.integer(text, 1..100) || :invalid
+  defp parse_id(text), do: Params.positive_integer(text) || 0
 end

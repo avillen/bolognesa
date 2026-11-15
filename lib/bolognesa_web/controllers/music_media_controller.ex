@@ -4,6 +4,7 @@ defmodule BolognesaWeb.MusicMediaController do
   alias Bolognesa.Playback
   alias BolognesaWeb.MediaDelivery
   alias BolognesaWeb.MediaMime
+  alias BolognesaWeb.Params
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"track_id" => entry_text, "file_id" => file_text}),
@@ -23,10 +24,10 @@ defmodule BolognesaWeb.MusicMediaController do
     end
   end
 
-  defp positive_id(text) do
-    case Integer.parse(text) do
-      {id, ""} when id > 0 -> {:ok, id}
-      _ -> {:error, :not_found}
+  defp positive_id(value) do
+    case Params.positive_integer(value) do
+      nil -> {:error, :not_found}
+      id -> {:ok, id}
     end
   end
 end

@@ -2,6 +2,7 @@ defmodule BolognesaWeb.Series.Review.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
   alias Bolognesa.Series
+  alias BolognesaWeb.Params
   alias BolognesaWeb.Series.Review.Components.ReviewItem
   alias BolognesaWeb.Series.Review.Reducer.ApplyResult
   alias BolognesaWeb.Series.Review.Reducer.BeginCorrection
@@ -76,12 +77,5 @@ defmodule BolognesaWeb.Series.Review.Live do
   def handle_async({kind, ref}, result, socket),
     do: {:noreply, ApplyResult.call(socket, kind, ref, result)}
 
-  defp integer(value, min, default) when is_binary(value) do
-    case Integer.parse(value) do
-      {id, ""} when id >= min and id <= 100_000_000 -> id
-      _ -> default
-    end
-  end
-
-  defp integer(_, _, default), do: default
+  defp integer(value, min, default), do: Params.integer(value, min..100_000_000) || default
 end

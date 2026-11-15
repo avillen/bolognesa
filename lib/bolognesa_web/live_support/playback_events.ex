@@ -8,19 +8,17 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   alias BolognesaWeb.LiveSupport.PlaybackControl
   alias BolognesaWeb.LiveSupport.PlaybackDiagnostics
   alias BolognesaWeb.LiveSupport.PlaybackState
+  alias BolognesaWeb.Params
 
   @spec handle_event(binary(), PlaybackControl.capability_payload(), Phoenix.LiveView.Socket.t()) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
   def handle_event("playback_diagnostic", params, socket),
     do: {:noreply, PlaybackDiagnostics.record(socket, params)}
 
-  def handle_event("play", %{"file_id" => file_id}, socket) when is_binary(file_id) do
-    case Integer.parse(file_id) do
-      {file_id, ""} when file_id > 0 ->
-        {:noreply, PlaybackControl.select_version(socket, file_id)}
-
-      _ ->
-        {:noreply, socket}
+  def handle_event("play", %{"file_id" => file_id}, socket) do
+    case Params.positive_integer(file_id) do
+      nil -> {:noreply, socket}
+      file_id -> {:noreply, PlaybackControl.select_version(socket, file_id)}
     end
   end
 

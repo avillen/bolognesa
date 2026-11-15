@@ -9,6 +9,7 @@ defmodule BolognesaWeb.Library.Index.Reducer.StartScan do
   alias BolognesaWeb.Library.Index.Reducer.CancelScanStatuses
   alias BolognesaWeb.Library.Index.Reducer.FetchScanStatuses
   alias BolognesaWeb.Library.Index.State.Library
+  alias BolognesaWeb.Params
 
   @spec call(Phoenix.LiveView.Socket.t(), String.t(), keyword()) :: Phoenix.LiveView.Socket.t()
   def call(socket, web_id, opts \\ []) do
@@ -45,14 +46,13 @@ defmodule BolognesaWeb.Library.Index.Reducer.StartScan do
     end
   end
 
-  defp parse_id(id) when is_binary(id) do
-    case Integer.parse(id) do
-      {value, ""} when value > 0 -> {:ok, value}
-      _ -> {:error, :not_found}
+  defp parse_id(id) do
+    case Params.positive_integer(id) do
+      nil -> {:error, :not_found}
+      value -> {:ok, value}
     end
   end
 
-  defp parse_id(_), do: {:error, :not_found}
   defp message(:not_found), do: gettext("No se encontró la biblioteca.")
   defp message(:forbidden), do: gettext("No tienes permiso para escanear esta biblioteca.")
   defp message(:scan_in_progress), do: gettext("Esta biblioteca ya tiene un escaneo activo.")

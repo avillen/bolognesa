@@ -4,6 +4,7 @@ defmodule BolognesaWeb.TranscodeController do
 
   alias Bolognesa.Playback
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
+  alias BolognesaWeb.Params
 
   @segment ~r/\Aseg-[0-9]{6,12}\.ts\z/
 
@@ -93,14 +94,12 @@ defmodule BolognesaWeb.TranscodeController do
   defp entry_param(%{"episode_id" => id}), do: id
   defp entry_param(_), do: nil
 
-  defp positive_id(text) when is_binary(text) do
-    case Integer.parse(text) do
-      {value, ""} when value > 0 -> {:ok, value}
-      _ -> {:error, :not_found}
+  defp positive_id(value) do
+    case Params.positive_integer(value) do
+      nil -> {:error, :not_found}
+      id -> {:ok, id}
     end
   end
-
-  defp positive_id(_), do: {:error, :not_found}
 
   defp reject(conn, status) do
     conn

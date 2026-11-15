@@ -4,6 +4,7 @@ defmodule BolognesaWeb.LibraryNavigation do
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [attach_hook: 4, push_navigate: 2, put_flash: 3]
   alias Bolognesa.Libraries
+  alias BolognesaWeb.Params
 
   @spec on_mount(:default, map(), map(), Phoenix.LiveView.Socket.t()) ::
           {:cont, Phoenix.LiveView.Socket.t()}
@@ -59,14 +60,10 @@ defmodule BolognesaWeb.LibraryNavigation do
     apply_selection(socket, library, path)
   end
 
-  defp find_library(libraries, value) when is_binary(value) do
-    case Integer.parse(value) do
-      {id, ""} when id > 0 -> Enum.find(libraries, &(&1.id == id))
-      _ -> nil
-    end
+  defp find_library(libraries, value) do
+    id = Params.positive_integer(value)
+    id && Enum.find(libraries, &(&1.id == id))
   end
-
-  defp find_library(_libraries, _value), do: nil
 
   defp apply_selection(socket, nil, _path),
     do: {:halt, push_navigate(socket, to: "/libraries")}

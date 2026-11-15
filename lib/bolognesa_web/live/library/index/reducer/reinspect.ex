@@ -3,11 +3,12 @@ defmodule BolognesaWeb.Library.Index.Reducer.Reinspect do
   import Phoenix.Component, only: [assign: 3]
 
   alias BolognesaWeb.Library.Index.Reducer.StartScan
+  alias BolognesaWeb.Params
 
   @spec call(Phoenix.LiveView.Socket.t(), :prepare | :confirm, String.t()) ::
           Phoenix.LiveView.Socket.t()
   def call(socket, :prepare, web_id) when is_binary(web_id) do
-    with {id, ""} when id > 0 <- Integer.parse(web_id),
+    with id when is_integer(id) <- Params.positive_integer(web_id),
          %{name: name} <- Enum.find(socket.assigns.navigation_libraries, &(&1.id == id)) do
       assign(socket, :reinspect_target, %{id: id, name: name})
     else
