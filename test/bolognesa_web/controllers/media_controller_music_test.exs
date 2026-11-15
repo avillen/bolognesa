@@ -1,4 +1,4 @@
-defmodule BolognesaWeb.MusicMediaControllerTest do
+defmodule BolognesaWeb.MediaControllerMusicTest do
   alias Bolognesa.MusicFixtures
   alias Ecto.Changeset
   use BolognesaWeb.ConnCase, async: false
