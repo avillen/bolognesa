@@ -152,7 +152,7 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
         token: UUID.generate(),
         observed_revision: 1,
         state: :succeeded,
-        format: "mp4",
+        format: "mov,mp4,m4a,3gp,3g2,mj2",
         tracks: %{
           "items" => [
             %{

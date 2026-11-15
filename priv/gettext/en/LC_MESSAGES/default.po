@@ -2137,6 +2137,11 @@ msgstr "Technical details are missing. Refresh the analysis or try the original 
 
 #: lib/bolognesa_web/live_support/playback_state.ex:110
 #, elixir-autogen, elixir-format
+msgid "Este archivo no contiene una pista de vídeo reproducible."
+msgstr "This file does not contain a playable video track."
+
+#: lib/bolognesa_web/live_support/playback_state.ex:110
+#, elixir-autogen, elixir-format
 msgid "No se pudo detectar la compatibilidad de este navegador."
 msgstr "Browser compatibility could not be detected."
 

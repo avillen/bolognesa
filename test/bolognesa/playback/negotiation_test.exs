@@ -98,7 +98,7 @@ defmodule Bolognesa.Playback.NegotiationTest do
     assert :ok = Negotiation.validate_plan(source, plan)
   end
 
-  test "Main video with unknown color facts can be preserved while MP3 becomes AAC" do
+  test "Main video with unknown color facts is preserved before converting while AC-3 becomes AAC" do
     source = source()
     [video, audio] = source.tracks
 
@@ -123,30 +123,34 @@ defmodule Bolognesa.Playback.NegotiationTest do
                 color_primaries: nil,
                 color_space: nil
             },
-            %{audio | codec: "mp3", codec_string: nil, profile: nil, sample_rate: 44_100}
+            %{audio | codec: "ac3", codec_string: nil, profile: nil, sample_rate: 48_000}
           ]
       }
 
-      assert {:ok, [candidate]} = Negotiation.candidates(source)
+      assert {:ok, [candidate, fallback]} = Negotiation.candidates(source)
       assert candidate.plan.mode == :audio_conversion
+      assert fallback.plan.mode == :full_conversion
       assert candidate.plan.video_action == :copy
       assert candidate.plan.audio_action == :aac
       assert candidate.plan.configuration.video.codec_string == codec_string
       assert candidate.plan.configuration.video.bit_rate == nil
       assert candidate.plan.configuration.audio.codec_string == "mp4a.40.2"
 
-      {:ok, observations} =
-        CapabilityReport.new(report([candidate], candidate.id), [candidate], "generation")
+      issued = [candidate, fallback]
 
-      assert {:ok, plan} = Negotiation.select(source, [candidate], observations)
+      {:ok, observations} =
+        CapabilityReport.new(report(issued, :all), issued, "generation")
+
+      assert {:ok, plan} = Negotiation.select(source, issued, observations)
+      assert plan.mode == :audio_conversion
       assert :ok = Negotiation.validate_plan(source, plan)
 
-      {:ok, rejected} = CapabilityReport.new(report([candidate], nil), [candidate], "generation")
-      refute match?({:ok, _}, Negotiation.select(source, [candidate], rejected))
+      {:ok, rejected} = CapabilityReport.new(report(issued, nil), issued, "generation")
+      refute match?({:ok, _}, Negotiation.select(source, issued, rejected))
     end
   end
 
-  test "absent color facts allow stream copy but never video encoding" do
+  test "absent color facts on 8-bit 4:2:0 H.264 imply SDR and allow every delivery" do
     source = source()
     [video, audio] = source.tracks
 
@@ -157,8 +161,80 @@ defmodule Bolognesa.Playback.NegotiationTest do
           %{video | color_transfer: nil, color_primaries: nil, color_space: nil}
         ] do
       assert {:ok, candidates} = Negotiation.candidates(%{source | tracks: [changed, audio]})
-      assert Enum.map(candidates, & &1.plan.mode) == [:direct, :remux, :audio_conversion]
+
+      assert Enum.map(candidates, & &1.plan.mode) ==
+               [:direct, :remux, :audio_conversion, :video_conversion, :full_conversion]
     end
+  end
+
+  test "absent color facts never establish encoding for high bit depth or modern codecs" do
+    source = source()
+    [video, audio] = source.tracks
+    untagged = %{video | color_transfer: nil, color_primaries: nil, color_space: nil}
+
+    for changed <- [
+          %{untagged | pixel_format: "yuv420p10le", bit_depth: 10, profile: "High 10"},
+          %{untagged | codec: "hevc", codec_string: "hvc1.1.6.L120.90", profile: "Main"},
+          %{untagged | codec: "vp9", codec_string: nil, profile: "Profile 0"},
+          %{untagged | profile: nil}
+        ] do
+      result = Negotiation.candidates(%{source | tracks: [changed, audio]})
+      modes = with {:ok, candidates} <- result, do: Enum.map(candidates, & &1.plan.mode)
+      refute is_list(modes) and Enum.any?(modes, &(&1 in [:video_conversion, :full_conversion]))
+    end
+  end
+
+  test "untagged Xvid AVI with MP3 is converted instead of requiring metadata" do
+    source = %Source{
+      revision: 1,
+      format: "avi",
+      tracks: [
+        %TechnicalTrack{
+          kind: :video,
+          index: 0,
+          codec: "mpeg4",
+          profile: "Simple Profile",
+          level: 3,
+          width: 720,
+          height: 404,
+          frame_rate: "24/1",
+          bit_rate: 1_999_458,
+          pixel_format: "yuv420p",
+          bit_depth: 8,
+          attached_picture?: false,
+          default?: false
+        },
+        %TechnicalTrack{
+          kind: :audio,
+          index: 1,
+          codec: "mp3",
+          channels: 2,
+          sample_rate: 44_100,
+          bit_rate: 128_000,
+          default?: false
+        }
+      ]
+    }
+
+    assert {:ok, [copied_audio, candidate] = issued} = Negotiation.candidates(source)
+    assert copied_audio.plan.mode == :video_conversion
+    assert {copied_audio.plan.video_action, copied_audio.plan.audio_action} == {:h264, :copy}
+    assert copied_audio.plan.configuration.audio.codec_string == "mp4a.40.34"
+    assert candidate.plan.mode == :full_conversion
+    assert {candidate.plan.video_action, candidate.plan.audio_action} == {:h264, :aac}
+    assert candidate.plan.configuration.video.width == 720
+    assert candidate.plan.configuration.video.height == 404
+
+    {:ok, observations} =
+      CapabilityReport.new(report(issued, candidate.id), issued, "generation")
+
+    assert {:ok, %{mode: :full_conversion}} = Negotiation.select(source, issued, observations)
+
+    assert {:error, :metadata_required} =
+             Negotiation.candidates(%{
+               source
+               | tracks: [%{hd(source.tracks) | bit_depth: 10, pixel_format: "yuv420p10le"}]
+             })
   end
 
   test "explicit unsupported color facts still prevent copying" do
@@ -390,6 +466,143 @@ defmodule Bolognesa.Playback.NegotiationTest do
     assert Enum.any?(candidates, &(&1.plan.mode == :remux))
   end
 
+  test "declared non-SDR color facts are unsupported instead of missing" do
+    source = source()
+    [video, audio] = source.tracks
+
+    for changed <- [
+          %{video | color_primaries: "bt2020"},
+          %{video | color_space: "bt2020nc"},
+          %{video | color_space: "gbr"},
+          %{video | color_transfer: "smpte2084"}
+        ] do
+      source = %{source | tracks: [changed, audio]}
+      assert {:ok, [candidate]} = Negotiation.candidates(source)
+      assert candidate.plan.mode == :direct
+      {:ok, rejected} = CapabilityReport.new(report([candidate], nil), [candidate], "generation")
+
+      assert {:error, :unsupported_conversion} =
+               Negotiation.select(source, [candidate], rejected)
+    end
+  end
+
+  test "undetectable browsers are reported before missing technical facts" do
+    source = source()
+    [video, audio] = source.tracks
+    source = %{source | tracks: [%{video | profile: nil}, audio]}
+    assert {:ok, [candidate]} = Negotiation.candidates(source)
+
+    {:ok, unknown} =
+      CapabilityReport.new(report([candidate], :unknown), [candidate], "generation")
+
+    assert {:error, :detection_unknown} = Negotiation.select(source, [candidate], unknown)
+  end
+
+  test "ffprobe names for SD gamma transfers are SDR for copy and encoding" do
+    source = source()
+    [video, audio] = source.tracks
+
+    for transfer <- ["bt470bg", "bt470m"] do
+      changed = %{video | color_transfer: transfer, color_primaries: "bt470bg"}
+      assert {:ok, candidates} = Negotiation.candidates(%{source | tracks: [changed, audio]})
+      modes = Enum.map(candidates, & &1.plan.mode)
+      assert :remux in modes
+      assert :full_conversion in modes
+    end
+  end
+
+  test "high frame rates are encoded at an even integer divisor" do
+    source = source()
+    [video, audio] = source.tracks
+
+    for {rate, expected} <- [
+          {"50/1", 25.0},
+          {"60000/1001", 60_000 / 1001 / 2},
+          {"120/1", 30.0},
+          {"48/1", 24.0},
+          {"30000/1001", 30_000 / 1001},
+          {"24/1", 24.0}
+        ] do
+      changed = %{video | frame_rate: rate}
+      assert {:ok, candidates} = Negotiation.candidates(%{source | tracks: [changed, audio]})
+      full = Enum.find(candidates, &(&1.plan.mode == :full_conversion))
+      assert_in_delta full.plan.configuration.video.frame_rate, expected, 0.0001
+    end
+  end
+
+  test "automatic preference skips candidates the browser predicts will stutter" do
+    source = source()
+    {:ok, candidates} = Negotiation.candidates(source)
+    raw = report(candidates, :all)
+
+    stutter = fn raw, ids ->
+      Map.update!(raw, "results", fn results ->
+        Enum.map(results, &if(&1["candidate_id"] in ids, do: %{&1 | "smooth" => "no"}, else: &1))
+      end)
+    end
+
+    {:ok, observations} =
+      CapabilityReport.new(stutter.(raw, ["c0", "c1"]), candidates, "generation")
+
+    assert {:ok, %{mode: :audio_conversion}} =
+             Negotiation.select(source, candidates, observations)
+
+    all_ids = Enum.map(candidates, & &1.id)
+    {:ok, observations} = CapabilityReport.new(stutter.(raw, all_ids), candidates, "generation")
+    assert {:ok, %{mode: :direct}} = Negotiation.select(source, candidates, observations)
+  end
+
+  test "browser-verified HE-AAC and stereo MP3 are copied while other audio becomes AAC" do
+    source = source()
+    [video, audio] = source.tracks
+
+    for {changed, copied?, codec_string} <- [
+          {%{audio | profile: "HE-AAC"}, true, "mp4a.40.2"},
+          {%{audio | profile: "HE-AACv2", codec_string: nil}, false, nil},
+          {%{audio | codec: "mp3", codec_string: nil, profile: nil}, true, "mp4a.40.34"},
+          {%{audio | codec: "mp3", codec_string: nil, profile: nil, sample_rate: 22_050}, false,
+           nil},
+          {%{audio | codec: "mp3", codec_string: nil, profile: nil, channels: 6}, false, nil},
+          {%{audio | codec: "ac3", codec_string: nil, profile: nil}, false, nil}
+        ] do
+      assert {:ok, candidates} = Negotiation.candidates(%{source | tracks: [video, changed]})
+      remux = Enum.find(candidates, &(&1.plan.mode == :remux))
+      assert Enum.any?(candidates, &(&1.plan.mode == :full_conversion))
+
+      if copied? do
+        assert remux.plan.audio_action == :copy
+        assert remux.plan.configuration.audio.codec_string == codec_string
+      else
+        refute remux
+      end
+    end
+  end
+
+  test "sources without a playable video track report no video" do
+    source = source()
+    [video, audio] = source.tracks
+    assert {:error, :no_video} = Negotiation.candidates(%{source | tracks: [audio]})
+
+    assert {:error, :no_video} =
+             Negotiation.candidates(%{
+               source
+               | tracks: [%{video | attached_picture?: true}, audio]
+             })
+  end
+
+  test "direct delivery only trusts container names reported by ffprobe" do
+    source = source()
+    assert {:ok, [%{plan: %{mode: :direct}} | _]} = Negotiation.candidates(source)
+
+    for format <- ["mp4", "mov", "webm", "avi"] do
+      assert {:ok, candidates} = Negotiation.candidates(%{source | format: format})
+      refute Enum.any?(candidates, &(&1.plan.mode == :direct))
+    end
+
+    assert {:ok, [%{plan: %{mode: :direct, configuration: %{container: :matroska}}} | _]} =
+             Negotiation.candidates(%{source | format: "matroska,webm"})
+  end
+
   defp source do
     %Source{
       revision: 2,
@@ -440,10 +653,11 @@ defmodule Bolognesa.Playback.NegotiationTest do
             "candidate_id" => candidate.id,
             "transport" => if(candidate.plan.mode == :direct, do: "file", else: "hls_js"),
             "support" =>
-              if(supported == :all or supported == candidate.id,
-                do: "supported",
-                else: "unsupported"
-              ),
+              cond do
+                supported == :unknown -> "unknown"
+                supported == :all or supported == candidate.id -> "supported"
+                true -> "unsupported"
+              end,
             "smooth" => "unknown",
             "power_efficient" => "unknown"
           }

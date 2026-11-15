@@ -59,3 +59,23 @@ test("native HLS recognition can be maybe while exact elementary streams must be
   }}}, [hls])
   assert.equal(throwing.results[0].support, "unknown")
 })
+
+test("HLS.js MP3 is probed through the SourceBuffer HLS.js actually uses", async () => {
+  const audio = {codec_string: "mp4a.40.34", sample_rate: 44100, channels: 2, bit_rate: 128000}
+  const hls = {...candidate, transports: ["hls_js", "native_hls"], configuration: {...configuration, audio}}
+  const queried = [], decoded = []
+  const mse = supported => ({isTypeSupported: type => { queried.push(type); return supported.includes(type) }})
+  const options = supported => ({Hls: {isSupported: () => true}, MediaSource: mse(supported),
+    mediaCapabilities: {decodingInfo: async config => { decoded.push(config); return {supported: true} }}})
+  const chrome = await probe(options(['video/mp4; codecs="avc1.42C029"', "audio/mpeg"]), [hls])
+  assert.equal(chrome.results[0].transport, "hls_js")
+  assert.equal(chrome.results[0].support, "supported")
+  assert.ok(!queried.includes('video/mp4; codecs="avc1.42C029, mp4a.40.34"'))
+  assert.equal(decoded[0].audio.contentType, "audio/mpeg")
+  const remuxed = await probe(options(['video/mp4; codecs="avc1.42C029"', 'audio/mp4; codecs="mp3"']), [hls])
+  assert.equal(remuxed.results[0].transport, "hls_js")
+  assert.equal(decoded[1].audio.contentType, 'audio/mp4; codecs="mp3"')
+  const none = await probe({...options(['video/mp4; codecs="avc1.42C029"']), video: {canPlayType: () => ""}}, [hls])
+  assert.equal(none.results[0].transport, "native_hls")
+  assert.equal(none.results[0].support, "unsupported")
+})

@@ -106,6 +106,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackState do
   defp message(:metadata_required),
     do: gettext("Faltan datos técnicos. Actualiza el análisis o prueba el archivo original.")
 
+  defp message(:no_video),
+    do: gettext("Este archivo no contiene una pista de vídeo reproducible.")
+
   defp message(:detection_unknown),
     do: gettext("No se pudo detectar la compatibilidad de este navegador.")
 

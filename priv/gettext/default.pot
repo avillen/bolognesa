@@ -2145,6 +2145,11 @@ msgstr ""
 
 #: lib/bolognesa_web/live_support/playback_state.ex:110
 #, elixir-autogen, elixir-format
+msgid "Este archivo no contiene una pista de vídeo reproducible."
+msgstr ""
+
+#: lib/bolognesa_web/live_support/playback_state.ex:110
+#, elixir-autogen, elixir-format
 msgid "No se pudo detectar la compatibilidad de este navegador."
 msgstr ""
 

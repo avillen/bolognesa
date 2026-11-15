@@ -9,7 +9,7 @@ defmodule Bolognesa.PlaybackNegotiationFixtures do
   alias Bolognesa.Repo
 
   @spec inspect!(MediaFileSchema.t(), String.t(), String.t()) :: InspectionSchema.t()
-  def inspect!(file, format \\ "mp4", audio_codec \\ "aac") do
+  def inspect!(file, format \\ "mov,mp4,m4a,3gp,3g2,mj2", audio_codec \\ "aac") do
     inspection = Repo.get_by(InspectionSchema, media_file_id: file.id) || %InspectionSchema{}
 
     Repo.insert_or_update!(
