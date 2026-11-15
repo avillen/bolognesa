@@ -10,7 +10,7 @@ Libraries inventory batches now persist inspections and their Oban jobs atomical
 
 Music now persists its pending import and linked job through its public transaction-aware facade when accepting a current successful audio inspection. Recovery reads the import request directly, including jobs that never started. Attempt token and job ownership reject obsolete work at the same revision. This supersedes event-based delivery and recovery in decision 0018.
 
-Movies and Series now create and link their identification jobs inside their existing owner-specific request writers, covering inventory, backfill and explicit retries. This supersedes the outbox mechanism retained in decision 0019. Their independent domain models, workers, recovery, manual precedence and ordered episode associations remain intact.
+Movies and Series now create and link their identification jobs inside their existing owner-specific request writers, covering inventory requests and explicit retries. This supersedes the outbox mechanism retained in decision 0019. Their independent domain models, workers, recovery, manual precedence and ordered episode associations remain intact.
 
 Cross-context integrations use explicit transaction-aware owner facades. Each owner retains its domain rules, worker, persistence and recovery. No generic workflow engine is introduced.
 

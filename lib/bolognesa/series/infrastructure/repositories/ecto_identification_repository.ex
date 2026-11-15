@@ -23,10 +23,6 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
           non_neg_integer()
   def request_batch!(repo, entries), do: RequestWriter.request_batch!(repo, entries)
 
-  @spec backfill_batch(non_neg_integer(), pos_integer()) ::
-          {:ok, non_neg_integer(), non_neg_integer()} | {:error, :unavailable}
-  def backfill_batch(cursor_id, limit), do: RequestWriter.backfill_batch(cursor_id, limit)
-
   @impl true
   def fetch_file(id) do
     case Repo.get(MediaFileSchema, id, log: false) do
