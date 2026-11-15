@@ -313,21 +313,6 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     end
   end
 
-  test "rejects a seek outside known duration", %{source: source} do
-    assert {:error, :invalid_offset} =
-             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), -1)
-
-    assert {:error, :invalid_offset} =
-             TranscodeManager.start(
-               1,
-               {:movie, 2},
-               3,
-               source,
-               plan(source, :full_conversion),
-               60_001
-             )
-  end
-
   test "allows one running conversion and releases it on stop", %{source: source} do
     assert {:ok, session} =
              TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
@@ -372,15 +357,10 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     fragment = Path.join(previous.directory, "seg-000000.ts")
     File.write!(fragment, "published fragment")
 
-    assert {:error, :invalid_offset} =
-             TranscodeManager.start(
-               1,
-               {:movie, 2},
-               3,
-               source,
-               plan(source, :full_conversion),
-               60_001
-             )
+    stale = %{plan(source, :full_conversion) | revision: 2}
+
+    assert {:error, :source_changed} =
+             TranscodeManager.start(1, {:movie, 2}, 3, source, stale, 0)
 
     assert {:ok, ^previous} = TranscodeManager.lookup(previous.id)
     assert File.read!(fragment) == "published fragment"

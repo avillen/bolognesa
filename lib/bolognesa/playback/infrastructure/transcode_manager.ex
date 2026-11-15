@@ -24,7 +24,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
           LocalMediaFile.failure()
           | :not_found
           | :busy
-          | :invalid_offset
           | :tool_unavailable
           | :unsafe_root
           | :storage_unavailable
@@ -287,7 +286,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     source = request.source
 
     with :ok <- validate_strategy(request.strategy, source),
-         :ok <- valid_offset(source, request.offset_ms),
          {:ok, root} <- root(),
          {:ok, executable} <- executable(),
          :ok <- LocalMediaFile.validate(source),
@@ -399,13 +397,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     ArgumentError -> {:error, :tool_unavailable}
     ErlangError -> {:error, :tool_unavailable}
   end
-
-  defp valid_offset(%Source{duration_ms: duration}, offset)
-       when is_integer(offset) and offset >= 0 and
-              (is_nil(duration) or offset <= duration),
-       do: :ok
-
-  defp valid_offset(_, _), do: {:error, :invalid_offset}
 
   defp replace_actor_session(%{current: %{actor_id: actor_id}} = state, actor_id, reason),
     do: clear(state, reason)

@@ -21,7 +21,11 @@ defmodule Bolognesa.Playback do
   @type negotiation_reason ::
           reason() | LocalMediaFile.failure() | Negotiation.error() | :invalid_report
   @type transcode_reason ::
-          reason() | LocalMediaFile.failure() | TranscodeManager.failure() | :unsupported
+          reason()
+          | LocalMediaFile.failure()
+          | TranscodeManager.failure()
+          | :unsupported
+          | :invalid_offset
 
   @spec start_video(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
           {:ok, Source.t()} | {:error, :forbidden | :not_found | :missing | :unavailable}
