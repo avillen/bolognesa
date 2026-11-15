@@ -111,8 +111,7 @@ defmodule BolognesaWeb.TranscodeControllerTest do
                actor,
                {:movie, movie.id},
                file.id,
-               0,
-               :full_transcode
+               0
              )
 
     for {request_actor, entry_id, file_id} <- [
@@ -178,8 +177,7 @@ defmodule BolognesaWeb.TranscodeControllerTest do
                actor,
                {:movie, movie.id},
                file.id,
-               0,
-               :full_transcode
+               0
              )
 
     File.write!(Path.join(next_session.directory, "seg-000000.ts"), "synthetic segment")
