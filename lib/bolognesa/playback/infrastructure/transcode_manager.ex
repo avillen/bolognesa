@@ -273,7 +273,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
         offset_ms: request.offset_ms,
         duration_ms: source.duration_ms,
         directory: directory,
-        strategy: request.strategy.mode,
         plan: request.strategy
       }
 
@@ -590,16 +589,18 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   defp session_event(event, session, measurements, metadata) do
     fields =
-      %{session_id: session.id, file_id: session.file_id, strategy: session.strategy}
-      |> Map.merge(plan_metadata(session.plan))
+      %{
+        session_id: session.id,
+        file_id: session.file_id,
+        strategy: session.plan.mode,
+        transport: session.plan.transport,
+        delivery_reason: DeliveryPlan.reason(session.plan)
+      }
       |> Map.merge(metadata)
       |> PlaybackEvents.sanitize_delivery_metadata()
 
     :telemetry.execute([:bolognesa, :playback, :session, event], measurements, fields)
   end
-
-  defp plan_metadata(nil), do: %{}
-  defp plan_metadata(plan), do: %{transport: plan.transport, delivery_reason: DeliveryPlan.reason(plan)}
 
   defp now, do: System.monotonic_time(:millisecond)
 end

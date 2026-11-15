@@ -173,7 +173,6 @@ defmodule Bolognesa.Playback.Domain.Policies.Negotiation do
     }
   end
 
-
   defp configuration(container, mime, video, audio),
     do: %MediaConfiguration{container: container, mime: mime, video: video, audio: audio}
 

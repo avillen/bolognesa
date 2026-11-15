@@ -577,7 +577,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
                     %{strategy: :remux, transport: :hls_js, delivery_reason: :remux_supported}}
 
     assert first.plan == plan
-    assert first.strategy == :remux
+    assert first.plan.mode == :remux
     assert {:error, :busy} = TranscodeManager.start(2, {:movie, 2}, 3, source, plan, 0)
     assert {:ok, next} = TranscodeManager.start(1, {:movie, 2}, 3, source, plan, 10_000, :seek)
     assert next.plan == plan
