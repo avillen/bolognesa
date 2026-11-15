@@ -59,8 +59,8 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   def begin_identification(file_id, token, job_id) do
     transaction(fn ->
       case current(file_id, token) do
-        {:ok, identification, file} when identification.state == :pending ->
-          start_pending_identification(identification, file, job_id)
+        {:ok, identification, projection} when identification.state == :pending ->
+          start_pending_identification(identification, projection, job_id)
 
         _ ->
           {:ok, :stale}
@@ -72,8 +72,8 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   def complete(file_id, token, candidates, details, needs_review) do
     transaction(fn ->
       case current(file_id, token) do
-        {:ok, identification, file} when identification.state == :pending ->
-          complete_movie_current(identification, file, candidates, details, needs_review)
+        {:ok, identification, _projection} when identification.state == :pending ->
+          complete_pending_identification(identification, candidates, details, needs_review)
 
         _ ->
           {:ok, :stale}
@@ -85,7 +85,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   def fail(file_id, token, reason) do
     transaction(fn ->
       case current(file_id, token) do
-        {:ok, identification, _file} when identification.state == :pending ->
+        {:ok, identification, _projection} when identification.state == :pending ->
           {:ok, failed} =
             Identification.fail(
               decision(identification),
@@ -176,16 +176,10 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
 
   defp recovery_result({:ok, :stale}, result), do: result
 
-  defp start_pending_identification(identification, file, job_id) do
+  defp start_pending_identification(identification, projection, job_id) do
     {:ok, started} = Identification.start(decision(identification), job_id, DateTime.utc_now())
     DecisionStore.save!(Repo, identification, started)
-    {:ok, file_projection(file)}
-  end
-
-  defp complete_movie_current(identification, file, candidates, details, needs_review) do
-    if file_projection(file).content_type == :movie,
-      do: complete_pending_identification(identification, candidates, details, needs_review),
-      else: {:ok, :stale}
+    {:ok, projection}
   end
 
   defp complete_pending_identification(identification, candidates, details, needs_review) do
@@ -234,12 +228,13 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
       )
 
     identification = DecisionStore.lock(Repo, file_id)
+    projection = file && file_projection(file)
 
-    if file && file_projection(file).content_type == :movie && identification &&
+    if projection && projection.content_type == :movie && identification &&
          identification.token == token &&
          identification.origin != :manual && file.availability == :available &&
          file.revision == identification.observed_revision,
-       do: {:ok, identification, file},
+       do: {:ok, identification, projection},
        else: :stale
   end
 
