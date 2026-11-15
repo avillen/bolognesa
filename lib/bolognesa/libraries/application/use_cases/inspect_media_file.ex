@@ -43,15 +43,17 @@ defmodule Bolognesa.Libraries.Application.UseCases.InspectMediaFile do
         Events.emit(:libraries, :inspection, :started, metadata)
         notifications.notify(library.id)
 
-        inspect_current(
-          file,
-          token,
-          attempt,
-          repository,
-          notifications,
-          {metadata, started},
-          probe.inspect(library, file)
-        )
+        context = %{
+          file: file,
+          token: token,
+          attempt: attempt,
+          repository: repository,
+          notifications: notifications,
+          metadata: metadata,
+          started: started
+        }
+
+        inspect_current(context, probe.inspect(library, file))
 
       {:error, :unavailable} ->
         observe(:retryable, metadata, started, :storage_unavailable)
@@ -59,137 +61,55 @@ defmodule Bolognesa.Libraries.Application.UseCases.InspectMediaFile do
     end
   end
 
-  defp inspect_current(
-         file,
-         token,
-         attempt,
-         repository,
-         notifications,
-         context,
-         {:error, reason, stage}
-       ) do
-    {metadata, started} = context
-
-    inspect_current(
-      file,
-      token,
-      attempt,
-      repository,
-      notifications,
-      {Map.put(metadata, :failure_stage, stage), started},
-      {:error, reason}
-    )
+  defp inspect_current(context, {:error, reason, stage}) do
+    metadata = Map.put(context.metadata, :failure_stage, stage)
+    inspect_current(%{context | metadata: metadata}, {:error, reason})
   end
 
-  defp inspect_current(
-         file,
-         token,
-         _attempt,
-         repository,
-         notifications,
-         context,
-         {:ok, technical_media}
-       ) do
-    finish(
-      repository.complete_inspection(file.id, token, technical_media),
-      file,
-      notifications,
-      context,
-      :completed,
-      nil,
-      :ok
-    )
+  defp inspect_current(context, {:ok, technical_media}) do
+    result = context.repository.complete_inspection(context.file.id, context.token, technical_media)
+    finish(result, context, :completed, nil, :ok)
   end
 
-  defp inspect_current(file, token, attempt, repository, notifications, context, {:error, reason})
-       when reason in @permanent do
-    record_failure(file, token, reason, attempt, repository, notifications, context, :ok)
-  end
+  defp inspect_current(context, {:error, reason}) when reason in @permanent,
+    do: record_failure(context, reason, :ok)
 
-  defp inspect_current(file, token, attempt, repository, notifications, context, {:error, reason})
-       when reason in @transient do
-    retry_or_fail(file, token, reason, attempt, repository, notifications, context)
-  end
+  defp inspect_current(context, {:error, reason}) when reason in @transient,
+    do: retry_or_fail(context, reason)
 
-  defp inspect_current(
-         _file,
-         _token,
-         _attempt,
-         _repository,
-         _notifications,
-         {metadata, started},
-         _
-       ) do
-    observe(:retryable, metadata, started, :unexpected_failure)
+  defp inspect_current(context, _result) do
+    observe(:retryable, context.metadata, context.started, :unexpected_failure)
     {:error, :unexpected_failure}
   end
 
-  defp retry_or_fail(file, token, reason, attempt, repository, notifications, context) do
-    if attempt >= Inspection.max_attempts() do
-      record_failure(
-        file,
-        token,
-        reason,
-        attempt,
-        repository,
-        notifications,
-        context,
-        {:error, reason}
-      )
+  defp retry_or_fail(context, reason) do
+    if context.attempt >= Inspection.max_attempts() do
+      record_failure(context, reason, {:error, reason})
     else
-      {metadata, started} = context
-      observe(:retryable, metadata, started, reason)
+      observe(:retryable, context.metadata, context.started, reason)
       {:error, reason}
     end
   end
 
-  defp record_failure(file, token, reason, attempt, repository, notifications, context, result) do
-    finish(
-      repository.fail_inspection(file.id, token, reason),
-      file,
-      notifications,
-      context,
-      :failed,
-      reason,
-      result
-    )
+  defp record_failure(context, reason, result) do
+    stored = context.repository.fail_inspection(context.file.id, context.token, reason)
+    finish(stored, context, :failed, reason, result)
   end
 
-  defp finish(:ok, file, notifications, {metadata, started}, outcome, reason, result) do
-    observe(outcome, metadata, started, reason)
-    notifications.notify(file.library_id)
+  defp finish(:ok, context, outcome, reason, result) do
+    observe(outcome, context.metadata, context.started, reason)
+    context.notifications.notify(context.file.library_id)
     result
   end
 
-  defp finish(
-         {:ok, :stale},
-         _file,
-         _notifications,
-         {metadata, started},
-         _outcome,
-         _reason,
-         _result
-       ) do
-    observe(:stale, metadata, started, :stale_attempt)
+  defp finish({:ok, :stale}, context, _outcome, _reason, _result) do
+    observe(:stale, context.metadata, context.started, :stale_attempt)
     :ok
   end
 
-  defp finish(
-         {:error, :unavailable},
-         _file,
-         _notifications,
-         {metadata, started},
-         _outcome,
-         _reason,
-         _result
-       ) do
-    observe(
-      :retryable,
-      Map.put(metadata, :failure_stage, :persistence),
-      started,
-      :storage_unavailable
-    )
-
+  defp finish({:error, :unavailable}, context, _outcome, _reason, _result) do
+    metadata = Map.put(context.metadata, :failure_stage, :persistence)
+    observe(:retryable, metadata, context.started, :storage_unavailable)
     {:error, :storage_unavailable}
   end
 
