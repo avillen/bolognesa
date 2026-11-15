@@ -18,7 +18,7 @@ defmodule Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema do
     field :token, Ecto.UUID
     field :needs_review, :boolean, default: false
     field :failure_reason, :string
-    field :candidate_data, :map, default: %{items: []}
+    field :candidate_data, :map, default: %{"items" => []}
     field :job_id, :integer
     field :started_at, :utc_datetime_usec
     field :finished_at, :utc_datetime_usec

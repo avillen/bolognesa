@@ -15,7 +15,7 @@ defmodule Bolognesa.Series.IdentificationTest do
              token: "token",
              state: :pending,
              needs_review?: false,
-             candidate_data: %{items: []}
+             candidate_data: %{"items" => []}
            }
 
     for {id, revision, token} <- [{0, 1, "token"}, {1, 0, "token"}, {1, 1, ""}] do
@@ -162,7 +162,7 @@ defmodule Bolognesa.Series.IdentificationTest do
       observed_revision: 1,
       token: "old",
       needs_review?: false,
-      candidate_data: %{items: []}
+      candidate_data: %{"items" => []}
     }
   end
 
