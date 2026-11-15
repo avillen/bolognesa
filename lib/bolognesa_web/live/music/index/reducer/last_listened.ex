@@ -6,7 +6,9 @@ defmodule BolognesaWeb.Music.Index.Reducer.LastListened do
   alias Bolognesa.Music.Application.UseCases.ListRecentAlbums
 
   @type operation ::
-          :reset | :load | {:result, reference(), {:ok, ListRecentAlbums.result()} | {:exit, term()}}
+          :reset
+          | :load
+          | {:result, reference(), {:ok, ListRecentAlbums.result()} | {:exit, term()}}
 
   @spec call(Phoenix.LiveView.Socket.t(), operation()) :: Phoenix.LiveView.Socket.t()
   def call(socket, :reset) do
