@@ -16,11 +16,11 @@ defmodule Bolognesa.Series.Domain.ValueObjects.SeasonDetails do
   @spec new(map()) :: {:ok, t()} | {:error, :invalid_response}
   def new(attrs) do
     value = struct(__MODULE__, attrs)
-
-    if valid_identity?(value) and valid_episodes?(value),
-      do: {:ok, value},
-      else: {:error, :invalid_response}
+    if valid?(value), do: {:ok, value}, else: {:error, :invalid_response}
   end
+
+  @spec valid?(t()) :: boolean()
+  def valid?(%__MODULE__{} = value), do: valid_identity?(value) and valid_episodes?(value)
 
   defp valid_identity?(value) do
     is_integer(value.provider_id) and value.provider_id > 0 and

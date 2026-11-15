@@ -34,46 +34,29 @@ defmodule Bolognesa.Series.Domain.ValueObjects.EpisodeSelection do
   defp validate_part(part, [_]) when is_integer(part) and part in 1..100, do: :ok
   defp validate_part(_, _), do: {:error, :invalid_selection}
 
-  defp validate_numbers(numbers) when is_list(numbers) do
+  @doc "Validates selected episode numbers before any provider lookup."
+  @spec validate_numbers([pos_integer()]) :: :ok | {:error, :invalid_selection}
+  def validate_numbers(numbers) when is_list(numbers) do
     if length(numbers) in 1..100 and Enum.all?(numbers, &(is_integer(&1) and &1 > 0)) and
          Enum.uniq(numbers) == numbers, do: :ok, else: {:error, :invalid_selection}
   end
 
-  defp validate_numbers(_), do: {:error, :invalid_selection}
+  def validate_numbers(_), do: {:error, :invalid_selection}
 
   defp validate_response(series, season) do
-    if valid_series?(series) and valid_season?(season, series.provider_id) and
-         valid_episode_response?(season), do: :ok, else: {:error, :invalid_response}
+    if valid_series?(series) and SeasonDetails.valid?(season) and
+         season.series_provider_id == series.provider_id,
+       do: :ok,
+       else: {:error, :invalid_response}
   end
 
   defp valid_series?(series) do
     positive?(series.provider_id) and text?(series.title) and
       (is_nil(series.year) or is_integer(series.year)) and
-      optional_texts?(series, [:overview, :poster_path, :backdrop_path])
+      Enum.all?([series.overview, series.poster_path, series.backdrop_path], fn item ->
+        is_nil(item) or (is_binary(item) and String.valid?(item))
+      end)
   end
-
-  defp valid_season?(season, series_id) do
-    positive?(season.provider_id) and season.series_provider_id == series_id and
-      is_integer(season.number) and season.number >= 0 and
-      optional_texts?(season, [:title, :poster_path])
-  end
-
-  defp valid_episode_response?(%{episodes: episodes} = season) when is_list(episodes) do
-    Enum.all?(episodes, &valid_episode?(&1, season.number)) and
-      Enum.uniq_by(episodes, & &1.number) == episodes and
-      Enum.uniq_by(episodes, & &1.provider_id) == episodes
-  end
-
-  defp valid_episode_response?(_), do: false
-
-  defp valid_episode?(%EpisodeDetails{} = episode, season_number) do
-    positive?(episode.provider_id) and positive?(episode.number) and
-      episode.season_number == season_number and
-      text?(episode.title) and optional_texts?(episode, [:overview, :still_path]) and
-      (is_nil(episode.air_date) or is_struct(episode.air_date, Date))
-  end
-
-  defp valid_episode?(_, _), do: false
 
   defp select_episodes(episodes, numbers) do
     by_number = Map.new(episodes, &{&1.number, &1})
@@ -87,11 +70,4 @@ defmodule Bolognesa.Series.Domain.ValueObjects.EpisodeSelection do
     do:
       is_binary(value) and String.valid?(value) and String.trim(value) != "" and
         byte_size(value) <= 256
-
-  defp optional_texts?(value, fields),
-    do:
-      Enum.all?(fields, fn key ->
-        item = Map.fetch!(value, key)
-        is_nil(item) or (is_binary(item) and String.valid?(item))
-      end)
 end
