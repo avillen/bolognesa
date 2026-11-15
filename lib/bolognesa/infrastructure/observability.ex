@@ -39,6 +39,19 @@ defmodule Bolognesa.Infrastructure.Observability do
     :client_time_ms,
     :media_error
   ]
+  @playback_measurements [
+    :duration_ms,
+    :exit_status,
+    :segment_count,
+    :published_ms,
+    :prelaunch_ms,
+    :spawn_ms,
+    :first_progress_ms,
+    :progress_age_ms,
+    :ffmpeg_frame,
+    :ffmpeg_output_ms,
+    :ffmpeg_speed_milli
+  ]
   # Logger merges process metadata. Override formatter fields even when an event
   # omits them, so unrelated request/process values cannot bypass event validation.
   @empty_operational_fields Map.new(
@@ -60,19 +73,8 @@ defmodule Bolognesa.Infrastructure.Observability do
                                   :files_discovered,
                                   :recovered_count,
                                   :changed_library_count,
-                                  :count,
-                                  :duration_ms,
-                                  :exit_status,
-                                  :segment_count,
-                                  :published_ms,
-                                  :prelaunch_ms,
-                                  :spawn_ms,
-                                  :first_progress_ms,
-                                  :progress_age_ms,
-                                  :ffmpeg_frame,
-                                  :ffmpeg_output_ms,
-                                  :ffmpeg_speed_milli
-                                ],
+                                  :count
+                                ] ++ @playback_measurements,
                               &{&1, nil}
                             )
 
@@ -113,21 +115,7 @@ defmodule Bolognesa.Infrastructure.Observability do
     fields =
       @empty_operational_fields
       |> Map.merge(Map.take(metadata, @metadata))
-      |> Map.merge(
-        Map.take(measurements, [
-          :duration_ms,
-          :exit_status,
-          :segment_count,
-          :published_ms,
-          :prelaunch_ms,
-          :spawn_ms,
-          :first_progress_ms,
-          :progress_age_ms,
-          :ffmpeg_frame,
-          :ffmpeg_output_ms,
-          :ffmpeg_speed_milli
-        ])
-      )
+      |> Map.merge(Map.take(measurements, @playback_measurements))
 
     Logger.log(level, message, Map.to_list(fields))
   end
