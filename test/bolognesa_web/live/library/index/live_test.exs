@@ -257,6 +257,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     {:ok, view, _} = live(conn, ~p"/libraries")
     await_status_updates(view)
     view |> element("#library-scan-#{library.id}") |> render_click()
+    await_status_updates(view)
     assert has_element?(view, "#library-scan-#{library.id}[disabled]")
     assert has_element?(view, "#library-scan-state-#{library.id}[data-state='queued']")
     assert {:ok, %{latest_scan: scan}} = Libraries.fetch_scan_status(actor, library.id)
@@ -316,6 +317,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
            )
 
     view |> element("#library-reinspect-confirm-button-#{library.id}") |> render_click()
+    await_status_updates(view)
     assert has_element?(view, "#library-scan-state-#{library.id}[data-state='queued']")
     assert has_element?(view, "#library-reinspect-#{library.id}[disabled]")
     assert {:ok, %{latest_scan: forced}} = Libraries.fetch_scan_status(actor, library.id)

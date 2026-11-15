@@ -4,11 +4,8 @@ defmodule BolognesaWeb.Library.Index.Reducer.StartScan do
   import Phoenix.Component, only: [assign: 3]
 
   alias Bolognesa.Libraries
-  alias BolognesaWeb.Library.Index.LibraryRows
-
   alias BolognesaWeb.Library.Index.Reducer.CancelScanStatuses
   alias BolognesaWeb.Library.Index.Reducer.FetchScanStatuses
-  alias BolognesaWeb.Library.Index.State.Library
   alias BolognesaWeb.Params
 
   @spec call(Phoenix.LiveView.Socket.t(), String.t(), keyword()) :: Phoenix.LiveView.Socket.t()
@@ -17,32 +14,10 @@ defmodule BolognesaWeb.Library.Index.Reducer.StartScan do
 
     with {:ok, id} <- parse_id(web_id),
          {:ok, _scan} <- Libraries.start_scan(socket.assigns.current_scope.actor, id, opts) do
-      socket |> refresh_row(id) |> FetchScanStatuses.call()
+      socket |> assign(:scan_feedback, nil) |> FetchScanStatuses.call()
     else
       {:error, reason} ->
         socket |> assign(:scan_feedback, message(reason)) |> FetchScanStatuses.call()
-    end
-  end
-
-  defp refresh_row(socket, id) do
-    actor = socket.assigns.current_scope.actor
-
-    with {:ok, libraries} <- Libraries.list_libraries(actor),
-         library when library != nil <- Enum.find(libraries, &(&1.id == id)),
-         {:ok, status} <- Libraries.fetch_scan_status(actor, id),
-         {:ok, counts} <- Libraries.fetch_inspection_counts(actor, id) do
-      row = Library.from_domain(library, status, counts)
-
-      socket
-      |> assign(:scan_feedback, nil)
-      |> LibraryRows.insert(row)
-    else
-      _ ->
-        assign(
-          socket,
-          :scan_feedback,
-          gettext("Escaneo solicitado. No se pudo actualizar su estado.")
-        )
     end
   end
 
