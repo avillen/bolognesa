@@ -10,6 +10,7 @@ defmodule Bolognesa.Series.IdentifySeriesFileTest do
   alias Bolognesa.Series.Domain.ValueObjects.EpisodeSelection
   alias Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
+  alias Bolognesa.Series.Infrastructure.Repositories.IdentifiedSeriesWriter
   alias Bolognesa.Test.SyntheticSeriesProvider, as: Provider
   alias Ecto.Adapters.SQL
   alias Ecto.Adapters.SQL.Sandbox
@@ -135,6 +136,25 @@ defmodule Bolognesa.Series.IdentifySeriesFileTest do
 
     assert {:ok, :stale} =
              Repository.complete_series(file.id, token, [], nil, :incomplete_episodes)
+  end
+
+  test "an episode moved by TMDb to another season fails as an invalid response" do
+    {:ok, series} = Provider.details(201)
+    {:ok, special} = Provider.season(201, 0)
+    moved = Enum.map(special.episodes, &%{&1 | provider_id: &1.provider_id + 10})
+    {:ok, previous} = EpisodeSelection.new(series, %{special | episodes: moved}, [1])
+    {:ok, _} = Repo.transaction(fn -> IdentifiedSeriesWriter.upsert!(previous) end)
+    {file, token} = pending("Serie S01E01.mkv")
+    {:ok, season} = Provider.season(201, 1)
+    {:ok, selection} = EpisodeSelection.new(series, season, [1])
+
+    assert {:error, :invalid_response} =
+             Repository.complete_series(file.id, token, [], selection, nil)
+
+    assert :ok = IdentifySeriesFile.call(file.id, token, 1, Repository, Provider)
+
+    assert {:ok, %{state: :failed, failure_reason: "invalid_response", episode_ids: []}} =
+             Repository.get(file.id)
   end
 
   test "incomplete ambiguous and unusable selections never confirm a subset" do

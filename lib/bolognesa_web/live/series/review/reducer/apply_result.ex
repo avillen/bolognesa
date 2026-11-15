@@ -83,6 +83,13 @@ defmodule BolognesaWeb.Series.Review.Reducer.ApplyResult do
         feedback: gettext("El archivo ha cambiado. Recarga antes de corregirlo.")
       )
 
+  defp apply_result(socket, :correction, {:ok, {:error, :invalid_response}}),
+    do:
+      assign(socket,
+        saving?: false,
+        feedback: gettext("TMDb ha movido estos episodios a otra temporada o número.")
+      )
+
   defp apply_result(socket, :correction, _),
     do:
       assign(socket,

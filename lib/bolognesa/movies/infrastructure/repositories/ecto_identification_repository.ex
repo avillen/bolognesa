@@ -294,6 +294,5 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     Postgrex.Error -> {:error, :unavailable}
     Ecto.ConstraintError -> {:error, :unavailable}
     Ecto.InvalidChangesetError -> {:error, :unavailable}
-    MatchError -> {:error, :unavailable}
   end
 end

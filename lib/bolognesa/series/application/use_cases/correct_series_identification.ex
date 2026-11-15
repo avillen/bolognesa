@@ -101,6 +101,15 @@ defmodule Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification do
     )
   end
 
+  defp observe({:error, :invalid_response}, actor, file_id, started),
+    do:
+      observe(
+        {:provider_error, :invalid_response, :invalid_response, :persistence},
+        actor,
+        file_id,
+        started
+      )
+
   defp observe({:error, :source_changed}, actor, file_id, started) do
     Events.emit(
       :series,

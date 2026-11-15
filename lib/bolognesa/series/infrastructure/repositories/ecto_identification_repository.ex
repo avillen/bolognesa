@@ -305,6 +305,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   defp transaction(fun) do
     case Repo.transaction(fun) do
       {:ok, value} -> value
+      {:error, :invalid_response} = error -> error
       {:error, _} -> {:error, :unavailable}
     end
   rescue
@@ -312,6 +313,5 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
     Postgrex.Error -> {:error, :unavailable}
     Ecto.ConstraintError -> {:error, :unavailable}
     Ecto.InvalidChangesetError -> {:error, :unavailable}
-    MatchError -> {:error, :unavailable}
   end
 end

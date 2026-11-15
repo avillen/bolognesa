@@ -24,14 +24,19 @@ defmodule Bolognesa.Series.Application.Ports.Repositories.IdentificationReposito
               candidates :: [SeriesCandidate.t()],
               selection :: EpisodeSelection.t() | nil,
               review_reason :: review_reason() | nil
-            ) :: :ok | {:ok, :stale} | {:error, :unavailable}
+            ) :: :ok | {:ok, :stale} | {:error, :unavailable | :invalid_response}
   @callback correct_series(
               file_id :: pos_integer(),
               expected_revision :: pos_integer(),
               choice :: EpisodeSelection.t() | :unidentified
             ) ::
               {:ok, Identification.t()}
-              | {:error, :not_found | :unavailable | :wrong_content_type | :source_changed}
+              | {:error,
+                 :not_found
+                 | :unavailable
+                 | :invalid_response
+                 | :wrong_content_type
+                 | :source_changed}
   @callback begin_identification(
               file_id :: pos_integer(),
               token :: Identification.token(),

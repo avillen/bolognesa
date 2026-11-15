@@ -87,12 +87,15 @@ defmodule Bolognesa.Series.Application.UseCases.IdentifySeriesFile do
          :ok <- matching(season.number, hint.season_number, :season),
          {:ok, selection} <-
            EpisodeSelection.new(series, season, hint.episode_numbers, hint.part_number) do
-      normalize(
-        repository.complete_series(id, token, candidates, selection, nil),
-        observation,
-        :completed,
-        %{result: :matched}
-      )
+      case repository.complete_series(id, token, candidates, selection, nil) do
+        {:error, :invalid_response} ->
+          observation
+          |> Observation.put(:failure_stage, :persistence)
+          |> handle_error(id, token, attempt, repository, candidates, :invalid_response)
+
+        result ->
+          normalize(result, observation, :completed, %{result: :matched})
+      end
     else
       {:error, reason, stage} ->
         handle_error(

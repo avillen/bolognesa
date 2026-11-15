@@ -2170,3 +2170,8 @@ msgstr "Video transcoding"
 #, elixir-autogen, elixir-format
 msgid "Probar reproducción compatible"
 msgstr "Try compatible playback"
+
+#: lib/bolognesa_web/live/series/review/reducer/apply_result.ex:90
+#, elixir-autogen, elixir-format
+msgid "TMDb ha movido estos episodios a otra temporada o número."
+msgstr "TMDb has moved these episodes to another season or number."

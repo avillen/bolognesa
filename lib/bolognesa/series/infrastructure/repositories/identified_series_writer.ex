@@ -78,51 +78,42 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.IdentifiedSeriesWriter do
 
   @spec upsert!(EpisodeSelection.t(), DecisionStore.repo()) :: [pos_integer()]
   def upsert!(%EpisodeSelection{} = selection, repo \\ Repo) do
-    {:ok, validated} =
-      EpisodeSelection.new(
-        selection.series,
-        selection.season,
-        Enum.map(selection.episodes, & &1.number),
-        selection.part_number
-      )
+    series = persist!(repo, SeriesSchema, Map.from_struct(selection.series))
 
-    series_id = persist!(repo, SeriesSchema, Map.from_struct(validated.series))
-
-    season_id =
+    season =
       persist!(repo, SeasonSchema, %{
-        provider_id: validated.season.provider_id,
-        series_id: series_id,
-        number: validated.season.number,
-        title: validated.season.title,
-        poster_path: validated.season.poster_path
+        provider_id: selection.season.provider_id,
+        series_id: series.id,
+        number: selection.season.number,
+        title: selection.season.title,
+        poster_path: selection.season.poster_path
       })
 
-    season = repo.get!(SeasonSchema, season_id, log: false)
-    true = season.series_id == series_id and season.number == validated.season.number
+    consistent!(repo, season.series_id == series.id and season.number == selection.season.number)
 
-    Enum.map(validated.episodes, fn episode ->
+    Enum.map(selection.episodes, fn episode ->
       attrs =
         episode
         |> Map.from_struct()
         |> Map.drop([:season_number])
-        |> Map.put(:season_id, season_id)
+        |> Map.put(:season_id, season.id)
 
-      id = persist!(repo, EpisodeSchema, attrs)
-      stored = repo.get!(EpisodeSchema, id, log: false)
-      true = stored.season_id == season_id and stored.number == episode.number
-      id
+      stored = persist!(repo, EpisodeSchema, attrs)
+      consistent!(repo, stored.season_id == season.id and stored.number == episode.number)
+      stored.id
     end)
   end
 
-  defp persist!(repo, schema, attrs) do
-    row =
-      repo.insert!(schema.changeset(struct(schema), Map.put(attrs, :provider, :tmdb)),
-        on_conflict: [set: [provider_id: attrs.provider_id]],
-        conflict_target: [:provider, :provider_id],
-        returning: true,
-        log: false
-      )
+  # TMDb can move a known provider_id to another season or number (common with specials).
+  defp consistent!(_repo, true), do: :ok
+  defp consistent!(repo, false), do: repo.rollback(:invalid_response)
 
-    row.id
+  defp persist!(repo, schema, attrs) do
+    repo.insert!(schema.changeset(struct(schema), Map.put(attrs, :provider, :tmdb)),
+      on_conflict: [set: [provider_id: attrs.provider_id]],
+      conflict_target: [:provider, :provider_id],
+      returning: true,
+      log: false
+    )
   end
 end
