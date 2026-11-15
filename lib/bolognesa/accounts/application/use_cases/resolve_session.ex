@@ -9,14 +9,14 @@ defmodule Bolognesa.Accounts.Application.UseCases.ResolveSession do
   @spec call(Session.token() | nil, UserRepository.adapter()) ::
           {:ok, AuthenticatedUser.t()} | {:error, :unauthenticated | :unavailable}
   def call(token, repository) do
-    with {:ok, raw} <- SessionToken.decode(token),
-         {:ok, user} <- fetch_active_user(raw, repository) do
+    with {:ok, token_hash} <- SessionToken.decode(token),
+         {:ok, user} <- fetch_active_user(token_hash, repository) do
       {:ok, AuthenticatedUser.from_user(user)}
     end
   end
 
-  defp fetch_active_user(raw, repository) do
-    case repository.fetch_active_session(:crypto.hash(:sha256, raw), DateTime.utc_now()) do
+  defp fetch_active_user(token_hash, repository) do
+    case repository.fetch_active_session(token_hash, DateTime.utc_now()) do
       {:ok, user} ->
         {:ok, user}
 

@@ -49,7 +49,7 @@ defmodule Bolognesa.Accounts.Application.UseCases.StartSession do
   defp create_session(user, repository) do
     raw = :crypto.strong_rand_bytes(SessionToken.raw_byte_length())
     token = Base.url_encode64(raw, padding: false)
-    session = Session.new(user.id, :crypto.hash(:sha256, raw), DateTime.utc_now())
+    session = Session.new(user.id, SessionToken.hash(raw), DateTime.utc_now())
 
     case repository.insert_session(session) do
       :ok ->
