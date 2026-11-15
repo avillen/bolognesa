@@ -28,7 +28,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.BoundedCommand do
         new_size = size + byte_size(data)
 
         if new_size > max_bytes do
-          Port.close(port)
+          stop(port)
           {:error, :too_large}
         else
           collect(port, deadline, max_bytes, [data | chunks], new_size)
@@ -41,8 +41,20 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.BoundedCommand do
         {:error, :failed}
     after
       remaining ->
-        Port.close(port)
+        stop(port)
         {:error, :timeout}
     end
+  end
+
+  # Port.close/1 only closes the pipes; the OS process would keep reading the file.
+  defp stop(port) do
+    with {:os_pid, pid} <- Port.info(port, :os_pid) do
+      System.cmd("sh", ["-c", "kill -KILL \"$1\" 2>/dev/null", "sh", Integer.to_string(pid)])
+    end
+
+    Port.close(port)
+  rescue
+    # The process may have exited while it was being killed.
+    ArgumentError -> true
   end
 end

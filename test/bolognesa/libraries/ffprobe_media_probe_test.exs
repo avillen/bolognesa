@@ -188,7 +188,11 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
     assert {:error, :too_large} =
              BoundedCommand.run(fake(root, "printf '123456789'"), [], 5_000, 3)
 
-    assert {:error, :timeout} = BoundedCommand.run(fake(root, "sleep 1"), [], 10, 100)
+    pid_file = Path.join(root, "sleeper.pid")
+    sleeper = fake(root, "echo $$ > '#{pid_file}'\nexec sleep 30")
+    assert {:error, :timeout} = BoundedCommand.run(sleeper, [], 1_000, 100)
+    pid = pid_file |> File.read!() |> String.trim()
+    assert Enum.any?(1..50, fn _ -> process_gone?(pid) or (Process.sleep(10) && false) end)
 
     assert {:error, :tool_unavailable} =
              BoundedCommand.run(Path.join(root, "absent"), [], 100, 100)
@@ -283,6 +287,9 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
     assert {:error, :source_changed} =
              FfprobeMediaProbe.inspect(library(source), observed, executable: executable)
   end
+
+  defp process_gone?(pid),
+    do: match?({_, s} when s != 0, System.cmd("kill", ["-0", pid], stderr_to_stdout: true))
 
   defp fake(root, body) do
     path = Path.join(root, "probe-#{System.unique_integer([:positive])}")
