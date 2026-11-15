@@ -610,8 +610,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     for invalid <- [
           %{plan | video_index: 99},
           %{plan | transport: :file},
-          %{plan | video_action: :h264},
-          %{plan | reason: :full_conversion_required}
+          %{plan | video_action: :h264}
         ] do
       assert {:error, :unsupported} =
                TranscodeManager.start(1, {:movie, 2}, 3, source, invalid, 0)

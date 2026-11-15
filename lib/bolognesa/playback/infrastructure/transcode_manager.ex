@@ -599,7 +599,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   end
 
   defp plan_metadata(nil), do: %{}
-  defp plan_metadata(plan), do: %{transport: plan.transport, delivery_reason: plan.reason}
+  defp plan_metadata(plan), do: %{transport: plan.transport, delivery_reason: DeliveryPlan.reason(plan)}
 
   defp now, do: System.monotonic_time(:millisecond)
 end

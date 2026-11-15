@@ -17,8 +17,7 @@ defmodule Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan do
           video_action: :original | :copy | :h264,
           audio_action: :original | :copy | :aac | :absent,
           configuration: MediaConfiguration.t(),
-          transport: transport() | nil,
-          reason: reason()
+          transport: transport() | nil
         }
   @enforce_keys [
     :revision,
@@ -27,8 +26,7 @@ defmodule Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan do
     :mode,
     :video_action,
     :audio_action,
-    :configuration,
-    :reason
+    :configuration
   ]
   defstruct [
     :revision,
@@ -38,7 +36,14 @@ defmodule Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan do
     :video_action,
     :audio_action,
     :configuration,
-    :transport,
-    :reason
+    :transport
   ]
+
+  @doc "The telemetry explanation for a delivery mode."
+  @spec reason(t()) :: reason()
+  def reason(%__MODULE__{mode: :direct}), do: :original_supported
+  def reason(%__MODULE__{mode: :remux}), do: :remux_supported
+  def reason(%__MODULE__{mode: :audio_conversion}), do: :audio_conversion_required
+  def reason(%__MODULE__{mode: :video_conversion}), do: :video_conversion_required
+  def reason(%__MODULE__{mode: :full_conversion}), do: :full_conversion_required
 end

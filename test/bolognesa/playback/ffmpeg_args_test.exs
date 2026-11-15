@@ -113,7 +113,6 @@ defmodule Bolognesa.Playback.FfmpegArgsTest do
       video_action: if(mode in [:remux, :audio_conversion], do: :copy, else: :h264),
       audio_action: if(mode in [:remux, :video_conversion], do: :copy, else: :aac),
       transport: :hls_js,
-      reason: :remux_supported,
       configuration: %MediaConfiguration{
         container: :mpegts,
         mime: "video/mp2t",
