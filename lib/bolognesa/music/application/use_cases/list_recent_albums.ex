@@ -4,6 +4,7 @@ defmodule Bolognesa.Music.Application.UseCases.ListRecentAlbums do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Dto.RecentAlbum
   alias Bolognesa.Music.Application.Ports.Readers.BrowseReader
+  alias Bolognesa.Music.Application.ReadQuery
 
   @type result ::
           {:ok, [RecentAlbum.t()]}
@@ -12,7 +13,7 @@ defmodule Bolognesa.Music.Application.UseCases.ListRecentAlbums do
   @spec call(AuthenticatedUser.t() | nil, pos_integer() | nil, BrowseReader.adapter()) :: result()
   def call(actor, library_id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
-         true <- is_nil(library_id) or (is_integer(library_id) and library_id > 0),
+         true <- ReadQuery.valid_optional_id?(library_id),
          {:ok, albums} <- reader.list_recent_albums(library_id, actor.id) do
       {:ok, Enum.map(albums, &RecentAlbum.from_domain/1)}
     else
