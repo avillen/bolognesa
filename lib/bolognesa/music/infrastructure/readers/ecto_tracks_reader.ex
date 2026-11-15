@@ -24,11 +24,6 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
       base_query(nil, 0)
       |> where([_file, _library, _inspection, track], track.id == ^track_id)
       |> limit(1)
-      |> select(
-        [file, _library, inspection, track, artist, album, import_state, activity],
-        {file, inspection, track, artist.name, album.title, import_state,
-         type(activity.last_played_at, :utc_datetime_usec)}
-      )
       |> Repo.one(log: false)
 
     case row do
@@ -95,11 +90,6 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
       |> ordered(order)
       |> limit(^limit)
       |> offset(^((page - 1) * limit))
-      |> select(
-        [file, _library, inspection, track, artist, album, import_state, activity],
-        {file, inspection, track, artist.name, album.title, import_state,
-         type(activity.last_played_at, :utc_datetime_usec)}
-      )
       |> Repo.all(log: false)
 
     %TrackPage{items: Enum.map(rows, &row/1), total: total, page: page}
@@ -143,7 +133,10 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
         on: import_state.media_file_id == file.id,
         left_join: activity in "music_listening_activity",
         on: activity.track_id == track.id and activity.user_id == ^user_id,
-        where: library.content_type == :music and file.availability == :available
+        where: library.content_type == :music and file.availability == :available,
+        select:
+          {file, inspection, track, artist.name, album.title, import_state,
+           type(activity.last_played_at, :utc_datetime_usec)}
       )
 
     if library_id, do: where(query, [file], file.library_id == ^library_id), else: query
