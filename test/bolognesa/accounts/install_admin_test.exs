@@ -91,6 +91,14 @@ defmodule Bolognesa.Accounts.InstallAdminTest do
     assert Repo.aggregate(UserSchema, :count) == 1
   end
 
+  test "setup stays closed when the administrator email is submitted again" do
+    attrs = %{name: "Ada", email: "ada@example.com", password: @password}
+
+    assert {:ok, _} = Accounts.install_admin(attrs)
+    assert {:error, :setup_closed} = Accounts.install_admin(attrs)
+    assert Repo.aggregate(UserSchema, :count) == 1
+  end
+
   test "two simultaneous setup submissions create exactly one administrator" do
     supervisor = start_supervised!(TaskSupervisor)
     parent = self()
