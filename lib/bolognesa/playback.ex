@@ -169,6 +169,13 @@ defmodule Bolognesa.Playback do
   def resume_video_transcode(actor, session_id),
     do: signal_transcode(actor, session_id, :resume)
 
+  @spec touch_video_transcode(String.t()) :: :ok | {:error, :not_found}
+  def touch_video_transcode(session_id), do: TranscodeManager.touch(session_id)
+
+  @spec open_source(Source.t()) ::
+          {:ok, LocalMediaFile.opened()} | {:error, LocalMediaFile.failure()}
+  def open_source(source), do: LocalMediaFile.open(source)
+
   @spec video_transcode_status(String.t()) :: :ready | :waiting | :failed | :not_found
   def video_transcode_status(session_id), do: TranscodeManager.status(session_id)
 
