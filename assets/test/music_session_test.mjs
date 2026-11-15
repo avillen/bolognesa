@@ -481,7 +481,7 @@ test("only declared playback commands are exposed", () => {
   session.destroy()
 })
 
-for (const start of [{trackId: 2, fileId: 12}, {startIndex: 1}]) {
+for (const start of [{trackId: 2, fileId: 12}]) {
   test(`album start uses canonical selection ${JSON.stringify(start)}`, async () => {
     const tracks = [1, 2, 3].map(id => ({id, file_id: id + 10, state: "ready"}))
     const session = createMusicSession({audio: new FakeAudio(), transport: {
@@ -495,7 +495,7 @@ for (const start of [{trackId: 2, fileId: 12}, {startIndex: 1}]) {
   })
 }
 
-for (const start of [{trackId: 2, fileId: 12}, {startIndex: 1}]) test(`album authorization retry preserves ${JSON.stringify(start)}`, async () => {
+for (const start of [{trackId: 2, fileId: 12}]) test(`album authorization retry preserves ${JSON.stringify(start)}`, async () => {
   const tracks = [1, 2].map(id => ({id, file_id: id + 10, state: "ready"}))
   const audio = new FakeAudio()
   let fail = true

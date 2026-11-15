@@ -117,13 +117,13 @@ export function createSelectionOperations({playback, queue, source, activity, co
   async function selectTrack({trackId, fileId}) {
     return replace(null, command => authorizeTrack(trackId, fileId, undefined, command))
   }
-  async function playAlbum({albumId, libraryId = null, trackId = null, fileId = null, startIndex = null, requireTrack = false} = {}) {
-    const operation = {type: "album", albumId, libraryId, trackId, fileId, startIndex, requireTrack}
+  async function playAlbum({albumId, libraryId = null, trackId = null, fileId = null, requireTrack = false} = {}) {
+    const operation = {type: "album", albumId, libraryId, trackId, fileId, requireTrack}
     return replace(operation, async command => {
       const result = await transport.loadAlbum({albumId, libraryId}, {signal: commands.signal()})
       if (!isCurrent(command)) return
       if (!result.tracks?.length) throw Object.assign(new Error(), {code: "empty_queue"})
-      const tracks = albumTracksFrom(result.tracks, {trackId, fileId, startIndex, requireTrack})
+      const tracks = albumTracksFrom(result.tracks, {trackId, fileId, requireTrack})
       const first = tracks[0]
       if (!isReadyTrack(first)) throw Object.assign(new Error(), {code: "unavailable"})
       await authorizeTrack(first.id, first.file_id, 0, command, {

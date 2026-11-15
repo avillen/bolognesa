@@ -1,6 +1,5 @@
-/** Album selection keeps the existing index precedence and beginning fallback. */
-export function albumTracksFrom(tracks, {trackId, fileId, startIndex, requireTrack = false}) {
-  if (Number.isInteger(startIndex) && startIndex >= 0 && startIndex < tracks.length) return tracks.slice(startIndex)
+/** Album selection starts at the requested track/file or falls back to the beginning. */
+export function albumTracksFrom(tracks, {trackId, fileId, requireTrack = false}) {
   if (trackId == null) return tracks.slice()
   const found = tracks.findIndex(track => track.id === trackId && (fileId == null || track.file_id === fileId))
   if (requireTrack && found < 0) throw Object.assign(new Error(), {code: "unavailable"})
