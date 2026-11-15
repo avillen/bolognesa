@@ -2,6 +2,8 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
   @moduledoc "Music home with recent listening."
   use BolognesaWeb, :html
 
+  alias BolognesaWeb.Music.Index.Components.Artwork
+
   attr :albums, :list, required: true
   attr :status, :atom, required: true
   attr :library_params, :map, required: true
@@ -12,7 +14,7 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
     ~H"""
     <section id="music-last-listened" aria-labelledby="music-last-listened-title">
       <div class="music-recent-section-heading">
-        <h2 id="music-last-listened-title" class="text-xl font-semibold">
+        <h2 id="music-last-listened-title">
           {gettext("Últimos discos escuchados")}
         </h2>
         <p>{gettext("Vuelve a lo que te apetezca")}</p>
@@ -58,12 +60,10 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
         patch={~p"/music?#{Map.merge(@library_params, %{view: :album, album_id: @album.id})}"}
         aria-label={gettext("Ver %{title}", title: @album.title)}
       >
-        <div class="music-detail-art" aria-hidden="true">
-          <.icon name="hero-musical-note" class="size-8" />
-        </div>
-        <div class="min-w-0">
-          <h3 class="text-lg font-semibold break-words">{@album.title}</h3>
-          <p :if={@album.artist} class="text-sm text-muted break-words">{@album.artist}</p>
+        <Artwork.artwork id={@album.id} title={@album.title} />
+        <div class="music-recent-copy">
+          <h3>{@album.title}</h3>
+          <p :if={@album.artist}>{@album.artist}</p>
         </div>
       </.link>
       <div class="music-recent-footer">

@@ -94,6 +94,13 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     assert has_element?(view, "#music-heading", "Record")
     assert has_element?(view, ".music-album-artist", "Ensemble")
     assert has_element?(view, ".music-album-year", "2024")
+
+    assert has_element?(
+             view,
+             ".music-album-heading .music-art[aria-hidden=true][data-tone] .music-art-title",
+             "Record"
+           )
+
     refute has_element?(view, "#music-last-listened")
   end
 
@@ -181,6 +188,7 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     render_async(view)
     view |> element("#artist-#{fixture.track.artist_id}") |> render_click()
     render_async(view)
+    assert has_element?(view, ".music-artist-heading .music-art-artist .music-art-initials")
     refute has_element?(view, "#music-last-listened")
     view |> element("#music-home-link") |> render_click()
     render_async(view)

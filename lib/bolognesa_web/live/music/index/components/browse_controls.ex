@@ -50,17 +50,16 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
       phx-submit="search"
       class="music-search"
     >
+      <.icon name="hero-magnifying-glass" class="music-search-icon size-5" />
       <.input
         field={@form[:query]}
         phx-debounce="300"
         type="search"
+        class="music-search-input"
         label={gettext("Buscar canciones, artistas o álbumes")}
         placeholder={gettext("Buscar música")}
       />
-      <button
-        type="submit"
-        class="min-h-11 rounded-lg bg-accent px-4 py-2 font-semibold text-canvas hover:bg-accent-hover disabled:opacity-50"
-      >{gettext("Buscar")}</button>
+      <button type="submit" class="music-search-submit">{gettext("Buscar")}</button>
     </.form>
     """
   end
@@ -110,19 +109,19 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
     <nav
       :if={@total > @page_size}
       aria-label={gettext("Paginación de música")}
-      class="flex items-center justify-between gap-3"
+      class="music-pagination"
     >
       <.link
         :if={@page > 1}
         patch={~p"/music?#{Map.merge(@browse_params, %{query: @query, page: @page - 1})}"}
-        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
-      >{gettext("Anterior")}</.link>
-      <span>{gettext("Página %{page}", page: @page)}</span>
+        class="music-page-link"
+      ><.icon name="hero-chevron-left" class="size-4" />{gettext("Anterior")}</.link>
+      <span class="music-page-current">{gettext("Página %{page}", page: @page)}</span>
       <.link
         :if={@page * @page_size < @total}
         patch={~p"/music?#{Map.merge(@browse_params, %{query: @query, page: @page + 1})}"}
-        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
-      >{gettext("Siguiente")}</.link>
+        class="music-page-link"
+      >{gettext("Siguiente")}<.icon name="hero-chevron-right" class="size-4" /></.link>
     </nav>
     """
   end

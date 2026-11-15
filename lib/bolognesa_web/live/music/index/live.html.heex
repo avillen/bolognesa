@@ -16,17 +16,13 @@
     >
     </p>
     <header class="music-header">
-      <div>
-        <p class="music-eyebrow">{gettext("Biblioteca local")}</p><h1 class="music-title">
-          {@library_name || gettext("Música")}
-        </h1>
-      </div>
+      <h1 class="music-title">{@library_name || gettext("Música")}</h1>
+      <BrowseControls.navigation
+        browse_kind={@browse_kind}
+        library_params={@library_params}
+        artist_id={@artist_id}
+      />
     </header>
-    <BrowseControls.navigation
-      browse_kind={@browse_kind}
-      library_params={@library_params}
-      artist_id={@artist_id}
-    />
     <Home.home
       :if={@last_listened_visible?}
       albums={@recent_albums}
@@ -76,7 +72,7 @@
     <div
       id="music-tracks"
       phx-update="stream"
-      class="music-track-list"
+      class={["music-track-list", @browse_kind == :album && "music-track-list-album"]}
       hidden={@browse_kind in [:home, :artists, :albums] || @loading? || @error != nil}
     >
       <TrackRow.track_row
