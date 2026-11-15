@@ -279,7 +279,8 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
           session.plan,
           Path.join(source.path, source.relative_path),
           directory,
-          session.offset_ms
+          session.offset_ms,
+          threads: Application.get_env(:bolognesa, :transcode_threads, 2)
         )
 
       {:ok, session, executable, args}

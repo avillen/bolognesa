@@ -38,6 +38,19 @@ if config_env() != :test do
          )
 end
 
+if config_env() != :test do
+  transcode_threads =
+    case Integer.parse(System.get_env("BOLOGNESA_TRANSCODE_THREADS", "2")) do
+      {threads, ""} when threads in 0..16 ->
+        threads
+
+      _ ->
+        raise "BOLOGNESA_TRANSCODE_THREADS must be an integer from 0 (automatic) to 16"
+    end
+
+  config :bolognesa, :transcode_threads, transcode_threads
+end
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration

@@ -3,15 +3,18 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
 
   alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
 
-  @spec for(
-          DeliveryPlan.t(),
-          String.t(),
-          String.t(),
-          non_neg_integer()
-        ) :: [
-          String.t()
-        ]
-  def for(%DeliveryPlan{} = plan, input, directory, offset_ms) do
+  @default_threads 2
+
+  @doc """
+  Builds the FFmpeg arguments for a validated plan.
+
+  `:threads` bounds libx264 encoder threads (`0` lets FFmpeg choose); copied
+  streams ignore it.
+  """
+  @spec for(DeliveryPlan.t(), String.t(), String.t(), non_neg_integer(), keyword()) ::
+          [String.t()]
+  def for(%DeliveryPlan{} = plan, input, directory, offset_ms, opts \\ []) do
+    threads = Keyword.get(opts, :threads, @default_threads)
     seek = :erlang.float_to_binary(offset_ms / 1_000, decimals: 3)
     audio_map = if plan.audio_index, do: ["-map", "0:#{plan.audio_index}"], else: []
 
@@ -37,16 +40,17 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
     ] ++
       audio_map ++
       ["-sn", "-dn"] ++
-      planned_video_args(plan) ++ planned_audio_args(plan.audio_action) ++ output_args(directory)
+      planned_video_args(plan, threads) ++
+      planned_audio_args(plan.audio_action) ++ output_args(directory)
   end
 
-  defp planned_video_args(%DeliveryPlan{video_action: :copy}),
+  defp planned_video_args(%DeliveryPlan{video_action: :copy}, _threads),
     do: ["-c:v", "copy", "-bsf:v", "h264_mp4toannexb"]
 
-  defp planned_video_args(%DeliveryPlan{video_action: :h264, configuration: config}) do
+  defp planned_video_args(%DeliveryPlan{video_action: :h264, configuration: config}, threads) do
     video = config.video
 
-    encoded_video_args() ++
+    encoded_video_args(threads) ++
       [
         "-profile:v",
         "baseline",
@@ -89,7 +93,7 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
     ]
   end
 
-  defp encoded_video_args,
+  defp encoded_video_args(threads),
     do: [
       "-c:v",
       "libx264",
@@ -100,7 +104,7 @@ defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
       "-pix_fmt",
       "yuv420p",
       "-threads",
-      "2",
+      Integer.to_string(threads),
       "-force_key_frames",
       "expr:gte(t,n_forced*4)"
     ]

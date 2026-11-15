@@ -27,6 +27,21 @@ defmodule Bolognesa.Playback.FfmpegArgsTest do
     end
   end
 
+  test "encoder threads default to two and follow the configured count" do
+    pairs = fn opts ->
+      FfmpegArgs.for(plan(:full_conversion), "/movies/input.mkv", "/tmp/session", 0, opts)
+      |> Enum.chunk_every(2, 1, :discard)
+    end
+
+    assert ["-threads", "2"] in pairs.([])
+    assert ["-threads", "4"] in pairs.(threads: 4)
+    assert ["-threads", "0"] in pairs.(threads: 0)
+
+    refute "-threads" in FfmpegArgs.for(plan(:audio_conversion), "/m.mkv", "/tmp/s", 0,
+             threads: 4
+           )
+  end
+
   test "video strategy encodes H.264 and AAC with browser pixel format" do
     args = FfmpegArgs.for(plan(:full_conversion), "/movies/original.avi", "/tmp/session", 12_000)
     assert Enum.chunk_every(args, 2, 1, :discard) |> Enum.member?(["-c:v", "libx264"])
