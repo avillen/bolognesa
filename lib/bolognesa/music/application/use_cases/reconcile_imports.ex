@@ -6,7 +6,7 @@ defmodule Bolognesa.Music.Application.UseCases.ReconcileImports do
   @spec call(DateTime.t(), ImportRepository.adapter()) :: :ok | {:error, :unavailable}
   def call(now, repository) do
     started = Events.started_at()
-    repository.reconcile_jobs_with_summary(now) |> observe(started)
+    repository.reconcile_jobs(now) |> observe(started)
   end
 
   defp observe({:ok, summary}, started) do

@@ -62,14 +62,6 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
 
   @impl true
   def request_retry(file_id) do
-    case request_retry_with_result(file_id) do
-      {:ok, _result} -> :ok
-      error -> error
-    end
-  end
-
-  @impl true
-  def request_retry_with_result(file_id) do
     transaction(fn ->
       case locked(file_id) do
         {:ok, file, inspection, state} -> retry(file, inspection, state)
@@ -205,14 +197,6 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
 
   @impl true
   def reconcile_jobs(now) do
-    case reconcile_jobs_with_summary(now) do
-      {:ok, _summary} -> :ok
-      {:error, :unavailable, _summary} -> {:error, :unavailable}
-    end
-  end
-
-  @impl true
-  def reconcile_jobs_with_summary(now) do
     cutoff = DateTime.add(now, -60, :second)
 
     ids = ObanJobRecovery.list_interrupted(cutoff)

@@ -26,7 +26,7 @@ defmodule Bolognesa.Music.ImportRecoveryTest do
     job = request_job(current)
     {:ok, _attempt} = EctoImportRepository.begin_attempt(current.file.id, 1, job.id)
     Repo.update!(change(job, state: "discarded"))
-    assert :ok = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
+    assert {:ok, _summary} = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
     assert Repo.get_by!(MusicImportSchema, media_file_id: current.file.id).state == :failed
   end
 
@@ -42,7 +42,7 @@ defmodule Bolognesa.Music.ImportRecoveryTest do
       })
     )
 
-    assert :ok = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
+    assert {:ok, _summary} = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
     assert Repo.get_by!(MusicImportSchema, media_file_id: fixture.file.id).state == :failed
   end
 
@@ -80,7 +80,7 @@ defmodule Bolognesa.Music.ImportRecoveryTest do
     job = Repo.one!(from(job in Oban.Job, where: job.queue == "music_imports"))
     Repo.update!(change(job, state: "discarded"))
     assert Repo.get_by!(MusicImportSchema, media_file_id: fixture.file.id).state == :pending
-    assert :ok = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
+    assert {:ok, _summary} = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
     state = Repo.get_by!(MusicImportSchema, media_file_id: fixture.file.id)
     assert state.state == :failed
     assert state.failure_reason == :attempts_exhausted
@@ -106,7 +106,7 @@ defmodule Bolognesa.Music.ImportRecoveryTest do
         do: Repo.delete!(job),
         else: Repo.update!(change(job, state: status))
 
-      assert :ok = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
+      assert {:ok, _summary} = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
       failed = Repo.get_by!(MusicImportSchema, media_file_id: fixture.file.id)
       assert failed.state == :failed
       assert failed.failure_reason in [:attempts_exhausted, :unexpected_failure]
@@ -145,16 +145,16 @@ defmodule Bolognesa.Music.ImportRecoveryTest do
     job = request_job(fixture)
     {:ok, _attempt} = EctoImportRepository.begin_attempt(fixture.file.id, 1, job.id)
     Repo.update!(change(job, state: "retryable"))
-    assert :ok = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
+    assert {:ok, _summary} = EctoImportRepository.reconcile_jobs(DateTime.utc_now())
     assert Repo.get_by!(MusicImportSchema, media_file_id: fixture.file.id).state == :pending
     {:ok, _attempt} = EctoImportRepository.begin_attempt(fixture.file.id, 1, job.id)
     now = DateTime.utc_now()
     Repo.update!(change(job, state: "executing", attempted_at: DateTime.add(now, -120, :second)))
-    assert :ok = EctoImportRepository.reconcile_jobs(now)
+    assert {:ok, _summary} = EctoImportRepository.reconcile_jobs(now)
     assert Repo.get_by!(MusicImportSchema, media_file_id: fixture.file.id).state == :running
     state = Repo.get_by!(MusicImportSchema, media_file_id: fixture.file.id)
     Repo.update!(change(state, started_at: DateTime.add(now, -120, :second)))
-    assert :ok = EctoImportRepository.reconcile_jobs(now)
+    assert {:ok, _summary} = EctoImportRepository.reconcile_jobs(now)
     assert Repo.get_by!(MusicImportSchema, media_file_id: fixture.file.id).state == :failed
   end
 
