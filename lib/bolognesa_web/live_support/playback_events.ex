@@ -115,19 +115,13 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
         socket
       ) do
     session = socket.assigns.transcode_session
+    offset = session && offset(position, session.duration_ms)
 
-    case parse_position(position) do
-      {offset, ""}
-      when not is_nil(session) and session.id == id and
-             socket.assigns.playback_phase == :ready and offset >= 0 and offset <= 2_147_483_647 and
-             (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
-        next =
-          PlaybackControl.deliver(socket, offset, :seek)
-
-        {:noreply, Component.assign(next, :transcode_autoplay?, params["playing"] == "true")}
-
-      _ ->
-        {:noreply, socket}
+    if offset && session.id == id && socket.assigns.playback_phase == :ready do
+      next = PlaybackControl.deliver(socket, offset, :seek)
+      {:noreply, Component.assign(next, :transcode_autoplay?, params["playing"] == "true")}
+    else
+      {:noreply, socket}
     end
   end
 
@@ -252,14 +246,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   end
 
   defp resume_expired(socket, session, position) do
-    case parse_position(position) do
-      {offset, ""}
-      when offset >= 0 and offset <= 2_147_483_647 and
-             (is_nil(session.duration_ms) or offset <= session.duration_ms) ->
-        {:noreply, PlaybackControl.deliver(socket, offset, :session_replaced)}
-
-      _ ->
-        {:noreply, socket}
+    case offset(position, session.duration_ms) do
+      nil -> {:noreply, socket}
+      offset -> {:noreply, PlaybackControl.deliver(socket, offset, :session_replaced)}
     end
   end
 
@@ -267,9 +256,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
     with true <- socket.assigns.playback_phase == :ready and !socket.assigns[:loading?],
          attempt when is_binary(attempt) <- socket.assigns[:playback_attempt_id],
          ^attempt <- params["attempt_id"],
-         {offset, ""} when offset >= 0 and offset <= 2_147_483_647 <-
-           parse_position(params["position_ms"]),
-         true <- valid_position?(socket, offset) do
+         offset when is_integer(offset) <-
+           offset(params["position_ms"], socket.assigns[:playback_duration_ms]) do
       handle_client_failure(socket, params["error_kind"], offset)
     else
       _ -> {:noreply, socket}
@@ -288,11 +276,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
 
   defp handle_client_failure(socket, _kind, _offset), do: {:noreply, socket}
 
-  defp valid_position?(socket, offset) do
-    duration = socket.assigns[:playback_duration_ms]
-    is_nil(duration) or offset <= duration
+  # Offsets are whole-file milliseconds within the media duration when it is known.
+  defp offset(value, duration_ms) do
+    offset = Params.integer(value, 0..2_147_483_647)
+    if offset && (is_nil(duration_ms) or offset <= duration_ms), do: offset
   end
-
-  defp parse_position(value) when is_binary(value), do: Integer.parse(value)
-  defp parse_position(_), do: :error
 end
