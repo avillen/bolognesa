@@ -19,7 +19,7 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
            log: false
          ) do
       {1, [stored]} -> {:ok, UserMapper.to_user(stored)}
-      _ -> {:error, :unavailable}
+      {0, _} -> {:error, :not_found}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -64,6 +64,10 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
 
   @impl true
   def insert_session(session) do
+    Repo.delete_all(from(s in SessionSchema, where: s.expires_at <= ^session.issued_at),
+      log: false
+    )
+
     case Repo.insert(
            %SessionSchema{
              user_id: session.user_id,

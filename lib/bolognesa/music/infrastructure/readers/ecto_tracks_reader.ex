@@ -53,33 +53,36 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   @impl true
   def list_album_tracks(album_id, query, page, library_id, limit, user_id) do
     with :ok <- library_scope(library_id),
-         :ok <- album_scope(album_id, library_id) do
+         {:ok, album, artist} <- fetch_album(album_id, library_id) do
       base =
         base_query(library_id, user_id)
         |> where([_file, _library, _inspection, track], track.album_id == ^album_id)
         |> search(query)
 
       result = read_page(base, page, limit, :album)
-      album = Repo.get!(MusicAlbumSchema, album_id, log: false)
-      artist = if album.artist_id, do: Repo.get(MusicArtistSchema, album.artist_id, log: false)
 
-      {:ok,
-       %{
-         result
-         | heading: album.title,
-           album_artist: artist && artist.name,
-           album_year: album.year
-       }}
+      {:ok, %{result | heading: album.title, album_artist: artist, album_year: album.year}}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  defp album_scope(id, library_id) do
-    case Repo.get(MusicAlbumSchema, id, log: false) do
-      %{library_id: library} when is_nil(library_id) or library_id == library -> :ok
-      _ -> {:error, :not_found}
+  defp fetch_album(id, library_id) do
+    query =
+      from album in MusicAlbumSchema,
+        left_join: artist in MusicArtistSchema,
+        on: artist.id == album.artist_id,
+        where: album.id == ^id,
+        select: {album, artist.name}
+
+    case Repo.one(query, log: false) do
+      {%{library_id: library} = album, artist}
+      when is_nil(library_id) or library_id == library ->
+        {:ok, album, artist}
+
+      _ ->
+        {:error, :not_found}
     end
   end
 

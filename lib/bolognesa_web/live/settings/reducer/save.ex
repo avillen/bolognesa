@@ -11,7 +11,7 @@ defmodule BolognesaWeb.Settings.Reducer.Save do
 
   @type operation :: (AuthenticatedUser.t(), Locale.t() ->
                         {:ok, AuthenticatedUser.t()}
-                        | {:error, :forbidden | :invalid_locale | :unavailable})
+                        | {:error, :forbidden | :invalid_locale | :not_found | :unavailable})
   @spec call(Phoenix.LiveView.Socket.t(), map(), operation()) :: Phoenix.LiveView.Socket.t()
   def call(socket, params, operation \\ &Accounts.update_locale/2) do
     changeset = Preferences.changeset(socket.assigns.current_scope.actor.locale, params)

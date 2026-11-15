@@ -49,6 +49,35 @@ defmodule Bolognesa.Accounts.SessionTest do
     assert stored.expires_at == session.expires_at
   end
 
+  test "inserting a session deletes sessions expired at its issue time", %{actor: actor} do
+    session = fn hash, issued_at, expires_at ->
+      %Session{
+        user_id: actor.id,
+        token_hash: :crypto.hash(:sha256, hash),
+        issued_at: issued_at,
+        expires_at: expires_at
+      }
+    end
+
+    :ok =
+      EctoUserRepository.insert_session(
+        session.("expired", ~U[2026-01-01 00:00:00.000000Z], ~U[2026-01-02 00:00:00.000000Z])
+      )
+
+    :ok =
+      EctoUserRepository.insert_session(
+        session.("active", ~U[2026-01-01 00:00:00.000000Z], ~U[2026-02-01 00:00:00.000000Z])
+      )
+
+    :ok =
+      EctoUserRepository.insert_session(
+        session.("new", ~U[2026-01-02 00:00:00.000000Z], ~U[2026-02-02 00:00:00.000000Z])
+      )
+
+    assert Repo.all(from(s in SessionSchema, select: s.token_hash, order_by: s.expires_at)) ==
+             [:crypto.hash(:sha256, "active"), :crypto.hash(:sha256, "new")]
+  end
+
   test "unknown email and wrong password have the same result" do
     assert {:error, :invalid_credentials} =
              Accounts.start_session("missing@example.com", @password)

@@ -12,7 +12,8 @@ defmodule Bolognesa.Accounts.Application.Ports.Repositories.UserRepository do
   @typedoc "Account and password hash used to verify credentials."
   @type user_credentials :: {User.t(), PasswordHasher.hash()}
 
-  @callback update_locale(User.id(), Locale.t()) :: {:ok, User.t()} | {:error, :unavailable}
+  @callback update_locale(User.id(), Locale.t()) ::
+              {:ok, User.t()} | {:error, :not_found | :unavailable}
   @callback admin_exists?() :: {:ok, boolean()} | {:error, :unavailable}
   @callback insert_initial_admin(NewAdmin.t(), PasswordHasher.hash()) ::
               {:ok, User.t()} | {:error, :setup_closed | :unavailable}

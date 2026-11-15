@@ -3,6 +3,7 @@ defmodule Bolognesa.Accounts.UpdateLocaleTest do
   use Bolognesa.DataCase, async: false
 
   alias Bolognesa.Accounts
+  alias Bolognesa.Infrastructure.Persistence.SessionSchema
   alias Bolognesa.Infrastructure.Persistence.UserSchema
 
   @password "correct horse battery staple"
@@ -54,6 +55,12 @@ defmodule Bolognesa.Accounts.UpdateLocaleTest do
     assert updated.email == original.email
     assert Repo.get!(UserSchema, other.id).locale == nil
     assert {:ok, _} = Accounts.start_session("ada@example.com", @password)
+  end
+
+  test "a missing user is not reported as a storage failure", %{actor: actor} do
+    Repo.delete_all(SessionSchema)
+    Repo.delete!(Repo.get!(UserSchema, actor.id))
+    assert {:error, :not_found} = Accounts.update_locale(actor, "en")
   end
 
   test "database rejects unsupported locales", %{actor: actor} do

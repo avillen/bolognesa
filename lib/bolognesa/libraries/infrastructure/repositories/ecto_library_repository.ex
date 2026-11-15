@@ -23,6 +23,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository 
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
   end
 
   @impl true
@@ -31,6 +32,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoLibraryRepository 
     {:ok, Enum.map(libraries, &LibraryMapper.to_library/1)}
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
   end
 
   defp from_library_query do

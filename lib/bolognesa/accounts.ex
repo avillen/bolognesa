@@ -51,7 +51,8 @@ defmodule Bolognesa.Accounts do
   def fetch_authenticated_user(token), do: ResolveSession.call(token, EctoUserRepository)
 
   @spec update_locale(AuthenticatedUser.t() | nil, Locale.t()) ::
-          {:ok, AuthenticatedUser.t()} | {:error, :forbidden | :invalid_locale | :unavailable}
+          {:ok, AuthenticatedUser.t()}
+          | {:error, :forbidden | :invalid_locale | :not_found | :unavailable}
   def update_locale(actor, locale), do: UpdateLocale.call(actor, locale, EctoUserRepository)
 
   @spec end_session(Session.token() | nil) :: :ok | {:error, :unavailable}

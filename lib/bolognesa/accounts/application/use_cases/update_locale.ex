@@ -6,7 +6,8 @@ defmodule Bolognesa.Accounts.Application.UseCases.UpdateLocale do
   alias Bolognesa.Infrastructure.Observability.Events
 
   @spec call(AuthenticatedUser.t() | nil, Locale.t(), UserRepository.adapter()) ::
-          {:ok, AuthenticatedUser.t()} | {:error, :forbidden | :invalid_locale | :unavailable}
+          {:ok, AuthenticatedUser.t()}
+          | {:error, :forbidden | :invalid_locale | :not_found | :unavailable}
   def call(%AuthenticatedUser{role: role} = actor, value, repository)
       when role in [:admin, :member] do
     with {:ok, locale} <- Locale.validate(value),

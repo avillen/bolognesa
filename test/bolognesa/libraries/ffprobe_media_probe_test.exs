@@ -98,6 +98,14 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
                executable: executable
              )
 
+    mixed_case = Path.join(root, "misdetected.Mp3")
+    File.write!(mixed_case, "audio")
+
+    assert {:ok, %{format: "mp3"}} =
+             FfprobeMediaProbe.inspect(library(root, :music), file(mixed_case, root),
+               executable: executable
+             )
+
     assert {:error, :invalid_output} =
              FfprobeMediaProbe.inspect(library(root, :movie), file(path, root),
                executable: executable

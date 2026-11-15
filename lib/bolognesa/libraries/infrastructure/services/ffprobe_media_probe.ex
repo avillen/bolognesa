@@ -95,7 +95,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
   end
 
   defp retry_mp3(error, output, path, :music, opts) do
-    with true <- Path.extname(path) in [".mp3", ".MP3"],
+    with true <- String.downcase(Path.extname(path), :ascii) == ".mp3",
          {:ok, %{"format" => %{"format_name" => "mpeg"}}} <- Jason.decode(output) do
       probe_mp3(path, opts)
     else
