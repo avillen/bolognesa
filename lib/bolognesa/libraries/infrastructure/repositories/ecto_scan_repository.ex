@@ -98,14 +98,17 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
       plans = plan_batch(scan, entries, existing, inspections)
       rows = Enum.map(entries, &file_row(scan, &1, Map.fetch!(plans, &1.relative_path)))
 
-      Repo.insert_all(MediaFileSchema, rows,
-        log: false,
-        conflict_target: [:library_id, :relative_path],
-        on_conflict:
-          {:replace, [:size_bytes, :modified_at, :availability, :revision, :last_seen_generation]}
-      )
+      {_count, stored} =
+        Repo.insert_all(MediaFileSchema, rows,
+          log: false,
+          returning: true,
+          conflict_target: [:library_id, :relative_path],
+          on_conflict:
+            {:replace,
+             [:size_bytes, :modified_at, :availability, :revision, :last_seen_generation]}
+        )
 
-      saved = load_batch_files(scan.library_id, entries)
+      saved = Map.new(stored, &{&1.relative_path, MediaFileMapper.to_media_file(&1)})
       schedule_inspections(entries, saved, inspections, existing, plans)
       schedule_identifications(scan.library_id, entries, saved, plans)
 
