@@ -11,7 +11,6 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Series.Application.UseCases.FetchSeries.Response, as: SeriesDetail
   alias Bolognesa.Series.Application.UseCases.FetchSeriesReviewItem
   alias Bolognesa.Series.Application.UseCases.FetchSeriesSeason
-  alias Bolognesa.Series.Application.UseCases.IdentifySeriesFile
   alias Bolognesa.Series.Application.UseCases.ListEpisodes
   alias Bolognesa.Series.Application.UseCases.ListEpisodes.Response, as: EpisodePage
   alias Bolognesa.Series.Application.UseCases.ListSeriesReviewItems
@@ -113,19 +112,6 @@ defmodule Bolognesa.Series do
         ) :: non_neg_integer()
   def request_batch_in_transaction!(repo, entries),
     do: EctoIdentificationRepository.request_batch!(repo, entries)
-
-  @spec identify_file(pos_integer(), Identification.token(), pos_integer(), pos_integer() | nil) ::
-          :ok | {:error, reason()}
-  def identify_file(id, token, attempt, job_id),
-    do:
-      IdentifySeriesFile.call(
-        id,
-        token,
-        attempt,
-        EctoIdentificationRepository,
-        provider(),
-        job_id
-      )
 
   @spec fetch_review_item(AuthenticatedUser.t(), pos_integer()) ::
           {:ok, SeriesReviewItem.t()} | :not_found | {:error, reason()}
