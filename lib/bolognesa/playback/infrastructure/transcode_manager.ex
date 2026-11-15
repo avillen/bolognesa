@@ -109,6 +109,8 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   def init(_) do
     case root() do
       {:ok, root} ->
+        # A suspended FFmpeg never gets SIGPIPE, so terminate/2 must run on shutdown.
+        Process.flag(:trap_exit, true)
         remove_abandoned(root)
         Process.send_after(self(), :tick, @tick_ms)
 
@@ -228,6 +230,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   end
 
   def handle_info({:DOWN, _ref, :process, _owner, _reason}, state), do: {:noreply, state}
+  def handle_info({:EXIT, _from, _reason}, state), do: {:noreply, state}
   def handle_info({_port, _message}, state), do: {:noreply, state}
 
   def handle_info(:tick, state) do

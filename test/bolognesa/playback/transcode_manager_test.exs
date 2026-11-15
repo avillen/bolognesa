@@ -457,6 +457,42 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     assert {:error, :not_found} = TranscodeManager.resume(session.id)
   end
 
+  test "supervised shutdown stops a suspended FFmpeg", %{source: source} do
+    :ok = Supervisor.terminate_child(Bolognesa.Supervisor, TranscodeManager)
+    on_exit(fn -> Supervisor.restart_child(Bolognesa.Supervisor, TranscodeManager) end)
+    start_supervised!(TranscodeManager)
+
+    {:ok, session} =
+      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
+    {:os_pid, os_pid} = Port.info(:sys.get_state(TranscodeManager).port, :os_pid)
+    assert :ok = TranscodeManager.suspend(session.id)
+
+    :ok = stop_supervised(TranscodeManager)
+
+    refute File.exists?(session.directory)
+    assert eventually(fn -> not os_process_alive?(os_pid) end)
+  end
+
+  defp os_process_alive?(os_pid) do
+    {_, status} = System.cmd("kill", ["-0", Integer.to_string(os_pid)], stderr_to_stdout: true)
+    status == 0
+  end
+
+  defp eventually(check, attempts \\ 50) do
+    cond do
+      check.() ->
+        true
+
+      attempts == 0 ->
+        false
+
+      true ->
+        Process.sleep(20)
+        eventually(check, attempts - 1)
+    end
+  end
+
   test "the ended event releases only the displayed session", %{source: source} do
     assert {:ok, session} =
              TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
