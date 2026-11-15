@@ -14,7 +14,6 @@ defmodule Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepositor
   @callback request_refresh(MediaFile.id(), pos_integer(), DateTime.t()) :: refresh_result()
   @callback counts(Library.id()) ::
               {:ok, InspectionCounts.t()} | {:error, :not_found | :unavailable}
-  @callback fetch(MediaFile.id()) :: {:ok, Inspection.t()} | {:error, :not_found | :unavailable}
   @callback begin_inspection(MediaFile.id(), String.t(), integer() | nil) ::
               {:ok, MediaFile.t(), Library.t()} | {:ok, :stale} | {:error, :unavailable}
   @callback complete_inspection(MediaFile.id(), String.t(), TechnicalMedia.t()) ::

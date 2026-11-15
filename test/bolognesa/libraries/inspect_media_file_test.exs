@@ -5,9 +5,7 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
 
   alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
 
-  alias Bolognesa.Libraries.Domain.Entities.Inspection
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
-  alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalTrack
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
@@ -61,14 +59,12 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
     assert_receive {:library_status_changed, ^library_id}
     assert_receive {:library_status_changed, ^library_id}
 
-    assert {:ok, %{state: :succeeded, format: "matroska", duration_ms: 2_500} = result} =
-             EctoInspectionRepository.fetch(inspection.media_file_id)
-
-    assert result.__struct__ == Inspection
-    assert [%TechnicalTrack{kind: :video}] = result.tracks
-
-    assert %{"items" => [%{"kind" => "video", "channels" => nil, "language" => nil}]} =
-             Repo.get!(InspectionSchema, inspection.id).tracks
+    assert %{
+             state: :succeeded,
+             format: "matroska",
+             duration_ms: 2_500,
+             tracks: %{"items" => [%{"kind" => "video", "channels" => nil, "language" => nil}]}
+           } = Repo.get!(InspectionSchema, inspection.id)
 
     assert :ok =
              InspectMediaFile.call(
@@ -108,10 +104,8 @@ defmodule Bolognesa.Libraries.InspectMediaFileTest do
                LibraryStatusNotifications
              )
 
-    assert {:ok, %{state: :failed, failure_reason: :invalid_output} = result} =
-             EctoInspectionRepository.fetch(inspection.media_file_id)
-
-    assert result.__struct__ == Inspection
+    assert %{state: :failed, failure_reason: :invalid_output} =
+             Repo.get!(InspectionSchema, inspection.id)
   end
 
   test "does not publish a result after the file becomes absent", %{
