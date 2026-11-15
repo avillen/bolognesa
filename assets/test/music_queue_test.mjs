@@ -12,7 +12,7 @@ test("an album queue navigates in order and stops at its boundaries", () => {
   queue.select(1);
   assert.equal(queue.nextIndex(), null);
   queue.clear();
-  assert.deepEqual(queue.snapshot(), { tracks: [], index: -1 });
+  assert.deepEqual(queue.snapshot(), { tracks: [], index: -1, revision: 4 });
 });
 
 test("queue snapshots do not expose mutable track data", () => {
@@ -23,4 +23,15 @@ test("queue snapshots do not expose mutable track data", () => {
   const snapshot = queue.snapshot();
   snapshot.tracks[0].id = 3;
   assert.equal(queue.snapshot().tracks[0].id, 1);
+});
+
+test("the queue revision changes only when the queue changes", () => {
+  const queue = createMusicQueue();
+  queue.replace([{ id: 1 }]);
+  const revision = queue.snapshot().revision;
+  assert.equal(queue.clearUpcoming(), true);
+  assert.equal(queue.snapshot().revision, revision + 1);
+  assert.equal(queue.clearUpcoming(), false);
+  queue.select(5);
+  assert.equal(queue.snapshot().revision, revision + 1);
 });

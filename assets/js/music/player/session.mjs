@@ -56,7 +56,7 @@ export function createMusicSession({audio, transport, clock = () => performance.
     const queued = queue.snapshot()
     return {...playback.state, selected: playback.state.selected ? {...playback.state.selected} : null,
       activityRevision: playback.activityRevision, activityTrackId: playback.activityTrackId,
-      queue: queued.tracks, queueIndex: queued.index, queueCount: queued.tracks.length, ...source.snapshot()}
+      queue: queued.tracks, queueIndex: queued.index, queueRevision: queued.revision, queueCount: queued.tracks.length, ...source.snapshot()}
   }
   function notify() {
     if (playback.destroyed) return
