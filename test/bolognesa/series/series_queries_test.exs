@@ -135,10 +135,10 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     other = SeriesFixtures.file(library.id, "other.mkv")
     SeriesFixtures.identify(other, 2, [1])
 
-    assert {:ok, %{previous_episode_id: nil, next_episode_id: ^later_id}} =
+    assert {:ok, %{previous_entry: nil, next_entry: %{id: ^later_id}}} =
              Series.fetch_episode(@actor, earlier_id)
 
-    assert {:ok, %{previous_episode_id: ^earlier_id, next_episode_id: nil}} =
+    assert {:ok, %{previous_entry: %{id: ^earlier_id}, next_entry: nil}} =
              Series.fetch_episode(@actor, later_id)
   end
 

@@ -10,8 +10,6 @@ defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Response do
           season: Season.t(),
           series: Series.t(),
           versions: [EpisodeVersion.t()],
-          previous_episode_id: Episode.id() | nil,
-          next_episode_id: Episode.id() | nil,
           previous_entry: Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil,
           next_entry: Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil
         }
@@ -21,8 +19,6 @@ defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Response do
     :season,
     :series,
     :versions,
-    :previous_episode_id,
-    :next_episode_id,
     :previous_entry,
     :next_entry
   ]
@@ -32,15 +28,13 @@ defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Response do
            {Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil,
             Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil}}
         ) :: t()
-  def from_domain({episode, season, series, versions, {previous_id, next_id}}),
+  def from_domain({episode, season, series, versions, {previous, next}}),
     do: %__MODULE__{
       episode: episode,
       season: season,
       series: series,
       versions: versions,
-      previous_episode_id: previous_id && previous_id.id,
-      next_episode_id: next_id && next_id.id,
-      previous_entry: previous_id,
-      next_entry: next_id
+      previous_entry: previous,
+      next_entry: next
     }
 end
