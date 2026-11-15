@@ -180,14 +180,6 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
     end)
   end
 
-  @spec reconcile_jobs(DateTime.t()) :: :ok | {:error, :unavailable}
-  def reconcile_jobs(now) do
-    case reconcile_jobs_result(now) do
-      {:ok, _count} -> :ok
-      {:error, :unavailable, _count} -> {:error, :unavailable}
-    end
-  end
-
   @spec reconcile_jobs_result(DateTime.t()) ::
           {:ok, non_neg_integer()} | {:error, :unavailable, non_neg_integer()}
   @impl true
@@ -221,10 +213,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
       %{file_id: file.id, revision: file.revision, requested?: true}
     ])
 
-    case get(file.id) do
-      {:ok, identification} -> {:ok, identification}
-      error -> error
-    end
+    get(file.id)
   end
 
   defp current(file_id, token) do
