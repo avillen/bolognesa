@@ -61,6 +61,43 @@ defmodule Bolognesa.Playback.NegotiationTest do
     assert is_nil(plan.configuration.audio.bit_rate)
   end
 
+  test "High video is copied while surround E-AC-3 becomes AAC instead of re-encoding video" do
+    source = source()
+    [video, audio] = source.tracks
+
+    source = %{
+      source
+      | format: "matroska,webm",
+        tracks: [
+          %{
+            video
+            | profile: "High",
+              level: 40,
+              codec_string: "avc1.640028",
+              width: 1920,
+              height: 960,
+              frame_rate: "24000/1001",
+              bit_rate: nil
+          },
+          %{audio | codec: "eac3", codec_string: nil, profile: nil, channels: 6}
+        ]
+    }
+
+    assert {:ok, candidates} = Negotiation.candidates(source)
+    copy = Enum.find(candidates, &(&1.plan.mode == :audio_conversion))
+    assert copy.plan.video_action == :copy
+    assert copy.plan.configuration.video.codec_string == "avc1.640028"
+
+    refute Enum.any?(candidates, &(&1.plan.mode == :direct))
+
+    {:ok, observations} =
+      CapabilityReport.new(report(candidates, copy.id), candidates, "generation")
+
+    assert {:ok, plan} = Negotiation.select(source, candidates, observations)
+    assert {plan.video_action, plan.audio_action} == {:copy, :aac}
+    assert :ok = Negotiation.validate_plan(source, plan)
+  end
+
   test "Main video with unknown color facts can be preserved while MP3 becomes AAC" do
     source = source()
     [video, audio] = source.tracks
@@ -318,7 +355,7 @@ defmodule Bolognesa.Playback.NegotiationTest do
     [video, audio] = source.tracks
 
     for changed <- [
-          %{video | profile: "High", codec_string: "avc1.640029"},
+          %{video | profile: "High 4:2:2", codec_string: "avc1.7A0029"},
           %{video | level: 50},
           %{video | width: 3840, height: 2160},
           %{video | frame_rate: "60/1"},

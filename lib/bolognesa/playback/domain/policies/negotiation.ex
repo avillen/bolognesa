@@ -227,7 +227,7 @@ defmodule Bolognesa.Playback.Domain.Policies.Negotiation do
 
   defp copy_video_format?(video) do
     video.codec == "h264" and exact_codec?(video) and video.pixel_format == "yuv420p" and
-      video.bit_depth == 8 and video.profile in ["Constrained Baseline", "Main"] and
+      video.bit_depth == 8 and video.profile in ["Constrained Baseline", "Main", "High"] and
       video.level in 1..41
   end
 

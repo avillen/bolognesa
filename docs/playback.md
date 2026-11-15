@@ -7,7 +7,7 @@ Bolognesa checks the browser's reported support for each selected file before lo
 | Delivery | Eligible input and behavior |
 | --- | --- |
 | Original file | MP4/MOV, WebM or Matroska with exact recognized H.264/HEVC and optional AAC-LC identifiers, unambiguous tracks, and a positive browser test. Matroska is not automatically playable on iPhone. Other originals can be tried explicitly without a compatibility promise. |
-| HLS remux | Copy H.264 Constrained Baseline or Main, level 4.1 or lower, 8-bit yuv420p, up to 1920×1080 at 30 fps. Audio is absent or AAC-LC, mono/stereo at 32, 44.1 or 48 kHz. |
+| HLS remux | Copy H.264 Constrained Baseline, Main or High, level 4.1 or lower, 8-bit yuv420p, up to 1920×1080 at 30 fps. Audio is absent or AAC-LC, mono/stereo at 32, 44.1 or 48 kHz. |
 | HLS audio conversion | Preserve eligible H.264 video and convert selected audio to AAC-LC stereo, 48 kHz, 128 kbps. This can handle audio that cannot be copied, such as MP3. |
 | HLS video/full conversion | Requires known SDR source facts. Encode H.264 Constrained Baseline level 4.1, 8-bit yuv420p, up to 1920×1080 and 30 fps, with an 8 Mbps video maximum; copy eligible AAC or convert audio as needed. |
 | HEVC | Original delivery needs a positive exact browser test. Copying HEVC into HLS is unavailable; known-SDR sources can be encoded to H.264 under the video-conversion limits above. |
