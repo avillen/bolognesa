@@ -24,7 +24,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.IdentifiedMovieWriter do
   @spec delete_orphaned!([pos_integer()]) :: :ok
   def delete_orphaned!(ids) do
     Enum.each(Enum.sort(ids), fn id ->
-      Repo.one(from(row in MovieSchema, where: row.id == ^id, lock: "FOR UPDATE"), log: false)
+      Repo.get(lock(MovieSchema, "FOR UPDATE"), id, log: false)
 
       referenced =
         from(row in MovieIdentificationSchema,

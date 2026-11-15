@@ -50,7 +50,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   @impl true
   def correct_series(file_id, expected_revision, choice) do
     transaction(fn ->
-      file = Repo.one(from row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE")
+      file = Repo.get(lock(MediaFileSchema, "FOR UPDATE"), file_id)
       correct_series_current(file, expected_revision, choice)
     end)
   end
@@ -155,9 +155,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   def retry(file_id) do
     transaction(fn ->
       file =
-        Repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
-          log: false
-        )
+        Repo.get(lock(MediaFileSchema, "FOR UPDATE"), file_id, log: false)
 
       identification = DecisionStore.lock(Repo, file_id)
 
@@ -218,9 +216,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
 
   defp current(file_id, token) do
     file =
-      Repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
-        log: false
-      )
+      Repo.get(lock(MediaFileSchema, "FOR UPDATE"), file_id, log: false)
 
     identification = DecisionStore.lock(Repo, file_id)
     projection = file && file_projection(file)
