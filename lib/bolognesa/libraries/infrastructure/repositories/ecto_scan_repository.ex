@@ -70,7 +70,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
       {:ok,
        %ScanStatus{
          library_id: library_id,
-         latest_scan: map_latest(latest),
+         latest_scan: latest && ScanMapper.to_scan(latest),
          last_completed_at: last_completed_at
        }}
     end
@@ -344,7 +344,4 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
          opts[:constraint] == :unique and opts[:constraint_name] == "library_scans_one_active"
        end), do: :scan_in_progress, else: :unavailable
   end
-
-  defp map_latest(nil), do: nil
-  defp map_latest(scan), do: ScanMapper.to_scan(scan)
 end
