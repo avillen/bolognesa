@@ -306,13 +306,6 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     assert PlaybackContext.video_transcode_status(session.id) == :ready
   end
 
-  test "rejects malformed or untyped video references", %{source: source} do
-    for ref <- [2, {:series, 2}, {:movie, 0}] do
-      assert {:error, :not_found} =
-               TranscodeManager.start(1, ref, 3, source, plan(source, :full_conversion), 0)
-    end
-  end
-
   test "allows one running conversion and releases it on stop", %{source: source} do
     assert {:ok, session} =
              TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)

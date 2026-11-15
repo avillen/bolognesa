@@ -22,7 +22,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   @type failure ::
           LocalMediaFile.failure()
-          | :not_found
           | :busy
           | :tool_unavailable
           | :unsafe_root
@@ -50,21 +49,17 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
         offset_ms,
         replace_reason \\ :session_replaced
       ) do
-    if ContentRef.valid?(content_ref) do
-      request = %{
-        actor_id: actor_id,
-        content_ref: content_ref,
-        file_id: file_id,
-        source: source,
-        strategy: strategy,
-        offset_ms: offset_ms,
-        replace_reason: replace_reason
-      }
+    request = %{
+      actor_id: actor_id,
+      content_ref: content_ref,
+      file_id: file_id,
+      source: source,
+      strategy: strategy,
+      offset_ms: offset_ms,
+      replace_reason: replace_reason
+    }
 
-      GenServer.call(__MODULE__, {:start, request})
-    else
-      {:error, :not_found}
-    end
+    GenServer.call(__MODULE__, {:start, request})
   end
 
   @spec lookup(String.t()) :: {:ok, TranscodeSession.t()} | {:error, :not_found}
