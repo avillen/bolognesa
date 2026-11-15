@@ -1,6 +1,6 @@
 # 0011. Capability-based video playback
 
-Status: implemented for [#10](https://github.com/avillen/bolognesa/issues/10). Desktop Chrome/HLS.js checks and a local WebKit native-HLS fixture pass; physical Chrome on iPhone remains unverified. Deployment evidence belongs in the issue, independently of device acceptance.
+Status: implemented for [#10](https://github.com/avillen/bolognesa/issues/10). Desktop Chrome/HLS.js checks and a local WebKit native-HLS fixture pass; physical Chrome on iPhone played a 15-minute native-HLS episode continuously to its end (see the [device evidence](../playback.md#device-evidence)). Deployment evidence belongs in the issue, independently of device acceptance.
 
 ## Context
 

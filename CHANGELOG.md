@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Convert untagged 8-bit 4:2:0 video, such as Xvid/DivX AVI files, instead of reporting missing technical data.
 - Copy browser-supported HE-AAC and MP3 audio into HLS instead of always converting it to AAC-LC.
+- Keep video playing on iPhone instead of reloading the page after about seven minutes.
 - Encode 50 and 60 fps sources at 25 and 29.97 fps so motion stays even.
 - Prefer deliveries the browser predicts will play smoothly over cheaper ones predicted to stutter.
 - Report unsupported color formats and files without video instead of missing technical data.
