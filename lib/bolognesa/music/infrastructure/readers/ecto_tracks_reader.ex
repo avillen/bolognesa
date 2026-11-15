@@ -16,6 +16,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   alias Bolognesa.Music.Domain.ValueObjects.CatalogMetadata
   alias Bolognesa.Music.Domain.ValueObjects.FileTags
   alias Bolognesa.Music.Domain.ValueObjects.Observation
+  alias Bolognesa.Music.Infrastructure.Readers.QueryFilters
   alias Bolognesa.Repo
   @impl true
   def fetch_track(track_id) do
@@ -41,7 +42,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
 
   @impl true
   def list_tracks(query, page, library_id, user_id) do
-    with :ok <- library_scope(library_id) do
+    with :ok <- QueryFilters.library_scope(library_id) do
       base = base_query(library_id, user_id) |> search(query)
       {:ok, read_page(base, page, 50, :title)}
     end
@@ -52,7 +53,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
 
   @impl true
   def list_album_tracks(album_id, query, page, library_id, limit, user_id) do
-    with :ok <- library_scope(library_id),
+    with :ok <- QueryFilters.library_scope(library_id),
          {:ok, album, artist} <- fetch_album(album_id, library_id) do
       base =
         base_query(library_id, user_id)
@@ -125,15 +126,6 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
     )
   end
 
-  defp library_scope(nil), do: :ok
-
-  defp library_scope(id) do
-    case Repo.get(LibrarySchema, id, log: false) do
-      %{content_type: :music} -> :ok
-      _ -> {:error, :not_found}
-    end
-  end
-
   defp base_query(library_id, user_id) do
     query =
       from(file in MediaFileSchema,
@@ -160,12 +152,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   defp search(query, ""), do: query
 
   defp search(query, text) do
-    pattern =
-      "%" <>
-        (text
-         |> String.replace("\\", "\\\\")
-         |> String.replace("%", "\\%")
-         |> String.replace("_", "\\_")) <> "%"
+    pattern = QueryFilters.contains_pattern(text)
 
     where(
       query,
