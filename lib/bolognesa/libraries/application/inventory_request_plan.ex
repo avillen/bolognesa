@@ -22,7 +22,7 @@ defmodule Bolognesa.Libraries.Application.InventoryRequestPlan do
     new_discovery? = previous == nil or previous.last_seen_generation != generation
 
     inspect? =
-      Inspection.request?(previous, has_inspection?, entry, force_inspection?) and
+      Inspection.request?(previous, has_inspection?, changed?, force_inspection?) and
         (not force_inspection? or new_discovery? or changed?)
 
     identify? =
