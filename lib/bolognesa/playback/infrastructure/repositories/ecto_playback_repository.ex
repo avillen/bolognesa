@@ -63,19 +63,12 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
   defp video_result(nil), do: :not_found
   defp video_result({%{availability: :missing}, _, _}), do: {:error, :missing}
 
-  defp video_result({file, path, inspection}) do
-    {:ok,
-     %Source{
-       path: path,
-       relative_path: file.relative_path,
-       size_bytes: file.size_bytes,
-       modified_at: file.modified_at,
-       revision: file.revision,
-       format: if(inspection, do: inspection.format),
-       duration_ms: if(inspection, do: inspection.duration_ms),
-       tracks: if(inspection, do: tracks(inspection.tracks), else: [])
-     }}
-  end
+  defp video_result({file, path, nil}), do: {:ok, source(file, path, nil, nil, [])}
+
+  defp video_result({file, path, inspection}),
+    do:
+      {:ok,
+       source(file, path, inspection.format, inspection.duration_ms, tracks(inspection.tracks))}
 
   @impl true
   def fetch_track_source(track_id, file_id) do
@@ -119,20 +112,23 @@ defmodule Bolognesa.Playback.Infrastructure.Repositories.EctoPlaybackRepository 
     source_tracks = tracks(inspection.tracks)
 
     if Enum.any?(source_tracks, &(&1.kind == :audio)) do
-      {:ok,
-       %Source{
-         path: path,
-         relative_path: file.relative_path,
-         size_bytes: file.size_bytes,
-         modified_at: file.modified_at,
-         revision: file.revision,
-         format: inspection.format,
-         duration_ms: inspection.duration_ms,
-         tracks: source_tracks
-       }}
+      {:ok, source(file, path, inspection.format, inspection.duration_ms, source_tracks)}
     else
       :not_found
     end
+  end
+
+  defp source(file, path, format, duration_ms, tracks) do
+    %Source{
+      path: path,
+      relative_path: file.relative_path,
+      size_bytes: file.size_bytes,
+      modified_at: file.modified_at,
+      revision: file.revision,
+      format: format,
+      duration_ms: duration_ms,
+      tracks: tracks
+    }
   end
 
   defp tracks(%{"items" => items}) when is_list(items) do
