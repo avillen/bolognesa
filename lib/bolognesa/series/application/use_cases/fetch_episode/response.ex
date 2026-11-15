@@ -1,6 +1,5 @@
 defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Response do
   @moduledoc "Public episode detail result."
-  alias Bolognesa.Series.Application.UseCases.FetchEpisode.Version, as: EpisodeVersionDto
   alias Bolognesa.Series.Domain.ReadModels.Episode
   alias Bolognesa.Series.Domain.ReadModels.EpisodeVersion
   alias Bolognesa.Series.Domain.ReadModels.Season
@@ -10,7 +9,7 @@ defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Response do
           episode: Episode.t(),
           season: Season.t(),
           series: Series.t(),
-          versions: [EpisodeVersionDto.t()],
+          versions: [EpisodeVersion.t()],
           previous_episode_id: Episode.id() | nil,
           next_episode_id: Episode.id() | nil,
           previous_entry: Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil,
@@ -38,7 +37,7 @@ defmodule Bolognesa.Series.Application.UseCases.FetchEpisode.Response do
       episode: episode,
       season: season,
       series: series,
-      versions: Enum.map(versions, &EpisodeVersionDto.from_domain/1),
+      versions: versions,
       previous_episode_id: previous_id && previous_id.id,
       next_episode_id: next_id && next_id.id,
       previous_entry: previous_id,
