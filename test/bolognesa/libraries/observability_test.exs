@@ -22,7 +22,6 @@ defmodule Bolognesa.Libraries.ObservabilityTest do
 
   defmodule Probe do
     def inspect(_, _), do: Process.get(:probe, {:ok, :technical})
-    def inspect_with_diagnostics(_, _), do: Process.get(:probe, {:ok, :technical})
   end
 
   defmodule Notifications do

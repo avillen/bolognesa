@@ -147,7 +147,7 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
     failed =
       fake(root, "case \"$*\" in *'-f mp3'*) exit 7 ;; *) printf '%s' '#{invalid}' ;; esac")
 
-    assert {:error, :unreadable} =
+    assert {:error, :unreadable, :ffprobe} =
              FfprobeMediaProbe.inspect(library(root, :music), file(path, root),
                executable: failed
              )
@@ -217,13 +217,8 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
 
     log =
       CaptureLog.capture_log(formatter ++ [level: :warning], fn ->
-        assert {:error, :unreadable} =
-                 FfprobeMediaProbe.inspect(library(root), %{observed | id: 42},
-                   executable: executable
-                 )
-
         assert {:error, :unreadable, :ffprobe} =
-                 FfprobeMediaProbe.inspect_with_diagnostics(library(root), %{observed | id: 42},
+                 FfprobeMediaProbe.inspect(library(root), %{observed | id: 42},
                    executable: executable
                  )
       end)
@@ -249,7 +244,7 @@ defmodule Bolognesa.Libraries.FfprobeMediaProbeTest do
           modified_at: DateTime.utc_now()
         }
 
-        assert {:error, :unreadable} =
+        assert {:error, :unreadable, _stage} =
                  FfprobeMediaProbe.inspect(library(root), observed, executable: executable)
     end
   end

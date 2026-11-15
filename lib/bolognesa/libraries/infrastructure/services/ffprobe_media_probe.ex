@@ -23,33 +23,13 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.FfprobeMediaProbe do
   @impl true
   def inspect(library, file), do: inspect(library, file, [])
 
+  @doc "Diagnostic result retaining a bounded failure stage without logging."
   @spec inspect(
           Bolognesa.Libraries.Domain.Entities.Library.t(),
           Bolognesa.Libraries.Domain.Entities.MediaFile.t(),
           keyword()
-        ) ::
-          {:ok, Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia.t()}
-          | {:error, Bolognesa.Libraries.Application.Ports.Services.MediaProbe.reason()}
+        ) :: Bolognesa.Libraries.Application.Ports.Services.MediaProbe.result()
   def inspect(library, file, opts) do
-    case inspect_with_diagnostics(library, file, opts) do
-      {:error, reason, _stage} -> {:error, reason}
-      result -> result
-    end
-  end
-
-  @impl true
-  def inspect_with_diagnostics(library, file), do: inspect_with_diagnostics(library, file, [])
-
-  @doc "Internal diagnostic result retaining a bounded failure stage without logging."
-  @spec inspect_with_diagnostics(
-          Bolognesa.Libraries.Domain.Entities.Library.t(),
-          Bolognesa.Libraries.Domain.Entities.MediaFile.t(),
-          keyword()
-        ) ::
-          {:ok, Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia.t()}
-          | {:error, Bolognesa.Libraries.Application.Ports.Services.MediaProbe.reason()}
-          | {:error, :unreadable, :ffprobe | :file_access}
-  def inspect_with_diagnostics(library, file, opts) do
     with {:ok, root, source_identity} <- source(library.path),
          {:ok, path, before_identity} <- physical_file(root, file),
          {:ok, media} <- probe(path, library.content_type, opts),

@@ -50,21 +50,13 @@ defmodule Bolognesa.Libraries.Application.UseCases.InspectMediaFile do
           repository,
           notifications,
           {metadata, started},
-          probe_result(probe, library, file)
+          probe.inspect(library, file)
         )
 
       {:error, :unavailable} ->
         observe(:retryable, metadata, started, :storage_unavailable)
         {:error, :storage_unavailable}
     end
-  end
-
-  defp probe_result(probe, library, file) do
-    Code.ensure_loaded(probe)
-
-    if function_exported?(probe, :inspect_with_diagnostics, 2),
-      do: probe.inspect_with_diagnostics(library, file),
-      else: probe.inspect(library, file)
   end
 
   defp inspect_current(
