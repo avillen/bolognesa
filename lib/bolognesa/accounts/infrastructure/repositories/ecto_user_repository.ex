@@ -5,7 +5,6 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
   import Ecto.Query
   alias Bolognesa.Repo
 
-  alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository.SessionMapper
   alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository.UserMapper
 
   alias Bolognesa.Infrastructure.Persistence.SessionSchema
@@ -91,12 +90,13 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
   def fetch_active_session(token_hash, now) do
     query =
       from s in SessionSchema,
+        join: u in assoc(s, :user),
         where: s.token_hash == ^token_hash and s.expires_at > ^now,
-        preload: [:user]
+        select: u
 
     case Repo.one(query, log: false) do
       nil -> :not_found
-      session -> {:ok, SessionMapper.to_user(session)}
+      stored -> {:ok, UserMapper.to_user(stored)}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
