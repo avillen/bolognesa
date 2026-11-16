@@ -11,8 +11,8 @@ RASTER_LIMITS = {
     "library-create-mobile.png": (8, 1, 0, 0, 0),
     "music-player.png": (MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA, 0, 0, 0),
     "music.png": (16, 1, 0, 0, 0),
-    # Observed fourteen one-level antialiasing differences on the search corners.
-    "music-albums.png": (16, 1, 0, 0, 0),
+    # Observed up to 32 one- or two-level antialiasing differences on the section tabs.
+    "music-albums.png": (32, 2, 0, 0, 0),
     # Observed up to ten isolated antialiasing outliers between CI captures.
     "series-detail.png": (16, 1, 10, 2, 39),
     "season.png": (16, 1, 0, 0, 0),
@@ -23,6 +23,10 @@ RASTER_LIMITS = {
     "series-detail-mobile.png": (64, 2, 0, 0, 0),
     "episode-mobile.png": (8, 1, 0, 0, 0),
     "movie-mobile.png": (128, 2, 0, 0, 0),
+    # Observed up to 22 one- or two-level antialiasing differences on the mobile movie grid.
+    "movies-mobile.png": (32, 2, 0, 0, 0),
+    # Observed thirteen one-level antialiasing differences beside the review list.
+    "series-review.png": (16, 1, 0, 0, 0),
     # Observed antialiasing on the compact music player's rounded bottom corners.
     "music-mobile.png": (128, 2, 0, 0, 0),
     "episode.png": (32, 2, 1, 16, 20),
