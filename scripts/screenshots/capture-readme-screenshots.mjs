@@ -577,6 +577,8 @@ try {
       throw new Error("Expanding the synopsis recreated the episode player.");
     }
     await page.locator("#episode-description > summary").click();
+    // On phones the in-frame error grows past 16:9 by design; measure a playing frame.
+    await playDemoOriginal("episode");
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({width, height: 1000});
       const fits = await page.evaluate(() => {
