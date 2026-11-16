@@ -32,6 +32,8 @@ RASTER_LIMITS = {
     "episode.png": (32, 2, 1, 16, 20),
     "movie.png": (0, 0, 1, 16, 20),
     "player.png": (0, 0, 1, 16, 20),
+    # Observed three one-level and two 14-level antialiasing differences on the sidebar.
+    "library.png": (8, 1, 2, 8, 16),
 }
 
 

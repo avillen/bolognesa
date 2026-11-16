@@ -106,6 +106,25 @@ class ScreenshotCheckTest(unittest.TestCase):
                 (actual / name).write_bytes(png(16, 16, [101] * 768))
                 self.assertEqual(checker.differences(expected, actual), [name])
 
+    def test_library_allows_two_bounded_sidebar_outliers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
+            expected.mkdir(); actual.mkdir()
+            name = 'library.png'
+            (expected / name).write_bytes(png(8, 8, [100] * 192))
+            changed = [100] * 192
+            changed[0] = changed[3] = 114
+            changed[6] = changed[9] = changed[12] = 101
+            (actual / name).write_bytes(png(8, 8, changed))
+            self.assertEqual(checker.differences(expected, actual), [])
+            changed[15] = 114
+            (actual / name).write_bytes(png(8, 8, changed))
+            self.assertEqual(checker.differences(expected, actual), [name])
+            changed[15] = 100
+            changed[0] = 117
+            (actual / name).write_bytes(png(8, 8, changed))
+            self.assertEqual(checker.differences(expected, actual), [name])
+
     def test_series_detail_allows_only_bounded_raster_outliers(self):
         with tempfile.TemporaryDirectory() as folder:
             expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
