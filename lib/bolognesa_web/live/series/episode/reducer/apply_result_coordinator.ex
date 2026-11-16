@@ -1,5 +1,5 @@
-defmodule BolognesaWeb.Series.Episode.Reducer.ApplyResult do
-  @moduledoc false
+defmodule BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator do
+  @moduledoc "Applies the loaded episode and, when it loads, selects the requested part."
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   alias BolognesaWeb.LiveSupport.PlaybackControl

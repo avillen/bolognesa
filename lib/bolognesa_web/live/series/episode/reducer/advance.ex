@@ -1,12 +1,9 @@
 defmodule BolognesaWeb.Series.Episode.Reducer.Advance do
   @moduledoc false
-  use BolognesaWeb, :verified_routes
-  use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
-  import Phoenix.LiveView, only: [start_async: 3, push_patch: 2, put_flash: 3]
+  import Phoenix.LiveView, only: [start_async: 3]
   alias Bolognesa.Series
   alias BolognesaWeb.LiveSupport.PlaybackEvents
-  alias BolognesaWeb.Series.Navigation
 
   @spec call(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
   def call(%{assigns: %{loading?: true}} = socket, _params), do: socket
@@ -14,16 +11,6 @@ defmodule BolognesaWeb.Series.Episode.Reducer.Advance do
   def call(socket, params) do
     if current_playback?(socket, params) and is_nil(socket.assigns[:advance_request]) do
       start_advance(socket, params)
-    else
-      socket
-    end
-  end
-
-  @spec apply_result(Phoenix.LiveView.Socket.t(), reference(), term()) ::
-          Phoenix.LiveView.Socket.t()
-  def apply_result(socket, request, result) do
-    if socket.assigns[:advance_request] == request do
-      finish(socket, result)
     else
       socket
     end
@@ -61,37 +48,4 @@ defmodule BolognesaWeb.Series.Episode.Reducer.Advance do
   end
 
   defp stop_completed(socket, _params), do: socket
-
-  defp finish(socket, {:ok, {:ok, episode}}),
-    do: push_patch(socket, to: ~p"/episodes/#{episode.id}?#{advance_params(socket, episode)}")
-
-  defp finish(socket, {:ok, {:error, :part_unavailable}}),
-    do:
-      socket
-      |> assign(:advance_request, nil)
-      |> put_flash(:error, gettext("La siguiente parte no está disponible."))
-
-  defp finish(socket, {:ok, :not_found}), do: assign(socket, :advance_request, nil)
-
-  defp finish(socket, _result),
-    do:
-      socket
-      |> assign(:advance_request, nil)
-      |> put_flash(:error, gettext("No se encontró el episodio."))
-
-  defp advance_params(
-         %{assigns: %{detail: %{season: %{id: season_id}}}} = socket,
-         %{
-           season_id: season_id
-         } = episode
-       ),
-       do:
-         Navigation.episode_target_params(
-           socket.assigns.series_params,
-           Map.get(socket.assigns.season_params, :page, 1),
-           episode
-         )
-
-  defp advance_params(socket, episode),
-    do: Navigation.episode_target_params(Map.get(socket.assigns, :series_params, %{}), 1, episode)
 end

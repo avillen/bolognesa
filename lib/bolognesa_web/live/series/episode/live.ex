@@ -8,14 +8,19 @@ defmodule BolognesaWeb.Series.Episode.Live do
   alias BolognesaWeb.Player
   alias BolognesaWeb.Series.Episode.Components.EpisodeNavigation
   alias BolognesaWeb.Series.Episode.Components.VersionCard
+  alias BolognesaWeb.Series.Episode.Parts
   alias BolognesaWeb.Series.Episode.Reducer.Advance
-  alias BolognesaWeb.Series.Episode.Reducer.ApplyResult
+  alias BolognesaWeb.Series.Episode.Reducer.ApplyAdvanceResult
+  alias BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator
   alias BolognesaWeb.Series.Episode.Reducer.Initialize
+  alias BolognesaWeb.Series.Episode.Reducer.Load
   alias BolognesaWeb.Series.Episode.Reducer.SelectPart
   alias BolognesaWeb.Series.Navigation
   @impl true
-  def mount(%{"id" => id}, _session, socket),
-    do: {:ok, Initialize.call(socket, socket.assigns.current_scope.actor, parse_id(id))}
+  def mount(%{"id" => id}, _session, socket) do
+    id = parse_id(id)
+    {:ok, socket |> Initialize.call(id) |> Load.call(socket.assigns.current_scope.actor, id)}
+  end
 
   @impl true
   def handle_params(params, _uri, socket) do
@@ -27,7 +32,7 @@ defmodule BolognesaWeb.Series.Episode.Live do
     socket =
       cond do
         socket.assigns.requested_episode_id != id ->
-          Initialize.load(socket, socket.assigns.current_scope.actor, id)
+          Load.call(socket, socket.assigns.current_scope.actor, id)
 
         changed && socket.assigns.detail && !socket.assigns.loading? ->
           SelectPart.call(socket, part)
@@ -41,10 +46,10 @@ defmodule BolognesaWeb.Series.Episode.Live do
 
   @impl true
   def handle_async({:next_episode, request}, result, socket),
-    do: {:noreply, Advance.apply_result(socket, request, result)}
+    do: {:noreply, ApplyAdvanceResult.call(socket, request, result)}
 
   def handle_async({:episode, request_id}, result, socket),
-    do: {:noreply, ApplyResult.call(socket, request_id, result)}
+    do: {:noreply, ApplyResultCoordinator.call(socket, request_id, result)}
 
   @impl true
   def handle_event("playback_ended", params, socket),
@@ -58,7 +63,7 @@ defmodule BolognesaWeb.Series.Episode.Live do
 
       updated =
         if updated.assigns.selected_file_id == version.id,
-          do: SelectPart.metadata(updated, version.part_number),
+          do: Parts.assign_part(updated, version.part_number),
           else: updated
 
       {:noreply, updated}

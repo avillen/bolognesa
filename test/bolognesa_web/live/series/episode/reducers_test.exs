@@ -3,7 +3,8 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
   alias Bolognesa.Series.Domain.ReadModels.Episode
   alias BolognesaWeb.Series.Episode.Live
   alias BolognesaWeb.Series.Episode.Reducer.Advance
-  alias BolognesaWeb.Series.Episode.Reducer.ApplyResult
+  alias BolognesaWeb.Series.Episode.Reducer.ApplyAdvanceResult
+  alias BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator
   alias BolognesaWeb.Series.Episode.Reducer.SelectPart
 
   test "selecting another part discards an outstanding continuation" do
@@ -26,7 +27,7 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
 
     selected = SelectPart.call(socket, 2)
     assert selected.assigns.advance_request == nil
-    assert Advance.apply_result(selected, request, {:ok, {:ok, %Episode{id: 123}}}) == selected
+    assert ApplyAdvanceResult.call(selected, request, {:ok, {:ok, %Episode{id: 123}}}) == selected
   end
 
   test "completion during navigation cannot replace the requested episode" do
@@ -74,7 +75,7 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
     result = {:ok, {:ok, %Episode{id: 123}}}
 
     assert restarted == socket
-    assert Advance.apply_result(restarted, request, result).redirected != nil
+    assert ApplyAdvanceResult.call(restarted, request, result).redirected != nil
   end
 
   test "an accepted restart discards a pending continuation even when preparation fails" do
@@ -106,7 +107,7 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
       )
 
     result = {:ok, {:ok, %Episode{id: 123}}}
-    assert Advance.apply_result(restarted, request, result) == restarted
+    assert ApplyAdvanceResult.call(restarted, request, result) == restarted
     assert restarted.redirected == nil
   end
 
@@ -125,11 +126,11 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
     }
 
     result = {:ok, {:error, :too_many_versions}}
-    updated = ApplyResult.call(socket, request, result)
+    updated = ApplyResultCoordinator.call(socket, request, result)
     assert updated.assigns.loading? == false
     assert updated.assigns.error =~ "100"
     assert updated.assigns.detail == nil
     assert updated.assigns.selected_file_id == nil
-    assert ApplyResult.call(socket, make_ref(), result) == socket
+    assert ApplyResultCoordinator.call(socket, make_ref(), result) == socket
   end
 end
