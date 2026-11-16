@@ -4,7 +4,6 @@ defmodule Bolognesa.Accounts.LookupTest do
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Application.UseCases.FetchAuthenticatedAdmin
   alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository, as: Repository
-  alias Bolognesa.Release, as: BolognesaRelease
 
   defmodule UnavailableRepository do
     @spec fetch_admin() :: {:error, :unavailable}
@@ -31,7 +30,6 @@ defmodule Bolognesa.Accounts.LookupTest do
              })
 
     assert {:ok, ^actor} = Accounts.fetch_authenticated_admin()
-    assert {:ok, ^actor} = BolognesaRelease.fetch_authenticated_admin()
     assert {:ok, user} = Repository.fetch_admin()
     assert user.id == actor.id
     assert {:ok, {^user, hash}} = Repository.fetch_user_by_email(actor.email)

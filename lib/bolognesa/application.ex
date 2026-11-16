@@ -19,46 +19,28 @@ defmodule Bolognesa.Application do
 
     children =
       children ++
-        scan_reconciler_children() ++
-        inspection_reconciler_children() ++
-        identification_reconciler_children() ++ music_children()
+        optional_children(:scan_reconciler, [
+          {Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.LibraryJobReconciler,
+           operation: :scan}
+        ]) ++
+        optional_children(:inspection_reconciler, [
+          {Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.LibraryJobReconciler,
+           operation: :inspection}
+        ]) ++
+        optional_children(:identification_reconciler, [
+          Bolognesa.Movies.Infrastructure.Jobs.Reconcilers.IdentificationReconciler,
+          Bolognesa.Series.Infrastructure.Jobs.Reconcilers.IdentificationReconciler
+        ]) ++
+        optional_children(:music_import_reconciler, [
+          Bolognesa.Music.Infrastructure.Jobs.Reconcilers.ImportReconciler
+        ])
 
     opts = [strategy: :one_for_one, name: Bolognesa.Supervisor]
     Supervisor.start_link(children, opts)
   end
 
-  defp scan_reconciler_children do
-    if Application.get_env(:bolognesa, :scan_reconciler, true),
-      do: [
-        {Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.LibraryJobReconciler,
-         operation: :scan}
-      ],
-      else: []
-  end
-
-  defp inspection_reconciler_children do
-    if Application.get_env(:bolognesa, :inspection_reconciler, true),
-      do: [
-        {Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.LibraryJobReconciler,
-         operation: :inspection}
-      ],
-      else: []
-  end
-
-  defp identification_reconciler_children do
-    if Application.get_env(:bolognesa, :identification_reconciler, true),
-      do: [
-        Bolognesa.Movies.Infrastructure.Jobs.Reconcilers.IdentificationReconciler,
-        Bolognesa.Series.Infrastructure.Jobs.Reconcilers.IdentificationReconciler
-      ],
-      else: []
-  end
-
-  defp music_children do
-    if Application.get_env(:bolognesa, :music_import_reconciler, true),
-      do: [Bolognesa.Music.Infrastructure.Jobs.Reconcilers.ImportReconciler],
-      else: []
-  end
+  defp optional_children(key, children),
+    do: if(Application.get_env(:bolognesa, key, true), do: children, else: [])
 
   @impl true
   def config_change(changed, _new, removed) do
