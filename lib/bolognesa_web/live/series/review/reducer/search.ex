@@ -4,7 +4,6 @@ defmodule BolognesaWeb.Series.Review.Reducer.Search do
   import Phoenix.LiveView, only: [stream: 4]
   alias Bolognesa.Series
   alias BolognesaWeb.Series.Review.AsyncRequest
-  alias BolognesaWeb.Series.Review.Reducer.ResetSelection
   @spec call(Phoenix.LiveView.Socket.t(), binary()) :: Phoenix.LiveView.Socket.t()
   def call(%{assigns: %{saving?: true}} = socket, _), do: socket
 
@@ -12,7 +11,6 @@ defmodule BolognesaWeb.Series.Review.Reducer.Search do
     actor = socket.assigns.current_scope.actor
 
     socket
-    |> ResetSelection.call()
     |> assign(
       searching?: true,
       candidate_titles: %{},

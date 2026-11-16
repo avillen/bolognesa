@@ -4,9 +4,12 @@ defmodule BolognesaWeb.Series.Review.Live do
   alias Bolognesa.Series
   alias BolognesaWeb.Params
   alias BolognesaWeb.Series.Review.Components.ReviewItem
-  alias BolognesaWeb.Series.Review.Reducer.ApplyResult
-  alias BolognesaWeb.Series.Review.Reducer.BeginCorrection
-  alias BolognesaWeb.Series.Review.Reducer.ChooseSeries
+  alias BolognesaWeb.Series.Review.Reducer.ApplyCandidatesResult
+  alias BolognesaWeb.Series.Review.Reducer.ApplyCorrectionResultCoordinator
+  alias BolognesaWeb.Series.Review.Reducer.ApplyReviewsResult
+  alias BolognesaWeb.Series.Review.Reducer.ApplySeasonResult
+  alias BolognesaWeb.Series.Review.Reducer.BeginCorrectionCoordinator
+  alias BolognesaWeb.Series.Review.Reducer.ChooseSeriesCoordinator
   alias BolognesaWeb.Series.Review.Reducer.Initialize
   alias BolognesaWeb.Series.Review.Reducer.Load
   alias BolognesaWeb.Series.Review.Reducer.LoadSeason
@@ -31,11 +34,14 @@ defmodule BolognesaWeb.Series.Review.Live do
   end
 
   @impl true
+  def handle_event("search", _params, %{assigns: %{saving?: true}} = socket),
+    do: {:noreply, socket}
+
   def handle_event("search", %{"search" => %{"query" => query}}, socket),
-    do: {:noreply, Search.call(socket, query)}
+    do: {:noreply, socket |> ResetSelection.call() |> Search.call(query)}
 
   def handle_event("choose", %{"id" => id}, socket),
-    do: {:noreply, ChooseSeries.call(socket, integer(id, 1, nil))}
+    do: {:noreply, ChooseSeriesCoordinator.call(socket, integer(id, 1, nil))}
 
   def handle_event("season", %{"season" => %{"number" => number}}, socket) do
     case integer(number, 0, nil) do
@@ -45,7 +51,7 @@ defmodule BolognesaWeb.Series.Review.Live do
   end
 
   def handle_event("correct", params, socket),
-    do: {:noreply, BeginCorrection.call(socket, Map.get(params, "selection", %{}))}
+    do: {:noreply, BeginCorrectionCoordinator.call(socket, Map.get(params, "selection", %{}))}
 
   def handle_event("unidentified", _, socket),
     do: {:noreply, Save.call(socket, :unidentified)}
@@ -74,8 +80,17 @@ defmodule BolognesaWeb.Series.Review.Live do
   end
 
   @impl true
-  def handle_async({kind, ref}, result, socket),
-    do: {:noreply, ApplyResult.call(socket, kind, ref, result)}
+  def handle_async({:reviews, ref}, result, socket),
+    do: {:noreply, ApplyReviewsResult.call(socket, ref, result)}
+
+  def handle_async({:candidates, ref}, result, socket),
+    do: {:noreply, ApplyCandidatesResult.call(socket, ref, result)}
+
+  def handle_async({:season, ref}, result, socket),
+    do: {:noreply, ApplySeasonResult.call(socket, ref, result)}
+
+  def handle_async({:correction, ref}, result, socket),
+    do: {:noreply, ApplyCorrectionResultCoordinator.call(socket, ref, result)}
 
   defp integer(value, min, default), do: Params.integer(value, min..100_000_000) || default
 end

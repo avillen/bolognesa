@@ -3,9 +3,11 @@ defmodule BolognesaWeb.Series.Review.ReducersTest do
   use ExUnit.Case, async: true
   alias BolognesaWeb.Series.Review.Forms.Selection
 
-  alias BolognesaWeb.Series.Review.Reducer.ApplyResult
-  alias BolognesaWeb.Series.Review.Reducer.BeginCorrection
-  alias BolognesaWeb.Series.Review.Reducer.ChooseSeries
+  alias BolognesaWeb.Series.Review.Reducer.ApplyCandidatesResult
+  alias BolognesaWeb.Series.Review.Reducer.ApplyCorrectionResultCoordinator
+  alias BolognesaWeb.Series.Review.Reducer.ApplySeasonResult
+  alias BolognesaWeb.Series.Review.Reducer.BeginCorrectionCoordinator
+  alias BolognesaWeb.Series.Review.Reducer.ChooseSeriesCoordinator
   alias BolognesaWeb.Series.Review.Reducer.Initialize
   alias BolognesaWeb.Series.Review.Reducer.LoadSeason
   alias BolognesaWeb.Series.Review.Reducer.Save
@@ -32,8 +34,8 @@ defmodule BolognesaWeb.Series.Review.ReducersTest do
         series_id: 202
       )
 
-    assert ApplyResult.call(socket, :candidates, old, {:ok, {:ok, []}}) == socket
-    assert ApplyResult.call(socket, :season, old, {:ok, {:error, :unavailable}}) == socket
+    assert ApplyCandidatesResult.call(socket, old, {:ok, {:ok, []}}) == socket
+    assert ApplySeasonResult.call(socket, old, {:ok, {:error, :unavailable}}) == socket
   end
 
   test "finished requests are consumed and cannot replace validation feedback" do
@@ -45,10 +47,13 @@ defmodule BolognesaWeb.Series.Review.ReducersTest do
 
     ref = make_ref()
     socket = Component.assign(socket, requests: %{correction: ref}, saving?: true)
-    completed = ApplyResult.call(socket, :correction, ref, {:ok, {:error, :source_changed}})
+
+    completed =
+      ApplyCorrectionResultCoordinator.call(socket, ref, {:ok, {:error, :source_changed}})
+
     assert completed.assigns.saving? == false
     assert completed.assigns.requests == %{}
-    assert ApplyResult.call(completed, :correction, ref, {:exit, :cancelled}) == completed
+    assert ApplyCorrectionResultCoordinator.call(completed, ref, {:exit, :cancelled}) == completed
   end
 
   test "a second submit and changes of selection are ignored while saving" do
@@ -59,10 +64,10 @@ defmodule BolognesaWeb.Series.Review.ReducersTest do
       })
 
     socket = Component.assign(socket, saving?: true)
-    assert BeginCorrection.call(socket, %{"episode_numbers" => ["2"]}) == socket
+    assert BeginCorrectionCoordinator.call(socket, %{"episode_numbers" => ["2"]}) == socket
     assert Save.call(socket, :unidentified) == socket
     assert Search.call(socket, "Another") == socket
-    assert ChooseSeries.call(socket, 202) == socket
+    assert ChooseSeriesCoordinator.call(socket, 202) == socket
     assert LoadSeason.call(socket, 2) == socket
   end
 end

@@ -19,4 +19,13 @@ defmodule BolognesaWeb.Series.Review.AsyncRequest do
       ref -> cancel_async(socket, {kind, ref})
     end
   end
+
+  @doc "Removes a finished request, or returns `:stale` when a newer one replaced it."
+  @spec complete(Phoenix.LiveView.Socket.t(), atom(), reference()) ::
+          {:ok, Phoenix.LiveView.Socket.t()} | :stale
+  def complete(socket, kind, ref) do
+    if Map.get(socket.assigns.requests, kind) == ref,
+      do: {:ok, assign(socket, requests: Map.delete(socket.assigns.requests, kind))},
+      else: :stale
+  end
 end
