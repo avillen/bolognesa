@@ -3,12 +3,6 @@ defmodule Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan do
   alias Bolognesa.Playback.Domain.ValueObjects.MediaConfiguration
   @type mode :: :direct | :remux | :audio_conversion | :video_conversion | :full_conversion
   @type transport :: :file | :native_hls | :hls_js
-  @type reason ::
-          :original_supported
-          | :remux_supported
-          | :audio_conversion_required
-          | :video_conversion_required
-          | :full_conversion_required
   @type t :: %__MODULE__{
           revision: pos_integer(),
           video_index: non_neg_integer(),
@@ -38,12 +32,4 @@ defmodule Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan do
     :configuration,
     :transport
   ]
-
-  @doc "The telemetry explanation for a delivery mode."
-  @spec reason(t()) :: reason()
-  def reason(%__MODULE__{mode: :direct}), do: :original_supported
-  def reason(%__MODULE__{mode: :remux}), do: :remux_supported
-  def reason(%__MODULE__{mode: :audio_conversion}), do: :audio_conversion_required
-  def reason(%__MODULE__{mode: :video_conversion}), do: :video_conversion_required
-  def reason(%__MODULE__{mode: :full_conversion}), do: :full_conversion_required
 end

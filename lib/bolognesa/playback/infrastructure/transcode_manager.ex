@@ -608,8 +608,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
         session_id: session.id,
         file_id: session.file_id,
         strategy: session.plan.mode,
-        transport: session.plan.transport,
-        delivery_reason: DeliveryPlan.reason(session.plan)
+        transport: session.plan.transport
       }
       |> Map.merge(metadata)
       |> PlaybackEvents.sanitize_delivery_metadata()

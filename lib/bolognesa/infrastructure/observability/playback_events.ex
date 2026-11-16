@@ -21,14 +21,7 @@ defmodule Bolognesa.Infrastructure.Observability.PlaybackEvents do
       :audio_only,
       :full_transcode
     ],
-    transport: [:file, :native_hls, :hls_js],
-    delivery_reason: [
-      :original_supported,
-      :remux_supported,
-      :audio_conversion_required,
-      :video_conversion_required,
-      :full_conversion_required
-    ]
+    transport: [:file, :native_hls, :hls_js]
   }
 
   @spec sanitize_delivery_metadata(map()) :: map()

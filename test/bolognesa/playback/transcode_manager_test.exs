@@ -26,7 +26,6 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
              file_id: 3,
              strategy: :full_conversion,
              transport: :hls_js,
-             delivery_reason: :full_conversion_required,
              offset_ms: 12_000
            }
 
@@ -375,7 +374,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     assert {:ok, first} = TranscodeManager.start(1, {:movie, 2}, 3, source, plan, 0)
 
     assert_receive {[:bolognesa, :playback, :session, :started], _,
-                    %{strategy: :remux, transport: :hls_js, delivery_reason: :remux_supported}}
+                    %{strategy: :remux, transport: :hls_js}}
 
     assert first.plan == plan
     assert first.plan.mode == :remux
