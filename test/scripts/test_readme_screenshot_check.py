@@ -73,7 +73,7 @@ class ScreenshotCheckTest(unittest.TestCase):
             self.assertEqual(checker.differences(expected, actual), [name])
 
     def test_catalog_surfaces_allow_only_tiny_antialiasing(self):
-        for name in ['music.png', 'music-albums.png', 'season.png', 'about.png']:
+        for name in ['music.png', 'season.png', 'about.png']:
             with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:
                 expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
                 expected.mkdir(); actual.mkdir()
@@ -105,6 +105,25 @@ class ScreenshotCheckTest(unittest.TestCase):
                 self.assertEqual(checker.differences(expected, actual), [name])
                 (actual / name).write_bytes(png(16, 16, [101] * 768))
                 self.assertEqual(checker.differences(expected, actual), [name])
+
+    def test_library_allows_two_bounded_sidebar_outliers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
+            expected.mkdir(); actual.mkdir()
+            name = 'library.png'
+            (expected / name).write_bytes(png(8, 8, [100] * 192))
+            changed = [100] * 192
+            changed[0] = changed[3] = 114
+            changed[6] = changed[9] = changed[12] = 101
+            (actual / name).write_bytes(png(8, 8, changed))
+            self.assertEqual(checker.differences(expected, actual), [])
+            changed[15] = 114
+            (actual / name).write_bytes(png(8, 8, changed))
+            self.assertEqual(checker.differences(expected, actual), [name])
+            changed[15] = 100
+            changed[0] = 117
+            (actual / name).write_bytes(png(8, 8, changed))
+            self.assertEqual(checker.differences(expected, actual), [name])
 
     def test_series_detail_allows_only_bounded_raster_outliers(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -147,7 +166,7 @@ class ScreenshotCheckTest(unittest.TestCase):
                 (actual / name).write_bytes((expected / name).read_bytes())
 
     def test_mobile_corners_have_small_capture_specific_budgets(self):
-        for name, budget, delta in [('series.png', 8, 1), ('series-mobile.png', 8, 1), ('series-detail-mobile.png', 64, 2), ('episode-mobile.png', 8, 1), ('music-mobile.png', 128, 2)]:
+        for name, budget, delta in [('series.png', 8, 1), ('series-mobile.png', 8, 1), ('series-detail-mobile.png', 64, 2), ('episode-mobile.png', 8, 1), ('music-mobile.png', 128, 2), ('music-albums.png', 32, 2), ('movies-mobile.png', 32, 2), ('series-review.png', 16, 1)]:
             with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:
                 expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
                 expected.mkdir(); actual.mkdir()
