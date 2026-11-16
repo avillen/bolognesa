@@ -5,16 +5,17 @@ defmodule BolognesaWeb.Library.Index.Live do
   alias BolognesaWeb.Library.Index.Components.LibraryForm
   alias BolognesaWeb.Library.Index.Components.LibraryList
   alias BolognesaWeb.Library.Index.Components.ReinspectConfirmation
-  alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
+  alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatusesCoordinator
+  alias BolognesaWeb.Library.Index.Reducer.ConfirmReinspectCoordinator
   alias BolognesaWeb.Library.Index.Reducer.FetchScanStatuses
-  alias BolognesaWeb.Library.Index.Reducer.Initialize
-  alias BolognesaWeb.Library.Index.Reducer.Reinspect
-  alias BolognesaWeb.Library.Index.Reducer.Save
+  alias BolognesaWeb.Library.Index.Reducer.InitializeCoordinator
+  alias BolognesaWeb.Library.Index.Reducer.PrepareReinspect
+  alias BolognesaWeb.Library.Index.Reducer.SaveCoordinator
   alias BolognesaWeb.Library.Index.Reducer.StartScan
   alias BolognesaWeb.Library.Index.Reducer.Validate
 
   @impl true
-  def mount(_params, _session, socket), do: {:ok, Initialize.call(socket)}
+  def mount(_params, _session, socket), do: {:ok, InitializeCoordinator.call(socket)}
 
   @impl true
   def handle_event("open_library_form", _params, socket),
@@ -27,19 +28,19 @@ defmodule BolognesaWeb.Library.Index.Live do
     do: {:noreply, Validate.call(socket, params)}
 
   def handle_event("save", %{"library" => params}, socket),
-    do: {:noreply, Save.call(socket, params)}
+    do: {:noreply, SaveCoordinator.call(socket, params)}
 
   def handle_event("scan", %{"library_id" => id}, socket),
-    do: {:noreply, StartScan.call(socket, id)}
+    do: {:noreply, socket |> StartScan.call(id) |> FetchScanStatuses.call()}
 
   def handle_event("prepare_reinspect", %{"library_id" => id}, socket),
-    do: {:noreply, Reinspect.call(socket, :prepare, id)}
+    do: {:noreply, PrepareReinspect.call(socket, id)}
 
   def handle_event("cancel_reinspect", _params, socket),
-    do: {:noreply, Reinspect.call(socket, :cancel)}
+    do: {:noreply, assign(socket, :reinspect_target, nil)}
 
   def handle_event("confirm_reinspect", %{"library_id" => id}, socket),
-    do: {:noreply, Reinspect.call(socket, :confirm, id)}
+    do: {:noreply, ConfirmReinspectCoordinator.call(socket, id)}
 
   @impl true
   def handle_info({:library_status_changed, _library_id}, socket),
@@ -47,5 +48,5 @@ defmodule BolognesaWeb.Library.Index.Live do
 
   @impl true
   def handle_async({:scan_statuses, request_id}, result, socket),
-    do: {:noreply, ApplyScanStatuses.call(socket, request_id, result)}
+    do: {:noreply, ApplyScanStatusesCoordinator.call(socket, request_id, result)}
 end

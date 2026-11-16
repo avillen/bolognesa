@@ -1,5 +1,5 @@
-defmodule BolognesaWeb.Library.Index.Reducer.Save do
-  @moduledoc false
+defmodule BolognesaWeb.Library.Index.Reducer.SaveCoordinator do
+  @moduledoc "Saves a library and, once it exists, reloads the scan statuses."
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
 
@@ -8,8 +8,8 @@ defmodule BolognesaWeb.Library.Index.Reducer.Save do
 
   alias BolognesaWeb.Library.Index.Forms.Library
   alias BolognesaWeb.Library.Index.LibraryRows
-  alias BolognesaWeb.Library.Index.Reducer.CancelScanStatuses
   alias BolognesaWeb.Library.Index.Reducer.FetchScanStatuses
+  alias BolognesaWeb.Library.Index.ScanStatuses
   alias BolognesaWeb.Library.Index.State.Library, as: LibraryState
   alias BolognesaWeb.LibraryNavigation, as: BolognesaWebLibraryNavigation
   alias Ecto.Changeset
@@ -27,7 +27,7 @@ defmodule BolognesaWeb.Library.Index.Reducer.Save do
       {:ok, library} ->
         socket
         |> BolognesaWebLibraryNavigation.refresh()
-        |> CancelScanStatuses.call()
+        |> ScanStatuses.cancel()
         |> assign(:form, to_form(Library.changeset()))
         |> assign(:show_library_form?, false)
         |> assign(:form_error, nil)
