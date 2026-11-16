@@ -1,5 +1,5 @@
-defmodule BolognesaWeb.Music.Index.Reducer.RetryImport do
-  @moduledoc false
+defmodule BolognesaWeb.Music.Index.Reducer.RetryImportCoordinator do
+  @moduledoc "Retries an audio import and, once queued, reloads the list."
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.LiveView, only: [put_flash: 3]
   alias Bolognesa.Music
