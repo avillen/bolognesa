@@ -13,9 +13,11 @@ defmodule Bolognesa.Music do
 
   alias Bolognesa.Music.Domain.Entities.Album
   alias Bolognesa.Music.Domain.Entities.Artist
+  alias Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader
   alias Bolognesa.Music.Infrastructure.Readers.EctoObservationsReader
   alias Bolognesa.Music.Infrastructure.Readers.EctoTracksReader
   alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository
+  alias Bolognesa.Music.Infrastructure.Repositories.EctoListeningActivityRepository
   alias Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository
   @type transaction_repository :: atom()
   @type import_request :: %{
@@ -52,7 +54,7 @@ defmodule Bolognesa.Music do
         track_id,
         file_id,
         EctoTracksReader,
-        Bolognesa.Music.Infrastructure.Repositories.EctoListeningActivityRepository
+        EctoListeningActivityRepository
       )
 
   @spec retry_import(AuthenticatedUser.t() | nil, pos_integer()) :: RetryImport.result()
@@ -65,12 +67,7 @@ defmodule Bolognesa.Music do
   @spec list_recent_albums(AuthenticatedUser.t() | nil, pos_integer() | nil) ::
           ListRecentAlbums.result()
   def list_recent_albums(actor, library_id),
-    do:
-      ListRecentAlbums.call(
-        actor,
-        library_id,
-        Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader
-      )
+    do: ListRecentAlbums.call(actor, library_id, EctoBrowseReader)
 
   @spec list_tracks(AuthenticatedUser.t() | nil, String.t(), pos_integer(), pos_integer() | nil) ::
           ListTracks.result()
@@ -94,7 +91,7 @@ defmodule Bolognesa.Music do
         query,
         page,
         library,
-        Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader
+        EctoBrowseReader
       )
 
   @spec list_album_tracks(

@@ -26,10 +26,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   alias Bolognesa.Series
 
   @impl true
-  def request(library_id), do: request(library_id, false)
-
-  @impl true
-  def request(library_id, force_inspection?) when is_boolean(force_inspection?) do
+  def request(library_id, force_inspection? \\ false) when is_boolean(force_inspection?) do
     Multi.new()
     |> Multi.run(:library, fn repo, _changes -> find_library(repo, library_id) end)
     |> Multi.insert(
@@ -73,7 +70,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
       {:ok,
        %ScanStatus{
          library_id: library_id,
-         latest_scan: map_latest(latest),
+         latest_scan: latest && ScanMapper.to_scan(latest),
          last_completed_at: last_completed_at
        }}
     end
@@ -101,14 +98,17 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
       plans = plan_batch(scan, entries, existing, inspections)
       rows = Enum.map(entries, &file_row(scan, &1, Map.fetch!(plans, &1.relative_path)))
 
-      Repo.insert_all(MediaFileSchema, rows,
-        log: false,
-        conflict_target: [:library_id, :relative_path],
-        on_conflict:
-          {:replace, [:size_bytes, :modified_at, :availability, :revision, :last_seen_generation]}
-      )
+      {_count, stored} =
+        Repo.insert_all(MediaFileSchema, rows,
+          log: false,
+          returning: true,
+          conflict_target: [:library_id, :relative_path],
+          on_conflict:
+            {:replace,
+             [:size_bytes, :modified_at, :availability, :revision, :last_seen_generation]}
+        )
 
-      saved = load_batch_files(scan.library_id, entries)
+      saved = Map.new(stored, &{&1.relative_path, MediaFileMapper.to_media_file(&1)})
       schedule_inspections(entries, saved, inspections, existing, plans)
       schedule_identifications(scan.library_id, entries, saved, plans)
 
@@ -151,7 +151,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
   @impl true
   def reconcile_jobs(now), do: ObanJobRecovery.reconcile(now)
 
-  defp transaction(operation) do
+  @doc false
+  @spec transaction((-> result)) :: result | {:error, term()} when result: term()
+  def transaction(operation) do
     case Repo.transaction(operation) do
       {:ok, result} ->
         result
@@ -165,7 +167,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
     Ecto.ConstraintError -> {:error, :unavailable}
   end
 
-  defp locked_scan(scan_id, missing_reason) do
+  @doc false
+  @spec locked_scan(Scan.id(), atom()) :: ScanSchema.t()
+  def locked_scan(scan_id, missing_reason) do
     case Repo.one(from scan in ScanSchema, where: scan.id == ^scan_id, lock: "FOR UPDATE") do
       nil -> Repo.rollback(missing_reason)
       scan -> scan
@@ -209,7 +213,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
     end
   end
 
-  defp save_scan(schema, scan) do
+  @doc false
+  @spec save_scan(ScanSchema.t(), Scan.t()) :: Scan.t()
+  def save_scan(schema, scan) do
     attrs =
       Map.take(scan, [
         :state,
@@ -338,7 +344,4 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository do
          opts[:constraint] == :unique and opts[:constraint_name] == "library_scans_one_active"
        end), do: :scan_in_progress, else: :unavailable
   end
-
-  defp map_latest(nil), do: nil
-  defp map_latest(scan), do: ScanMapper.to_scan(scan)
 end

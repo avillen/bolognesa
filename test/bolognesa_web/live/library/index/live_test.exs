@@ -5,7 +5,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   alias Phoenix.ConnTest
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileLibraryJobs
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
   alias BolognesaWeb.Library.Index.Live
@@ -545,7 +545,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     |> Repo.update!()
 
     assert :ok =
-             ReconcileInspections.call(
+             ReconcileLibraryJobs.call(
+               :inspection,
                DateTime.utc_now(),
                EctoInspectionRepository,
                LibraryStatusNotifications

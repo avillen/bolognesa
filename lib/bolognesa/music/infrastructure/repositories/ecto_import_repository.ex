@@ -1,15 +1,12 @@
 defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   @moduledoc false
   @behaviour Bolognesa.Music.Application.Ports.Repositories.ImportRepository
-  import Ecto.Query
 
-  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
-  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
-  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MusicImportSchema
 
   alias Bolognesa.Music.Domain.Entities.ImportState
   alias Bolognesa.Music.Infrastructure.Jobs.Oban.ObanImportJob
+  alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository.ImportLock
   alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository.ObanJobRecovery
   alias Bolognesa.Repo
 
@@ -22,7 +19,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
     unless repo.in_transaction?(),
       do: raise(ArgumentError, "Music handoff requires a transaction")
 
-    case locked(id, repo) do
+    case ImportLock.lock(id, repo) do
       {:ok, %{revision: ^revision} = file, %{token: ^token} = inspection, state} ->
         request_current(repo, file, inspection, state)
 
@@ -62,16 +59,8 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
 
   @impl true
   def request_retry(file_id) do
-    case request_retry_with_result(file_id) do
-      {:ok, _result} -> :ok
-      error -> error
-    end
-  end
-
-  @impl true
-  def request_retry_with_result(file_id) do
     transaction(fn ->
-      case locked(file_id) do
+      case ImportLock.lock(file_id) do
         {:ok, file, inspection, state} -> retry(file, inspection, state)
         :stale -> {:error, :not_found}
       end
@@ -81,7 +70,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   @impl true
   def begin_attempt(file_id, revision, job_id) do
     transaction(fn ->
-      case locked(file_id) do
+      case ImportLock.lock(file_id) do
         {:ok, %{revision: ^revision} = file, inspection, state} ->
           begin(file, inspection, state, job_id)
 
@@ -94,7 +83,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   @impl true
   def fail_attempt(attempt, reason) do
     transaction(fn ->
-      case locked(attempt.media_file_id) do
+      case ImportLock.lock(attempt.media_file_id) do
         {:ok, file, inspection, state} -> fail_current(file, inspection, state, attempt, reason)
         :stale -> {:ok, :stale}
       end
@@ -150,36 +139,6 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
     end
   end
 
-  defp locked(file_id, repo \\ Repo) do
-    file =
-      repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
-        log: false
-      )
-
-    inspection =
-      repo.one(
-        from(row in InspectionSchema, where: row.media_file_id == ^file_id, lock: "FOR UPDATE"),
-        log: false
-      )
-
-    state =
-      repo.one(
-        from(row in MusicImportSchema, where: row.media_file_id == ^file_id, lock: "FOR UPDATE")
-      )
-
-    if eligible?(file, inspection, repo), do: {:ok, file, inspection, state}, else: :stale
-  end
-
-  defp eligible?(nil, _inspection, _repo), do: false
-  defp eligible?(_file, nil, _repo), do: false
-
-  defp eligible?(file, inspection, repo) do
-    file.availability == :available &&
-      repo.get!(LibrarySchema, file.library_id).content_type == :music &&
-      inspection.state == :succeeded && inspection.observed_revision == file.revision &&
-      Enum.any?(inspection.tracks["items"] || [], &(&1["kind"] == "audio"))
-  end
-
   defp save(nil, attrs),
     do: Repo.insert!(MusicImportSchema.changeset(%MusicImportSchema{}, attrs))
 
@@ -205,14 +164,6 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
 
   @impl true
   def reconcile_jobs(now) do
-    case reconcile_jobs_with_summary(now) do
-      {:ok, _summary} -> :ok
-      {:error, :unavailable, _summary} -> {:error, :unavailable}
-    end
-  end
-
-  @impl true
-  def reconcile_jobs_with_summary(now) do
     cutoff = DateTime.add(now, -60, :second)
 
     ids = ObanJobRecovery.list_interrupted(cutoff)
@@ -244,7 +195,7 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository do
   end
 
   defp reconcile(id, cutoff) do
-    case locked(id) do
+    case ImportLock.lock(id) do
       {:ok, file, inspection, state} when not is_nil(state) ->
         reconcile_state(state, inspection, cutoff, file.library_id)
 

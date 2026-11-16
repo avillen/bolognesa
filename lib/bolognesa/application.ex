@@ -20,10 +20,12 @@ defmodule Bolognesa.Application do
     children =
       children ++
         optional_children(:scan_reconciler, [
-          Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.ScanReconciler
+          {Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.LibraryJobReconciler,
+           operation: :scan}
         ]) ++
         optional_children(:inspection_reconciler, [
-          Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.InspectionReconciler
+          {Bolognesa.Libraries.Infrastructure.Jobs.Reconcilers.LibraryJobReconciler,
+           operation: :inspection}
         ]) ++
         optional_children(:identification_reconciler, [
           Bolognesa.Movies.Infrastructure.Jobs.Reconcilers.IdentificationReconciler,

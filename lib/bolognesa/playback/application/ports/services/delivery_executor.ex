@@ -13,7 +13,6 @@ defmodule Bolognesa.Playback.Application.Ports.Services.DeliveryExecutor do
           | :unreadable
           | :unavailable
           | :busy
-          | :invalid_offset
           | :tool_unavailable
           | :unsafe_root
           | :storage_unavailable

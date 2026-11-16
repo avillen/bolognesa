@@ -53,8 +53,6 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker do
 
   defp execute(id, attempt, repository, discovery, notifications, metadata, started) do
     DiscoverFiles.call(id, attempt, repository, discovery, notifications, metadata[:job_id])
-  rescue
-    _exception -> unexpected_failure(metadata, started)
   catch
     _kind, _value -> unexpected_failure(metadata, started)
   end

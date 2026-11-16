@@ -23,10 +23,6 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
           non_neg_integer()
   def request_batch!(repo, entries), do: RequestWriter.request_batch!(repo, entries)
 
-  @spec backfill_batch(non_neg_integer(), pos_integer()) ::
-          {:ok, non_neg_integer(), non_neg_integer()} | {:error, :unavailable}
-  def backfill_batch(cursor_id, limit), do: RequestWriter.backfill_batch(cursor_id, limit)
-
   @impl true
   def fetch_file(id) do
     case Repo.get(MediaFileSchema, id, log: false) do
@@ -42,8 +38,8 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   def complete_series(file_id, token, candidates, selection, reason) do
     transaction(fn ->
       case current(file_id, token) do
-        {:ok, identification, file} when identification.state == :pending ->
-          complete_series_current(identification, file, candidates, selection, reason)
+        {:ok, identification, _projection} when identification.state == :pending ->
+          complete_series_current(identification, candidates, selection, reason)
 
         _ ->
           {:ok, :stale}
@@ -54,28 +50,15 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   @impl true
   def correct_series(file_id, expected_revision, choice) do
     transaction(fn ->
-      file = Repo.one(from row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE")
+      file = Repo.get(lock(MediaFileSchema, "FOR UPDATE"), file_id)
       correct_series_current(file, expected_revision, choice)
     end)
   end
 
-  defp complete_series_current(identification, file, candidates, selection, reason) do
-    if file_projection(file).content_type == :series do
-      ids = selected_ids(selection)
-
-      complete_decision!(
-        identification,
-        ids,
-        candidates,
-        ids == [],
-        reason,
-        part_number(selection)
-      )
-
-      :ok
-    else
-      {:ok, :stale}
-    end
+  defp complete_series_current(identification, candidates, selection, reason) do
+    ids = selected_ids(selection)
+    complete_decision!(identification, ids, candidates, ids == [], reason, part_number(selection))
+    :ok
   end
 
   defp part_number(%{part_number: part}), do: part
@@ -129,8 +112,8 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   def begin_identification(file_id, token, job_id) do
     transaction(fn ->
       case current(file_id, token) do
-        {:ok, identification, file} when identification.state == :pending ->
-          start_pending_identification(identification, file, job_id)
+        {:ok, identification, projection} when identification.state == :pending ->
+          start_pending_identification(identification, projection, job_id)
 
         _ ->
           {:ok, :stale}
@@ -148,7 +131,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   def fail(file_id, token, reason) do
     transaction(fn ->
       case current(file_id, token) do
-        {:ok, identification, _file} when identification.state == :pending ->
+        {:ok, identification, _projection} when identification.state == :pending ->
           {:ok, failed} =
             Identification.fail(
               decision(identification),
@@ -172,9 +155,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   def retry(file_id) do
     transaction(fn ->
       file =
-        Repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
-          log: false
-        )
+        Repo.get(lock(MediaFileSchema, "FOR UPDATE"), file_id, log: false)
 
       identification = DecisionStore.lock(Repo, file_id)
 
@@ -195,14 +176,6 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
           request_retry(file)
       end
     end)
-  end
-
-  @spec reconcile_jobs(DateTime.t()) :: :ok | {:error, :unavailable}
-  def reconcile_jobs(now) do
-    case reconcile_jobs_result(now) do
-      {:ok, _count} -> :ok
-      {:error, :unavailable, _count} -> {:error, :unavailable}
-    end
   end
 
   @spec reconcile_jobs_result(DateTime.t()) ::
@@ -227,10 +200,10 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
 
   defp recovery_result({:ok, :stale}, result), do: result
 
-  defp start_pending_identification(identification, file, job_id) do
+  defp start_pending_identification(identification, projection, job_id) do
     {:ok, started} = Identification.start(decision(identification), job_id, DateTime.utc_now())
     DecisionStore.save!(Repo, identification, started)
-    {:ok, file_projection(file)}
+    {:ok, projection}
   end
 
   defp request_retry(file) do
@@ -238,25 +211,21 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
       %{file_id: file.id, revision: file.revision, requested?: true}
     ])
 
-    case get(file.id) do
-      {:ok, identification} -> {:ok, identification}
-      error -> error
-    end
+    get(file.id)
   end
 
   defp current(file_id, token) do
     file =
-      Repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
-        log: false
-      )
+      Repo.get(lock(MediaFileSchema, "FOR UPDATE"), file_id, log: false)
 
     identification = DecisionStore.lock(Repo, file_id)
+    projection = file && file_projection(file)
 
-    if file && file_projection(file).content_type == :series && identification &&
+    if projection && projection.content_type == :series && identification &&
          identification.token == token &&
          identification.origin != :manual && file.availability == :available &&
          file.revision == identification.observed_revision,
-       do: {:ok, identification, file},
+       do: {:ok, identification, projection},
        else: :stale
   end
 

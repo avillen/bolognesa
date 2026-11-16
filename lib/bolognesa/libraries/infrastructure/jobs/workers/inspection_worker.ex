@@ -39,8 +39,6 @@ defmodule Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker do
       )
       when is_integer(id) and id > 0 and is_binary(token) do
     InspectMediaFile.call(id, token, attempt, repository, probe, notifications, job.id)
-  rescue
-    _exception -> unexpected_failure(id, job.id, attempt)
   catch
     _kind, _value -> unexpected_failure(id, job.id, attempt)
   end

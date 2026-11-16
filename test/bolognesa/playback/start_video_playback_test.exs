@@ -153,6 +153,7 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
         observed_revision: 1,
         state: :succeeded,
         format: "mov,mp4,m4a,3gp,3g2,mj2",
+        duration_ms: 60_000,
         tracks: %{
           "items" => [
             %{
@@ -172,6 +173,15 @@ defmodule Bolognesa.Playback.StartVideoPlaybackTest do
     {:ok, [candidate]} = Negotiation.candidates(source)
     plan = %{candidate.plan | transport: :file}
     assert {:ok, :direct} = Playback.prepare_video(actor, {:movie, movie.id}, file.id, plan)
+
+    assert {:ok, :direct} =
+             Playback.prepare_video(actor, {:movie, movie.id}, file.id, plan, 60_000)
+
+    for offset <- [-1, 60_001] do
+      assert {:error, :invalid_offset} =
+               Playback.prepare_video(actor, {:movie, movie.id}, file.id, plan, offset)
+    end
+
     assert {:error, :forbidden} = Playback.prepare_video(nil, {:movie, movie.id}, file.id, plan)
     assert {:error, :not_found} = Playback.prepare_video(actor, {:movie, 0}, file.id, plan)
 

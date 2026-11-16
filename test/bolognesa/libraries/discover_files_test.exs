@@ -4,7 +4,7 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
   alias Bolognesa.Infrastructure.Persistence.ScanSchema
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   use Bolognesa.DataCase, async: false
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileLibraryJobs
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
 
   alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.ScanWorker
@@ -89,7 +89,8 @@ defmodule Bolognesa.Libraries.DiscoverFilesTest do
     |> Repo.update!()
 
     assert :ok =
-             ReconcileScans.call(
+             ReconcileLibraryJobs.call(
+               :scan,
                DateTime.utc_now(),
                EctoScanRepository,
                LibraryStatusNotifications

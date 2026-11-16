@@ -338,7 +338,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       })
 
       session = preparing_session(view)
-      assert session.strategy == :full_conversion
+      assert session.plan.mode == :full_conversion
       assert has_element?(view, "#playback-mode", "Transcodificación de vídeo y audio")
       assert session.offset_ms == 12_000
       refute has_element?(view, "#movie-playback-error")
@@ -399,7 +399,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
     test "prepares inspected incompatible media and displays its HLS controls when ready", ctx do
       session = start_inspected_version(ctx)
-      assert session.strategy == :audio_conversion
+      assert session.plan.mode == :audio_conversion
       assert has_element?(ctx.view, "#movie-playback-preparing")
       refute has_element?(ctx.view, "#movie-video-frame[data-src]")
       make_ready(ctx.view, session)
@@ -465,7 +465,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       assert closed_id == session.id
       assert next.id != session.id
       assert next.offset_ms == 10_000
-      assert next.strategy == :audio_conversion
+      assert next.plan.mode == :audio_conversion
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
       make_ready(ctx.view, next)
 
@@ -614,7 +614,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       refute has_element?(ctx.view, "#movie-playback-preparing")
       render_click(element(ctx.view, "#movie-playback-compatible"))
       session = preparing_session(ctx.view)
-      assert session.strategy == :full_conversion
+      assert session.plan.mode == :full_conversion
       refute playback_attempt(ctx.view) == old
       make_ready(ctx.view, session)
       refute has_element?(ctx.view, "#movie-playback-compatible")

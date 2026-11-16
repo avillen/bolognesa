@@ -5,7 +5,6 @@ defmodule Bolognesa.Movies do
   alias Bolognesa.Movies.Application.UseCases.CorrectMovieIdentification
   alias Bolognesa.Movies.Application.UseCases.GetMovie
   alias Bolognesa.Movies.Application.UseCases.GetMovie.Response, as: MovieDetail
-  alias Bolognesa.Movies.Application.UseCases.IdentifyMovieFile
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems.Response, as: MovieReviewPage
   alias Bolognesa.Movies.Application.UseCases.ListMovies
@@ -73,12 +72,6 @@ defmodule Bolognesa.Movies do
         ) :: non_neg_integer()
   def request_batch_in_transaction!(repo, entries),
     do: EctoIdentificationRepository.request_batch!(repo, entries)
-
-  @spec identify_file(pos_integer(), Identification.token(), pos_integer(), pos_integer() | nil) ::
-          :ok | {:error, reason()}
-  def identify_file(id, token, attempt, job_id),
-    do:
-      IdentifyMovieFile.call(id, token, attempt, EctoIdentificationRepository, provider(), job_id)
 
   defp provider, do: Application.get_env(:bolognesa, :movie_provider_adapter, TmdbMovieProvider)
 end

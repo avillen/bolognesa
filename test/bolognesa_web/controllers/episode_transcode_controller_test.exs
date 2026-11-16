@@ -43,8 +43,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
                ctx.actor,
                {:episode, first},
                file.id,
-               0,
-               :full_transcode
+               0
              )
 
     for {actor, entry, file_id} <- [
@@ -81,8 +80,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
                ctx.actor,
                {:episode, second},
                file.id,
-               0,
-               :full_transcode
+               0
              )
 
     write_hls(next)
@@ -177,8 +175,7 @@ defmodule BolognesaWeb.EpisodeTranscodeControllerTest do
                  ctx.actor,
                  {kind, id},
                  source_file.id,
-                 0,
-                 :full_transcode
+                 0
                )
 
       assert session.content_ref == {kind, id}

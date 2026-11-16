@@ -17,10 +17,8 @@ defmodule Bolognesa.Libraries.Application.Ports.Services.MediaProbe do
 
   @typedoc "Bounded source of an unreadable result, with no command output or path."
   @type failure_stage :: :ffprobe | :file_access
-  @type diagnostic_result ::
+  @type result ::
           {:ok, TechnicalMedia.t()} | {:error, reason()} | {:error, :unreadable, failure_stage()}
 
-  @callback inspect(Library.t(), MediaFile.t()) :: {:ok, TechnicalMedia.t()} | {:error, reason()}
-  @callback inspect_with_diagnostics(Library.t(), MediaFile.t()) :: diagnostic_result()
-  @optional_callbacks inspect_with_diagnostics: 2
+  @callback inspect(Library.t(), MediaFile.t()) :: result()
 end

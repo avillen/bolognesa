@@ -8,7 +8,7 @@ defmodule Bolognesa.Libraries.StartScanTest do
 
   alias Bolognesa.Libraries.Application.UseCases.FetchInspectionCounts
   alias Bolognesa.Libraries.Application.UseCases.FetchScanStatus
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileLibraryJobs
   alias Bolognesa.Libraries.Application.UseCases.StartScan
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
 
@@ -313,7 +313,8 @@ defmodule Bolognesa.Libraries.StartScanTest do
 
   test "job reconciliation is a no-op without active scans" do
     assert :ok =
-             ReconcileScans.call(
+             ReconcileLibraryJobs.call(
+               :scan,
                DateTime.utc_now(),
                EctoScanRepository,
                LibraryStatusNotifications

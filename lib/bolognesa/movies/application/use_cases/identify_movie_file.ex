@@ -47,17 +47,9 @@ defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
 
   defp identify(observation, file_id, token, attempt, repository, provider, file) do
     with {:ok, hint} <- TitleHint.from_path(file.relative_path),
-         {:ok, candidates} <- provider_result(provider.search(hint.title, hint.year), :search) do
-      identify_candidates(
-        observation,
-        file_id,
-        token,
-        attempt,
-        repository,
-        provider,
-        hint,
-        candidates
-      )
+         {:ok, candidates} <- provider_result(provider.search(hint.title, hint.year), :search),
+         {:ok, details, needs_review} <- best_match(provider, hint, candidates) do
+      complete(observation, file_id, token, repository, candidates, details, needs_review)
     else
       {:error, reason, stage} ->
         observation = Observation.put(observation, :failure_stage, stage)
@@ -68,53 +60,23 @@ defmodule Bolognesa.Movies.Application.UseCases.IdentifyMovieFile do
     end
   end
 
-  defp identify_candidates(
-         observation,
-         file_id,
-         token,
-         _attempt,
-         repository,
-         _provider,
-         _hint,
-         []
-       ) do
-    normalize(repository.complete(file_id, token, [], nil, true), observation, :completed, %{
-      result: :no_match
-    })
+  defp best_match(_provider, _hint, []), do: {:ok, nil, true}
+
+  defp best_match(provider, hint, [candidate | _]) do
+    with {:ok, details} <- provider_result(provider.details(candidate.provider_id), :details),
+         do: {:ok, details, IdentificationPolicy.needs_review?(hint, candidate)}
   end
 
-  defp identify_candidates(
-         observation,
-         file_id,
-         token,
-         attempt,
-         repository,
-         provider,
-         hint,
-         [candidate | _] = candidates
-       ) do
-    case provider_result(provider.details(candidate.provider_id), :details) do
-      {:ok, details} ->
-        normalize(
-          repository.complete(
-            file_id,
-            token,
-            candidates,
-            details,
-            IdentificationPolicy.needs_review?(hint, candidate)
-          ),
-          observation,
-          :completed,
-          %{
-            result:
-              if(IdentificationPolicy.needs_review?(hint, candidate), do: :review, else: :matched)
-          }
-        )
+  defp complete(observation, file_id, token, repository, candidates, details, needs_review) do
+    result =
+      cond do
+        is_nil(details) -> :no_match
+        needs_review -> :review
+        true -> :matched
+      end
 
-      {:error, reason, stage} ->
-        observation = Observation.put(observation, :failure_stage, stage)
-        handle_error(observation, file_id, token, reason, attempt, repository)
-    end
+    repository.complete(file_id, token, candidates, details, needs_review)
+    |> normalize(observation, :completed, %{result: result})
   end
 
   defp handle_error(observation, file_id, token, reason, attempt, repository) do

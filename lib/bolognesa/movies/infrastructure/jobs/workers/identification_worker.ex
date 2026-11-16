@@ -2,25 +2,23 @@ defmodule Bolognesa.Movies.Infrastructure.Jobs.Workers.IdentificationWorker do
   @moduledoc "Runs a token-protected movie identification."
   use Oban.Worker, queue: :identifications, max_attempts: 3
   alias Bolognesa.Infrastructure.Observability.Events
-  alias Bolognesa.Movies, as: BolognesaMovies
   alias Bolognesa.Movies.Application.Ports.Providers.MovieProvider
   alias Bolognesa.Movies.Application.Ports.Repositories.IdentificationRepository
   alias Bolognesa.Movies.Application.UseCases.IdentifyMovieFile
+  alias Bolognesa.Movies.Infrastructure.Providers.TmdbMovieProvider
+  alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository
 
   @impl Oban.Worker
   def timeout(_job), do: 30_000
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"file_id" => id, "token" => token}, attempt: attempt} = job)
-      when is_integer(id) and id > 0 and is_binary(token) do
-    BolognesaMovies.identify_file(id, token, attempt, job.id)
-  rescue
-    _ -> unexpected_failure(id, job.id, attempt)
-  catch
-    _, _ -> unexpected_failure(id, job.id, attempt)
-  end
-
-  def perform(_), do: {:cancel, :invalid_job}
+  def perform(job),
+    do:
+      perform(
+        job,
+        EctoIdentificationRepository,
+        Application.get_env(:bolognesa, :movie_provider_adapter, TmdbMovieProvider)
+      )
 
   @spec perform(Oban.Job.t(), IdentificationRepository.adapter(), MovieProvider.adapter()) ::
           :ok

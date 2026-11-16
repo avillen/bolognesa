@@ -11,14 +11,13 @@ defmodule Bolognesa.Series.Application.UseCases.FetchSeriesSeason do
           | {:error, :forbidden | :invalid_selection | SeriesProvider.reason()}
   def call(actor, id, number, provider) do
     with :ok <- Accounts.authorize(actor, :admin),
-         :ok <- valid_ids(id, number),
-         {:ok, season} <- provider.season(id, number) do
-      {:ok, season}
-    else
-      {:error, :not_found} -> :not_found
-      error -> error
+         :ok <- valid_ids(id, number) do
+      not_found(provider.season(id, number))
     end
   end
+
+  defp not_found({:error, :not_found}), do: :not_found
+  defp not_found(result), do: result
 
   defp valid_ids(id, number)
        when is_integer(id) and id > 0 and is_integer(number) and number >= 0, do: :ok

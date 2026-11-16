@@ -12,7 +12,6 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   alias Bolognesa.Movies.Infrastructure.Jobs.Oban.ObanIdentificationJob
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
   alias Bolognesa.Movies.Infrastructure.Repositories.IdentificationMapper
-  alias Bolognesa.Repo
 
   @type request_entry :: %{
           required(:file_id) => pos_integer(),
@@ -28,55 +27,6 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     Enum.count(entries, fn entry ->
       if entry.requested?, do: request_one!(repo, entry.file_id, entry.revision), else: false
     end)
-  end
-
-  @spec backfill_batch(non_neg_integer(), pos_integer()) ::
-          {:ok, non_neg_integer(), non_neg_integer()} | {:error, :unavailable}
-  def backfill_batch(cursor_id, limit)
-      when is_integer(cursor_id) and cursor_id >= 0 and is_integer(limit) and limit > 0 and
-             limit <= 100 do
-    case Repo.transaction(fn -> backfill_locked(cursor_id, limit) end) do
-      {:ok, {next_cursor, count}} -> {:ok, next_cursor, count}
-      {:error, _reason} -> {:error, :unavailable}
-    end
-  rescue
-    DBConnection.ConnectionError -> {:error, :unavailable}
-    Postgrex.Error -> {:error, :unavailable}
-    Ecto.ConstraintError -> {:error, :unavailable}
-  end
-
-  def backfill_batch(_cursor_id, _limit), do: {:error, :unavailable}
-
-  defp backfill_locked(cursor_id, limit) do
-    files =
-      Repo.all(
-        from(file in MediaFileSchema,
-          join: library in LibrarySchema,
-          on: library.id == file.library_id,
-          where: library.content_type == :movie,
-          where: file.id > ^cursor_id and file.availability == :available,
-          order_by: file.id,
-          limit: ^limit,
-          lock: "FOR UPDATE"
-        ),
-        log: false
-      )
-
-    count =
-      Enum.count(files, fn file ->
-        case DecisionStore.lock(Repo, file.id) do
-          nil -> insert_request!(Repo, file.id, file.revision)
-          _existing -> false
-        end
-      end)
-
-    next_cursor =
-      case List.last(files) do
-        nil -> cursor_id
-        file -> file.id
-      end
-
-    {next_cursor, count}
   end
 
   defp request_one!(repo, file_id, revision) do

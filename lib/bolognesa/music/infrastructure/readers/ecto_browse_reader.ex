@@ -3,7 +3,6 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
   @behaviour Bolognesa.Music.Application.Ports.Readers.BrowseReader
   import Ecto.Query
 
-  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MusicAlbumSchema
   alias Bolognesa.Infrastructure.Persistence.MusicArtistSchema
@@ -12,11 +11,12 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
   alias Bolognesa.Music.Domain.ReadModels.BrowseItem
   alias Bolognesa.Music.Domain.ReadModels.BrowsePage
   alias Bolognesa.Music.Domain.ReadModels.RecentAlbum
+  alias Bolognesa.Music.Infrastructure.Readers.QueryFilters
   alias Bolognesa.Repo
 
   @impl true
   def list_recent_albums(library_id, user_id) do
-    with :ok <- library_scope(library_id) do
+    with :ok <- QueryFilters.library_scope(library_id) do
       latest =
         from(track in MusicTrackSchema,
           join: activity in "music_listening_activity",
@@ -83,7 +83,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
 
   @impl true
   def browse(kind, artist_id, text, page, library_id, user_id) do
-    with :ok <- library_scope(library_id),
+    with :ok <- QueryFilters.library_scope(library_id),
          {:ok, heading} <- artist_heading(artist_id, library_id) do
       query = collection(kind, artist_id) |> scope(library_id) |> search(text, kind)
       total = Repo.aggregate(query, :count, :id, log: false)
@@ -118,15 +118,6 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
     select_merge(query, [], %{
       last_played_at: type(fragment("?", subquery(latest)), :utc_datetime_usec)
     })
-  end
-
-  defp library_scope(nil), do: :ok
-
-  defp library_scope(id) do
-    case Repo.get(LibrarySchema, id, log: false) do
-      %{content_type: :music} -> :ok
-      _ -> {:error, :not_found}
-    end
   end
 
   defp artist_heading(nil, _library), do: {:ok, nil}
@@ -217,16 +208,8 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
   defp scope(query, library), do: where(query, [row], row.library_id == ^library)
   defp search(query, "", _kind), do: query
 
-  defp search(query, text, kind) do
-    pattern =
-      "%" <>
-        (text
-         |> String.replace("\\", "\\\\")
-         |> String.replace("%", "\\%")
-         |> String.replace("_", "\\_")) <> "%"
-
-    search_pattern(query, kind, pattern)
-  end
+  defp search(query, text, kind),
+    do: search_pattern(query, kind, QueryFilters.contains_pattern(text))
 
   defp search_pattern(query, :artists, pattern),
     do: where(query, [row], ilike(row.name, ^pattern))

@@ -5,6 +5,7 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
   alias Bolognesa.Music.Application.Dto.Track
   alias Bolognesa.Music.Application.Dto.TrackPage
   alias Bolognesa.Music.Application.Ports.Readers.TracksReader
+  alias Bolognesa.Music.Application.ReadQuery
   alias Bolognesa.Music.Domain.Entities.Album
   @type error :: :forbidden | :invalid_query | :not_found | :unavailable | :album_too_large
   @type result :: {:ok, TrackPage.t()} | {:error, error()}
@@ -43,23 +44,12 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
   end
 
   defp validate(actor, id, query, page, library) do
-    with :ok <- Accounts.authorize(actor, :admin) do
-      valid_query(id, query, page, library)
+    with :ok <- Accounts.authorize(actor, :admin),
+         true <- ReadQuery.valid_id?(id) and ReadQuery.valid?(query, page, library) do
+      :ok
+    else
+      false -> {:error, :invalid_query}
+      error -> error
     end
   end
-
-  defp valid_query(id, query, page, library) do
-    if valid_id?(id) and valid_text?(query) and is_integer(page) and page in 1..100_000 and
-         valid_library?(library),
-       do: :ok,
-       else: {:error, :invalid_query}
-  end
-
-  defp valid_id?(id), do: is_integer(id) and id > 0
-
-  defp valid_text?(query),
-    do: is_binary(query) and String.valid?(query) and byte_size(query) <= 256
-
-  defp valid_library?(nil), do: true
-  defp valid_library?(id), do: valid_id?(id)
 end
