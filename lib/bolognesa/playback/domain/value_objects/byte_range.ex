@@ -43,10 +43,12 @@ defmodule Bolognesa.Playback.Domain.ValueObjects.ByteRange do
 
   defp closed_range(first_text, last_text, size) do
     with {:ok, first} <- number(first_text),
-         {:ok, last} <- number(last_text) do
-      if first < size and last >= first,
-        do: {:ok, {first, min(last, size - 1) - first + 1, 206}},
-        else: {:error, :unsatisfiable}
+         {:ok, last} <- number(last_text),
+         true <- first < size and last >= first do
+      {:ok, {first, min(last, size - 1) - first + 1, 206}}
+    else
+      false -> {:error, :unsatisfiable}
+      error -> error
     end
   end
 
