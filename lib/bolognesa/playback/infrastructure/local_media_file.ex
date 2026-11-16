@@ -68,12 +68,16 @@ defmodule Bolognesa.Playback.Infrastructure.LocalMediaFile do
 
   defp physical_ancestors(path) do
     parts = Path.split(path) |> Enum.reject(&(&1 == "/"))
-    check_directory_chain("", parts)
+
+    with {:ok, _identities} <- directory_chain("", parts, File), do: :ok
   end
 
   defp relative_ancestors(root, relative_path, file_access) do
     parts = :binary.split(relative_path, "/", [:global]) |> Enum.drop(-1)
+    directory_chain(root, parts, file_access)
+  end
 
+  defp directory_chain(root, parts, file_access) do
     Enum.reduce_while(parts, {root, []}, fn part, {parent, identities} ->
       path = parent <> "/" <> part
 
@@ -92,27 +96,6 @@ defmodule Bolognesa.Playback.Infrastructure.LocalMediaFile do
     |> case do
       {:error, _} = error -> error
       {_, identities} -> {:ok, Enum.reverse(identities)}
-    end
-  end
-
-  defp check_directory_chain(root, parts) do
-    Enum.reduce_while(parts, root, fn part, parent ->
-      path = parent <> "/" <> part
-
-      case File.lstat(path, time: :posix) do
-        {:ok, %{type: :directory, access: access}} when access in [:read, :read_write] ->
-          {:cont, path}
-
-        {:ok, _} ->
-          {:halt, {:error, :unsafe_entry}}
-
-        {:error, _} ->
-          {:halt, {:error, :source_inaccessible}}
-      end
-    end)
-    |> case do
-      {:error, _} = error -> error
-      _ -> :ok
     end
   end
 

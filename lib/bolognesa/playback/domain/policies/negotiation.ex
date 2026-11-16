@@ -168,17 +168,10 @@ defmodule Bolognesa.Playback.Domain.Policies.Negotiation do
         mode: option.mode,
         video_action: option.video_action,
         audio_action: option.audio_action,
-        configuration: option.configuration,
-        reason: reason(option.mode)
+        configuration: option.configuration
       }
     }
   end
-
-  defp reason(:direct), do: :original_supported
-  defp reason(:remux), do: :remux_supported
-  defp reason(:audio_conversion), do: :audio_conversion_required
-  defp reason(:video_conversion), do: :video_conversion_required
-  defp reason(:full_conversion), do: :full_conversion_required
 
   defp configuration(container, mime, video, audio),
     do: %MediaConfiguration{container: container, mime: mime, video: video, audio: audio}

@@ -12,7 +12,6 @@ defmodule Bolognesa.Infrastructure.Observability do
     :file_id,
     :strategy,
     :transport,
-    :delivery_reason,
     :stage,
     :offset_ms,
     :reason,
