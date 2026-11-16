@@ -23,7 +23,7 @@ defmodule Bolognesa.Playback.Domain.ReadModels.TranscodeSession do
           duration_ms: non_neg_integer() | nil,
           directory: String.t(),
           plan: DeliveryPlan.t(),
-          status: :running | :finished | :failed
+          status: :running | :finished
         }
 
   defstruct [

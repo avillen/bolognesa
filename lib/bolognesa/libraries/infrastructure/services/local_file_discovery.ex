@@ -2,9 +2,10 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery do
   @moduledoc """
   Discovers physical candidates without writing to the source.
 
-  Checks source identity and physical ancestors between filesystem operations and
-  after each sink. These checks detect replacements observed by the walk; File
-  APIs do not provide an atomic snapshot against concurrent filesystem changes.
+  Checks source identity and physical ancestors when entering and leaving each
+  directory and after each sink. Entries are read with lstat, so links are never
+  followed. These checks detect replacements observed by the walk; File APIs do
+  not provide an atomic snapshot against concurrent filesystem changes.
   """
   @behaviour Bolognesa.Libraries.Application.Ports.Services.FileDiscovery
 
@@ -43,8 +44,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery do
     relative_path = join_relative(directory, name)
     remaining = [{directory, names} | stack]
 
-    with :ok <- check_directory(source, directory),
-         {:ok, stat} <- entry_stat(absolute_path(source, relative_path)) do
+    with {:ok, stat} <- entry_stat(absolute_path(source, relative_path)) do
       visit(source, relative_path, stat, remaining, batch, count, sink)
     end
   end
@@ -92,8 +92,11 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery do
 
   defp emit_batch(source, batch, sink) do
     with :ok <- sink.(Enum.reverse(batch)) do
-      Enum.reduce_while(batch, :ok, fn entry, :ok ->
-        continue_check(check_directory(source, relative_parent(entry.relative_path)))
+      batch
+      |> Enum.map(&relative_parent(&1.relative_path))
+      |> Enum.uniq()
+      |> Enum.reduce_while(:ok, fn directory, :ok ->
+        continue_check(check_directory(source, directory))
       end)
     end
   end

@@ -65,7 +65,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @spec lookup(String.t()) :: {:ok, TranscodeSession.t()} | {:error, :not_found}
   def lookup(id), do: GenServer.call(__MODULE__, {:lookup, id})
 
-  @spec status(String.t()) :: :ready | :waiting | :failed | :not_found
+  @spec status(String.t()) :: :ready | :waiting | :not_found
   def status(id), do: GenServer.call(__MODULE__, {:status, id})
 
   @spec touch(String.t()) :: :ok | {:error, :not_found}
@@ -139,9 +139,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     do: {:reply, {:ok, session}, state}
 
   def handle_call({:lookup, _id}, _from, state), do: {:reply, {:error, :not_found}, state}
-
-  def handle_call({:status, id}, _from, %{current: %{id: id, status: :failed}} = state),
-    do: {:reply, :failed, state}
 
   def handle_call(
         {:status, id},
