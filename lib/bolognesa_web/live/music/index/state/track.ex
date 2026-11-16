@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.Music.Index.State.Track do
   @moduledoc "Localized music list presentation."
   use Gettext, backend: BolognesaWeb.Gettext
-  alias Bolognesa.Music.Application.Dto
+  alias Bolognesa.Music.Domain.ReadModels.TrackRow
 
   @type t :: %__MODULE__{
           id: pos_integer(),
@@ -31,8 +31,8 @@ defmodule BolognesaWeb.Music.Index.State.Track do
     :track_number
   ]
 
-  @spec from_dto(Dto.Track.t()) :: t()
-  def from_dto(track),
+  @spec from_row(TrackRow.t()) :: t()
+  def from_row(track),
     do: %__MODULE__{
       id: track.file_id,
       track_id: track.id,

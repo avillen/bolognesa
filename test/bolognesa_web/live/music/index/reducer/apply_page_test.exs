@@ -1,6 +1,6 @@
 defmodule BolognesaWeb.Music.Index.Reducer.ApplyPageTest do
   use ExUnit.Case, async: true
-  alias Bolognesa.Music.Application.Dto.TrackPage
+  alias Bolognesa.Music.Domain.ReadModels.TrackPage
   alias BolognesaWeb.Music.Index.Reducer.ApplyPage
 
   test "stale success and stale errors cannot replace a newer request" do

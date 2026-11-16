@@ -3,9 +3,9 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [stream: 4]
-  alias Bolognesa.Music.Application.Dto.BrowsePage
   alias Bolognesa.Music.Application.UseCases.Browse
   alias Bolognesa.Music.Application.UseCases.ListTracks
+  alias Bolognesa.Music.Domain.ReadModels.BrowsePage
   alias BolognesaWeb.Music.Index.State.Track
   @type async_result :: {:ok, ListTracks.result() | Browse.result()} | {:exit, term()}
   @spec call(Phoenix.LiveView.Socket.t(), reference(), async_result()) ::
@@ -36,7 +36,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
     |> assign(:heading, page.heading)
     |> assign(:visible_track_ids, page.items |> Enum.map(& &1.id) |> MapSet.new())
     |> stream(:groups, [], reset: true)
-    |> stream(:tracks, Enum.map(page.items, &Track.from_dto/1), reset: true)
+    |> stream(:tracks, Enum.map(page.items, &Track.from_row/1), reset: true)
   end
 
   defp apply_result(socket, _result),
