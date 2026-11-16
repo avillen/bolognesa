@@ -51,7 +51,7 @@ defmodule Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification do
 
   defp selection({:tmdb, id, number, numbers}, provider, path)
        when is_integer(id) and id > 0 and is_integer(number) and number >= 0 and is_list(numbers) do
-    with :ok <- valid_numbers(numbers),
+    with :ok <- EpisodeSelection.validate_numbers(numbers),
          {:ok, part} <- EpisodePart.from_path(path),
          {:ok, series} <- provider_result(provider.details(id), :details),
          :ok <- matching(series.provider_id, id, :details),
@@ -70,11 +70,6 @@ defmodule Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification do
   defp provider_result(result, _stage), do: result
   defp matching(value, value, _stage), do: :ok
   defp matching(_, _, stage), do: {:provider_error, :invalid_response, :invalid_response, stage}
-
-  defp valid_numbers(numbers) do
-    if length(numbers) in 1..100 and Enum.all?(numbers, &(is_integer(&1) and &1 > 0)) and
-         Enum.uniq(numbers) == numbers, do: :ok, else: {:error, :invalid_selection}
-  end
 
   defp observe({:ok, identification}, actor, file_id, started) do
     Events.emit(

@@ -2,11 +2,8 @@ defmodule Bolognesa.Movies.OwnershipTest do
   alias Bolognesa.SeriesFixtures
   use Bolognesa.DataCase, async: false
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
-  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Movies
-
-  alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository
 
   @actor %AuthenticatedUser{id: 1, role: :admin}
 
@@ -31,14 +28,11 @@ defmodule Bolognesa.Movies.OwnershipTest do
            ) == 0
   end
 
-  test "mixed requests and backfill filter type before their batch limit" do
+  test "mixed requests ignore foreign content types" do
     foreign = SeriesFixtures.library(:series)
-    for n <- 1..101, do: SeriesFixtures.file(foreign.id, "Foreign #{n}.mkv")
+    foreign_file = SeriesFixtures.file(foreign.id, "Foreign.mkv")
     library = SeriesFixtures.library(:movie)
     file = SeriesFixtures.file(library.id, "Owned.mkv")
-
-    foreign_file =
-      Repo.one!(from row in MediaFileSchema, where: row.library_id == ^foreign.id, limit: 1)
 
     entries =
       Enum.map([foreign_file, file], &%{file_id: &1.id, revision: &1.revision, requested?: true})
@@ -47,10 +41,5 @@ defmodule Bolognesa.Movies.OwnershipTest do
              Repo.transaction(fn -> Movies.request_batch_in_transaction!(Repo, entries) end)
 
     assert Repo.get_by(MovieIdentificationSchema, media_file_id: foreign_file.id) == nil
-    second = SeriesFixtures.file(library.id, "Second.mkv")
-    assert {:ok, cursor, 0} = EctoIdentificationRepository.backfill_batch(0, 1)
-    assert cursor == file.id
-    assert {:ok, next, 1} = EctoIdentificationRepository.backfill_batch(cursor, 1)
-    assert next == second.id
   end
 end

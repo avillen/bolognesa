@@ -22,10 +22,6 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
           non_neg_integer()
   def request_batch!(repo, entries), do: RequestWriter.request_batch!(repo, entries)
 
-  @spec backfill_batch(non_neg_integer(), pos_integer()) ::
-          {:ok, non_neg_integer(), non_neg_integer()} | {:error, :unavailable}
-  def backfill_batch(cursor_id, limit), do: RequestWriter.backfill_batch(cursor_id, limit)
-
   @impl true
   def find_file(id) do
     case Repo.get(MediaFileSchema, id, log: false) do
@@ -52,7 +48,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   def get(file_id) do
     case DecisionStore.get(Repo, file_id) do
       nil -> {:error, :not_found}
-      row -> {:ok, decision(row)}
+      row -> {:ok, IdentificationMapper.to_domain(row)}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -63,8 +59,8 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   def begin_identification(file_id, token, job_id) do
     transaction(fn ->
       case current(file_id, token) do
-        {:ok, identification, file} when identification.state == :pending ->
-          start_pending_identification(identification, file, job_id)
+        {:ok, identification, projection} when identification.state == :pending ->
+          start_pending_identification(identification, projection, job_id)
 
         _ ->
           {:ok, :stale}
@@ -76,8 +72,8 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   def complete(file_id, token, candidates, details, needs_review) do
     transaction(fn ->
       case current(file_id, token) do
-        {:ok, identification, file} when identification.state == :pending ->
-          complete_movie_current(identification, file, candidates, details, needs_review)
+        {:ok, identification, _projection} when identification.state == :pending ->
+          complete_pending_identification(identification, candidates, details, needs_review)
 
         _ ->
           {:ok, :stale}
@@ -89,10 +85,10 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   def fail(file_id, token, reason) do
     transaction(fn ->
       case current(file_id, token) do
-        {:ok, identification, _file} when identification.state == :pending ->
+        {:ok, identification, _projection} when identification.state == :pending ->
           {:ok, failed} =
             Identification.fail(
-              decision(identification),
+              IdentificationMapper.to_domain(identification),
               Atom.to_string(reason),
               DateTime.utc_now()
             )
@@ -111,9 +107,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   def correct(file_id, expected_revision, choice) do
     transaction(fn ->
       file =
-        Repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
-          log: false
-        )
+        Repo.get(lock(MediaFileSchema, "FOR UPDATE"), file_id, log: false)
 
       if file do
         correct_file(file, file_id, expected_revision, choice)
@@ -127,9 +121,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
   def retry(file_id) do
     transaction(fn ->
       file =
-        Repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
-          log: false
-        )
+        Repo.get(lock(MediaFileSchema, "FOR UPDATE"), file_id, log: false)
 
       identification = DecisionStore.lock(Repo, file_id)
 
@@ -152,14 +144,6 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     end)
   end
 
-  @spec reconcile_jobs(DateTime.t()) :: :ok | {:error, :unavailable}
-  def reconcile_jobs(now) do
-    case reconcile_jobs_result(now) do
-      {:ok, _count} -> :ok
-      {:error, :unavailable, _count} -> {:error, :unavailable}
-    end
-  end
-
   @impl true
   def reconcile_jobs_result(now) do
     ObanJobRecovery.interrupted(Repo, now)
@@ -180,26 +164,22 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
 
   defp recovery_result({:ok, :stale}, result), do: result
 
-  defp start_pending_identification(identification, file, job_id) do
-    {:ok, started} = Identification.start(decision(identification), job_id, DateTime.utc_now())
-    DecisionStore.save!(Repo, identification, started)
-    {:ok, file_projection(file)}
-  end
+  defp start_pending_identification(identification, projection, job_id) do
+    {:ok, started} =
+      Identification.start(
+        IdentificationMapper.to_domain(identification),
+        job_id,
+        DateTime.utc_now()
+      )
 
-  defp complete_movie_current(identification, file, candidates, details, needs_review) do
-    if file_projection(file).content_type == :movie,
-      do: complete_pending_identification(identification, candidates, details, needs_review),
-      else: {:ok, :stale}
+    DecisionStore.save!(Repo, identification, started)
+    {:ok, projection}
   end
 
   defp complete_pending_identification(identification, candidates, details, needs_review) do
-    movie_id = if details, do: upsert_movie_id(details), else: nil
-    complete_decision!(identification, movie_id, candidates, needs_review, nil)
+    movie_id = if details, do: IdentifiedMovieWriter.upsert!(details), else: nil
+    complete_decision!(identification, movie_id, candidates, needs_review)
     :ok
-  end
-
-  defp upsert_movie_id(details) do
-    IdentifiedMovieWriter.upsert!(details)
   end
 
   defp correct_file(file, file_id, expected_revision, choice) do
@@ -215,7 +195,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     identification = DecisionStore.lock(Repo, file_id)
 
     movie_id =
-      if choice == :unidentified, do: nil, else: upsert_movie_id(choice)
+      if choice == :unidentified, do: nil, else: IdentifiedMovieWriter.upsert!(choice)
 
     save_correction(identification, file, movie_id)
   end
@@ -225,25 +205,21 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
       %{file_id: file.id, revision: file.revision, requested?: true}
     ])
 
-    case get(file.id) do
-      {:ok, identification} -> {:ok, identification}
-      error -> error
-    end
+    get(file.id)
   end
 
   defp current(file_id, token) do
     file =
-      Repo.one(from(row in MediaFileSchema, where: row.id == ^file_id, lock: "FOR UPDATE"),
-        log: false
-      )
+      Repo.get(lock(MediaFileSchema, "FOR UPDATE"), file_id, log: false)
 
     identification = DecisionStore.lock(Repo, file_id)
+    projection = file && file_projection(file)
 
-    if file && file_projection(file).content_type == :movie && identification &&
+    if projection && projection.content_type == :movie && identification &&
          identification.token == token &&
          identification.origin != :manual && file.availability == :available &&
          file.revision == identification.observed_revision,
-       do: {:ok, identification, file},
+       do: {:ok, identification, projection},
        else: :stale
   end
 
@@ -251,20 +227,22 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     candidate |> Map.from_struct() |> Map.new(fn {key, value} -> {Atom.to_string(key), value} end)
   end
 
-  defp decision(row) do
-    IdentificationMapper.to_domain(row)
-  end
-
-  defp complete_decision!(row, ids, candidates, needs_review, reason) do
+  defp complete_decision!(row, ids, candidates, needs_review) do
     result = %{
       candidate_data: %{"items" => Enum.map(Enum.take(candidates, 5), &candidate_data/1)},
       needs_review?: needs_review,
-      failure_reason: if(reason, do: Atom.to_string(reason), else: nil)
+      failure_reason: nil
     }
 
-    {:ok, completed} = Identification.complete(decision(row), ids, result, DateTime.utc_now())
-    saved = DecisionStore.save!(Repo, row, completed)
-    saved
+    {:ok, completed} =
+      Identification.complete(
+        IdentificationMapper.to_domain(row),
+        ids,
+        result,
+        DateTime.utc_now()
+      )
+
+    DecisionStore.save!(Repo, row, completed)
   end
 
   defp save_correction(existing, file, ids) do
@@ -282,7 +260,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
     pending
   end
 
-  defp correction_base(existing, _file, _token), do: decision(existing)
+  defp correction_base(existing, _file, _token), do: IdentificationMapper.to_domain(existing)
 
   defp transaction(fun) do
     case Repo.transaction(fun) do
