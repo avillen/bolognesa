@@ -2,13 +2,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.Load do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3, to_form: 2]
   import Phoenix.LiveView, only: [start_async: 3, stream: 4]
-  alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music
-  alias Bolognesa.Music.Application.UseCases.AlbumTracks
-  alias Bolognesa.Music.Application.UseCases.Browse
-  alias Bolognesa.Music.Application.UseCases.ListTracks
-  alias Bolognesa.Music.Domain.Entities.Album
-  alias Bolognesa.Music.Domain.Entities.Artist
 
   @spec call(Phoenix.LiveView.Socket.t(), String.t(), pos_integer()) ::
           Phoenix.LiveView.Socket.t()
@@ -46,22 +40,12 @@ defmodule BolognesaWeb.Music.Index.Reducer.Load do
     end)
   end
 
-  @doc "Reads one page of the given browse kind."
-  @spec read(
-          AuthenticatedUser.t(),
-          :tracks | :album | :artists | :albums,
-          Artist.id() | nil,
-          Album.id() | nil,
-          String.t(),
-          pos_integer(),
-          pos_integer() | nil
-        ) :: ListTracks.result() | AlbumTracks.result() | Browse.result()
-  def read(actor, :tracks, _artist, _album, query, page, library),
+  defp read(actor, :tracks, _artist, _album, query, page, library),
     do: Music.list_tracks(actor, query, page, library)
 
-  def read(actor, :album, _artist, album, query, page, library),
+  defp read(actor, :album, _artist, album, query, page, library),
     do: Music.list_album_tracks(actor, album, query, page, library)
 
-  def read(actor, kind, artist, _album, query, page, library),
+  defp read(actor, kind, artist, _album, query, page, library),
     do: Music.browse(actor, kind, artist, query, page, library)
 end

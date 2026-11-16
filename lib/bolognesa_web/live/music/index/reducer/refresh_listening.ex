@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.RefreshListening do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [start_async: 3, stream_insert: 3]
-  alias BolognesaWeb.Music.Index.Reducer.Load
+  alias Bolognesa.Music
   alias BolognesaWeb.Music.Index.State.Track
 
   @spec call(Phoenix.LiveView.Socket.t(), integer()) :: Phoenix.LiveView.Socket.t()
@@ -44,9 +44,15 @@ defmodule BolognesaWeb.Music.Index.Reducer.RefreshListening do
     request_id = socket.assigns.request_id
 
     start_async(socket, {:listening_activity, request_id, track_id}, fn ->
-      Load.read(actor, kind, nil, album, query, page, library)
+      read(actor, kind, album, query, page, library)
     end)
   end
+
+  defp read(actor, :tracks, _album, query, page, library),
+    do: Music.list_tracks(actor, query, page, library)
+
+  defp read(actor, :album, album, query, page, library),
+    do: Music.list_album_tracks(actor, album, query, page, library)
 
   @spec apply_result(Phoenix.LiveView.Socket.t(), reference(), integer(), term()) ::
           Phoenix.LiveView.Socket.t()
