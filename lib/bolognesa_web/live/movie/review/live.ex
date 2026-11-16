@@ -5,7 +5,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
   alias BolognesaWeb.Movie.Review.Components.CorrectionPanel
   alias BolognesaWeb.Movie.Review.Components.ReviewItem
   alias BolognesaWeb.Movie.Review.Reducer.ApplyCandidatesResult
-  alias BolognesaWeb.Movie.Review.Reducer.ApplyCorrectionResult
+  alias BolognesaWeb.Movie.Review.Reducer.ApplyCorrectionResultCoordinator
   alias BolognesaWeb.Movie.Review.Reducer.ApplyReviewsResult
   alias BolognesaWeb.Movie.Review.Reducer.BeginCorrection
   alias BolognesaWeb.Movie.Review.Reducer.Initialize
@@ -119,7 +119,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
     do: {:noreply, ApplyCandidatesResult.call(socket, request_id, result)}
 
   def handle_async({:correction, request_id}, result, socket),
-    do: {:noreply, ApplyCorrectionResult.call(socket, request_id, result)}
+    do: {:noreply, ApplyCorrectionResultCoordinator.call(socket, request_id, result)}
 
   defp positive_id(id) do
     case Params.positive_integer(id) do

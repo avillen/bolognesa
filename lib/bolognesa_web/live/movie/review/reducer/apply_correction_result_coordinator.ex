@@ -1,5 +1,5 @@
-defmodule BolognesaWeb.Movie.Review.Reducer.ApplyCorrectionResult do
-  @moduledoc false
+defmodule BolognesaWeb.Movie.Review.Reducer.ApplyCorrectionResultCoordinator do
+  @moduledoc "Applies a correction result and, once saved, clears the selection and reloads."
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   alias BolognesaWeb.Movie.Review.Reducer.Load
