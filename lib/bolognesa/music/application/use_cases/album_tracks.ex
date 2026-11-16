@@ -44,10 +44,12 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
   end
 
   defp validate(actor, id, query, page, library) do
-    with :ok <- Accounts.authorize(actor, :admin) do
-      if ReadQuery.valid_id?(id) and ReadQuery.valid?(query, page, library),
-        do: :ok,
-        else: {:error, :invalid_query}
+    with :ok <- Accounts.authorize(actor, :admin),
+         true <- ReadQuery.valid_id?(id) and ReadQuery.valid?(query, page, library) do
+      :ok
+    else
+      false -> {:error, :invalid_query}
+      error -> error
     end
   end
 end
