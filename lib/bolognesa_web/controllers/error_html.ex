@@ -1,7 +1,6 @@
 defmodule BolognesaWeb.ErrorHTML do
   alias BolognesaWeb.Locale
   alias Phoenix.Controller
-  alias Plug.Conn, as: PlugConn
 
   @moduledoc """
   This module is invoked by your endpoint in case of errors on HTML requests.
@@ -20,8 +19,7 @@ defmodule BolognesaWeb.ErrorHTML do
   defp message(template), do: Controller.status_message_from_template(template)
 
   defp locale(%{conn: conn}) do
-    conn.assigns[:locale] ||
-      Locale.negotiate(List.first(PlugConn.get_req_header(conn, "accept-language")))
+    conn.assigns[:locale] || Locale.browser(conn)
   end
 
   defp locale(_), do: Gettext.get_locale(BolognesaWeb.Gettext)

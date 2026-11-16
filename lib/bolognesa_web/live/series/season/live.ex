@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Series.Season.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
+  alias BolognesaWeb.Params
   alias BolognesaWeb.Series.Navigation
   alias BolognesaWeb.Series.Season.Components.EpisodeCard
   alias BolognesaWeb.Series.Season.Reducer.ApplyResult
@@ -24,12 +25,5 @@ defmodule BolognesaWeb.Series.Season.Live do
   def handle_async({:season_episodes, request}, result, socket),
     do: {:noreply, ApplyResult.call(socket, request, result)}
 
-  defp parse(text, default) when is_binary(text) do
-    case Integer.parse(text) do
-      {id, ""} when id > 0 -> id
-      _ -> default
-    end
-  end
-
-  defp parse(_, default), do: default
+  defp parse(text, default), do: Params.positive_integer(text) || default
 end

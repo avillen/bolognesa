@@ -9,7 +9,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
 
   alias BolognesaWeb.Library.Index.Live
-  alias BolognesaWeb.Library.Index.Reducer.Initialize
+  alias BolognesaWeb.Library.Index.Reducer.InitializeCoordinator
   alias Phoenix.LiveView.Channel
   import Phoenix.LiveViewTest
 
@@ -86,7 +86,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   } do
     socket = status_socket(actor)
     socket = Component.assign(socket, :current_scope, %{actor: nil})
-    socket = Initialize.call(socket)
+    socket = InitializeCoordinator.call(socket)
     {:noreply, socket} = Live.handle_event("open_library_form", %{}, socket)
     {:noreply, socket} = Live.handle_event("close_library_form", %{}, socket)
     html = render_component(&Live.render/1, Map.put(socket.assigns, :__changed__, nil))
@@ -96,16 +96,16 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   end
 
   test "refresh errors are independent of scan feedback and clear on recovery", %{actor: actor} do
-    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
+    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatusesCoordinator
     alias BolognesaWeb.Library.Index.Reducer.StartScan
     socket = status_socket(actor) |> StartScan.call("invalid")
     request = socket.assigns.scan_request_id
-    socket = ApplyScanStatuses.call(socket, request, {:ok, {:error, :unavailable}})
+    socket = ApplyScanStatusesCoordinator.call(socket, request, {:ok, {:error, :unavailable}})
     html = render_component(&Live.render/1, Map.put(socket.assigns, :__changed__, nil))
     document = LazyHTML.from_fragment(html)
     assert LazyHTML.query(document, "#library-scan-feedback") |> LazyHTML.to_tree() != []
     assert LazyHTML.query(document, "#library-scan-refresh-error") |> LazyHTML.to_tree() != []
-    socket = ApplyScanStatuses.call(socket, request, {:ok, {:ok, []}})
+    socket = ApplyScanStatusesCoordinator.call(socket, request, {:ok, {:ok, []}})
     html = render_component(&Live.render/1, Map.put(socket.assigns, :__changed__, nil))
     document = LazyHTML.from_fragment(html)
     assert LazyHTML.query(document, "#library-scan-feedback") |> LazyHTML.to_tree() != []
@@ -257,6 +257,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     {:ok, view, _} = live(conn, ~p"/libraries")
     await_status_updates(view)
     view |> element("#library-scan-#{library.id}") |> render_click()
+    await_status_updates(view)
     assert has_element?(view, "#library-scan-#{library.id}[disabled]")
     assert has_element?(view, "#library-scan-state-#{library.id}[data-state='queued']")
     assert {:ok, %{latest_scan: scan}} = Libraries.fetch_scan_status(actor, library.id)
@@ -316,6 +317,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
            )
 
     view |> element("#library-reinspect-confirm-button-#{library.id}") |> render_click()
+    await_status_updates(view)
     assert has_element?(view, "#library-scan-state-#{library.id}[data-state='queued']")
     assert has_element?(view, "#library-reinspect-#{library.id}[disabled]")
     assert {:ok, %{latest_scan: forced}} = Libraries.fetch_scan_status(actor, library.id)
@@ -562,7 +564,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path: path,
     actor: actor
   } do
-    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
+    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatusesCoordinator
 
     {:ok, library} =
       Libraries.create_library(actor, %{name: "Current", path: path, content_type: :movie})
@@ -577,7 +579,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     {:noreply, socket} = Live.handle_info({:library_status_changed, library.id}, socket)
     {:noreply, socket} = Live.handle_info({:library_status_changed, library.id}, socket)
     assert socket.assigns.scan_refresh_pending?
-    socket = ApplyScanStatuses.call(socket, make_ref(), {:ok, {:ok, []}})
+    socket = ApplyScanStatusesCoordinator.call(socket, make_ref(), {:ok, {:ok, []}})
     assert socket.assigns.scan_refresh_pending?
     assert socket.assigns.scan_loading?
 
@@ -585,7 +587,11 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
 
     socket =
-      ApplyScanStatuses.call(socket, old_request, {:ok, {:ok, [{library, old_status, counts}]}})
+      ApplyScanStatusesCoordinator.call(
+        socket,
+        old_request,
+        {:ok, {:ok, [{library, old_status, counts}]}}
+      )
 
     new_request = socket.assigns.scan_request_id
     refute new_request == old_request
@@ -607,14 +613,14 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   end
 
   test "a failed refresh consumes a pending hint without retrying indefinitely", %{actor: actor} do
-    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
+    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatusesCoordinator
     socket = status_socket(actor)
     socket = %{socket | transport_pid: self()}
     socket = Component.assign(socket, :current_scope, %{actor: nil})
     socket = Component.assign(socket, :scan_loading?, true)
     request = socket.assigns.scan_request_id
     {:noreply, socket} = Live.handle_info({:library_status_changed, 1}, socket)
-    socket = ApplyScanStatuses.call(socket, request, {:ok, {:error, :unavailable}})
+    socket = ApplyScanStatusesCoordinator.call(socket, request, {:ok, {:error, :unavailable}})
     retry_request = socket.assigns.scan_request_id
     refute retry_request == request
 
@@ -648,8 +654,8 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path: path,
     actor: actor
   } do
-    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
-    alias BolognesaWeb.Library.Index.Reducer.Initialize
+    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatusesCoordinator
+    alias BolognesaWeb.Library.Index.Reducer.InitializeCoordinator
     alias Live
 
     {:ok, library} =
@@ -667,12 +673,19 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
       }
       |> Component.assign(:current_scope, %{actor: actor})
       |> with_navigation()
-      |> Initialize.call()
+      |> InitializeCoordinator.call()
 
     request_id = socket.assigns.scan_request_id
-    socket = ApplyScanStatuses.call(socket, request_id, {:ok, {:ok, [{library, status, counts}]}})
-    socket = ApplyScanStatuses.call(socket, make_ref(), {:ok, {:ok, []}})
-    socket = ApplyScanStatuses.call(socket, request_id, {:ok, {:error, :unavailable}})
+
+    socket =
+      ApplyScanStatusesCoordinator.call(
+        socket,
+        request_id,
+        {:ok, {:ok, [{library, status, counts}]}}
+      )
+
+    socket = ApplyScanStatusesCoordinator.call(socket, make_ref(), {:ok, {:ok, []}})
+    socket = ApplyScanStatusesCoordinator.call(socket, request_id, {:ok, {:error, :unavailable}})
     html = render_component(&Live.render/1, Map.put(socket.assigns, :__changed__, nil))
     document = LazyHTML.from_fragment(html)
 
@@ -689,7 +702,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     path: path,
     actor: actor
   } do
-    alias BolognesaWeb.Library.Index.Reducer.Initialize
+    alias BolognesaWeb.Library.Index.Reducer.InitializeCoordinator
     alias BolognesaWeb.Library.Index.Reducer.StartScan
 
     {:ok, library} =
@@ -703,7 +716,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
       }
       |> Component.assign(:current_scope, %{actor: actor})
       |> with_navigation()
-      |> Initialize.call()
+      |> InitializeCoordinator.call()
       |> Component.assign(:current_scope, %{actor: nil})
       |> StartScan.call(Integer.to_string(library.id))
 
@@ -721,9 +734,9 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
   end
 
   test "saving a new source invalidates an older status response", %{path: path, actor: actor} do
-    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses
-    alias BolognesaWeb.Library.Index.Reducer.Initialize
-    alias BolognesaWeb.Library.Index.Reducer.Save
+    alias BolognesaWeb.Library.Index.Reducer.ApplyScanStatusesCoordinator
+    alias BolognesaWeb.Library.Index.Reducer.InitializeCoordinator
+    alias BolognesaWeb.Library.Index.Reducer.SaveCoordinator
 
     socket =
       %Phoenix.LiveView.Socket{
@@ -733,12 +746,12 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
       }
       |> Component.assign(:current_scope, %{actor: actor})
       |> with_navigation()
-      |> Initialize.call()
+      |> InitializeCoordinator.call()
 
     old_request = socket.assigns.scan_request_id
-    socket = Save.call(socket, %{"name" => "New source", "path" => path})
+    socket = SaveCoordinator.call(socket, %{"name" => "New source", "path" => path})
     refute socket.assigns.scan_request_id == old_request
-    socket = ApplyScanStatuses.call(socket, old_request, {:ok, {:ok, []}})
+    socket = ApplyScanStatusesCoordinator.call(socket, old_request, {:ok, {:ok, []}})
 
     html =
       render_component(
@@ -769,7 +782,7 @@ defmodule BolognesaWeb.Library.Index.LiveTest do
     }
     |> Component.assign(:current_scope, %{actor: actor})
     |> with_navigation()
-    |> Initialize.call()
+    |> InitializeCoordinator.call()
   end
 
   defp with_navigation(socket) do

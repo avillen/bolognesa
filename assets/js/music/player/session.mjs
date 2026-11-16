@@ -56,7 +56,7 @@ export function createMusicSession({audio, transport, clock = () => performance.
     const queued = queue.snapshot()
     return {...playback.state, selected: playback.state.selected ? {...playback.state.selected} : null,
       activityRevision: playback.activityRevision, activityTrackId: playback.activityTrackId,
-      queue: queued.tracks, queueIndex: queued.index, queueCount: queued.tracks.length, ...source.snapshot()}
+      queue: queued.tracks, queueIndex: queued.index, queueRevision: queued.revision, queueCount: queued.tracks.length, ...source.snapshot()}
   }
   function notify() {
     if (playback.destroyed) return
@@ -114,7 +114,7 @@ export function createMusicSession({audio, transport, clock = () => performance.
       return () => subscribers.delete(listener)
     },
     selectTrack: selection.selectTrack,
-    /** Start at a track/file or zero-based startIndex, using canonical camelCase IDs. */
+    /** Start at a track/file, using canonical camelCase IDs. */
     playAlbum: selection.playAlbum,
     appendTrack: navigation.appendTrack,
     playNext: navigation.playNext,

@@ -463,11 +463,6 @@ msgstr "Escaneo completado"
 msgid "Escaneo interrumpido"
 msgstr "Escaneo interrumpido"
 
-#: lib/bolognesa_web/live/library/index/reducers/start_scan.ex:43
-#, elixir-autogen, elixir-format
-msgid "Escaneo solicitado. No se pudo actualizar su estado."
-msgstr "Escaneo solicitado. No se pudo actualizar su estado."
-
 #: lib/bolognesa_web/live/series/episode/live.html.heex:38
 #: lib/bolognesa_web/live/series/season/live.html.heex:27
 #: lib/bolognesa_web/live/series/season/live.html.heex:43

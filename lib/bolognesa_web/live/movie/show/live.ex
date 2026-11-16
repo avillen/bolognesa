@@ -7,6 +7,7 @@ defmodule BolognesaWeb.Movie.Show.Live do
   alias BolognesaWeb.Movie.Show.Components.VersionCard
   alias BolognesaWeb.Movie.Show.Reducer.ApplyResult
   alias BolognesaWeb.Movie.Show.Reducer.Initialize
+  alias BolognesaWeb.Params
   alias BolognesaWeb.Player
   @impl true
   def mount(%{"id" => id}, _session, socket),
@@ -23,10 +24,5 @@ defmodule BolognesaWeb.Movie.Show.Live do
   @impl true
   def terminate(reason, socket), do: PlaybackEvents.terminate(reason, socket)
 
-  defp parse_id(text) do
-    case Integer.parse(text) do
-      {id, ""} when id > 0 -> id
-      _ -> 0
-    end
-  end
+  defp parse_id(text), do: Params.positive_integer(text) || 0
 end

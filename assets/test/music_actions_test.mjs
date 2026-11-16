@@ -20,12 +20,12 @@ test("screen commands reject invalid identifiers and unknown actions", () => {
   assert.equal(command({musicAction: "album", albumId: "1", libraryId: "bad"}), null)
 })
 
-test("track-only ignores album context while album-track preserves it", () => {
+test("track-only ignores album context while track preserves it", () => {
   const dataset = {trackId: "2", fileId: "12", albumId: "4", libraryId: "3"}
   const calls = []
   const session = {getSnapshot: () => ({selected: null}), selectTrack: x => calls.push(["track", x]), playAlbum: x => calls.push(["album", x])}
   executeMusicAction(session, command({...dataset, musicAction: "track-only"}))
-  executeMusicAction(session, command({...dataset, musicAction: "album-track"}))
+  executeMusicAction(session, command({...dataset, musicAction: "track"}))
   assert.deepEqual(calls, [["track", {trackId: 2, fileId: 12}], ["album", {albumId: 4, libraryId: 3, trackId: 2, fileId: 12}]])
 })
 

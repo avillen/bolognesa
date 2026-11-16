@@ -1,5 +1,5 @@
-defmodule BolognesaWeb.Series.Review.Reducer.ChooseSeries do
-  @moduledoc false
+defmodule BolognesaWeb.Series.Review.Reducer.ChooseSeriesCoordinator do
+  @moduledoc "Chooses a search result and, when it exists, resets the earlier selection."
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2]
   alias BolognesaWeb.Series.Review.Reducer.ResetSelection

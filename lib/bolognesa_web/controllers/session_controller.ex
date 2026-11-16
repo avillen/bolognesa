@@ -33,9 +33,7 @@ defmodule BolognesaWeb.SessionController do
   def delete(conn, _params) do
     case Accounts.end_session(get_session(conn, :user_token)) do
       :ok ->
-        if conn.assigns.current_scope.actor do
-          Playback.stop_actor_video_transcode(conn.assigns.current_scope.actor)
-        end
+        Playback.stop_actor_video_transcode(conn.assigns.current_scope.actor)
 
         conn
         |> delete_session(:user_token)

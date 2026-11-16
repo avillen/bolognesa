@@ -2,7 +2,7 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import {createDirectController} from "../js/video/player/controllers/direct.mjs"
 const mount = context => {
-  context.controller = createDirectController({video: context.el, config: context.el.dataset, pushEvent: context.pushEvent})
+  context.controller = createDirectController({video: context.el, config: context.el.dataset, pushEvent: context.pushEvent, onReady() {}})
 }
 
 test("reports the failed position once and removes its listener", () => {
@@ -54,7 +54,7 @@ for (const [code, kind] of [[1, "aborted"], [2, "network"], [3, "media"], [4, "u
     const events = []
     createDirectController({video: {error: {code}, currentTime: 0,
       addEventListener() {}, removeEventListener() {}},
-      config: {fileId: "9", attemptId: "current"}, pushEvent: (...event) => events.push(event)})
+      config: {fileId: "9", attemptId: "current"}, pushEvent: (...event) => events.push(event), onReady() {}})
     assert.equal(events[0][1].error_kind, kind)
   })
 }

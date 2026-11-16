@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.UserAuth do
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
+  alias BolognesaWeb.Locale
   alias Phoenix.Component
   use Gettext, backend: BolognesaWeb.Gettext
   @moduledoc "Resolve the verified actor for browser and LiveView requests."
@@ -68,10 +69,7 @@ defmodule BolognesaWeb.UserAuth do
         ) ::
           {:cont, LiveView.Socket.t()} | {:halt, LiveView.Socket.t()}
   def on_mount(:require_authenticated, _params, session, socket) do
-    browser =
-      if session["browser_locale"] in ["es", "en"], do: session["browser_locale"], else: "es"
-
-    Gettext.put_locale(BolognesaWeb.Gettext, browser)
+    Gettext.put_locale(BolognesaWeb.Gettext, Locale.browser(session))
 
     result =
       case session["user_token"] do

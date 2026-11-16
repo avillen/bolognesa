@@ -2,6 +2,8 @@ defmodule BolognesaWeb.Series.Navigation do
   @moduledoc "Validated return context for the series browsing hierarchy."
   import Phoenix.Component, only: [assign: 2]
 
+  alias BolognesaWeb.Params
+
   @spec assign_context(Phoenix.LiveView.Socket.t(), map()) :: Phoenix.LiveView.Socket.t()
   def assign_context(socket, params) do
     series_params =
@@ -44,12 +46,8 @@ defmodule BolognesaWeb.Series.Navigation do
   defp put_page(params, key, page) when is_integer(page) and page > 1 and page <= 100_000,
     do: Map.put(params, key, page)
 
-  defp put_page(params, key, text) when is_binary(text) do
-    case Integer.parse(text) do
-      {page, ""} -> put_page(params, key, page)
-      _ -> params
-    end
-  end
+  defp put_page(params, key, text) when is_binary(text),
+    do: put_page(params, key, Params.positive_integer(text))
 
   defp put_page(params, _key, _page), do: params
   defp copy_param(params, _key, nil), do: params

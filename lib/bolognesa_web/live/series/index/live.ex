@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Series.Index.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
+  alias BolognesaWeb.Params
   alias BolognesaWeb.Series.Index.Components.SeriesCard
   alias BolognesaWeb.Series.Index.Reducer.ApplyResult
   alias BolognesaWeb.Series.Index.Reducer.Initialize
@@ -13,7 +14,7 @@ defmodule BolognesaWeb.Series.Index.Live do
   @impl true
   def handle_params(params, _uri, socket) do
     query = Map.get(params, "query", "")
-    page = parse_page(Map.get(params, "page", "1"))
+    page = Params.page(params["page"])
 
     socket =
       socket
@@ -36,13 +37,4 @@ defmodule BolognesaWeb.Series.Index.Live do
   def handle_async({:series, request_id}, result, socket) do
     {:noreply, ApplyResult.call(socket, request_id, result)}
   end
-
-  defp parse_page(value) when is_binary(value) do
-    case Integer.parse(value) do
-      {page, ""} when page > 0 and page <= 100_000 -> page
-      _ -> 1
-    end
-  end
-
-  defp parse_page(_), do: 1
 end

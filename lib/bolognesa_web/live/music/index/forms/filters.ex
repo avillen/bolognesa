@@ -1,7 +1,8 @@
 defmodule BolognesaWeb.Music.Index.Forms.Filters do
   @moduledoc "URL filter parsing for the music screen."
+  alias BolognesaWeb.Params
   @spec from_params(map()) :: {String.t(), pos_integer()}
-  def from_params(params), do: {Map.get(params, "query", ""), page(Map.get(params, "page", "1"))}
+  def from_params(params), do: {Map.get(params, "query", ""), Params.page(params["page"])}
 
   @spec browse(map()) ::
           {:home | :tracks | :artists | :albums | :album, pos_integer() | nil,
@@ -17,24 +18,7 @@ defmodule BolognesaWeb.Music.Index.Forms.Filters do
         _ -> :tracks
       end
 
-    {kind, id(Map.get(params, "artist_id")), id(Map.get(params, "album_id"))}
+    {kind, Params.positive_integer(params["artist_id"]),
+     Params.positive_integer(params["album_id"])}
   end
-
-  defp id(value) when is_binary(value) do
-    case Integer.parse(value) do
-      {id, ""} when id > 0 -> id
-      _ -> nil
-    end
-  end
-
-  defp id(_), do: nil
-
-  defp page(value) when is_binary(value) do
-    case Integer.parse(value) do
-      {page, ""} when page in 1..100_000 -> page
-      _ -> 1
-    end
-  end
-
-  defp page(_value), do: 1
 end

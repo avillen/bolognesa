@@ -74,7 +74,7 @@ export function connectMusicPlayerView(host, session) {
   }) : null
   observer?.observe(host)
   const render = state => {
-    const queueData = JSON.stringify([state.selected, state.queueIndex, state.queue])
+    const queueData = JSON.stringify([state.selected, state.queueRevision])
     if (queueData !== queueSnapshot) { renderQueue(queuePanel, state); queueSnapshot = queueData }
     const visible = Boolean(state.selected || state.queue.length || state.error || state.loading)
     host.hidden = !visible

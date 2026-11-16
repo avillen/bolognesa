@@ -1,6 +1,6 @@
-defmodule BolognesaWeb.Series.Review.Reducer.BeginCorrection do
+defmodule BolognesaWeb.Series.Review.Reducer.BeginCorrectionCoordinator do
   alias Ecto.Changeset
-  @moduledoc false
+  @moduledoc "Validates the episode selection and, when it is valid, saves it."
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 2, to_form: 2]
   alias BolognesaWeb.Series.Review.Forms.Selection

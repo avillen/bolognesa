@@ -7,6 +7,7 @@ defmodule BolognesaWeb.MediaDelivery do
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ValueObjects.ByteRange
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
+  alias BolognesaWeb.Params
 
   @type error ::
           :forbidden
@@ -150,12 +151,5 @@ defmodule BolognesaWeb.MediaDelivery do
 
   defp safe_id(id) when is_integer(id) and id > 0, do: id
 
-  defp safe_id(text) when is_binary(text) do
-    case Integer.parse(text) do
-      {id, ""} when id > 0 -> id
-      _ -> nil
-    end
-  end
-
-  defp safe_id(_id), do: nil
+  defp safe_id(value), do: Params.positive_integer(value)
 end

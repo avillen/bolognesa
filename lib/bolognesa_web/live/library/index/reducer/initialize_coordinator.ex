@@ -1,5 +1,5 @@
-defmodule BolognesaWeb.Library.Index.Reducer.Initialize do
-  @moduledoc false
+defmodule BolognesaWeb.Library.Index.Reducer.InitializeCoordinator do
+  @moduledoc "Initializes the screen and, once libraries load, reloads their scan statuses."
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [connected?: 1]

@@ -4,17 +4,23 @@ defmodule BolognesaWeb.Series.Episode.Live do
   use BolognesaWeb, {:live_view, log: false}
   alias BolognesaWeb.LiveSupport.PlaybackEvents
   alias BolognesaWeb.MediaComponents
+  alias BolognesaWeb.Params
   alias BolognesaWeb.Player
   alias BolognesaWeb.Series.Episode.Components.EpisodeNavigation
   alias BolognesaWeb.Series.Episode.Components.VersionCard
+  alias BolognesaWeb.Series.Episode.Parts
   alias BolognesaWeb.Series.Episode.Reducer.Advance
-  alias BolognesaWeb.Series.Episode.Reducer.ApplyResult
+  alias BolognesaWeb.Series.Episode.Reducer.ApplyAdvanceResult
+  alias BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator
   alias BolognesaWeb.Series.Episode.Reducer.Initialize
+  alias BolognesaWeb.Series.Episode.Reducer.Load
   alias BolognesaWeb.Series.Episode.Reducer.SelectPart
   alias BolognesaWeb.Series.Navigation
   @impl true
-  def mount(%{"id" => id}, _session, socket),
-    do: {:ok, Initialize.call(socket, socket.assigns.current_scope.actor, parse_id(id))}
+  def mount(%{"id" => id}, _session, socket) do
+    id = parse_id(id)
+    {:ok, socket |> Initialize.call(id) |> Load.call(socket.assigns.current_scope.actor, id)}
+  end
 
   @impl true
   def handle_params(params, _uri, socket) do
@@ -26,7 +32,7 @@ defmodule BolognesaWeb.Series.Episode.Live do
     socket =
       cond do
         socket.assigns.requested_episode_id != id ->
-          Initialize.load(socket, socket.assigns.current_scope.actor, id)
+          Load.call(socket, socket.assigns.current_scope.actor, id)
 
         changed && socket.assigns.detail && !socket.assigns.loading? ->
           SelectPart.call(socket, part)
@@ -40,10 +46,10 @@ defmodule BolognesaWeb.Series.Episode.Live do
 
   @impl true
   def handle_async({:next_episode, request}, result, socket),
-    do: {:noreply, Advance.apply_result(socket, request, result)}
+    do: {:noreply, ApplyAdvanceResult.call(socket, request, result)}
 
   def handle_async({:episode, request_id}, result, socket),
-    do: {:noreply, ApplyResult.call(socket, request_id, result)}
+    do: {:noreply, ApplyResultCoordinator.call(socket, request_id, result)}
 
   @impl true
   def handle_event("playback_ended", params, socket),
@@ -57,7 +63,7 @@ defmodule BolognesaWeb.Series.Episode.Live do
 
       updated =
         if updated.assigns.selected_file_id == version.id,
-          do: SelectPart.metadata(updated, version.part_number),
+          do: Parts.assign_part(updated, version.part_number),
           else: updated
 
       {:noreply, updated}
@@ -96,19 +102,6 @@ defmodule BolognesaWeb.Series.Episode.Live do
 
   defp parse_part(nil), do: nil
 
-  defp parse_part(text) when is_binary(text) do
-    case Integer.parse(text) do
-      {part, ""} when part in 1..100 -> part
-      _ -> :invalid
-    end
-  end
-
-  defp parse_part(_), do: :invalid
-
-  defp parse_id(text) do
-    case Integer.parse(text) do
-      {id, ""} when id > 0 -> id
-      _ -> 0
-    end
-  end
+  defp parse_part(text), do: Params.integer(text, 1..100) || :invalid
+  defp parse_id(text), do: Params.positive_integer(text) || 0
 end

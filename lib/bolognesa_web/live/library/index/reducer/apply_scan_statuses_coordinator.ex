@@ -1,5 +1,5 @@
-defmodule BolognesaWeb.Library.Index.Reducer.ApplyScanStatuses do
-  @moduledoc false
+defmodule BolognesaWeb.Library.Index.Reducer.ApplyScanStatusesCoordinator do
+  @moduledoc "Applies a scan status reload and starts the reload that arrived meanwhile."
   import Phoenix.Component, only: [assign: 3]
 
   alias Bolognesa.Libraries.Domain.Entities.Library

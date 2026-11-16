@@ -43,9 +43,7 @@ export function createHlsController({video, config, pushEvent, reportPlaybackErr
     pushEvent("playback_ended", {session_id: sessionId})
   }
   const ready = () => {
-    if (destroyed) return
-    if (onReady) onReady()
-    else if (config.autoplay === "true") video.play().catch(() => {})
+    if (!destroyed) onReady()
   }
   const listeners = {pause: onPause, play: onPlay, error: () => onError(), ended: onEnded}
   for (const [name, listener] of Object.entries(listeners)) video.addEventListener(name, listener)

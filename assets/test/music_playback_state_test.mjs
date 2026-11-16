@@ -26,17 +26,10 @@ test("selection failure preserves outgoing playback and exposes a retryable reas
   assert.equal(previous.loading, true)
 })
 
-test("an explicit album index takes precedence over a requested track", () => {
-  const tracks = [{id: 1, file_id: 11}, {id: 2, file_id: 12}, {id: 3, file_id: 13}]
-  assert.deepEqual(albumTracksFrom(tracks, {trackId: 1, startIndex: 1}), tracks.slice(1))
-  assert.equal(tracks.length, 3)
-})
-
 test("album selection distinguishes files and falls back to the beginning for unknown positions", () => {
   const tracks = [{id: 1, file_id: 11}, {id: 1, file_id: 12}, {id: 2, file_id: 13}]
   assert.deepEqual(albumTracksFrom(tracks, {trackId: 1, fileId: 12}), tracks.slice(1))
-  assert.deepEqual(albumTracksFrom(tracks, {trackId: 8, startIndex: -1}), tracks)
-  assert.deepEqual(albumTracksFrom(tracks, {startIndex: 8}), tracks)
+  assert.deepEqual(albumTracksFrom(tracks, {trackId: 8}), tracks)
   assert.deepEqual(albumTracksFrom([], {}), [])
 })
 

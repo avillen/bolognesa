@@ -20,7 +20,7 @@ export function createDirectController({video, config, pushEvent, onReady}) {
   const onEnded = () => pushEvent("playback_ended", {file_id: config.fileId})
   video.addEventListener("ended", onEnded)
   video.addEventListener("error", onError)
-  if (onReady) video.addEventListener("loadedmetadata", onReady, {once: true})
+  video.addEventListener("loadedmetadata", onReady, {once: true})
   if (video.error) onError()
   video.src = config.src || ""
   return {
@@ -28,7 +28,7 @@ export function createDirectController({video, config, pushEvent, onReady}) {
     destroy() {
       video.removeEventListener("ended", onEnded)
       video.removeEventListener("error", onError)
-      if (onReady) video.removeEventListener("loadedmetadata", onReady)
+      video.removeEventListener("loadedmetadata", onReady)
     },
   }
 }

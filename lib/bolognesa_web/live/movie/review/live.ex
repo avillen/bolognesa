@@ -5,12 +5,13 @@ defmodule BolognesaWeb.Movie.Review.Live do
   alias BolognesaWeb.Movie.Review.Components.CorrectionPanel
   alias BolognesaWeb.Movie.Review.Components.ReviewItem
   alias BolognesaWeb.Movie.Review.Reducer.ApplyCandidatesResult
-  alias BolognesaWeb.Movie.Review.Reducer.ApplyCorrectionResult
+  alias BolognesaWeb.Movie.Review.Reducer.ApplyCorrectionResultCoordinator
   alias BolognesaWeb.Movie.Review.Reducer.ApplyReviewsResult
   alias BolognesaWeb.Movie.Review.Reducer.BeginCorrection
   alias BolognesaWeb.Movie.Review.Reducer.Initialize
   alias BolognesaWeb.Movie.Review.Reducer.Load
   alias BolognesaWeb.Movie.Review.Reducer.SelectFile
+  alias BolognesaWeb.Params
 
   @impl true
   def mount(_params, _session, socket) do
@@ -19,17 +20,10 @@ defmodule BolognesaWeb.Movie.Review.Live do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    page =
-      case Integer.parse(Map.get(params, "page", "1")) do
-        {value, ""} when value > 0 and value <= 100_000 -> value
-        _ -> 1
-      end
+    page = Params.page(params["page"])
 
     selected_file_id =
-      case positive_id(Map.get(params, "file_id")) do
-        {:ok, id} -> id
-        :error -> socket.assigns.selected_file_id
-      end
+      Params.positive_integer(params["file_id"]) || socket.assigns.selected_file_id
 
     socket =
       if selected_file_id != socket.assigns.selected_file_id,
@@ -125,16 +119,14 @@ defmodule BolognesaWeb.Movie.Review.Live do
     do: {:noreply, ApplyCandidatesResult.call(socket, request_id, result)}
 
   def handle_async({:correction, request_id}, result, socket),
-    do: {:noreply, ApplyCorrectionResult.call(socket, request_id, result)}
+    do: {:noreply, ApplyCorrectionResultCoordinator.call(socket, request_id, result)}
 
-  defp positive_id(id) when is_binary(id) do
-    case Integer.parse(id) do
-      {value, ""} when value > 0 -> {:ok, value}
-      _ -> :error
+  defp positive_id(id) do
+    case Params.positive_integer(id) do
+      nil -> :error
+      value -> {:ok, value}
     end
   end
-
-  defp positive_id(_), do: :error
 
   defp parse_id(id) do
     case positive_id(id) do
