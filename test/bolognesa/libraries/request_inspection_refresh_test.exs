@@ -53,7 +53,7 @@ defmodule Bolognesa.Libraries.RequestInspectionRefreshTest do
     assert {:ok, :enqueued} = Libraries.request_inspection_refresh(@admin, file.id, 1)
     old = Repo.get_by!(InspectionSchema, media_file_id: file.id)
     {:ok, _, _} = EctoInspectionRepository.begin_inspection(file.id, old.token, old.job_id)
-    assert :ok = EctoInspectionRepository.fail_inspection(file.id, old.token, :unreadable, 1)
+    assert :ok = EctoInspectionRepository.fail_inspection(file.id, old.token, :unreadable)
     terminal = Repo.get!(InspectionSchema, old.id)
     assert {:error, :refresh_limited} = Libraries.request_inspection_refresh(@admin, file.id, 1)
 
@@ -70,7 +70,7 @@ defmodule Bolognesa.Libraries.RequestInspectionRefreshTest do
     assert current.failure_reason == nil
 
     assert {:ok, :stale} =
-             EctoInspectionRepository.fail_inspection(file.id, old.token, :unreadable, 1)
+             EctoInspectionRepository.fail_inspection(file.id, old.token, :unreadable)
 
     assert {:ok, :stale} =
              EctoInspectionRepository.begin_inspection(file.id, old.token, old.job_id)

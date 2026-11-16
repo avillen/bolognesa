@@ -3,21 +3,19 @@ defmodule Bolognesa.Libraries.InspectionDomainTest do
 
   alias Bolognesa.Libraries.Domain.Entities.Inspection
   alias Bolognesa.Libraries.Domain.Entities.MediaFile
-  alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia
 
   @modified ~U[2026-10-05 00:00:00Z]
 
   test "requests analysis for new, uninspected, changed, restored and forced files" do
-    entry = entry(5)
     file = file()
 
-    assert Inspection.request?(nil, false, entry, false)
-    assert Inspection.request?(file, false, entry, false)
-    assert Inspection.request?(file, true, entry(6), false)
-    assert Inspection.request?(%{file | availability: :missing}, true, entry, false)
-    assert Inspection.request?(file, true, entry, true)
-    refute Inspection.request?(file, true, entry, false)
+    assert Inspection.request?(nil, false, false, false)
+    assert Inspection.request?(file, false, false, false)
+    assert Inspection.request?(file, true, true, false)
+    assert Inspection.request?(%{file | availability: :missing}, true, false, false)
+    assert Inspection.request?(file, true, false, true)
+    refute Inspection.request?(file, true, false, false)
   end
 
   test "normalizes bounded technical data and rejects invalid values" do
@@ -40,13 +38,6 @@ defmodule Bolognesa.Libraries.InspectionDomainTest do
 
     assert {:error, :invalid_data} =
              TechnicalMedia.new(%{attrs | tracks: List.duplicate(hd(attrs.tracks), 129)})
-  end
-
-  defp entry(size) do
-    {:ok, value} =
-      NewMediaFile.new(%{relative_path: "a.mp4", size_bytes: size, modified_at: @modified})
-
-    value
   end
 
   defp file do

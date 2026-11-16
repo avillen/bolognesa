@@ -1,21 +1,23 @@
-defmodule Bolognesa.Libraries.Application.Reconciliation do
-  @moduledoc "Reports and notifies confirmed library changes retained by recovery."
+defmodule Bolognesa.Libraries.Application.UseCases.ReconcileLibraryJobs do
+  @moduledoc "Recovers scans or inspections and notifies changes confirmed before any recovery failure."
 
   alias Bolognesa.Infrastructure.Observability.Events
+  alias Bolognesa.Libraries.Application.Ports.Repositories.InspectionRepository
+  alias Bolognesa.Libraries.Application.Ports.Repositories.ScanRepository
   alias Bolognesa.Libraries.Application.Ports.Services.LibraryStatusNotifier
-  alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
 
   @type operation :: :scan | :inspection
   @type result :: :ok | {:error, :unavailable}
 
-  @spec complete(
-          ReconciliationResult.t(),
+  @spec call(
           operation(),
-          integer(),
+          DateTime.t(),
+          ScanRepository.adapter() | InspectionRepository.adapter(),
           LibraryStatusNotifier.adapter()
-        ) ::
-          result()
-  def complete(result, operation, started, notifications) do
+        ) :: result()
+  def call(operation, now, repository, notifications) do
+    started = Events.started_at()
+    result = repository.reconcile_jobs(now)
     library_ids = Enum.uniq(result.changed_library_ids)
 
     measurements = %{

@@ -9,7 +9,6 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries.Domain.ReadModels.Scans.InspectionCounts
-  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.InspectionMapper
 
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository.InspectionRequestWriter
 
@@ -77,17 +76,6 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
        do: DateTime.diff(now, updated_at, :millisecond) < 30_000
 
   defp refresh_limited?(_, _), do: false
-
-  @impl true
-  def fetch(file_id) do
-    case Repo.get_by(InspectionSchema, media_file_id: file_id) do
-      nil -> {:error, :not_found}
-      inspection -> {:ok, InspectionMapper.to_inspection(inspection)}
-    end
-  rescue
-    DBConnection.ConnectionError -> {:error, :unavailable}
-    Postgrex.Error -> {:error, :unavailable}
-  end
 
   @impl true
   def counts(library_id) do
@@ -168,7 +156,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   end
 
   @impl true
-  def fail_inspection(file_id, token, reason, _attempt) do
+  def fail_inspection(file_id, token, reason) do
     transaction(fn ->
       case current(file_id, token) do
         {:ok, inspection, _file} when inspection.state in [:pending, :running] ->
@@ -220,7 +208,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
     end)
   end
 
-  defp transaction(operation) do
+  @doc false
+  @spec transaction((-> result)) :: result | {:error, :unavailable} when result: term()
+  def transaction(operation) do
     case Repo.transaction(operation) do
       {:ok, result} ->
         result

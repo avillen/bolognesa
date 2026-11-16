@@ -56,7 +56,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery do
   end
 
   defp visit(source, path, %{type: :regular} = stat, stack, batch, count, sink) do
-    if ascii_lower(Path.extname(path)) in source.extensions,
+    if String.downcase(Path.extname(path), :ascii) in source.extensions,
       do: add_candidate(source, path, stat, stack, batch, count, sink),
       else: traverse(source, stack, batch, count, sink)
   end
@@ -192,10 +192,4 @@ defmodule Bolognesa.Libraries.Infrastructure.Services.LocalFileDiscovery do
 
   defp continue_check(:ok), do: {:cont, :ok}
   defp continue_check({:error, _} = error), do: {:halt, error}
-
-  defp ascii_lower(binary) do
-    for <<byte <- binary>>, into: <<>> do
-      <<if(byte in ?A..?Z, do: byte + 32, else: byte)>>
-    end
-  end
 end
