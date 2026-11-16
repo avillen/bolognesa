@@ -10,7 +10,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyListeningResult do
          MapSet.member?(socket.assigns.visible_track_ids, track_id) do
       case Enum.find(page.items, &(&1.id == track_id)) do
         nil -> socket
-        track -> stream_insert(socket, :tracks, Track.from_dto(track))
+        track -> stream_insert(socket, :tracks, Track.from_row(track))
       end
     else
       socket
