@@ -62,7 +62,7 @@ defmodule BolognesaWeb.Player do
         data-retry-label={gettext("Reintentar reproducción")}
         data-compatible-playback-available={to_string(@compatible_playback_available?)}
         data-compatible-playback-label={gettext("Probar reproducción compatible")}
-        class="bolognesa-video-frame"
+        class={["bolognesa-video-frame", @playback_error && "bolognesa-video-frame-error"]}
       >
         <div id={"#{@prefix}-video-ui"} phx-update="ignore">
           <media-i18n lang={Gettext.get_locale(BolognesaWeb.Gettext)}>
@@ -80,55 +80,73 @@ defmodule BolognesaWeb.Player do
             </video>
           </media-i18n>
         </div>
+        <div
+          :if={@playback_phase in [:checking, :preparing] && !@playback_error}
+          class="bolognesa-video-status"
+        >
+          <p
+            :if={@playback_phase == :checking}
+            role="status"
+            id={"#{@prefix}-playback-checking"}
+            class="motion-safe:animate-pulse"
+          >
+            {gettext("Comprobando compatibilidad del navegador…")}
+          </p>
+          <p
+            :if={@playback_phase == :preparing}
+            role="status"
+            id={"#{@prefix}-playback-preparing"}
+            class="motion-safe:animate-pulse"
+          >
+            {gettext("Preparando vídeo…")}
+          </p>
+        </div>
+        <div :if={@playback_error} class="bolognesa-video-error">
+          <p id={"#{@prefix}-playback-error"} role="alert" data-reason={@playback_error_reason}>
+            {@playback_error}
+          </p>
+          <div class="bolognesa-video-error-actions">
+            <button
+              :if={@retry_file_id}
+              id={"#{@prefix}-retry-playback"}
+              type="button"
+              phx-click="play"
+              phx-value-file_id={@selected_file_id || @retry_file_id}
+              class="bolognesa-video-error-primary"
+            >{gettext("Reintentar reproducción")}</button>
+            <button
+              :if={@compatible_playback_available?}
+              id={"#{@prefix}-playback-compatible"}
+              type="button"
+              phx-click="playback_compatible"
+            >{gettext("Probar reproducción compatible")}</button>
+            <button :if={@selected_file_id} type="button" phx-click="playback_original">
+              {gettext("Probar archivo original")}
+            </button>
+            <button
+              :if={@selected_file_id && !@inspection_refresh_used?}
+              type="button"
+              phx-click="playback_refresh"
+            >
+              {gettext("Actualizar análisis")}
+            </button>
+          </div>
+          <p :if={@inspection_refresh_requested?} role="status" class="text-xs text-muted">
+            {gettext("Análisis solicitado. Reintenta cuando termine.")}
+          </p>
+        </div>
       </div>
       <button
-        :if={@compatible_playback_available? && @playback_phase in [:ready, :error]}
+        :if={
+          !@playback_error && @compatible_playback_available? &&
+            @playback_phase in [:ready, :error]
+        }
         id={"#{@prefix}-playback-compatible"}
         type="button"
         phx-click="playback_compatible"
-        class="series-episode-play"
+        class="bolognesa-video-hint"
       >{gettext("Probar reproducción compatible")}</button>
     </section>
-    <p :if={@playback_phase == :checking} role="status" id={"#{@prefix}-playback-checking"}>
-      {gettext("Comprobando compatibilidad del navegador…")}
-    </p>
-    <p :if={@playback_phase == :preparing} role="status" id={"#{@prefix}-playback-preparing"}>
-      {gettext("Preparando vídeo…")}
-    </p>
-
-    <div :if={@playback_error && @selected_file_id} class="mt-3 flex flex-wrap gap-3">
-      <button
-        :if={!@inspection_refresh_used?}
-        type="button"
-        phx-click="playback_refresh"
-        class="series-episode-play"
-      >
-        {gettext("Actualizar análisis")}
-      </button>
-      <button type="button" phx-click="playback_original" class="series-episode-play">
-        {gettext("Probar archivo original")}
-      </button>
-      <span :if={@inspection_refresh_requested?} role="status">{gettext(
-        "Análisis solicitado. Reintenta cuando termine."
-      )}</span>
-    </div>
-    <p
-      :if={@playback_error}
-      id={"#{@prefix}-playback-error"}
-      role="alert"
-      data-reason={@playback_error_reason}
-      class="mt-4 rounded-xl border border-red-300/30 bg-red-950/30 p-4 text-sm text-red-100"
-    >
-      {@playback_error}
-    </p>
-    <button
-      :if={@playback_error && @retry_file_id}
-      id={"#{@prefix}-retry-playback"}
-      type="button"
-      phx-click="play"
-      phx-value-file_id={@selected_file_id || @retry_file_id}
-      class="series-episode-play mt-3"
-    >{gettext("Reintentar reproducción")}</button>
     """
   end
 
