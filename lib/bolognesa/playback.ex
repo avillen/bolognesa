@@ -176,7 +176,7 @@ defmodule Bolognesa.Playback do
           {:ok, LocalMediaFile.opened()} | {:error, LocalMediaFile.failure()}
   def open_source(source), do: LocalMediaFile.open(source)
 
-  @spec video_transcode_status(String.t()) :: :ready | :waiting | :failed | :not_found
+  @spec video_transcode_status(String.t()) :: :ready | :waiting | :not_found
   def video_transcode_status(session_id), do: TranscodeManager.status(session_id)
 
   defp signal_transcode(actor, session_id, action) do
