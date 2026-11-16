@@ -14,8 +14,13 @@ defmodule Bolognesa.Libraries.Application.InventoryRequestPlan do
 
   defstruct [:revision, :new_discovery?, :inspect?, :identify?]
 
-  @spec for_entry(MediaFile.t() | nil, boolean(), NewMediaFile.t(), boolean(), Scan.generation()) ::
-          t()
+  @spec for_entry(
+          MediaFile.t() | nil,
+          has_inspection? :: boolean(),
+          NewMediaFile.t(),
+          force_inspection? :: boolean(),
+          Scan.generation()
+        ) :: t()
   def for_entry(previous, has_inspection?, entry, force_inspection?, generation) do
     revision = MediaFile.revision_for(previous, entry)
     changed? = previous != nil and revision != previous.revision
