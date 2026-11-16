@@ -1,17 +1,13 @@
 defmodule Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository do
   @moduledoc false
   @behaviour Bolognesa.Music.Application.Ports.Repositories.MusicRepository
-  import Ecto.Query
-  alias Bolognesa.Infrastructure.Persistence.InspectionSchema
-  alias Bolognesa.Infrastructure.Persistence.LibrarySchema
-  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-
   alias Bolognesa.Infrastructure.Persistence.MusicAlbumSchema
   alias Bolognesa.Infrastructure.Persistence.MusicArtistSchema
   alias Bolognesa.Infrastructure.Persistence.MusicImportSchema
   alias Bolognesa.Infrastructure.Persistence.MusicTrackSchema
 
   alias Bolognesa.Music.Domain.Policies.Grouping
+  alias Bolognesa.Music.Infrastructure.Repositories.EctoImportRepository.ImportLock
   alias Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository.MusicMapper
   alias Bolognesa.Repo
 
@@ -28,48 +24,16 @@ defmodule Bolognesa.Music.Infrastructure.Repositories.EctoMusicRepository do
   end
 
   defp apply_locked(observation, metadata) do
-    file =
-      Repo.one(
-        from(row in MediaFileSchema, where: row.id == ^observation.file_id, lock: "FOR UPDATE"),
-        log: false
-      )
+    %{file_id: id, revision: revision, library_id: library_id, inspection_token: token} =
+      observation
 
-    inspection =
-      Repo.one(
-        from(row in InspectionSchema,
-          where: row.media_file_id == ^observation.file_id,
-          lock: "FOR UPDATE"
-        ),
-        log: false
-      )
+    case ImportLock.lock(id) do
+      {:ok, %{revision: ^revision, library_id: ^library_id}, %{token: ^token}, import_state} ->
+        persist(observation, metadata, import_state)
 
-    import_state =
-      Repo.one(
-        from(row in MusicImportSchema,
-          where: row.media_file_id == ^observation.file_id,
-          lock: "FOR UPDATE"
-        ),
-        log: false
-      )
-
-    if current?(file, inspection, observation) do
-      persist(observation, metadata, import_state)
-    else
-      {:ok, :stale}
+      _ ->
+        {:ok, :stale}
     end
-  end
-
-  defp current?(nil, _inspection, _observation), do: false
-  defp current?(_file, nil, _observation), do: false
-
-  defp current?(file, inspection, observation) do
-    library = Repo.get!(LibrarySchema, file.library_id, log: false)
-
-    library.content_type == :music and file.availability == :available and
-      file.revision == observation.revision and file.library_id == observation.library_id and
-      inspection.observed_revision == observation.revision and inspection.state == :succeeded and
-      inspection.token == observation.inspection_token and
-      Enum.any?(inspection.tracks["items"] || [], &(&1["kind"] == "audio"))
   end
 
   defp persist(observation, metadata, import_state) do

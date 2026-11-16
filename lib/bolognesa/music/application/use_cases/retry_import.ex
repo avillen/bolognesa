@@ -10,7 +10,7 @@ defmodule Bolognesa.Music.Application.UseCases.RetryImport do
   def call(actor, file_id, repository) do
     with :ok <- Accounts.authorize(actor, :admin),
          true <- is_integer(file_id) and file_id > 0 do
-      repository.request_retry_with_result(file_id)
+      repository.request_retry(file_id)
       |> observe(actor.id, file_id)
     else
       false -> {:error, :not_found}

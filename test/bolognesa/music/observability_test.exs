@@ -27,7 +27,7 @@ defmodule Bolognesa.Music.ObservabilityTest do
   end
 
   defmodule UnavailableRetryRepository do
-    def request_retry_with_result(_), do: {:error, :unavailable}
+    def request_retry(_), do: {:error, :unavailable}
   end
 
   defmodule UnavailableAdmissionRepository do
@@ -47,7 +47,7 @@ defmodule Bolognesa.Music.ObservabilityTest do
   end
 
   defmodule PartialRecoveryRepository do
-    def reconcile_jobs_with_summary(_),
+    def reconcile_jobs(_),
       do: {:error, :unavailable, %{recovered_count: 2, library_ids: [1]}}
   end
 
@@ -368,14 +368,14 @@ defmodule Bolognesa.Music.ObservabilityTest do
     {:ok, _} = EctoImportRepository.begin_attempt(second.file.id, 1, second_job.id)
 
     assert {:ok, %{recovered_count: 2, library_ids: [library_id]}} =
-             EctoImportRepository.reconcile_jobs_with_summary(DateTime.utc_now())
+             EctoImportRepository.reconcile_jobs(DateTime.utc_now())
 
     assert library_id == first.library.id
     assert Repo.get_by!(MusicImportSchema, media_file_id: first.file.id).state == :failed
     assert Repo.get_by!(MusicImportSchema, media_file_id: second.file.id).state == :pending
 
     assert {:ok, %{recovered_count: 0, library_ids: []}} =
-             EctoImportRepository.reconcile_jobs_with_summary(DateTime.utc_now())
+             EctoImportRepository.reconcile_jobs(DateTime.utc_now())
 
     refute_receive {:music_event, _, _, _}
   end
