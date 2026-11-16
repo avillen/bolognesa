@@ -1,5 +1,5 @@
 defmodule Bolognesa.Series.Domain.ValueObjects.TitleHint do
-  @moduledoc "Derives a bounded movie title and optional year from a filename."
+  @moduledoc "Derives a bounded series title and optional year from a filename."
 
   @release_words ~w(1080p 2160p 720p 480p bluray brrip webrip web-dl dvdrip hdrip h264 h265 x264 x265 hevc ac3 dts remux)
 

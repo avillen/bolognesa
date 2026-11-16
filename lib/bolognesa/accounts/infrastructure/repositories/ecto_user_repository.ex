@@ -5,7 +5,6 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
   import Ecto.Query
   alias Bolognesa.Repo
 
-  alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository.SessionMapper
   alias Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository.UserMapper
 
   alias Bolognesa.Infrastructure.Persistence.SessionSchema
@@ -34,10 +33,13 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
 
   @impl true
   def insert_initial_admin(user, hashed_password) do
-    Repo.transaction(fn ->
-      ensure_setup_open!()
-      insert_admin!(user, hashed_password)
-    end)
+    attrs = %{name: user.name, email: user.email}
+    record = %UserSchema{role: "admin", hashed_password: hashed_password}
+
+    case record |> UserSchema.changeset(attrs) |> Repo.insert(log: false) do
+      {:ok, stored} -> {:ok, UserMapper.to_user(stored)}
+      {:error, changeset} -> {:error, map_insert_error(changeset)}
+    end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
   end
@@ -88,12 +90,13 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
   def fetch_active_session(token_hash, now) do
     query =
       from s in SessionSchema,
+        join: u in assoc(s, :user),
         where: s.token_hash == ^token_hash and s.expires_at > ^now,
-        preload: [:user]
+        select: u
 
     case Repo.one(query, log: false) do
       nil -> :not_found
-      session -> {:ok, SessionMapper.to_user(session)}
+      stored -> {:ok, UserMapper.to_user(stored)}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -109,27 +112,17 @@ defmodule Bolognesa.Accounts.Infrastructure.Repositories.EctoUserRepository do
     DBConnection.ConnectionError -> {:error, :unavailable}
   end
 
-  defp ensure_setup_open! do
-    if Repo.exists?(from u in UserSchema, where: u.role == "admin") do
-      Repo.rollback(:setup_closed)
-    end
-  end
-
-  defp insert_admin!(user, hashed_password) do
-    attrs = %{name: user.name, email: user.email}
-    record = %UserSchema{role: "admin", hashed_password: hashed_password}
-
-    case record |> UserSchema.changeset(attrs) |> Repo.insert(log: false) do
-      {:ok, stored} -> UserMapper.to_user(stored)
-      {:error, changeset} -> Repo.rollback(map_insert_error(changeset))
-    end
-  end
-
   defp map_insert_error(changeset) do
-    if Enum.any?(changeset.errors, fn {_field, {_message, opts}} ->
-         opts[:constraint_name] == "accounts_one_admin"
-       end),
+    # The email index can fire before accounts_one_admin when the admin's email is reused.
+    if admin_constraint?(changeset) or
+         Repo.exists?(from u in UserSchema, where: u.role == "admin"),
        do: :setup_closed,
        else: :unavailable
+  end
+
+  defp admin_constraint?(changeset) do
+    Enum.any?(changeset.errors, fn {_field, {_message, opts}} ->
+      opts[:constraint_name] == "accounts_one_admin"
+    end)
   end
 end

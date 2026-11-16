@@ -4,17 +4,15 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.IdentifiedMovieWriter do
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
-  alias Bolognesa.Movies.Domain.ValueObjects.NewMovie
   alias Bolognesa.Repo
 
   @spec upsert!(MovieDetails.t()) :: pos_integer()
   def upsert!(%MovieDetails{} = details) do
     attrs = details |> Map.from_struct() |> Map.put(:provider, :tmdb)
-    {:ok, movie} = NewMovie.new(attrs)
 
     row =
-      Repo.insert!(MovieSchema.changeset(%MovieSchema{}, Map.from_struct(movie)),
-        on_conflict: [set: [provider_id: movie.provider_id]],
+      Repo.insert!(MovieSchema.changeset(%MovieSchema{}, attrs),
+        on_conflict: [set: [provider_id: details.provider_id]],
         conflict_target: [:provider, :provider_id],
         returning: true,
         log: false
@@ -26,7 +24,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.IdentifiedMovieWriter do
   @spec delete_orphaned!([pos_integer()]) :: :ok
   def delete_orphaned!(ids) do
     Enum.each(Enum.sort(ids), fn id ->
-      Repo.one(from(row in MovieSchema, where: row.id == ^id, lock: "FOR UPDATE"), log: false)
+      Repo.get(lock(MovieSchema, "FOR UPDATE"), id, log: false)
 
       referenced =
         from(row in MovieIdentificationSchema,

@@ -4,7 +4,7 @@ defmodule Bolognesa.Series.Domain.Entities.Identification do
   @type state :: :pending | :automatic | :manual | :manual_unidentified | :failed | :unmatched
   @type origin :: :automatic | :manual | nil
   @type token :: String.t()
-  @type candidate_data :: %{items: [map()]} | %{String.t() => [map()]}
+  @type candidate_data :: %{String.t() => [map()]}
   @type result :: %{
           optional(:part_number) => pos_integer() | nil,
           candidate_data: candidate_data(),
@@ -54,7 +54,7 @@ defmodule Bolognesa.Series.Domain.Entities.Identification do
        observed_revision: revision,
        token: token,
        needs_review?: false,
-       candidate_data: %{items: []}
+       candidate_data: %{"items" => []}
      }}
   end
 
@@ -188,7 +188,6 @@ defmodule Bolognesa.Series.Domain.Entities.Identification do
 
   defp valid_result?(_result), do: false
 
-  defp valid_candidates?(%{items: items}) when is_list(items), do: Enum.all?(items, &is_map/1)
   defp valid_candidates?(%{"items" => items}) when is_list(items), do: Enum.all?(items, &is_map/1)
   defp valid_candidates?(_candidates), do: false
 end

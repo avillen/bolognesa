@@ -4,6 +4,7 @@ defmodule Bolognesa.Music.Application.UseCases.Browse do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Dto.BrowsePage
   alias Bolognesa.Music.Application.Ports.Readers.BrowseReader
+  alias Bolognesa.Music.Application.ReadQuery
   alias Bolognesa.Music.Domain.Entities.Artist
 
   @type result ::
@@ -21,9 +22,8 @@ defmodule Bolognesa.Music.Application.UseCases.Browse do
   def call(actor, kind, artist_id, query, page, library_id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
          true <-
-           kind in [:artists, :albums] and valid_id?(artist_id) and valid_id?(library_id) and
-             is_binary(query) and String.valid?(query) and byte_size(query) <= 256 and
-             is_integer(page) and page in 1..100_000,
+           kind in [:artists, :albums] and ReadQuery.valid_optional_id?(artist_id) and
+             ReadQuery.valid?(query, page, library_id),
          {:ok, result} <- reader.browse(kind, artist_id, query, page, library_id, actor.id) do
       {:ok, BrowsePage.from_domain(result)}
     else
@@ -31,7 +31,4 @@ defmodule Bolognesa.Music.Application.UseCases.Browse do
       error -> error
     end
   end
-
-  defp valid_id?(nil), do: true
-  defp valid_id?(id), do: is_integer(id) and id > 0
 end

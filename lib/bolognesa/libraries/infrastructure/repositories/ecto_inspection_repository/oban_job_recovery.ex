@@ -6,6 +6,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.InspectionPolicy
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionRepository
   alias Bolognesa.Repo
 
   @spec reconcile(DateTime.t()) :: ReconciliationResult.t()
@@ -23,7 +24,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   end
 
   defp reconcile_id(id, cutoff, result) do
-    case transaction(fn -> reconcile_one(id, cutoff) end) do
+    case EctoInspectionRepository.transaction(fn -> reconcile_one(id, cutoff) end) do
       {:ok, library_ids} ->
         {:cont, %{result | changed_library_ids: library_ids ++ result.changed_library_ids}}
 
@@ -115,18 +116,4 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   end
 
   defp reconciliation_reason(_inspection, _job, _cutoff), do: nil
-
-  defp transaction(operation) do
-    case Repo.transaction(operation) do
-      {:ok, result} ->
-        result
-
-      {:error, _reason} ->
-        {:error, :unavailable}
-    end
-  rescue
-    DBConnection.ConnectionError -> {:error, :unavailable}
-    Postgrex.Error -> {:error, :unavailable}
-    Ecto.ConstraintError -> {:error, :unavailable}
-  end
 end

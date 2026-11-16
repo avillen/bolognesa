@@ -41,7 +41,7 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
     for state <- ["completed", "cancelled", "discarded", "missing", "executing"] do
       {file, token} = fixture()
       link_job(file, token, state, old, old)
-      assert :ok = Repository.reconcile_jobs(now)
+      assert {:ok, _count} = Repository.reconcile_jobs_result(now)
       reason = if state == "discarded", do: "attempts_exhausted", else: "unexpected_failure"
       assert {:ok, %{state: :failed, failure_reason: ^reason}} = Repository.get(file.id)
     end
@@ -102,7 +102,7 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
       {file, token} = fixture()
       link_job(file, token, "executing", started, attempted)
       assert {:ok, previous} = Repository.get(file.id)
-      assert :ok = Repository.reconcile_jobs(now)
+      assert {:ok, _count} = Repository.reconcile_jobs_result(now)
       assert {:ok, ^previous} = Repository.get(file.id)
     end
   end
@@ -132,7 +132,7 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
 
     last = List.last(files)
 
-    assert :ok = Repository.reconcile_jobs(now)
+    assert {:ok, _count} = Repository.reconcile_jobs_result(now)
 
     assert Repo.aggregate(
              from(row in MovieIdentificationSchema, where: row.state == :failed),
@@ -141,7 +141,7 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
              100
 
     assert {:ok, %{state: :pending}} = Repository.get(last.id)
-    assert :ok = Repository.reconcile_jobs(now)
+    assert {:ok, _count} = Repository.reconcile_jobs_result(now)
 
     assert Repo.aggregate(
              from(row in MovieIdentificationSchema, where: row.state == :failed),
@@ -184,7 +184,7 @@ defmodule Bolognesa.Movies.IdentificationRecoveryTest do
       set: [job_id: job.id]
     )
 
-    assert :ok = Repository.reconcile_jobs(DateTime.utc_now())
+    assert {:ok, _count} = Repository.reconcile_jobs_result(DateTime.utc_now())
 
     assert {:ok, %{state: :failed, failure_reason: "attempts_exhausted"}} =
              Repository.get(file.id)

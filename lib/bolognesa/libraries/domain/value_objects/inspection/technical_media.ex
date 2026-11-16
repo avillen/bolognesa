@@ -37,17 +37,12 @@ defmodule Bolognesa.Libraries.Domain.ValueObjects.Inspection.TechnicalMedia do
   def new(_), do: {:error, :invalid_data}
 
   defp normalize_tracks(tracks) do
-    Enum.reduce_while(tracks, {:ok, []}, fn attrs, {:ok, acc} ->
-      case TechnicalTrack.new(attrs) do
-        {:ok, track} -> {:cont, {:ok, [track | acc]}}
-        {:error, :invalid_data} = error -> {:halt, error}
-      end
-    end)
-    |> reverse_tracks()
-  end
+    normalized = Enum.map(tracks, &TechnicalTrack.new/1)
 
-  defp reverse_tracks({:ok, tracks}), do: {:ok, Enum.reverse(tracks)}
-  defp reverse_tracks(error), do: error
+    if Enum.all?(normalized, &match?({:ok, _track}, &1)),
+      do: {:ok, Enum.map(normalized, &elem(&1, 1))},
+      else: {:error, :invalid_data}
+  end
 
   defp valid_format?(nil), do: true
 

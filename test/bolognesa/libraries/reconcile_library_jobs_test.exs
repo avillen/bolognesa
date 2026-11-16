@@ -2,8 +2,7 @@ defmodule Bolognesa.Libraries.ReconcileLibraryJobsTest do
   alias Task.Supervisor, as: TaskSupervisor
   use ExUnit.Case, async: false
 
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileLibraryJobs
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Infrastructure.Services.LibraryStatusNotifications
   alias Bolognesa.Libraries.Support.ControlledScanRepository
@@ -15,15 +14,20 @@ defmodule Bolognesa.Libraries.ReconcileLibraryJobsTest do
     %{supervisor: supervisor}
   end
 
-  for use_case <- [ReconcileScans, ReconcileInspections] do
-    test "#{inspect(use_case)} notifies confirmed changes even after a later failure", %{
+  for operation <- [:scan, :inspection] do
+    test "#{operation} notifies confirmed changes even after a later failure", %{
       supervisor: supervisor
     } do
       now = ~U[2026-10-12 12:00:00Z]
 
       task =
         TaskSupervisor.async_nolink(supervisor, fn ->
-          unquote(use_case).call(now, ControlledScanRepository, LibraryStatusNotifications)
+          ReconcileLibraryJobs.call(
+            unquote(operation),
+            now,
+            ControlledScanRepository,
+            LibraryStatusNotifications
+          )
         end)
 
       assert_receive {:reconciliation, pid, ^now}
@@ -40,12 +44,17 @@ defmodule Bolognesa.Libraries.ReconcileLibraryJobsTest do
       refute_receive {:library_status_changed, _}
     end
 
-    test "#{inspect(use_case)} leaves unchanged libraries silent", %{supervisor: supervisor} do
+    test "#{operation} leaves unchanged libraries silent", %{supervisor: supervisor} do
       now = ~U[2026-10-12 12:00:00Z]
 
       task =
         TaskSupervisor.async_nolink(supervisor, fn ->
-          unquote(use_case).call(now, ControlledScanRepository, LibraryStatusNotifications)
+          ReconcileLibraryJobs.call(
+            unquote(operation),
+            now,
+            ControlledScanRepository,
+            LibraryStatusNotifications
+          )
         end)
 
       assert_receive {:reconciliation, pid, ^now}

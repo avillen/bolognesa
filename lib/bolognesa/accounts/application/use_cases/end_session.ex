@@ -8,7 +8,7 @@ defmodule Bolognesa.Accounts.Application.UseCases.EndSession do
   @spec call(Session.token() | nil, UserRepository.adapter()) :: :ok | {:error, :unavailable}
   def call(token, repository) do
     case SessionToken.decode(token) do
-      {:ok, raw} -> revoke(repository.delete_session(:crypto.hash(:sha256, raw)))
+      {:ok, token_hash} -> revoke(repository.delete_session(token_hash))
       {:error, :unauthenticated} -> :ok
     end
   end

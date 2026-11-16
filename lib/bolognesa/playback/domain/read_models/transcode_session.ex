@@ -22,8 +22,7 @@ defmodule Bolognesa.Playback.Domain.ReadModels.TranscodeSession do
           offset_ms: non_neg_integer(),
           duration_ms: non_neg_integer() | nil,
           directory: String.t(),
-          strategy: DeliveryPlan.mode(),
-          plan: DeliveryPlan.t() | nil,
+          plan: DeliveryPlan.t(),
           status: :running | :finished | :failed
         }
 
@@ -36,7 +35,6 @@ defmodule Bolognesa.Playback.Domain.ReadModels.TranscodeSession do
     :offset_ms,
     :duration_ms,
     :directory,
-    :strategy,
     :plan,
     status: :running
   ]

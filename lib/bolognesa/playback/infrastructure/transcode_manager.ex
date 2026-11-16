@@ -22,9 +22,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   @type failure ::
           LocalMediaFile.failure()
-          | :not_found
           | :busy
-          | :invalid_offset
           | :tool_unavailable
           | :unsafe_root
           | :storage_unavailable
@@ -51,30 +49,24 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
         offset_ms,
         replace_reason \\ :session_replaced
       ) do
-    if ContentRef.valid?(content_ref) do
-      request = %{
-        actor_id: actor_id,
-        content_ref: content_ref,
-        file_id: file_id,
-        source: source,
-        strategy: strategy,
-        offset_ms: offset_ms,
-        replace_reason: replace_reason
-      }
+    request = %{
+      actor_id: actor_id,
+      content_ref: content_ref,
+      file_id: file_id,
+      source: source,
+      strategy: strategy,
+      offset_ms: offset_ms,
+      replace_reason: replace_reason
+    }
 
-      GenServer.call(__MODULE__, {:start, request})
-    else
-      {:error, :not_found}
-    end
+    GenServer.call(__MODULE__, {:start, request})
   end
 
   @spec lookup(String.t()) :: {:ok, TranscodeSession.t()} | {:error, :not_found}
   def lookup(id), do: GenServer.call(__MODULE__, {:lookup, id})
 
-  @spec observe_preparation(String.t(), :ready | :waiting, non_neg_integer(), non_neg_integer()) ::
-          :ok
-  def observe_preparation(id, status, count, published_ms),
-    do: GenServer.call(__MODULE__, {:observe_preparation, id, status, count, published_ms})
+  @spec status(String.t()) :: :ready | :waiting | :failed | :not_found
+  def status(id), do: GenServer.call(__MODULE__, {:status, id})
 
   @spec touch(String.t()) :: :ok | {:error, :not_found}
   def touch(id), do: GenServer.call(__MODULE__, {:touch, id})
@@ -148,11 +140,15 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   def handle_call({:lookup, _id}, _from, state), do: {:reply, {:error, :not_found}, state}
 
+  def handle_call({:status, id}, _from, %{current: %{id: id, status: :failed}} = state),
+    do: {:reply, :failed, state}
+
   def handle_call(
-        {:observe_preparation, id, status, count, published_ms},
+        {:status, id},
         _from,
-        %{current: %{id: id}, preparation: prep} = state
+        %{current: %{id: id} = session, preparation: prep} = state
       ) do
+    {status, count, published_ms} = playlist_status(session.directory)
     prep = %{prep | count: count, published_ms: published_ms}
 
     prep =
@@ -165,10 +161,10 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
         do: preparation_event(state, prep, :ready),
         else: prep
 
-    {:reply, :ok, %{state | preparation: prep}}
+    {:reply, status, %{state | preparation: prep}}
   end
 
-  def handle_call({:observe_preparation, _, _, _, _}, _from, state), do: {:reply, :ok, state}
+  def handle_call({:status, _id}, _from, state), do: {:reply, :not_found, state}
 
   def handle_call({:touch, id}, _from, %{current: %{id: id}} = state),
     do: {:reply, :ok, %{state | last_activity: now()}}
@@ -250,6 +246,33 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     end
   end
 
+  defp playlist_status(directory) do
+    case File.read(Path.join(directory, "index.m3u8")) do
+      {:ok, manifest} ->
+        segments = Regex.scan(~r/^seg-[0-9]{6,12}\.ts$/m, manifest) |> List.flatten()
+        seconds = buffered_seconds(manifest)
+        enough? = seconds >= 4 or String.contains?(manifest, "#EXT-X-ENDLIST")
+
+        ready? =
+          enough? and segments != [] and
+            Enum.all?(segments, &File.regular?(Path.join(directory, &1)))
+
+        {if(ready?, do: :ready, else: :waiting), length(segments), round(seconds * 1000)}
+
+      _ ->
+        {:waiting, 0, 0}
+    end
+  end
+
+  defp buffered_seconds(manifest) do
+    ~r/^#EXTINF:(\d+(?:\.\d+)?),/m
+    |> Regex.scan(manifest, capture: :all_but_first)
+    |> Enum.reduce(0.0, fn [duration], total ->
+      {seconds, ""} = Float.parse(duration)
+      total + seconds
+    end)
+  end
+
   defp available_slot(%{current: nil}, _actor_id), do: :ok
   defp available_slot(%{current: %{actor_id: actor_id}}, actor_id), do: :ok
   defp available_slot(_state, _actor_id), do: {:error, :busy}
@@ -258,7 +281,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     source = request.source
 
     with :ok <- validate_strategy(request.strategy, source),
-         :ok <- valid_offset(source, request.offset_ms),
          {:ok, root} <- root(),
          {:ok, executable} <- executable(),
          :ok <- LocalMediaFile.validate(source),
@@ -273,7 +295,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
         offset_ms: request.offset_ms,
         duration_ms: source.duration_ms,
         directory: directory,
-        strategy: request.strategy.mode,
         plan: request.strategy
       }
 
@@ -371,13 +392,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     ArgumentError -> {:error, :tool_unavailable}
     ErlangError -> {:error, :tool_unavailable}
   end
-
-  defp valid_offset(%Source{duration_ms: duration}, offset)
-       when is_integer(offset) and offset >= 0 and
-              (is_nil(duration) or offset <= duration),
-       do: :ok
-
-  defp valid_offset(_, _), do: {:error, :invalid_offset}
 
   defp replace_actor_session(%{current: %{actor_id: actor_id}} = state, actor_id, reason),
     do: clear(state, reason)
@@ -590,16 +604,17 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   defp session_event(event, session, measurements, metadata) do
     fields =
-      %{session_id: session.id, file_id: session.file_id, strategy: session.strategy}
-      |> Map.merge(plan_metadata(session.plan))
+      %{
+        session_id: session.id,
+        file_id: session.file_id,
+        strategy: session.plan.mode,
+        transport: session.plan.transport
+      }
       |> Map.merge(metadata)
       |> PlaybackEvents.sanitize_delivery_metadata()
 
     :telemetry.execute([:bolognesa, :playback, :session, event], measurements, fields)
   end
-
-  defp plan_metadata(nil), do: %{}
-  defp plan_metadata(plan), do: %{transport: plan.transport, delivery_reason: plan.reason}
 
   defp now, do: System.monotonic_time(:millisecond)
 end

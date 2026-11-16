@@ -6,6 +6,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.Oba
   alias Bolognesa.Libraries.Domain.Entities.Scan
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Infrastructure.Jobs.Policies.ScanPolicy
+  alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.ScanMapper
   alias Bolognesa.Repo
 
@@ -33,7 +34,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.Oba
 
     Enum.reduce_while(candidates, %ReconciliationResult{}, fn id, result ->
       reconcile_result(
-        transaction(fn -> reconcile_locked(locked_scan(id, :not_found), now) end),
+        EctoScanRepository.transaction(fn ->
+          reconcile_locked(EctoScanRepository.locked_scan(id, :not_found), now)
+        end),
         result
       )
     end)
@@ -84,7 +87,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.Oba
 
     case Scan.transition(ScanMapper.to_scan(scan), state, reason, now) do
       {:ok, transitioned} ->
-        _stored = save_scan(scan, transitioned)
+        _stored = EctoScanRepository.save_scan(scan, transitioned)
         {:ok, [scan.library_id]}
 
       _ ->
@@ -97,45 +100,4 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository.Oba
 
   defp reconcile_result({:error, :not_found}, result), do: {:cont, result}
   defp reconcile_result({:error, _reason}, result), do: {:halt, %{result | error: :unavailable}}
-
-  defp transaction(operation) do
-    case Repo.transaction(operation) do
-      {:ok, result} ->
-        result
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  rescue
-    DBConnection.ConnectionError -> {:error, :unavailable}
-    Postgrex.Error -> {:error, :unavailable}
-    Ecto.ConstraintError -> {:error, :unavailable}
-  end
-
-  defp locked_scan(scan_id, missing_reason) do
-    case Repo.one(from scan in ScanSchema, where: scan.id == ^scan_id, lock: "FOR UPDATE") do
-      nil -> Repo.rollback(missing_reason)
-      scan -> scan
-    end
-  end
-
-  defp save_scan(schema, scan) do
-    attrs =
-      Map.take(scan, [
-        :state,
-        :generation,
-        :attempt,
-        :files_discovered,
-        :failure_reason,
-        :started_at,
-        :attempt_started_at,
-        :finished_at,
-        :updated_at
-      ])
-
-    case Repo.update(ScanSchema.changeset(schema, attrs)) do
-      {:ok, stored} -> ScanMapper.to_scan(stored)
-      {:error, _changeset} -> Repo.rollback(:unavailable)
-    end
-  end
 end

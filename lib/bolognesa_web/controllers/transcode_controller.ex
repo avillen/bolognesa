@@ -3,7 +3,6 @@ defmodule BolognesaWeb.TranscodeController do
   use BolognesaWeb, :controller
 
   alias Bolognesa.Playback
-  alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias BolognesaWeb.Params
 
   @segment ~r/\Aseg-[0-9]{6,12}\.ts\z/
@@ -75,7 +74,7 @@ defmodule BolognesaWeb.TranscodeController do
   end
 
   defp touch_segment(_id, "index.m3u8"), do: :ok
-  defp touch_segment(id, _name), do: TranscodeManager.touch(id)
+  defp touch_segment(id, _name), do: Playback.touch_video_transcode(id)
 
   defp read(directory, name) do
     path = Path.join(directory, name)

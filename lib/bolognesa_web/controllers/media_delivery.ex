@@ -3,6 +3,7 @@ defmodule BolognesaWeb.MediaDelivery do
   @moduledoc "Authorized-source byte responses using one validated file descriptor."
   import Plug.Conn
   alias Bolognesa.Infrastructure.Observability.Events
+  alias Bolognesa.Playback
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ValueObjects.ByteRange
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
@@ -31,7 +32,7 @@ defmodule BolognesaWeb.MediaDelivery do
 
   @spec serve(PlugConn.t(), Source.t(), String.t()) :: PlugConn.t()
   def serve(conn, source, mime_type) do
-    case LocalMediaFile.open(source) do
+    case Playback.open_source(source) do
       {:ok, opened} ->
         try do
           serve_opened(conn, opened, mime_type)

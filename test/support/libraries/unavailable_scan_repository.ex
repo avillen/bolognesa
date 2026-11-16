@@ -4,8 +4,6 @@ defmodule Bolognesa.Libraries.Support.UnavailableScanRepository do
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
 
   @impl true
-  defdelegate request(id), to: EctoScanRepository
-  @impl true
   defdelegate request(id, force_inspection?), to: EctoScanRepository
   @impl true
   defdelegate fetch_status(id), to: EctoScanRepository

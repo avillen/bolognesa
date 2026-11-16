@@ -93,7 +93,6 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
         transcode_session: %{
           id: "current",
           duration_ms: nil,
-          strategy: :full_conversion,
           file_id: 1
         }
       }

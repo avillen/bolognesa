@@ -11,8 +11,7 @@ defmodule Bolognesa.Series.Domain.ValueObjects.EpisodePart do
     end
   end
 
-  @spec from_suffix(binary()) :: {:ok, nil | pos_integer()} | {:error, :ambiguous_name}
-  def from_suffix(suffix) do
+  defp from_suffix(suffix) do
     case Regex.scan(~r/-part/i, suffix) do
       [] -> {:ok, nil}
       [_] -> parse(suffix)

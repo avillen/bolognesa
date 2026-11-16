@@ -23,21 +23,16 @@ defmodule Bolognesa.Infrastructure.Providers.TmdbClient do
   end
 
   defp request(path, params, token, opts) do
-    request_opts = [
-      url: @base_url <> path,
-      headers: [{"authorization", "Bearer " <> token}, {"accept", "application/json"}],
-      params: params,
-      receive_timeout: 5_000,
-      retry: false,
-      decode_body: false,
-      into: &collect_bounded/2
-    ]
-
     request_opts =
-      case Keyword.fetch(opts, :plug) do
-        {:ok, plug} -> Keyword.put(request_opts, :plug, plug)
-        :error -> request_opts
-      end
+      [
+        url: @base_url <> path,
+        headers: [{"authorization", "Bearer " <> token}, {"accept", "application/json"}],
+        params: params,
+        receive_timeout: 5_000,
+        retry: false,
+        decode_body: false,
+        into: &collect_bounded/2
+      ] ++ Keyword.take(opts, [:plug])
 
     case Req.get(request_opts) do
       {:ok, response} -> normalize_response(response)

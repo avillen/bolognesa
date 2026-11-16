@@ -3,12 +3,6 @@ defmodule Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan do
   alias Bolognesa.Playback.Domain.ValueObjects.MediaConfiguration
   @type mode :: :direct | :remux | :audio_conversion | :video_conversion | :full_conversion
   @type transport :: :file | :native_hls | :hls_js
-  @type reason ::
-          :original_supported
-          | :remux_supported
-          | :audio_conversion_required
-          | :video_conversion_required
-          | :full_conversion_required
   @type t :: %__MODULE__{
           revision: pos_integer(),
           video_index: non_neg_integer(),
@@ -17,8 +11,7 @@ defmodule Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan do
           video_action: :original | :copy | :h264,
           audio_action: :original | :copy | :aac | :absent,
           configuration: MediaConfiguration.t(),
-          transport: transport() | nil,
-          reason: reason()
+          transport: transport() | nil
         }
   @enforce_keys [
     :revision,
@@ -27,8 +20,7 @@ defmodule Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan do
     :mode,
     :video_action,
     :audio_action,
-    :configuration,
-    :reason
+    :configuration
   ]
   defstruct [
     :revision,
@@ -38,7 +30,6 @@ defmodule Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan do
     :video_action,
     :audio_action,
     :configuration,
-    :transport,
-    :reason
+    :transport
   ]
 end

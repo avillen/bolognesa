@@ -147,16 +147,16 @@ defmodule BolognesaWeb.Player do
     >
       <span class="font-medium text-ink">{gettext("Modo de reproducción:")}</span>
       <span :if={!@transcode_session}>{gettext("Reproducción directa")}</span>
-      <span :if={@transcode_session && @transcode_session.strategy == :remux}>{gettext(
+      <span :if={@transcode_session && @transcode_session.plan.mode == :remux}>{gettext(
         "Remultiplexado sin conversión"
       )}</span>
-      <span :if={@transcode_session && @transcode_session.strategy == :video_conversion}>{gettext(
+      <span :if={@transcode_session && @transcode_session.plan.mode == :video_conversion}>{gettext(
         "Transcodificación de vídeo"
       )}</span>
-      <span :if={@transcode_session && @transcode_session.strategy == :audio_conversion}>
+      <span :if={@transcode_session && @transcode_session.plan.mode == :audio_conversion}>
         {gettext("Transcodificación de audio")}
       </span>
-      <span :if={@transcode_session && @transcode_session.strategy == :full_conversion}>
+      <span :if={@transcode_session && @transcode_session.plan.mode == :full_conversion}>
         {gettext("Transcodificación de vídeo y audio")}
       </span>
     </p>

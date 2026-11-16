@@ -3,8 +3,7 @@ defmodule Bolognesa.Libraries.ObservabilityTest do
 
   alias Bolognesa.Libraries.Application.UseCases.DiscoverFiles
   alias Bolognesa.Libraries.Application.UseCases.InspectMediaFile
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileInspections
-  alias Bolognesa.Libraries.Application.UseCases.ReconcileScans
+  alias Bolognesa.Libraries.Application.UseCases.ReconcileLibraryJobs
 
   alias Bolognesa.Libraries.Domain.ReadModels.ReconciliationResult
   alias Bolognesa.Libraries.Infrastructure.Jobs.Workers.InspectionWorker
@@ -15,14 +14,13 @@ defmodule Bolognesa.Libraries.ObservabilityTest do
       do: Process.get(:admission, {:ok, %{id: 11, library_id: 17, revision: 2}, %{id: 17}})
 
     def complete_inspection(_, _, _), do: Process.get(:completion, :ok)
-    def fail_inspection(_, _, _, _), do: Process.get(:completion, :ok)
+    def fail_inspection(_, _, _), do: Process.get(:completion, :ok)
     def reconcile_jobs(_), do: Process.get(:recovery, %ReconciliationResult{})
     def begin_attempt(_, _), do: Process.get(:admission, {:ok, :terminal})
   end
 
   defmodule Probe do
     def inspect(_, _), do: Process.get(:probe, {:ok, :technical})
-    def inspect_with_diagnostics(_, _), do: Process.get(:probe, {:ok, :technical})
   end
 
   defmodule Notifications do
@@ -170,7 +168,7 @@ defmodule Bolognesa.Libraries.ObservabilityTest do
     refute_receive {:event, [:bolognesa, :libraries, :scan, :completed], _, _}
   end
 
-  for {use_case, operation} <- [{ReconcileScans, :scan}, {ReconcileInspections, :inspection}] do
+  for operation <- [:scan, :inspection] do
     test "#{operation} partial recovery reports committed libraries independently from failure and idle polls" do
       Process.put(:recovery, %ReconciliationResult{
         changed_library_ids: [17, 17, 19],
@@ -178,7 +176,12 @@ defmodule Bolognesa.Libraries.ObservabilityTest do
       })
 
       assert {:error, :unavailable} =
-               unquote(use_case).call(DateTime.utc_now(), Repository, Notifications)
+               ReconcileLibraryJobs.call(
+                 unquote(operation),
+                 DateTime.utc_now(),
+                 Repository,
+                 Notifications
+               )
 
       assert_receive {:event, [:bolognesa, :libraries, :reconciliation, :recovered],
                       %{changed_library_count: 2}, %{operation: unquote(operation)}}
@@ -188,7 +191,15 @@ defmodule Bolognesa.Libraries.ObservabilityTest do
                       %{operation: unquote(operation), reason: :storage_unavailable}}
 
       Process.put(:recovery, %ReconciliationResult{})
-      assert :ok = unquote(use_case).call(DateTime.utc_now(), Repository, Notifications)
+
+      assert :ok =
+               ReconcileLibraryJobs.call(
+                 unquote(operation),
+                 DateTime.utc_now(),
+                 Repository,
+                 Notifications
+               )
+
       refute_receive {:event, _, _, _}
     end
   end

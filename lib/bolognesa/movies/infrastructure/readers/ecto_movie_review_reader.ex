@@ -32,9 +32,7 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoMovieReviewReader do
 
     rows =
       Repo.all(
-        from(identification in base,
-          join: file in MediaFileSchema,
-          on: file.id == identification.media_file_id,
+        from([identification, file] in base,
           left_join: movie in MovieSchema,
           on: movie.id == identification.movie_id,
           order_by: identification.media_file_id,

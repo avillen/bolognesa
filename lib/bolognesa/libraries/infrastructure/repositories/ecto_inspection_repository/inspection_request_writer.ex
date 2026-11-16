@@ -9,6 +9,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
   @spec enqueue!(MediaFileSchema.t(), InspectionSchema.t() | nil) :: InspectionSchema.t()
   def enqueue!(file, current) do
     token = UUID.generate()
+    job = ObanInspectionJob.insert!(file.id, token)
 
     attrs = %{
       media_file_id: file.id,
@@ -16,7 +17,7 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
       observed_revision: file.revision,
       state: :pending,
       failure_reason: nil,
-      job_id: nil,
+      job_id: job.id,
       format: nil,
       duration_ms: nil,
       tracks: %{"items" => []},
@@ -25,14 +26,9 @@ defmodule Bolognesa.Libraries.Infrastructure.Repositories.EctoInspectionReposito
       finished_at: nil
     }
 
-    inspection =
-      case current do
-        nil -> Repo.insert!(InspectionSchema.changeset(%InspectionSchema{}, attrs))
-        schema -> Repo.update!(InspectionSchema.changeset(schema, attrs))
-      end
-
-    job = ObanInspectionJob.insert!(file.id, token)
-
-    inspection |> InspectionSchema.changeset(%{job_id: job.id}) |> Repo.update!()
+    case current do
+      nil -> Repo.insert!(InspectionSchema.changeset(%InspectionSchema{}, attrs))
+      schema -> Repo.update!(InspectionSchema.changeset(schema, attrs))
+    end
   end
 end

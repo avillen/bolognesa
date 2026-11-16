@@ -87,8 +87,8 @@ defmodule Bolognesa.PlaybackNegotiationFixtures do
   def negotiate(view, only \\ nil),
     do: render_hook(view, "playback_capabilities", report(view, only))
 
-  @spec prepare_transcode(map(), tuple(), pos_integer(), non_neg_integer(), atom()) :: tuple()
-  def prepare_transcode(actor, ref, file_id, offset, _old_strategy) do
+  @spec prepare_transcode(map(), tuple(), pos_integer(), non_neg_integer()) :: tuple()
+  def prepare_transcode(actor, ref, file_id, offset) do
     inspect!(Repo.get!(MediaFileSchema, file_id))
 
     with {:ok, _source, candidates} <- Playback.video_candidates(actor, ref, file_id) do
