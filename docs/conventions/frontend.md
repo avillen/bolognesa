@@ -26,7 +26,10 @@ Each reducer exposes `call(socket, ...)`, takes the socket first, and always ret
 
 - Reducers contain UI coordination, not business rules or direct queries to backend schemas and private repositories.
 - Backend use cases enforce rules and authorization.
-- Use a coordinator reducer when later steps depend on an earlier step's success.
+- Each reducer exposes one operation through `call`. Do not dispatch several operations on an argument such as `:load` or `{:result, ...}`; give each operation its own reducer.
+- The LiveView composes reducers, for example `socket |> StartScan.call(id) |> FetchScanStatuses.call()`. A reducer does not call another reducer.
+- Only when a later step depends on an earlier step's outcome may a reducer call other reducers. Name it with a `Coordinator` suffix, such as `RetryImportCoordinator`.
+- Steps that are not screen operations, such as cancelling a pending request, live in screen-local helper modules beside the LiveView (for example `library_rows.ex`), not in `reducer/`.
 - A public reducer represents a coherent operation; do not make a module for each simple `assign`.
 - Keep reducers with their screen instead of creating a global reducer module.
 
