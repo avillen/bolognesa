@@ -4,7 +4,7 @@ defmodule NegotiatedOutputVerification do
   alias Bolognesa.Libraries.Infrastructure.Services.FfprobeJson
   alias Bolognesa.Playback.Domain.Policies.Negotiation
   alias Bolognesa.Playback.Domain.ReadModels.{Source, TechnicalTrack}
-  alias Bolognesa.Playback.Infrastructure.FfmpegArgs
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager.FfmpegArgs
 
   @spec run(String.t()) :: :ok
   def run(directory) do

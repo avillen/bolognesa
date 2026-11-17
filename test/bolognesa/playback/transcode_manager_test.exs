@@ -329,6 +329,45 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     end
   end
 
+  test "the periodic check closes a session over the temporary-storage limit", %{source: source} do
+    assert {:ok, session} =
+             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
+    # A sparse file reports a large size without using disk space.
+    {:ok, file} = :file.open(Path.join(session.directory, "seg-000000.ts"), [:write, :raw])
+    {:ok, _} = :file.position(file, 513 * 1_024 * 1_024)
+    :ok = :file.truncate(file)
+    :ok = :file.close(file)
+
+    send(TranscodeManager, :tick)
+    _ = :sys.get_state(TranscodeManager)
+
+    assert {:error, :not_found} = TranscodeManager.lookup(session.id)
+    refute File.exists?(session.directory)
+  end
+
+  test "a cleanly finished FFmpeg keeps its published session", %{source: source} do
+    done = Path.join(source.path, "done-ffmpeg")
+    File.write!(done, "#!/bin/sh\nread line\nexit 0\n")
+    File.chmod!(done, 0o700)
+    good = Application.fetch_env!(:bolognesa, :ffmpeg_executable)
+    Application.put_env(:bolognesa, :ffmpeg_executable, done)
+    on_exit(fn -> Application.put_env(:bolognesa, :ffmpeg_executable, good) end)
+
+    assert {:ok, session} =
+             TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
+    %{port: port} = :sys.get_state(TranscodeManager)
+    ref = :erlang.monitor(:port, port)
+    Port.command(port, "\n")
+    assert_receive {:DOWN, ^ref, :port, ^port, _}, 5_000
+    _ = :sys.get_state(TranscodeManager)
+
+    assert {:ok, %{status: :finished}} = TranscodeManager.lookup(session.id)
+    assert File.dir?(session.directory)
+    assert {:error, :not_found} = TranscodeManager.suspend(session.id)
+  end
+
   test "logout cleanup only stops the matching actor", %{source: source} do
     assert {:ok, session} =
              TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)

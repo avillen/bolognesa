@@ -1,4 +1,4 @@
-defmodule Bolognesa.Playback.Infrastructure.FfmpegArgs do
+defmodule Bolognesa.Playback.Infrastructure.TranscodeManager.FfmpegArgs do
   @moduledoc "Closed FFmpeg argument list for a short sliding HLS stream."
 
   alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan

@@ -1,22 +1,33 @@
 defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
-  alias Ecto.UUID
   @moduledoc "Own one FFmpeg process and its private sliding HLS directory."
-  alias Bolognesa.Infrastructure.LocalSourcePath
   alias Bolognesa.Infrastructure.Observability
-  alias Bolognesa.Infrastructure.Observability.PlaybackEvents
   alias Bolognesa.Playback.Domain.Policies.Negotiation
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
   alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
   alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
-  alias Bolognesa.Playback.Infrastructure.FfmpegArgs
-  alias Bolognesa.Playback.Infrastructure.FfmpegProgress
   alias Bolognesa.Playback.Infrastructure.LocalMediaFile
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager.FfmpegArgs
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager.FfmpegProcess
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager.HlsPlaylist
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager.Preparation
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager.Storage
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager.Telemetry
+  alias Ecto.UUID
   use GenServer
 
   @idle_ms 300_000
   @tick_ms 5_000
-  @max_bytes 512 * 1_024 * 1_024
+
+  @empty %{
+    current: nil,
+    port: nil,
+    owner_ref: nil,
+    last_activity: nil,
+    started_at: nil,
+    suspended?: false,
+    preparation: nil
+  }
 
   @type stop_reason :: TranscodeSession.stop_reason()
 
@@ -99,23 +110,13 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   @impl true
   def init(_) do
-    case root() do
+    case Storage.root() do
       {:ok, root} ->
         # A suspended FFmpeg never gets SIGPIPE, so terminate/2 must run on shutdown.
         Process.flag(:trap_exit, true)
-        remove_abandoned(root)
+        Storage.remove_abandoned(root)
         Process.send_after(self(), :tick, @tick_ms)
-
-        {:ok,
-         %{
-           current: nil,
-           port: nil,
-           owner_ref: nil,
-           last_activity: nil,
-           started_at: nil,
-           suspended?: false,
-           preparation: nil
-         }}
+        {:ok, @empty}
 
       {:error, reason} ->
         {:stop, reason}
@@ -140,25 +141,10 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   def handle_call({:lookup, _id}, _from, state), do: {:reply, {:error, :not_found}, state}
 
-  def handle_call(
-        {:status, id},
-        _from,
-        %{current: %{id: id} = session, preparation: prep} = state
-      ) do
-    {status, count, published_ms} = playlist_status(session.directory)
-    prep = %{prep | count: count, published_ms: published_ms}
-
-    prep =
-      if count > 0 and not prep.first?,
-        do: preparation_event(state, prep, :first_segment),
-        else: prep
-
-    prep =
-      if status == :ready and not prep.ready?,
-        do: preparation_event(state, prep, :ready),
-        else: prep
-
-    {:reply, status, %{state | preparation: prep}}
+  def handle_call({:status, id}, _from, %{current: %{id: id} = session} = state) do
+    {status, count, published_ms} = HlsPlaylist.read(session.directory)
+    preparation = Preparation.observe(state.preparation, status, count, published_ms)
+    {:reply, status, %{state | preparation: preparation}}
   end
 
   def handle_call({:status, _id}, _from, state), do: {:reply, :not_found, state}
@@ -170,9 +156,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   def handle_call({:signal, id, action}, _from, %{current: %{id: id}, port: port} = state)
       when not is_nil(port) do
-    result = signal(port, if(action == :suspend, do: "STOP", else: "CONT"))
-
-    case result do
+    case FfmpegProcess.signal(port, action) do
       :ok ->
         {:reply, :ok, %{state | suspended?: action == :suspend, last_activity: now()}}
 
@@ -199,7 +183,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   def handle_info({port, {:exit_status, status}}, %{port: port} = state) do
     session = state.current
     result = if status == 0, do: :finished, else: :failed
-    session_event(:exited, session, %{count: 1, exit_status: status}, %{reason: result})
+    Telemetry.emit(:exited, session, %{count: 1, exit_status: status}, %{reason: result})
 
     if status == 0 do
       {:noreply, %{state | current: %{session | status: result}, port: nil, suspended?: false}}
@@ -208,12 +192,8 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     end
   end
 
-  def handle_info({port, {:data, line}}, %{port: port, preparation: prep} = state) do
-    {parser, report} = FfmpegProgress.consume(prep.parser, line)
-    prep = %{prep | parser: parser}
-    prep = record_progress(state, prep, report)
-    {:noreply, %{state | preparation: prep}}
-  end
+  def handle_info({port, {:data, line}}, %{port: port} = state),
+    do: {:noreply, %{state | preparation: Preparation.consume(state.preparation, line)}}
 
   def handle_info({:DOWN, ref, :process, _owner, reason}, %{owner_ref: ref} = state) do
     {:noreply,
@@ -228,46 +208,20 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   def handle_info(:tick, state) do
     Process.send_after(self(), :tick, @tick_ms)
-    state = enforce_limits(state)
-    {:noreply, state}
+    {:noreply, enforce_limits(state)}
   end
 
   @impl true
   def terminate(_reason, state), do: clear(state, :shutdown)
 
+  defp enforce_limits(%{current: nil} = state), do: state
+
   defp enforce_limits(state) do
     cond do
-      stale?(state) -> clear(state, :idle_timeout)
-      too_large?(state) -> clear(state, :storage_limit)
+      now() - state.last_activity > @idle_ms -> clear(state, :idle_timeout)
+      Storage.over_limit?(state.current.directory) -> clear(state, :storage_limit)
       true -> state
     end
-  end
-
-  defp playlist_status(directory) do
-    case File.read(Path.join(directory, "index.m3u8")) do
-      {:ok, manifest} ->
-        segments = Regex.scan(~r/^seg-[0-9]{6,12}\.ts$/m, manifest) |> List.flatten()
-        seconds = buffered_seconds(manifest)
-        enough? = seconds >= 4 or String.contains?(manifest, "#EXT-X-ENDLIST")
-
-        ready? =
-          enough? and segments != [] and
-            Enum.all?(segments, &File.regular?(Path.join(directory, &1)))
-
-        {if(ready?, do: :ready, else: :waiting), length(segments), round(seconds * 1000)}
-
-      _ ->
-        {:waiting, 0, 0}
-    end
-  end
-
-  defp buffered_seconds(manifest) do
-    ~r/^#EXTINF:(\d+(?:\.\d+)?),/m
-    |> Regex.scan(manifest, capture: :all_but_first)
-    |> Enum.reduce(0.0, fn [duration], total ->
-      {seconds, ""} = Float.parse(duration)
-      total + seconds
-    end)
   end
 
   defp available_slot(%{current: nil}, _actor_id), do: :ok
@@ -278,11 +232,11 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     source = request.source
 
     with :ok <- validate_strategy(request.strategy, source),
-         {:ok, root} <- root(),
-         {:ok, executable} <- executable(),
+         {:ok, root} <- Storage.root(),
+         {:ok, executable} <- FfmpegProcess.executable(),
          :ok <- LocalMediaFile.validate(source),
          id = UUID.generate(),
-         {:ok, directory} <- create_directory(root, id) do
+         {:ok, directory} <- Storage.create_session_directory(root, id) do
       session = %TranscodeSession{
         id: id,
         actor_id: request.actor_id,
@@ -315,37 +269,17 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   defp validate_strategy(_, _), do: {:error, :unsupported}
 
-  defp create_directory(root, id) do
-    directory = Path.join(root, "session-#{id}")
-
-    with :ok <- File.mkdir(directory),
-         :ok <- secure_directory(directory) do
-      {:ok, directory}
-    else
-      {:error, _} -> {:error, :storage_unavailable}
-    end
-  end
-
-  defp secure_directory(directory) do
-    case File.chmod(directory, 0o700) do
-      :ok ->
-        :ok
-
-      {:error, reason} ->
-        File.rm_rf(directory)
-        {:error, reason}
-    end
-  end
-
   defp launch_session(state, session, executable, args, owner, prelaunch_ms) do
     spawn_started = now()
 
-    case open_port(executable, args) do
+    case FfmpegProcess.open(executable, args) do
       {:ok, port} ->
-        session_event(
+        started_at = now()
+
+        Telemetry.emit(
           :started,
           session,
-          %{count: 1, prelaunch_ms: prelaunch_ms, spawn_ms: now() - spawn_started},
+          %{count: 1, prelaunch_ms: prelaunch_ms, spawn_ms: started_at - spawn_started},
           %{offset_ms: session.offset_ms}
         )
 
@@ -355,18 +289,9 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
            | current: session,
              port: port,
              owner_ref: Process.monitor(owner),
-             last_activity: now(),
-             started_at: now(),
-             preparation: %{
-               count: 0,
-               published_ms: 0,
-               first?: false,
-               ready?: false,
-               parser: FfmpegProgress.new(),
-               progress: %{},
-               first_progress_ms: nil,
-               progress_at: nil
-             },
+             last_activity: started_at,
+             started_at: started_at,
+             preparation: Preparation.new(session, started_at),
              suspended?: false
          }}
 
@@ -376,241 +301,29 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     end
   end
 
-  defp open_port(executable, args) do
-    {:ok,
-     Port.open({:spawn_executable, executable}, [
-       :binary,
-       {:line, 1024},
-       :exit_status,
-       :stderr_to_stdout,
-       args: args
-     ])}
-  rescue
-    ArgumentError -> {:error, :tool_unavailable}
-    ErlangError -> {:error, :tool_unavailable}
-  end
-
   defp replace_actor_session(%{current: %{actor_id: actor_id}} = state, actor_id, reason),
     do: clear(state, reason)
 
   defp replace_actor_session(state, _actor_id, _reason), do: state
 
-  defp root do
-    path = configured_transcode_path()
-    expanded = Path.expand(path)
-    libraries = configured_library_directories()
-
-    if Path.type(path) != :absolute or inside_library?(expanded, libraries) do
-      {:error, :unsafe_root}
-    else
-      ensure_transcode_directory(expanded)
-    end
-  end
-
-  defp configured_transcode_path do
-    Application.get_env(
-      :bolognesa,
-      :transcode_root,
-      Path.join(System.tmp_dir!(), "bolognesa-transcode")
-    )
-  end
-
-  defp configured_library_directories do
-    Application.fetch_env!(:bolognesa, :library_roots)
-    |> Enum.map(&resolve_library_directory/1)
-  end
-
-  defp resolve_library_directory(library) do
-    case LocalSourcePath.canonical_directory(library) do
-      {:ok, physical} -> physical
-      _ -> Path.expand(library)
-    end
-  end
-
-  defp ensure_transcode_directory(expanded) do
-    case File.mkdir_p(expanded) do
-      :ok -> verify_outside_libraries(expanded)
-      {:error, _} -> {:error, :storage_unavailable}
-    end
-  end
-
-  defp verify_outside_libraries(expanded) do
-    case LocalSourcePath.canonical_directory(expanded) do
-      {:error, :source_outside_roots} -> {:ok, expanded}
-      _ -> {:error, :unsafe_root}
-    end
-  end
-
-  defp inside_library?(path, libraries) do
-    Enum.any?(libraries, fn library ->
-      path == library or String.starts_with?(path, library <> "/")
-    end)
-  end
-
-  defp remove_abandoned(root) do
-    case File.ls(root) do
-      {:ok, names} ->
-        Enum.each(names, &remove_if_session(root, &1))
-
-      _ ->
-        :ok
-    end
-  end
-
-  defp remove_if_session(root, name) do
-    if Regex.match?(~r/\Asession-[0-9a-f-]{36}\z/, name) do
-      File.rm_rf(Path.join(root, name))
-    end
-  end
-
-  defp executable do
-    case System.find_executable(Application.get_env(:bolognesa, :ffmpeg_executable) || "ffmpeg") do
-      nil -> {:error, :tool_unavailable}
-      executable -> {:ok, executable}
-    end
-  end
-
-  defp stale?(%{current: nil}), do: false
-  defp stale?(state), do: now() - state.last_activity > @idle_ms
-
-  defp too_large?(%{current: nil}), do: false
-  defp too_large?(state), do: directory_bytes(state.current.directory) > @max_bytes
-
-  defp directory_bytes(directory) do
-    directory
-    |> File.ls!()
-    |> Enum.reduce(0, fn name, total ->
-      case File.stat(Path.join(directory, name)) do
-        {:ok, %{type: :regular, size: size}} -> total + size
-        _ -> total
-      end
-    end)
-  rescue
-    _ -> @max_bytes + 1
-  end
-
   defp clear(state, reason, metadata \\ %{})
   defp clear(%{current: nil} = state, _reason, _metadata), do: state
 
   defp clear(state, reason, metadata) do
-    if reason == :preparation_timeout, do: preparation_event(state, state.preparation, :timeout)
+    if reason == :preparation_timeout, do: Preparation.timed_out(state.preparation)
     if state.owner_ref, do: Process.demonitor(state.owner_ref, [:flush])
 
-    close_port(state.port, state.suspended?)
-
+    FfmpegProcess.close(state.port, state.suspended?)
     File.rm_rf(state.current.directory)
 
-    session_event(
+    Telemetry.emit(
       :closed,
       state.current,
       %{count: 1, duration_ms: now() - state.started_at},
       Map.put(metadata, :reason, reason)
     )
 
-    %{
-      state
-      | current: nil,
-        port: nil,
-        owner_ref: nil,
-        last_activity: nil,
-        suspended?: false,
-        preparation: nil
-    }
-  end
-
-  defp preparation_event(state, prep, stage) do
-    measurements = %{
-      duration_ms: now() - state.started_at,
-      segment_count: prep.count,
-      published_ms: prep.published_ms
-    }
-
-    measurements =
-      if prep.progress_at do
-        measurements
-        |> Map.merge(prep.progress)
-        |> Map.merge(%{
-          first_progress_ms: prep.first_progress_ms,
-          progress_age_ms: now() - prep.progress_at
-        })
-      else
-        measurements
-      end
-
-    session_event(
-      :preparation,
-      state.current,
-      measurements,
-      %{stage: stage}
-    )
-
-    case stage do
-      :first_segment -> %{prep | first?: true}
-      :ready -> %{prep | ready?: true}
-      :timeout -> prep
-      :first_progress -> prep
-    end
-  end
-
-  defp record_progress(_state, prep, nil), do: prep
-
-  defp record_progress(state, prep, report) do
-    received_at = now()
-    first? = is_nil(prep.first_progress_ms)
-
-    prep = %{
-      prep
-      | progress: report,
-        progress_at: received_at,
-        first_progress_ms: prep.first_progress_ms || received_at - state.started_at
-    }
-
-    if first?, do: preparation_event(state, prep, :first_progress), else: prep
-  end
-
-  defp close_port(nil, _suspended?), do: :ok
-
-  defp close_port(port, suspended?) do
-    if suspended?, do: signal(port, "CONT")
-    signal(port, "TERM")
-
-    try do
-      Port.close(port)
-    rescue
-      ArgumentError -> :ok
-    end
-  end
-
-  defp signal(port, name) do
-    case Port.info(port, :os_pid) do
-      {:os_pid, pid} ->
-        {_, status} =
-          System.cmd("sh", ["-c", "kill -#{name} \"$1\"", "sh", Integer.to_string(pid)],
-            stderr_to_stdout: true
-          )
-
-        signal_status(status)
-
-      _ ->
-        {:error, :process_missing}
-    end
-  end
-
-  defp signal_status(0), do: :ok
-  defp signal_status(_status), do: {:error, :process_missing}
-
-  defp session_event(event, session, measurements, metadata) do
-    fields =
-      %{
-        session_id: session.id,
-        file_id: session.file_id,
-        strategy: session.plan.mode,
-        transport: session.plan.transport
-      }
-      |> Map.merge(metadata)
-      |> PlaybackEvents.sanitize_delivery_metadata()
-
-    :telemetry.execute([:bolognesa, :playback, :session, event], measurements, fields)
+    @empty
   end
 
   defp now, do: System.monotonic_time(:millisecond)

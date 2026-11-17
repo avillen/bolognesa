@@ -1,6 +1,6 @@
 defmodule Bolognesa.Playback.FfmpegProgressTest do
   use ExUnit.Case, async: true
-  alias Bolognesa.Playback.Infrastructure.FfmpegProgress
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager.Preparation.FfmpegProgress
 
   test "publishes only completed numeric progress reports with explicit units" do
     state = FfmpegProgress.new()
