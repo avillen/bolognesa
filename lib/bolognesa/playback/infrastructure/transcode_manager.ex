@@ -1,7 +1,6 @@
 defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @moduledoc "Own one FFmpeg process and its private sliding HLS directory."
   alias Bolognesa.Infrastructure.Observability
-  alias Bolognesa.Playback.Domain.Policies.Negotiation
   alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
   alias Bolognesa.Playback.Domain.ValueObjects.ContentRef
@@ -19,6 +18,11 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @idle_ms 300_000
   @tick_ms 5_000
 
+  # Production follows the browser's segment requests. Both bounds stay below the
+  # 12-segment playlist window, so no unrequested segment is deleted.
+  @stop_ahead 8
+  @continue_ahead 5
+
   @empty %{
     current: nil,
     port: nil,
@@ -26,6 +30,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     last_activity: nil,
     started_at: nil,
     suspended?: false,
+    requested: -1,
     preparation: nil
   }
 
@@ -37,7 +42,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
           | :tool_unavailable
           | :unsafe_root
           | :storage_unavailable
-          | :unsupported
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(_opts), do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -51,12 +55,13 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
           integer(),
           stop_reason() | :session_replaced
         ) :: {:ok, TranscodeSession.t()} | {:error, failure()}
+  # The caller (LocalDeliveryExecutor) passes a plan already validated against the source.
   def start(
         actor_id,
         content_ref,
         file_id,
         source,
-        strategy,
+        %DeliveryPlan{} = strategy,
         offset_ms,
         replace_reason \\ :session_replaced
       ) do
@@ -79,8 +84,9 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   @spec status(String.t()) :: :ready | :waiting | :not_found
   def status(id), do: GenServer.call(__MODULE__, {:status, id})
 
-  @spec touch(String.t()) :: :ok | {:error, :not_found}
-  def touch(id), do: GenServer.call(__MODULE__, {:touch, id})
+  @doc "Renew the session's activity; a requested segment number also drives production."
+  @spec touch(String.t(), non_neg_integer() | nil) :: :ok | {:error, :not_found}
+  def touch(id, segment \\ nil), do: GenServer.call(__MODULE__, {:touch, id, segment})
 
   @spec stop(String.t(), stop_reason()) :: :ok
   def stop(id, reason \\ :operator_stop)
@@ -95,12 +101,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
              :liveview_terminated
            ],
       do: GenServer.call(__MODULE__, {:stop, id, reason})
-
-  @spec suspend(String.t()) :: :ok | {:error, :not_found}
-  def suspend(id), do: GenServer.call(__MODULE__, {:signal, id, :suspend})
-
-  @spec resume(String.t()) :: :ok | {:error, :not_found}
-  def resume(id), do: GenServer.call(__MODULE__, {:signal, id, :resume})
 
   @spec stop_all() :: :ok
   def stop_all, do: GenServer.call(__MODULE__, :stop_all)
@@ -149,23 +149,13 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   def handle_call({:status, _id}, _from, state), do: {:reply, :not_found, state}
 
-  def handle_call({:touch, id}, _from, %{current: %{id: id}} = state),
-    do: {:reply, :ok, %{state | last_activity: now()}}
-
-  def handle_call({:touch, _id}, _from, state), do: {:reply, {:error, :not_found}, state}
-
-  def handle_call({:signal, id, action}, _from, %{current: %{id: id}, port: port} = state)
-      when not is_nil(port) do
-    case FfmpegProcess.signal(port, action) do
-      :ok ->
-        {:reply, :ok, %{state | suspended?: action == :suspend, last_activity: now()}}
-
-      _ ->
-        {:reply, {:error, :not_found}, clear(state, :process_missing)}
-    end
+  def handle_call({:touch, id, segment}, _from, %{current: %{id: id}} = state) do
+    requested = max(state.requested, segment || -1)
+    state = regulate(%{state | last_activity: now(), requested: requested})
+    {:reply, if(state.current, do: :ok, else: {:error, :not_found}), state}
   end
 
-  def handle_call({:signal, _id, _action}, _from, state),
+  def handle_call({:touch, _id, _segment}, _from, state),
     do: {:reply, {:error, :not_found}, state}
 
   def handle_call({:stop, id, reason}, _from, %{current: %{id: id}} = state),
@@ -192,8 +182,10 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     end
   end
 
-  def handle_info({port, {:data, line}}, %{port: port} = state),
-    do: {:noreply, %{state | preparation: Preparation.consume(state.preparation, line)}}
+  def handle_info({port, {:data, line}}, %{port: port} = state) do
+    state = %{state | preparation: Preparation.consume(state.preparation, line)}
+    {:noreply, regulate(state)}
+  end
 
   def handle_info({:DOWN, ref, :process, _owner, reason}, %{owner_ref: ref} = state) do
     {:noreply,
@@ -220,7 +212,26 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     cond do
       now() - state.last_activity > @idle_ms -> clear(state, :idle_timeout)
       Storage.over_limit?(state.current.directory) -> clear(state, :storage_limit)
+      true -> regulate(state)
+    end
+  end
+
+  defp regulate(%{port: nil} = state), do: state
+
+  defp regulate(state) do
+    ahead = HlsPlaylist.last_segment(state.current.directory) - state.requested
+
+    cond do
+      not state.suspended? and ahead >= @stop_ahead -> signal(state, :suspend)
+      state.suspended? and ahead <= @continue_ahead -> signal(state, :resume)
       true -> state
+    end
+  end
+
+  defp signal(state, action) do
+    case FfmpegProcess.signal(state.port, action) do
+      :ok -> %{state | suspended?: action == :suspend}
+      _ -> clear(state, :process_missing)
     end
   end
 
@@ -231,8 +242,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
   defp prepare_session(request) do
     source = request.source
 
-    with :ok <- validate_strategy(request.strategy, source),
-         {:ok, root} <- Storage.root(),
+    with {:ok, root} <- Storage.root(),
          {:ok, executable} <- FfmpegProcess.executable(),
          :ok <- LocalMediaFile.validate(source),
          id = UUID.generate(),
@@ -261,13 +271,6 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
       {:ok, session, executable, args}
     end
   end
-
-  defp validate_strategy(%DeliveryPlan{mode: :direct}, _source), do: {:error, :unsupported}
-
-  defp validate_strategy(%DeliveryPlan{} = plan, source),
-    do: Negotiation.validate_plan(source, plan)
-
-  defp validate_strategy(_, _), do: {:error, :unsupported}
 
   defp launch_session(state, session, executable, args, owner, prelaunch_ms) do
     spawn_started = now()

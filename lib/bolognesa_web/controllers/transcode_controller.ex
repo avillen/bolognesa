@@ -74,7 +74,9 @@ defmodule BolognesaWeb.TranscodeController do
   end
 
   defp touch_segment(_id, "index.m3u8"), do: :ok
-  defp touch_segment(id, _name), do: Playback.touch_video_transcode(id)
+
+  defp touch_segment(id, "seg-" <> name),
+    do: Playback.touch_video_transcode(id, String.to_integer(Path.rootname(name)))
 
   defp read(directory, name) do
     path = Path.join(directory, name)

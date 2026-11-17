@@ -128,7 +128,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   def handle_event("playback_pause", %{"session_id" => id}, socket) do
     case socket.assigns.transcode_session do
       %{id: ^id} ->
-        Playback.pause_video_transcode(socket.assigns.current_scope.actor, id)
         {:noreply, PlaybackState.paused(socket, true)}
 
       _ ->
@@ -207,8 +206,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   defp poll_transcode(socket, id) do
     case Playback.video_transcode_status(id) do
       :ready ->
-        Playback.pause_video_transcode(socket.assigns.current_scope.actor, id)
-
         {:noreply, PlaybackState.ready(socket)}
 
       :waiting ->

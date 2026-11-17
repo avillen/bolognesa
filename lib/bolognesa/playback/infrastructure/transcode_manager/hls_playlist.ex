@@ -18,6 +18,17 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager.HlsPlaylist do
     end
   end
 
+  @doc "Number of the newest published segment, or -1 before the first one."
+  @spec last_segment(Path.t()) :: integer()
+  def last_segment(directory) do
+    with {:ok, manifest} <- File.read(Path.join(directory, "index.m3u8")),
+         [_ | _] = numbers <- Regex.scan(~r/^seg-([0-9]{6,12})\.ts$/m, manifest) do
+      numbers |> List.last() |> List.last() |> String.to_integer()
+    else
+      _ -> -1
+    end
+  end
+
   defp evaluate(directory, manifest) do
     segments = Regex.scan(~r/^seg-[0-9]{6,12}\.ts$/m, manifest) |> List.flatten()
     seconds = published_seconds(manifest)

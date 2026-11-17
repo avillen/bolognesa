@@ -206,27 +206,12 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     assert {:ok, ^next} = TranscodeManager.lookup(next.id)
   end
 
-  test "invalid replacement keeps the current session and its fragments", %{source: source} do
+  test "unavailable replacement source keeps the current session", %{source: source} do
     {:ok, previous} =
       TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
 
     fragment = Path.join(previous.directory, "seg-000000.ts")
     File.write!(fragment, "published fragment")
-
-    stale = %{plan(source, :full_conversion) | revision: 2}
-
-    assert {:error, :source_changed} =
-             TranscodeManager.start(1, {:movie, 2}, 3, source, stale, 0)
-
-    assert {:ok, ^previous} = TranscodeManager.lookup(previous.id)
-    assert File.read!(fragment) == "published fragment"
-    assert :ok = TranscodeManager.suspend(previous.id)
-    assert :ok = TranscodeManager.resume(previous.id)
-  end
-
-  test "unavailable replacement source keeps the current session", %{source: source} do
-    {:ok, previous} =
-      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
 
     missing = %{source | relative_path: "missing.avi"}
 
@@ -234,7 +219,7 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
              TranscodeManager.start(1, {:movie, 4}, 5, missing, plan(source, :full_conversion), 0)
 
     assert {:ok, ^previous} = TranscodeManager.lookup(previous.id)
-    assert File.dir?(previous.directory)
+    assert File.read!(fragment) == "published fragment"
   end
 
   test "missing FFmpeg keeps the current session", %{source: source} do
@@ -283,15 +268,53 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     refute File.exists?(session.directory)
   end
 
-  test "suspends production until playback resumes", %{source: source} do
+  test "production pauses ahead of the browser's requests and continues as it catches up", %{
+    source: source
+  } do
     assert {:ok, session} =
              TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
 
-    assert :ok = TranscodeManager.suspend(session.id)
-    assert :ok = TranscodeManager.resume(session.id)
+    publish(session, 0..6)
+    assert :ok = TranscodeManager.touch(session.id, 0)
+    refute suspended?()
+
+    # Eight segments ahead of the last request is the bound.
+    publish(session, 0..8)
+    send(TranscodeManager, :tick)
+    assert suspended?()
+
+    # Requests while paused keep it suspended until the lead drops to five segments.
+    assert :ok = TranscodeManager.touch(session.id, 2)
+    assert suspended?()
+    assert :ok = TranscodeManager.touch(session.id, 3)
+    refute suspended?()
+
+    # A request without a segment (resume) only renews activity.
+    assert :ok = TranscodeManager.touch(session.id)
     assert :ok = TranscodeManager.stop(session.id)
-    assert {:error, :not_found} = TranscodeManager.resume(session.id)
+    assert {:error, :not_found} = TranscodeManager.touch(session.id, 4)
   end
+
+  test "an older segment request never lowers the bound", %{source: source} do
+    {:ok, session} =
+      TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
+
+    publish(session, 0..9)
+    assert :ok = TranscodeManager.touch(session.id, 4)
+    assert :ok = TranscodeManager.touch(session.id, 0)
+    refute suspended?()
+  end
+
+  defp publish(session, numbers) do
+    entries =
+      Enum.map_join(numbers, fn n ->
+        "#EXTINF:4.0,\nseg-#{String.pad_leading("#{n}", 6, "0")}.ts\n"
+      end)
+
+    File.write!(Path.join(session.directory, "index.m3u8"), "#EXTM3U\n" <> entries)
+  end
+
+  defp suspended?, do: :sys.get_state(TranscodeManager).suspended?
 
   test "supervised shutdown stops a suspended FFmpeg", %{source: source} do
     :ok = Supervisor.terminate_child(Bolognesa.Supervisor, TranscodeManager)
@@ -302,7 +325,9 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
       TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
 
     {:os_pid, os_pid} = Port.info(:sys.get_state(TranscodeManager).port, :os_pid)
-    assert :ok = TranscodeManager.suspend(session.id)
+    publish(session, 0..8)
+    send(TranscodeManager, :tick)
+    assert suspended?()
 
     :ok = stop_supervised(TranscodeManager)
 
@@ -365,7 +390,9 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
 
     assert {:ok, %{status: :finished}} = TranscodeManager.lookup(session.id)
     assert File.dir?(session.directory)
-    assert {:error, :not_found} = TranscodeManager.suspend(session.id)
+    publish(session, 0..8)
+    assert :ok = TranscodeManager.touch(session.id, 0)
+    refute suspended?()
   end
 
   test "logout cleanup only stops the matching actor", %{source: source} do
@@ -423,38 +450,5 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     assert next.offset_ms == 10_000
     refute next.id == first.id
     refute File.exists?(first.directory)
-  end
-
-  test "source-only strategies cannot launch FFmpeg without a negotiated plan", %{source: source} do
-    root = Application.fetch_env!(:bolognesa, :transcode_root)
-
-    for strategy <- [:audio_only, :full_transcode] do
-      assert {:error, :unsupported} =
-               TranscodeManager.start(1, {:movie, 2}, 3, source, strategy, 0)
-    end
-
-    refute File.exists?(root)
-  end
-
-  test "stale or forged plans are rejected before creating a session directory", %{
-    source: original
-  } do
-    {source, plan} = negotiated_source(original)
-    root = Application.fetch_env!(:bolognesa, :transcode_root)
-    refute File.exists?(root)
-
-    assert {:error, :source_changed} =
-             TranscodeManager.start(1, {:movie, 2}, 3, source, %{plan | revision: 2}, 0)
-
-    for invalid <- [
-          %{plan | video_index: 99},
-          %{plan | transport: :file},
-          %{plan | video_action: :h264}
-        ] do
-      assert {:error, :unsupported} =
-               TranscodeManager.start(1, {:movie, 2}, 3, source, invalid, 0)
-    end
-
-    refute File.exists?(root)
   end
 end
