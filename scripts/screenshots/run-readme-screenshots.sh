@@ -54,7 +54,10 @@ docker run --detach --rm --init --ipc=host --platform linux/amd64 \
   --host 0.0.0.0 --port 3000 >/dev/null
 browser_started="true"
 browser_port="$(docker port "$browser_container" 3000/tcp | awk -F: '{print $NF}')"
-export BOLOGNESA_SCREENSHOT_BROWSER_WS="ws://127.0.0.1:$browser_port"
+# Skia otherwise picks SIMD paths from the host CPU, so runners and emulated
+# macOS hosts antialias differently. Every client inherits these launch options.
+launch_options='%7B%22args%22%3A%5B%22--disable-skia-runtime-opts%22%2C%22--force-color-profile%3Dsrgb%22%2C%22--disable-lcd-text%22%5D%7D'
+export BOLOGNESA_SCREENSHOT_BROWSER_WS="ws://127.0.0.1:$browser_port/?launch-options=$launch_options"
 for _ in $(seq 1 40); do
   if curl --silent --fail "http://127.0.0.1:$browser_port/" >/dev/null; then
     break

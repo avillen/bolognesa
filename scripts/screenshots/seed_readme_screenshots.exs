@@ -80,7 +80,7 @@ defmodule ReadmeScreenshotSeed do
       token: Ecto.UUID.generate(),
       needs_review: false,
       candidate_data: %{items: []},
-      finished_at: if(state == :automatic, do: DateTime.utc_now())
+      finished_at: if(state == :automatic, do: ~U[2025-01-15 12:00:00.000000Z])
     }
 
     Repo.transaction(fn ->
