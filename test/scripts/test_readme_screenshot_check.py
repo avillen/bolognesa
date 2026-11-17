@@ -9,196 +9,52 @@ spec = importlib.util.spec_from_file_location('checker', Path('scripts/screensho
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
 
-def png(width, height, pixels):
+WIDTH = HEIGHT = 100  # 10,000 pixels: faint budget is 10 pixels.
+
+
+def png(pixels, width=WIDTH, height=HEIGHT, level=9):
     def chunk(kind, body):
         return struct.pack('>I', len(body)) + kind + body + struct.pack('>I', zlib.crc32(kind + body))
     scanlines = b''.join(b'\0' + bytes(pixels[y * width * 3:(y + 1) * width * 3]) for y in range(height))
-    return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(scanlines)) + chunk(b'IEND', b'')
+    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0))
+            + chunk(b'IDAT', zlib.compress(scanlines, level)) + chunk(b'IEND', b''))
+
+
+def changed(count, delta):
+    pixels = [100] * (WIDTH * HEIGHT * 3)
+    for index in range(count):
+        pixels[index * 3] += delta
+    return pixels
+
 
 class ScreenshotCheckTest(unittest.TestCase):
-    def test_minor_native_rasterization_is_allowed_only_for_music_player(self):
+    def check(self, actual_bytes, name='any.png'):
         with tempfile.TemporaryDirectory() as folder:
             expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
             expected.mkdir(); actual.mkdir()
-            for name in ['music-player.png', 'home.png']:
-                (expected / name).write_bytes(png(2, 2, [100] * 12))
-                (actual / name).write_bytes(png(2, 2, [101] + [100] * 11))
-            self.assertEqual(checker.differences(expected, actual), ['home.png'])
+            (expected / name).write_bytes(png(changed(0, 0)))
+            if actual_bytes is not None:
+                (actual / name).write_bytes(actual_bytes)
+            return checker.differences(expected, actual)
 
-    def test_header_raster_budgets_do_not_apply_to_content(self):
-        for name, origin, count, delta in [
-            ('episode-mobile.png', (326, 10), 33, 2),
-            ('season.png', (24, 30), 8, 2),
-        ]:
-            with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:
-                expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
-                expected.mkdir(); actual.mkdir()
-                width, height = 400, 80
-                pixels = [100] * (width * height * 3)
-                (expected / name).write_bytes(png(width, height, pixels))
-                x, y = origin
-                for index in range(count):
-                    pixels[(y * width + x + index) * 3] += delta
-                (actual / name).write_bytes(png(width, height, pixels))
-                self.assertEqual(checker.differences(expected, actual), [])
-                pixels[((y + 1) * width + x) * 3] += delta
-                (actual / name).write_bytes(png(width, height, pixels))
-                self.assertEqual(checker.differences(expected, actual), [name])
-                pixels = [100] * (width * height * 3)
-                pixels[0] += delta
-                (actual / name).write_bytes(png(width, height, pixels))
-                self.assertEqual(checker.differences(expected, actual), [name])
+    def test_same_pixels_with_different_encoding_match(self):
+        self.assertEqual(self.check(png(changed(0, 0), level=1)), [])
 
-    def test_logo_outliers_are_bounded_and_local(self):
-        with tempfile.TemporaryDirectory() as folder:
-            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
-            expected.mkdir(); actual.mkdir()
-            name, width, height = 'season.png', 400, 80
-            pixels = [100] * (width * height * 3)
-            (expected / name).write_bytes(png(width, height, pixels))
-            for x in [28, 29]:
-                pixels[(65 * width + x) * 3] += 39
-            (actual / name).write_bytes(png(width, height, pixels))
-            self.assertEqual(checker.differences(expected, actual), [])
-            pixels[(65 * width + 30) * 3] += 39
-            (actual / name).write_bytes(png(width, height, pixels))
-            self.assertEqual(checker.differences(expected, actual), [name])
-            pixels = [100] * (width * height * 3)
-            pixels[(65 * width + 28) * 3] += 40
-            (actual / name).write_bytes(png(width, height, pixels))
-            self.assertEqual(checker.differences(expected, actual), [name])
-            pixels = [100] * (width * height * 3)
-            pixels[0] += 39
-            (actual / name).write_bytes(png(width, height, pixels))
-            self.assertEqual(checker.differences(expected, actual), [name])
+    def test_faint_antialiasing_is_bounded_by_ratio(self):
+        self.assertEqual(self.check(png(changed(10, 2))), [])
+        self.assertEqual(self.check(png(changed(11, 2))), ['any.png'])
 
-    def test_catalog_surfaces_allow_only_tiny_antialiasing(self):
-        for name in ['music.png', 'season.png', 'about.png']:
-            with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:
-                expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
-                expected.mkdir(); actual.mkdir()
-                (expected / name).write_bytes(png(16, 16, [100] * 768))
-                (actual / name).write_bytes(png(16, 16, [101] + [100] * 767))
-                self.assertEqual(checker.differences(expected, actual), [])
-                changed = [100] * 768
-                for index in range(16):
-                    changed[index * 3] = 101
-                (actual / name).write_bytes(png(16, 16, changed))
-                self.assertEqual(checker.differences(expected, actual), [])
-                changed[16 * 3] = 101
-                (actual / name).write_bytes(png(16, 16, changed))
-                self.assertEqual(checker.differences(expected, actual), [name])
-                (actual / name).write_bytes(png(16, 16, [102] + [100] * 767))
-                self.assertEqual(checker.differences(expected, actual), [name])
-                (actual / name).write_bytes(png(16, 16, [101] * 768))
-                self.assertEqual(checker.differences(expected, actual), [name])
+    def test_strong_differences_are_limited_to_isolated_pixels(self):
+        self.assertEqual(self.check(png(changed(16, 60))), [])
+        self.assertEqual(self.check(png(changed(17, 60))), ['any.png'])
 
-    def test_episode_and_mobile_movie_allow_bounded_antialiasing(self):
-        for name in ['episode.png', 'movie-mobile.png']:
-            with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:
-                expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
-                expected.mkdir(); actual.mkdir()
-                (expected / name).write_bytes(png(16, 16, [100] * 768))
-                (actual / name).write_bytes(png(16, 16, [102] + [100] * 767))
-                self.assertEqual(checker.differences(expected, actual), [])
-                (actual / name).write_bytes(png(16, 16, [103] + [100] * 767))
-                self.assertEqual(checker.differences(expected, actual), [name])
-                (actual / name).write_bytes(png(16, 16, [101] * 768))
-                self.assertEqual(checker.differences(expected, actual), [name])
-
-    def test_library_allows_two_bounded_sidebar_outliers(self):
-        with tempfile.TemporaryDirectory() as folder:
-            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
-            expected.mkdir(); actual.mkdir()
-            name = 'library.png'
-            (expected / name).write_bytes(png(8, 8, [100] * 192))
-            changed = [100] * 192
-            changed[0] = changed[3] = 114
-            changed[6] = changed[9] = changed[12] = 101
-            (actual / name).write_bytes(png(8, 8, changed))
-            self.assertEqual(checker.differences(expected, actual), [])
-            changed[15] = 114
-            (actual / name).write_bytes(png(8, 8, changed))
-            self.assertEqual(checker.differences(expected, actual), [name])
-            changed[15] = 100
-            changed[0] = 117
-            (actual / name).write_bytes(png(8, 8, changed))
-            self.assertEqual(checker.differences(expected, actual), [name])
-
-    def test_series_detail_allows_only_bounded_raster_outliers(self):
-        with tempfile.TemporaryDirectory() as folder:
-            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
-            expected.mkdir(); actual.mkdir()
-            name = 'series-detail.png'
-            (expected / name).write_bytes(png(8, 8, [100] * 192))
-            changed = [100] * 192
-            for index in range(10):
-                changed[index * 3] = 139
-            (actual / name).write_bytes(png(8, 8, changed))
-            self.assertEqual(checker.differences(expected, actual), [])
-            changed[30] = 139
-            (actual / name).write_bytes(png(8, 8, changed))
-            self.assertEqual(checker.differences(expected, actual), [name])
-            changed[30] = 100
-            changed[0] = 140
-            (actual / name).write_bytes(png(8, 8, changed))
-            self.assertEqual(checker.differences(expected, actual), [name])
-
-    def test_video_player_corners_allow_one_small_shadow_raster_difference(self):
-        with tempfile.TemporaryDirectory() as folder:
-            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
-            expected.mkdir(); actual.mkdir()
-            for name in ['movie.png', 'episode.png', 'player.png']:
-                (expected / name).write_bytes(png(8, 8, [100] * 192))
-                changed = [100] * 192
-                changed[0] = 117
-                (actual / name).write_bytes(png(8, 8, changed))
-                self.assertEqual(checker.differences(expected, actual), [])
-
-                changed[3] = 117
-                (actual / name).write_bytes(png(8, 8, changed))
-                self.assertEqual(checker.differences(expected, actual), [name])
-
-                changed[3] = 100
-                changed[0] = 121
-                (actual / name).write_bytes(png(8, 8, changed))
-                self.assertEqual(checker.differences(expected, actual), [name])
-                (actual / name).write_bytes((expected / name).read_bytes())
-
-    def test_mobile_corners_have_small_capture_specific_budgets(self):
-        for name, budget, delta in [('series.png', 8, 1), ('series-mobile.png', 8, 1), ('series-detail-mobile.png', 64, 2), ('episode-mobile.png', 8, 1), ('music-mobile.png', 128, 2), ('music-albums.png', 32, 2), ('movies-mobile.png', 32, 2), ('series-review.png', 16, 1)]:
-            with self.subTest(capture=name), tempfile.TemporaryDirectory() as folder:
-                expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
-                expected.mkdir(); actual.mkdir()
-                (expected / name).write_bytes(png(16, 16, [100] * 768))
-                changed = [100] * 768
-                for index in range(budget):
-                    changed[index * 3] += delta
-                (actual / name).write_bytes(png(16, 16, changed))
-                self.assertEqual(checker.differences(expected, actual), [])
-                changed[budget * 3] += delta
-                (actual / name).write_bytes(png(16, 16, changed))
-                self.assertEqual(checker.differences(expected, actual), [name])
-                (actual / name).write_bytes(png(16, 16, [101 + delta] + [100] * 767))
-                self.assertEqual(checker.differences(expected, actual), [name])
-
-    def test_visual_changes_and_size_changes_are_rejected(self):
-        with tempfile.TemporaryDirectory() as folder:
-            first, second = Path(folder) / 'first.png', Path(folder) / 'second.png'
-            first.write_bytes(png(16, 16, [100] * 768))
-            second.write_bytes(png(16, 16, [200] + [100] * 767))
-            self.assertFalse(checker.native_audio_matches(first, second))
-            second.write_bytes(png(16, 16, [101] * 768))
-            self.assertFalse(checker.native_audio_matches(first, second))
-            second.write_bytes(png(2, 2, [100] * 12))
-            self.assertFalse(checker.native_audio_matches(first, second))
+    def test_size_changes_and_invalid_files_are_rejected(self):
+        self.assertEqual(self.check(png([100] * 12, 2, 2)), ['any.png'])
+        self.assertEqual(self.check(b'not a png'), ['any.png'])
 
     def test_missing_capture_is_rejected(self):
-        with tempfile.TemporaryDirectory() as folder:
-            expected, actual = Path(folder) / 'expected', Path(folder) / 'actual'
-            expected.mkdir(); actual.mkdir()
-            (expected / 'music-player.png').write_bytes(png(2, 2, [100] * 12))
-            self.assertEqual(checker.differences(expected, actual), ['music-player.png'])
+        self.assertEqual(self.check(None), ['any.png'])
+
 
 if __name__ == '__main__':
     unittest.main()

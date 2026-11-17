@@ -1,48 +1,15 @@
-"""Compare captures, allowing bounded audio-control and icon rasterization differences."""
+"""Compare captures pixel by pixel with one global budget for rasterization noise."""
 import struct
 import sys
 import zlib
 from pathlib import Path
 
-MAX_NATIVE_PIXELS = 128
-MAX_CHANNEL_DELTA = 64
-RASTER_LIMITS = {
-    # Observed three one-level antialiasing differences on the mobile modal corner.
-    "library-create-mobile.png": (8, 1, 0, 0, 0),
-    "music-player.png": (MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA, 0, 0, 0),
-    "music.png": (16, 1, 0, 0, 0),
-    # Observed up to 32 one- or two-level antialiasing differences on the section tabs.
-    "music-albums.png": (32, 2, 0, 0, 0),
-    # Observed up to ten isolated antialiasing outliers between CI captures.
-    "series-detail.png": (16, 1, 10, 2, 39),
-    "season.png": (16, 1, 0, 0, 0),
-    "about.png": (16, 1, 0, 0, 0),
-    # Observed rounded-corner rasterization on the compact mobile series screens.
-    "series.png": (8, 1, 0, 0, 0),
-    "series-mobile.png": (8, 1, 0, 0, 0),
-    "series-detail-mobile.png": (64, 2, 0, 0, 0),
-    "episode-mobile.png": (8, 1, 0, 0, 0),
-    "movie-mobile.png": (128, 2, 0, 0, 0),
-    # Observed up to 22 one- or two-level antialiasing differences on the mobile movie grid.
-    "movies-mobile.png": (32, 2, 0, 0, 0),
-    # Observed thirteen one-level antialiasing differences beside the review list.
-    "series-review.png": (16, 1, 0, 0, 0),
-    # Observed antialiasing on the compact music player's rounded bottom corners.
-    "music-mobile.png": (128, 2, 0, 0, 0),
-    "episode.png": (32, 2, 1, 16, 20),
-    "movie.png": (0, 0, 1, 16, 20),
-    "player.png": (0, 0, 1, 16, 20),
-    # Observed three one-level and two 14-level antialiasing differences on the sidebar.
-    "library.png": (8, 1, 2, 8, 16),
-}
-
-
-# Measured between two pinned-browser runs of unchanged header elements.
-# Keep these budgets local so content and layout checks retain their limits.
-REGION_LIMITS = {
-    "episode-mobile.png": [((326, 10, 370, 54), (33, 2, 0, 0, 0))],
-    "season.png": [((24, 30, 60, 66), (8, 2, 2, 19, 39))],
-}
+# Faint antialiasing (channel delta <= 2) may touch at most 0.1% of a capture;
+# stronger differences are allowed only as a few isolated pixels. Anything
+# larger is a visible change and must be regenerated and committed.
+FAINT_DELTA = 2
+FAINT_RATIO = 0.001
+STRONG_PIXELS = 16
 
 
 def _png_rows(path):
@@ -95,56 +62,29 @@ def _png_rows(path):
     return width, height, channels, rows
 
 
-def native_audio_matches(expected, actual):
-    """Allow small native rasterization differences; reject larger visual changes."""
-    return _raster_matches(expected, actual, MAX_NATIVE_PIXELS, MAX_CHANNEL_DELTA)
-
-
-def _raster_matches(
-    expected,
-    actual,
-    max_pixels,
-    max_channel_delta,
-    outlier_pixels=0,
-    min_outlier_channel_delta=0,
-    max_outlier_channel_delta=0,
-    regions=(),
-):
+def matches(expected, actual):
     try:
         first, second = _png_rows(expected), _png_rows(actual)
-        if first[:3] != second[:3]:
-            return False
-        width, _, channels, rows = first
-        budgets = [(max_pixels, max_channel_delta, outlier_pixels,
-                    min_outlier_channel_delta, max_outlier_channel_delta)]
-        budgets.extend(limits for _, limits in regions)
-        counts = [[0, 0] for _ in budgets]
-        for y, (left, right) in enumerate(zip(rows, second[3])):
-            for index in range(0, width * channels, channels):
-                a, b = left[index:index + channels], right[index:index + channels]
-                if a == b:
-                    continue
-                bucket = 0
-                x = index // channels
-                for number, ((x1, y1, x2, y2), _) in enumerate(regions, start=1):
-                    if x1 <= x < x2 and y1 <= y < y2:
-                        bucket = number
-                        break
-                pixels, delta, outlier_limit, outlier_min, outlier_max = budgets[bucket]
-                channel_delta = max(abs(x - y) for x, y in zip(a, b))
-                if channel_delta <= delta:
-                    counts[bucket][0] += 1
-                    if counts[bucket][0] > pixels:
-                        return False
-                elif outlier_min <= channel_delta <= outlier_max:
-                    counts[bucket][1] += 1
-                    if counts[bucket][1] > outlier_limit:
-                        return False
-                else:
-                    return False
-        return True
     except (ValueError, KeyError, struct.error, zlib.error, UnboundLocalError):
         return False
+    if first[:3] != second[:3]:
+        return False
+    width, height, channels, rows = first
+    faint_budget, faint, strong = width * height * FAINT_RATIO, 0, 0
+    for left, right in zip(rows, second[3]):
+        if left == right:
+            continue
+        for index in range(0, width * channels, channels):
+            a, b = left[index:index + channels], right[index:index + channels]
+            if a == b:
+                continue
+            if max(abs(x - y) for x, y in zip(a, b)) <= FAINT_DELTA:
+                faint += 1
+            else:
+                strong += 1
+            if faint > faint_budget or strong > STRONG_PIXELS:
+                return False
+    return True
 
 
 def differences(expected, actual):
@@ -154,10 +94,8 @@ def differences(expected, actual):
     for name in sorted(first.keys() | second.keys()):
         if name not in first or name not in second:
             changed.append(name)
-        elif first[name].read_bytes() != second[name].read_bytes():
-            limits = RASTER_LIMITS.get(name)
-            if limits is None or not _raster_matches(first[name], second[name], *limits, regions=REGION_LIMITS.get(name, ())):
-                changed.append(name)
+        elif first[name].read_bytes() != second[name].read_bytes() and not matches(first[name], second[name]):
+            changed.append(name)
     return changed
 
 

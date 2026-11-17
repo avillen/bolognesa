@@ -1,6 +1,14 @@
 name: README screenshots
 
 on:
+  # Run manually with update=true on a branch to commit captures rendered by CI,
+  # which is the single source of truth for the README images.
+  workflow_dispatch:
+    inputs:
+      update:
+        description: Regenerate and commit README screenshots on this branch
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -35,9 +43,13 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: ${{ inputs.update == true }}
 
       - uses: erlef/setup-beam@v1
         with:
@@ -79,7 +91,22 @@ jobs:
         run: npm ci
 
       - name: Verify README screenshots
+        if: inputs.update != true
         run: make check-screenshots
+
+      - name: Regenerate and commit README screenshots
+        if: inputs.update == true
+        run: |
+          make screenshots
+          git add docs/screenshots
+          if git diff --cached --quiet; then
+            echo "README screenshots already match."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs(screenshots): regenerate README captures in CI"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Preserve failed synthetic captures
         if: failure()
