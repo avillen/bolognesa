@@ -125,7 +125,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 /* Video.js owns the controls inside its shadow root; the frame survives HLS session changes. */
-.bolognesa-video-frame { overflow: hidden; border-radius: 12px; background: #000; }
+.bolognesa-video-frame { position: relative; overflow: hidden; border-radius: 12px; background: #000; }
 .bolognesa-video-frame bolognesa-video-player { display: contents; }
 .bolognesa-video-frame video-skin { position: relative; display: block; --media-accent-color: var(--color-accent); }
 .bolognesa-playback-feedback { display: none; }
@@ -146,14 +146,51 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .bolognesa-playback-feedback button { min-height: 44px; padding: 12px 20px; border-radius: 8px; background: var(--color-accent, #c26e54); cursor: pointer; }
 .bolognesa-playback-feedback button:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
 
-.bolognesa-video-frame video-skin[data-initial-loading]::after {
+.bolognesa-video-frame video-skin[data-initial-loading]::after, .bolognesa-video-status {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   z-index: 1;
   pointer-events: none;
   background: #c26e54 url("/images/bolognesa-cat.svg") center / clamp(80px, 20%, 180px) auto no-repeat;
 }
+.bolognesa-video-status { z-index: 20; display: flex; align-items: flex-end; justify-content: center; padding: 0 16px 8%; color: #fff; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; text-align: center; }
+
+/* Errors stay inside the frame; the fullscreen copy lives in .bolognesa-playback-feedback. */
+.bolognesa-video-error {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Auto margins center like `safe center`: long content scrolls instead of clipping its top. */
+  justify-content: flex-start;
+  gap: 12px;
+  overflow-y: auto;
+  padding: 16px;
+  background: radial-gradient(circle at center, #3a1f17, #120c0a);
+  color: #fff;
+  text-align: center;
+  font-size: 13px;
+}
+.bolognesa-video-error > :first-child { margin-top: auto; }
+.bolognesa-video-error > :last-child { margin-bottom: auto; }
+.bolognesa-video-error > p[role="alert"] { max-width: 36rem; }
+.bolognesa-video-error-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+/* Phones: a 16:9 frame cannot hold the actions, so the error replaces the empty video in flow. A fullscreen skin renders in the top layer, unaffected. */
+@media (max-width: 639px) {
+  .bolognesa-video-frame-error > [phx-update="ignore"] { height: 0; overflow: hidden; }
+  .bolognesa-video-error { position: static; padding: 24px 16px; }
+  .bolognesa-video-error-actions { flex-direction: column; align-self: stretch; }
+}
+.bolognesa-video-error-actions button { min-height: 40px; padding: 8px 12px; border: 1px solid #fff4; border-radius: 8px; background: #fff1; font-size: 13px; font-weight: 600; cursor: pointer; }
+.bolognesa-video-error-actions button:hover { background: #fff2; }
+.bolognesa-video-error-actions .bolognesa-video-error-primary { border-color: transparent; background: var(--color-accent); color: var(--color-canvas); }
+.bolognesa-video-error-actions .bolognesa-video-error-primary:hover { background: var(--color-accent-hover); }
+.bolognesa-video-error-actions button:focus-visible, .bolognesa-video-hint:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.bolognesa-video-hint { min-height: 24px; color: var(--color-muted); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.bolognesa-video-hint:hover { color: var(--color-ink); }
 
 /* Library management uses one stream for compact rows and mobile cards. */
 .library-section { min-width: 0; }
