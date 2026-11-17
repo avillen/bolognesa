@@ -1,4 +1,4 @@
-defmodule Bolognesa.Playback.Infrastructure.FfmpegProgress do
+defmodule Bolognesa.Playback.Infrastructure.TranscodeManager.Preparation.FfmpegProgress do
   @moduledoc "Retain only numeric fields from bounded FFmpeg progress lines."
 
   @type report :: %{

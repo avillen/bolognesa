@@ -23,6 +23,10 @@ ARG DEBIAN_VERSION=trixie-20260824-slim
 
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
+# Debian trixie ships FFmpeg 7.1; playback needs >= 8 so `-re` catches up gently after SIGSTOP.
+ARG FFMPEG_IMAGE="docker.io/mwader/static-ffmpeg:9.0.2-1@sha256:f5d100184884eb3e82b0eb14bb5ebf98da99826ac824989720297fb9ef21c822"
+
+FROM ${FFMPEG_IMAGE} AS ffmpeg
 
 FROM ${BUILDER_IMAGE} AS builder
 
@@ -81,8 +85,10 @@ RUN mix release
 FROM ${RUNNER_IMAGE} AS final
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates ffmpeg \
+  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates \
   && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ffmpeg /ffmpeg /ffprobe /usr/local/bin/
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \

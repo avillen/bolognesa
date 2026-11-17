@@ -14,7 +14,7 @@ Bolognesa is one Phoenix application organized into bounded contexts. Context bo
 
 Use cases do not call another context's use cases. Share business behavior through the owning context's facade; keep cross-context technical utilities neutral and free of business rules. Inject adapters outside the domain. Test isolation follows [testing conventions](testing.md).
 
-Name ports after their responsibility (`LibraryRepository`, `MoviesReader`) and adapters after their technology (`EctoLibraryRepository`). Within each context, mirror `Application.Ports` and `Infrastructure` categories: `Repositories`, `Readers`, `Providers`, and `Services`. Keep mappers and collaborators beside the adapter that owns them. Global Ecto schemas live under `Bolognesa.Infrastructure.Persistence`; job workers and recovery policies live under `Infrastructure.Jobs`.
+Name ports after their responsibility (`LibraryRepository`, `MoviesReader`) and adapters after their technology (`EctoLibraryRepository`). Within each context, mirror `Application.Ports` and `Infrastructure` categories: `Repositories`, `Readers`, `Providers`, and `Services`. Nest mappers and collaborators under the adapter that owns them, following [module placement](elixir.md#module-placement). Global Ecto schemas live under `Bolognesa.Infrastructure.Persistence`; job workers and recovery policies live under `Infrastructure.Jobs`.
 
 Organize domain modules by concept type where useful: `entities/`, `value_objects/`, `policies/`, `services/`, and `read_models/`. Create only categories that contain real modules; group by subdomain only when that keeps a cohesive set together. Do not create an `aggregates/` category merely to label aggregate roots.
 

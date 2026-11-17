@@ -46,6 +46,12 @@ Always write the struct body in `@type t` across multiple lines, with one field 
 - Prefer the standard `Time`, `Date`, `DateTime`, and `Calendar` modules. Add a dependency only when the task requires it.
 - Name registered processes explicitly; use unique child-spec IDs when starting multiple instances of the same module. For concurrent enumeration, consider `Task.async_stream/3` with explicit concurrency, timeout, and failure handling; do not spawn one unbounded task per item.
 
+## Module placement
+
+- Nest a module used by exactly one other module under its user: if only `B` uses `A`, place it at `b/a.ex` as `B.A`. Apply the rule recursively (a module used only by `B.A` lives in `b/a/`).
+- Keep a module used by several modules at the same level as those modules.
+- Extracting helper modules to give code a named context is welcome; place them by this rule. Scripts and tests do not count as users, and tests keep their existing location.
+
 ## Mix
 
 Read task options with `mix help TASK` before using unfamiliar tasks. Avoid `mix deps.clean --all` unless there is a specific reason. Test commands and workflow belong in [testing conventions](testing.md) and [CONTRIBUTING](../../CONTRIBUTING.md#native-development).

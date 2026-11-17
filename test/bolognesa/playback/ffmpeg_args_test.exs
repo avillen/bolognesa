@@ -3,7 +3,7 @@ defmodule Bolognesa.Playback.FfmpegArgsTest do
 
   alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
   alias Bolognesa.Playback.Domain.ValueObjects.MediaConfiguration
-  alias Bolognesa.Playback.Infrastructure.FfmpegArgs
+  alias Bolognesa.Playback.Infrastructure.TranscodeManager.FfmpegArgs
 
   test "audio strategy copies video and converts audio to AAC" do
     args = FfmpegArgs.for(plan(:audio_conversion), "/movies/original.mkv", "/tmp/session", 0)

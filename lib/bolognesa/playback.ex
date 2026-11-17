@@ -161,16 +161,21 @@ defmodule Bolognesa.Playback do
   @spec stop_actor_video_transcode(AuthenticatedUser.t()) :: :ok
   def stop_actor_video_transcode(actor), do: TranscodeManager.stop_by_actor(actor.id)
 
-  @spec pause_video_transcode(AuthenticatedUser.t(), String.t()) :: :ok | {:error, :not_found}
-  def pause_video_transcode(actor, session_id),
-    do: signal_transcode(actor, session_id, :suspend)
-
+  @doc "Confirm the actor's session is still alive before resuming it."
   @spec resume_video_transcode(AuthenticatedUser.t(), String.t()) :: :ok | {:error, :not_found}
-  def resume_video_transcode(actor, session_id),
-    do: signal_transcode(actor, session_id, :resume)
+  def resume_video_transcode(actor, session_id) do
+    case TranscodeManager.lookup(session_id) do
+      {:ok, %{actor_id: actor_id}} when actor_id == actor.id ->
+        TranscodeManager.touch(session_id)
 
-  @spec touch_video_transcode(String.t()) :: :ok | {:error, :not_found}
-  def touch_video_transcode(session_id), do: TranscodeManager.touch(session_id)
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
+  @spec touch_video_transcode(String.t(), non_neg_integer()) :: :ok | {:error, :not_found}
+  def touch_video_transcode(session_id, segment),
+    do: TranscodeManager.touch(session_id, segment)
 
   @spec open_source(Source.t()) ::
           {:ok, LocalMediaFile.opened()} | {:error, LocalMediaFile.failure()}
@@ -178,18 +183,4 @@ defmodule Bolognesa.Playback do
 
   @spec video_transcode_status(String.t()) :: :ready | :waiting | :not_found
   def video_transcode_status(session_id), do: TranscodeManager.status(session_id)
-
-  defp signal_transcode(actor, session_id, action) do
-    with {:ok, session} <- TranscodeManager.lookup(session_id),
-         true <- session.actor_id == actor.id do
-      session |> signal_session(action) |> signal_result(session.status)
-    else
-      _ -> {:error, :not_found}
-    end
-  end
-
-  defp signal_session(session, :suspend), do: TranscodeManager.suspend(session.id)
-  defp signal_session(session, :resume), do: TranscodeManager.resume(session.id)
-  defp signal_result({:error, :not_found}, :finished), do: :ok
-  defp signal_result(result, _status), do: result
 end
