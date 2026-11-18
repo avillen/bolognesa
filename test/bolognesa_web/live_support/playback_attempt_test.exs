@@ -167,7 +167,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttemptTest do
     test "waiting polls again until the sixty second deadline, then stops the session" do
       attempt = preparing()
 
-      assert {%{phase: :preparing, poll_attempts: 1}, [{:schedule_poll, "s1", 500}]} =
+      assert {%{phase: :preparing}, [{:schedule_poll, "s1", 500}]} =
                PlaybackAttempt.resolve(attempt, {:fetch_status, "s1"}, :waiting, @now + 45_000)
 
       assert {failed, [{:stop_session, "s1", :preparation_timeout}]} =

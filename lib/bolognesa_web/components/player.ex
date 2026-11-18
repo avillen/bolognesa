@@ -16,26 +16,15 @@ defmodule BolognesaWeb.Player do
     assigns =
       assigns
       |> assign(
-        selected_file_id: attempt.file_id,
-        playback_phase: attempt.phase,
-        playback_attempt_id: attempt.id,
-        playback_probe: attempt.probe,
-        delivery_plan: attempt.plan,
-        compatible_playback_available?: attempt.compatible_available?,
-        inspection_refresh_used?: attempt.refresh_used?,
-        inspection_refresh_requested?: attempt.refresh_requested?,
-        transcode_session: attempt.session,
-        transcode_ready?: attempt.ready?,
-        transcode_paused?: attempt.paused?,
-        transcode_autoplay?: attempt.autoplay?,
         playback_error: error_message(attempt.error),
-        playback_error_reason: error_reason(attempt.error)
+        playback_error_reason: error_reason(attempt.error),
+        video_id: video_id(assigns.prefix, attempt),
+        video_src: video_src(assigns.kind, assigns.entry_id, attempt)
       )
-      |> then(&assign(&1, video_id: video_id(&1), video_src: video_src(&1)))
 
     ~H"""
     <section
-      :if={@selected_file_id || @playback_error}
+      :if={@attempt.file_id || @playback_error}
       id={"#{@prefix}-player"}
       class={@class}
       aria-label={gettext("Reproductor")}
@@ -43,28 +32,28 @@ defmodule BolognesaWeb.Player do
       <div
         id={"#{@prefix}-video-frame"}
         phx-hook="VideoPlayer"
-        data-attempt-id={@playback_attempt_id}
-        data-playback-phase={@playback_phase}
-        data-playback-probe={@playback_probe && Jason.encode!(@playback_probe)}
-        data-transport={@delivery_plan && @delivery_plan.transport}
+        data-attempt-id={@attempt.id}
+        data-playback-phase={@attempt.phase}
+        data-playback-probe={@attempt.probe && Jason.encode!(@attempt.probe)}
+        data-transport={@attempt.plan && @attempt.plan.transport}
         data-support-evidence={
-          if @delivery_plan && @delivery_plan.transport == :native_hls, do: "inferred"
+          if @attempt.plan && @attempt.plan.transport == :native_hls, do: "inferred"
         }
         data-video-id={@video_id}
-        data-file-id={@selected_file_id}
+        data-file-id={@attempt.file_id}
         data-recovery-scope={"#{@viewer_id}:#{@kind}:#{@entry_id}"}
-        data-session-id={@transcode_session && @transcode_session.id}
-        data-paused-server={to_string(@transcode_paused?)}
+        data-session-id={@attempt.session && @attempt.session.id}
+        data-paused-server={to_string(@attempt.paused?)}
         data-autoplay={
-          to_string(@playback_phase == :ready && (!@transcode_session || @transcode_autoplay?))
+          to_string(@attempt.phase == :ready && (!@attempt.session || @attempt.autoplay?))
         }
-        data-offset-ms={@transcode_session && @transcode_session.offset_ms}
-        data-duration-ms={@transcode_session && @transcode_session.duration_ms}
+        data-offset-ms={@attempt.session && @attempt.session.offset_ms}
+        data-duration-ms={@attempt.session && @attempt.session.duration_ms}
         data-src={!@playback_error && @video_src}
         data-playback-error={@playback_error}
-        data-retry-file-id={@selected_file_id || @retry_file_id}
+        data-retry-file-id={@attempt.file_id || @retry_file_id}
         data-retry-label={gettext("Reintentar reproducción")}
-        data-compatible-playback-available={to_string(@compatible_playback_available?)}
+        data-compatible-playback-available={to_string(@attempt.compatible_available?)}
         data-compatible-playback-label={gettext("Probar reproducción compatible")}
         class={["bolognesa-video-frame", @playback_error && "bolognesa-video-frame-error"]}
       >
@@ -72,11 +61,11 @@ defmodule BolognesaWeb.Player do
           <media-i18n lang={Gettext.get_locale(BolognesaWeb.Gettext)}>
             <video
               id={@video_id}
-              autoplay={@playback_phase == :ready && !@transcode_session}
+              autoplay={@attempt.phase == :ready && !@attempt.session}
               controls
               playsinline
               preload="metadata"
-              src={!@playback_error && !@transcode_session && @video_src}
+              src={!@playback_error && !@attempt.session && @video_src}
               poster={@poster}
               class="aspect-video w-full bg-black"
             >
@@ -85,11 +74,11 @@ defmodule BolognesaWeb.Player do
           </media-i18n>
         </div>
         <div
-          :if={@playback_phase in [:checking, :preparing] && !@playback_error}
+          :if={@attempt.phase in [:checking, :preparing] && !@playback_error}
           class="bolognesa-video-status"
         >
           <p
-            :if={@playback_phase == :checking}
+            :if={@attempt.phase == :checking}
             role="status"
             id={"#{@prefix}-playback-checking"}
             class="motion-safe:animate-pulse"
@@ -97,7 +86,7 @@ defmodule BolognesaWeb.Player do
             {gettext("Comprobando compatibilidad del navegador…")}
           </p>
           <p
-            :if={@playback_phase == :preparing}
+            :if={@attempt.phase == :preparing}
             role="status"
             id={"#{@prefix}-playback-preparing"}
             class="motion-safe:animate-pulse"
@@ -115,35 +104,35 @@ defmodule BolognesaWeb.Player do
               id={"#{@prefix}-retry-playback"}
               type="button"
               phx-click="play"
-              phx-value-file_id={@selected_file_id || @retry_file_id}
+              phx-value-file_id={@attempt.file_id || @retry_file_id}
               class="bolognesa-video-error-primary"
             >{gettext("Reintentar reproducción")}</button>
             <button
-              :if={@compatible_playback_available?}
+              :if={@attempt.compatible_available?}
               id={"#{@prefix}-playback-compatible"}
               type="button"
               phx-click="playback_compatible"
             >{gettext("Probar reproducción compatible")}</button>
-            <button :if={@selected_file_id} type="button" phx-click="playback_original">
+            <button :if={@attempt.file_id} type="button" phx-click="playback_original">
               {gettext("Probar archivo original")}
             </button>
             <button
-              :if={@selected_file_id && !@inspection_refresh_used?}
+              :if={@attempt.file_id && !@attempt.refresh_used?}
               type="button"
               phx-click="playback_refresh"
             >
               {gettext("Actualizar análisis")}
             </button>
           </div>
-          <p :if={@inspection_refresh_requested?} role="status" class="text-xs text-muted">
+          <p :if={@attempt.refresh_requested?} role="status" class="text-xs text-muted">
             {gettext("Análisis solicitado. Reintenta cuando termine.")}
           </p>
         </div>
       </div>
       <button
         :if={
-          !@playback_error && @compatible_playback_available? &&
-            @playback_phase in [:ready, :error]
+          !@playback_error && @attempt.compatible_available? &&
+            @attempt.phase in [:ready, :error]
         }
         id={"#{@prefix}-playback-compatible"}
         type="button"
@@ -158,8 +147,6 @@ defmodule BolognesaWeb.Player do
 
   @spec playback_mode(map()) :: Phoenix.LiveView.Rendered.t()
   def playback_mode(assigns) do
-    assigns = assign(assigns, :transcode_session, assigns.attempt.session)
-
     ~H"""
     <p
       :if={@attempt.file_id && @attempt.phase in [:ready, :preparing] && !@attempt.error}
@@ -167,17 +154,17 @@ defmodule BolognesaWeb.Player do
       class="text-xs leading-6 text-muted"
     >
       <span class="font-medium text-ink">{gettext("Modo de reproducción:")}</span>
-      <span :if={!@transcode_session}>{gettext("Reproducción directa")}</span>
-      <span :if={@transcode_session && @transcode_session.plan.mode == :remux}>{gettext(
+      <span :if={!@attempt.session}>{gettext("Reproducción directa")}</span>
+      <span :if={@attempt.session && @attempt.session.plan.mode == :remux}>{gettext(
         "Remultiplexado sin conversión"
       )}</span>
-      <span :if={@transcode_session && @transcode_session.plan.mode == :video_conversion}>{gettext(
+      <span :if={@attempt.session && @attempt.session.plan.mode == :video_conversion}>{gettext(
         "Transcodificación de vídeo"
       )}</span>
-      <span :if={@transcode_session && @transcode_session.plan.mode == :audio_conversion}>
+      <span :if={@attempt.session && @attempt.session.plan.mode == :audio_conversion}>
         {gettext("Transcodificación de audio")}
       </span>
-      <span :if={@transcode_session && @transcode_session.plan.mode == :full_conversion}>
+      <span :if={@attempt.session && @attempt.session.plan.mode == :full_conversion}>
         {gettext("Transcodificación de vídeo y audio")}
       </span>
     </p>
@@ -218,28 +205,19 @@ defmodule BolognesaWeb.Player do
   defp error_reason({:preparation, _reason}), do: "preparation_failed"
   defp error_reason({:transcode, _stage}), do: "transcode_failed"
 
-  defp video_id(%{transcode_session: %{id: id}, prefix: prefix}),
-    do: "#{prefix}-video-#{id}"
+  defp video_id(prefix, %{session: %{id: id}}), do: "#{prefix}-video-#{id}"
+  defp video_id(prefix, attempt), do: "#{prefix}-video-#{attempt.file_id}"
 
-  defp video_id(assigns), do: "#{assigns.prefix}-video-#{assigns.selected_file_id}"
+  defp video_src(_kind, _entry, %{phase: phase}) when phase != :ready, do: nil
+  defp video_src(_kind, _entry, %{file_id: nil}), do: nil
 
-  defp video_src(%{playback_phase: phase}) when phase != :ready, do: nil
+  defp video_src(kind, entry, %{session: nil} = attempt),
+    do: media_url(kind, entry, attempt.file_id)
 
-  defp video_src(%{selected_file_id: nil}), do: nil
+  defp video_src(kind, entry, %{ready?: true} = attempt),
+    do: hls_url(kind, entry, attempt.file_id, attempt.session.id)
 
-  defp video_src(%{transcode_session: nil} = assigns),
-    do: media_url(assigns.kind, assigns.entry_id, assigns.selected_file_id)
-
-  defp video_src(%{transcode_ready?: true} = assigns),
-    do:
-      hls_url(
-        assigns.kind,
-        assigns.entry_id,
-        assigns.selected_file_id,
-        assigns.transcode_session.id
-      )
-
-  defp video_src(_assigns), do: nil
+  defp video_src(_kind, _entry, _attempt), do: nil
 
   defp media_url(:movie, id, file), do: ~p"/movies/#{id}/media/#{file}"
   defp media_url(:episode, id, file), do: ~p"/episodes/#{id}/media/#{file}"

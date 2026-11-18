@@ -8,42 +8,72 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
   together with that result. Events that do not belong to the current attempt
   return it unchanged with no effects.
   """
+  alias Bolognesa.Playback
+  alias Bolognesa.Playback.Domain.ReadModels.Source
   alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
+  alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
+  alias Bolognesa.Playback.Domain.ValueObjects.PlaybackCandidate
   alias BolognesaWeb.Params
   alias Ecto.UUID
 
-  @type error ::
-          {:preparation, atom()} | {:transcode, :preparation | :interrupted}
+  @typedoc "Why preparing the attempt failed, as reported by playback or the inspection refresh."
+  @type failure_reason ::
+          Playback.negotiation_reason()
+          | Playback.transcode_reason()
+          | :source_changed
+          | :refresh_limited
+          | :detection_unknown
+  @typedoc "A visible failure: preparation was refused, or the conversion failed or was interrupted."
+  @type error :: {:preparation, failure_reason()} | {:transcode, :preparation | :interrupted}
+  @typedoc "The capability probe sent to the browser for the issued candidates."
+  @type probe :: %{generation: String.t(), candidates: [map()]}
+  @typedoc "Untrusted capability report as the browser sent it."
+  @type raw_report :: map()
+  @typedoc "Whether a delivery keeps the default autoplay or sets the browser's play state."
   @type autoplay :: :keep | boolean()
+  @typedoc "Why a plan is selected: the browser's request, the compatible check, or a recovery at an offset."
   @type plan_purpose ::
-          :requested | {:compatible_check, map()} | {:recovery, non_neg_integer()}
+          :requested | {:compatible_check, DeliveryPlan.t()} | {:recovery, non_neg_integer()}
+  @typedoc "Work the caller performs; those producing a result are answered through `resolve/4`."
   @type effect ::
           {:load_candidates, pos_integer()}
           | {:schedule_capability_timeout, String.t(), pos_integer()}
-          | {:select_plan, plan_purpose(), pos_integer(), list(), map()}
-          | {:deliver, pos_integer(), map() | nil, non_neg_integer(), atom(), autoplay()}
+          | {:select_plan, plan_purpose(), pos_integer(), [PlaybackCandidate.t()], raw_report()}
+          | {:deliver, pos_integer(), DeliveryPlan.t() | nil, non_neg_integer(),
+             TranscodeSession.stop_reason() | :session_replaced, autoplay()}
           | {:schedule_poll, String.t(), pos_integer()}
           | {:fetch_status, String.t()}
           | {:stop_session, String.t(), TranscodeSession.stop_reason()}
           | {:prepare_original, pos_integer()}
           | {:refresh_inspection, pos_integer()}
           | {:resume_session, String.t(), non_neg_integer() | nil}
+  @typedoc "The result of performing an effect, as returned by the playback facade."
+  @type result ::
+          {:ok, Source.t(), [PlaybackCandidate.t()]}
+          | {:ok, DeliveryPlan.t()}
+          | {:ok, :direct}
+          | {:ok, :transcode, TranscodeSession.t()}
+          | :ok
+          | :ready
+          | :waiting
+          | :not_found
+          | {:error, failure_reason()}
+  @typedoc "One browser's playback attempt."
   @type t :: %__MODULE__{
           id: String.t() | nil,
           phase: :idle | :checking | :preparing | :ready | :error,
           file_id: pos_integer() | nil,
           duration_ms: non_neg_integer() | nil,
-          probe: map() | nil,
-          candidates: list(),
-          plan: map() | nil,
-          report: map() | nil,
+          probe: probe() | nil,
+          candidates: [PlaybackCandidate.t()],
+          plan: DeliveryPlan.t() | nil,
+          report: raw_report() | nil,
           compatible_available?: boolean(),
           recovery_used?: boolean(),
-          session: map() | nil,
+          session: TranscodeSession.t() | nil,
           ready?: boolean(),
           paused?: boolean(),
           autoplay?: boolean(),
-          poll_attempts: non_neg_integer(),
           deadline: integer() | nil,
           error: error() | nil,
           refresh_used?: boolean(),
@@ -64,7 +94,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
             ready?: false,
             paused?: false,
             autoplay?: false,
-            poll_attempts: 0,
             deadline: nil,
             error: nil,
             refresh_used?: false,
@@ -114,7 +143,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
   """
   @spec client_failed(t(), :file | :session, map()) :: {t(), [effect()]}
   def client_failed(attempt, source, params) do
-    with true <- failure_source?(attempt, source, params),
+    with true <- displays?(attempt, {source, params["#{source}_id"]}),
          %{phase: :ready, id: id} when is_binary(id) <- attempt,
          ^id <- params["attempt_id"],
          offset when is_integer(offset) <- offset(params["position_ms"], attempt.duration_ms) do
@@ -172,11 +201,10 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
 
   @doc "Whether a browser event refers to the playback in progress."
   @spec playing?(t(), map()) :: boolean()
-  def playing?(%{session: %{id: id}}, %{"session_id" => id}), do: true
+  def playing?(attempt, %{"session_id" => id}), do: displays?(attempt, {:session, id})
 
-  def playing?(%{phase: :ready, session: nil, error: nil, file_id: file_id}, %{"file_id" => id})
-      when not is_nil(file_id),
-      do: to_string(file_id) == id
+  def playing?(%{phase: :ready, error: nil} = attempt, %{"file_id" => id}),
+    do: displays?(attempt, {:file, id})
 
   def playing?(_attempt, _params), do: false
 
@@ -197,7 +225,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
   def capability_timed_out(attempt, _generation), do: {attempt, []}
 
   @doc "Applies the result of an effect this attempt emitted."
-  @spec resolve(t(), effect(), term(), integer()) :: {t(), [effect()]}
+  @spec resolve(t(), effect(), result(), integer()) :: {t(), [effect()]}
   def resolve(attempt, {:load_candidates, _file_id}, {:ok, source, candidates}, _now_ms) do
     generation = UUID.generate()
     probe = %{generation: generation, candidates: Enum.map(candidates, &probe_candidate/1)}
@@ -258,7 +286,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
 
   def resolve(attempt, {:fetch_status, id}, :waiting, now_ms) do
     if now_ms < attempt.deadline do
-      {%{attempt | poll_attempts: attempt.poll_attempts + 1}, [{:schedule_poll, id, 500}]}
+      {attempt, [{:schedule_poll, id, 500}]}
     else
       {transcode_failed(attempt, :preparation), stop(attempt, :preparation_timeout)}
     end
@@ -313,13 +341,13 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
   def resolve(attempt, {:resume_session, _, offset}, _result, _now_ms),
     do: {attempt, [deliver(attempt, offset, :session_replaced)]}
 
-  defp failure_source?(%{session: %{id: id}}, :session, %{"session_id" => id}), do: true
+  # Whether a browser event names what is displayed: the stream's session, or the direct file.
+  defp displays?(%{session: %{id: id}}, {:session, id}), do: true
 
-  defp failure_source?(%{session: nil, file_id: file_id}, :file, %{"file_id" => id})
-       when not is_nil(file_id),
-       do: to_string(file_id) == id
+  defp displays?(%{session: nil, file_id: file_id}, {:file, id}) when not is_nil(file_id),
+    do: to_string(file_id) == id
 
-  defp failure_source?(_attempt, _source, _params), do: false
+  defp displays?(_attempt, _ref), do: false
 
   defp recover(%{report: report, recovery_used?: false} = attempt, offset) when is_map(report) do
     next = %{attempt | recovery_used?: true, compatible_available?: false}
@@ -347,7 +375,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
       | session: nil,
         ready?: false,
         paused?: false,
-        poll_attempts: 0,
         autoplay?: false,
         error: nil
     }

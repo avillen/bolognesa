@@ -23,6 +23,79 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
     end
   end
 
+  describe "effects reach the playback facade and their results re-enter the attempt" do
+    defp refused(playback, assigns \\ %{}) do
+      %Phoenix.LiveView.Socket{
+        assigns:
+          Map.merge(
+            %{
+              __changed__: %{},
+              loading?: false,
+              current_scope: %{actor: nil},
+              content_ref: {:movie, 1},
+              playback: playback
+            },
+            assigns
+          )
+      }
+    end
+
+    defp assert_refused(socket),
+      do: assert(socket.assigns.playback.error == {:preparation, :forbidden})
+
+    test "selecting a version loads its candidates" do
+      socket =
+        refused(PlaybackAttempt.new(), %{
+          detail: %{versions: [%{id: 3, availability: :available}]}
+        })
+
+      assert_refused(PlaybackEvents.select_version(socket, 3))
+    end
+
+    test "a capability report selects a plan" do
+      playback = %PlaybackAttempt{
+        file_id: 3,
+        phase: :checking,
+        probe: %{generation: "g", candidates: []}
+      }
+
+      assert {:noreply, next} =
+               PlaybackEvents.handle_event(
+                 "playback_capabilities",
+                 %{"generation" => "g"},
+                 refused(playback)
+               )
+
+      assert_refused(next)
+    end
+
+    test "a seek delivers the stream again" do
+      playback = %PlaybackAttempt{
+        file_id: 3,
+        phase: :ready,
+        session: %{id: "s1", duration_ms: nil, file_id: 3}
+      }
+
+      assert {:noreply, next} =
+               PlaybackEvents.handle_event(
+                 "playback_seek",
+                 %{"session_id" => "s1", "position_ms" => "10"},
+                 refused(playback)
+               )
+
+      assert_refused(next)
+    end
+
+    test "the original file and an inspection refresh are prepared through the facade" do
+      playback = %PlaybackAttempt{file_id: 3, phase: :error}
+
+      for event <- ["playback_original", "playback_refresh"] do
+        assert {:noreply, next} = PlaybackEvents.handle_event(event, %{}, refused(playback))
+        assert_refused(next)
+      end
+    end
+  end
+
   test "video views never log valid or rejected capability payloads at debug level" do
     level = Logger.level()
     Logger.configure(level: :debug)
