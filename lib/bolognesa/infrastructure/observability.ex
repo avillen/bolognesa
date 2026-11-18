@@ -13,6 +13,7 @@ defmodule Bolognesa.Infrastructure.Observability do
     :strategy,
     :transport,
     :stage,
+    :action,
     :offset_ms,
     :reason,
     :failure_stage,
@@ -149,6 +150,10 @@ defmodule Bolognesa.Infrastructure.Observability do
 
   defp log_message([:bolognesa, :playback, :session, :preparation]),
     do: {:info, "Playback preparation observation"}
+
+  # Pacing cycles every few segments during playback, so it stays below info.
+  defp log_message([:bolognesa, :playback, :session, :paced]),
+    do: {:debug, "Playback FFmpeg paced"}
 
   defp log_message([:bolognesa, :playback, :session, :closed]),
     do: {:info, "Playback session closed"}
