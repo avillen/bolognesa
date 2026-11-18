@@ -43,9 +43,9 @@ defmodule BolognesaWeb.Player do
         data-file-id={@attempt.file_id}
         data-recovery-scope={"#{@viewer_id}:#{@kind}:#{@entry_id}"}
         data-session-id={@attempt.session && @attempt.session.id}
-        data-paused-server={to_string(@attempt.paused?)}
+        data-paused-server={to_string(@attempt.stream_paused?)}
         data-autoplay={
-          to_string(@attempt.phase == :ready && (!@attempt.session || @attempt.autoplay?))
+          to_string(@attempt.phase == :ready && (!@attempt.session || @attempt.stream_autoplay?))
         }
         data-offset-ms={@attempt.session && @attempt.session.offset_ms}
         data-duration-ms={@attempt.session && @attempt.session.duration_ms}
@@ -214,7 +214,7 @@ defmodule BolognesaWeb.Player do
   defp video_src(kind, entry, %{session: nil} = attempt),
     do: media_url(kind, entry, attempt.file_id)
 
-  defp video_src(kind, entry, %{ready?: true} = attempt),
+  defp video_src(kind, entry, %{stream_ready?: true} = attempt),
     do: hls_url(kind, entry, attempt.file_id, attempt.session.id)
 
   defp video_src(_kind, _entry, _attempt), do: nil

@@ -32,13 +32,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
 
   def handle_event("playback_restore", %{"session_id" => id, "position_ms" => _} = params, socket) do
     {:noreply, next} = handle_event("playback_seek", params, socket)
-    previous = socket.assigns.playback.session
-    session = next.assigns.playback.session
-
-    accepted =
-      not is_nil(previous) and previous.id == id and not is_nil(session) and
-        session.id != previous.id and is_nil(next.assigns.playback.error)
-
+    accepted = PlaybackAttempt.restored?(socket.assigns.playback, next.assigns.playback, id)
     {:reply, %{accepted: accepted}, next}
   end
 

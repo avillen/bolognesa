@@ -117,7 +117,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttemptTest do
 
       assert prepared.phase == :preparing
       assert prepared.session == @session
-      assert prepared.autoplay?
+      assert prepared.stream_autoplay?
       assert prepared.deadline == @now + 60_000
 
       assert {%{error: {:preparation, :busy}}, []} =
@@ -144,7 +144,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttemptTest do
 
       next = %{@session | id: "s2", offset_ms: 30_000}
 
-      assert {%{session: ^next, autoplay?: false}, _} =
+      assert {%{session: ^next, stream_autoplay?: false}, _} =
                PlaybackAttempt.resolve(attempt, effect, {:ok, :transcode, next}, @now)
     end
   end
@@ -161,7 +161,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttemptTest do
     end
 
     test "a ready stream starts paused" do
-      assert %{phase: :ready, ready?: true, paused?: true} = streaming()
+      assert %{phase: :ready, stream_ready?: true, stream_paused?: true} = streaming()
     end
 
     test "waiting polls again until the sixty second deadline, then stops the session" do
@@ -310,15 +310,15 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttemptTest do
 
   describe "the displayed stream" do
     test "pauses, resumes and ends only for its own session" do
-      attempt = %{streaming() | paused?: false}
+      attempt = %{streaming() | stream_paused?: false}
 
       assert PlaybackAttempt.pause(attempt, "old") == {attempt, []}
-      assert {%{paused?: true}, []} = PlaybackAttempt.pause(attempt, "s1")
+      assert {%{stream_paused?: true}, []} = PlaybackAttempt.pause(attempt, "s1")
 
       assert PlaybackAttempt.ended(attempt, %{"session_id" => "old"}) == {attempt, []}
       assert PlaybackAttempt.ended(attempt, %{"file_id" => "3"}) == {attempt, []}
 
-      assert {%{paused?: true}, [{:stop_session, "s1", :ended}]} =
+      assert {%{stream_paused?: true}, [{:stop_session, "s1", :ended}]} =
                PlaybackAttempt.ended(attempt, %{"session_id" => "s1"})
     end
 
@@ -331,7 +331,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttemptTest do
 
       assert {^attempt, [effect]} = PlaybackAttempt.resume(attempt, params)
       assert effect == {:resume_session, "s1", 5000}
-      assert {%{paused?: false}, []} = PlaybackAttempt.resolve(attempt, effect, :ok, @now)
+      assert {%{stream_paused?: false}, []} = PlaybackAttempt.resolve(attempt, effect, :ok, @now)
 
       assert PlaybackAttempt.resolve(attempt, effect, {:error, :not_found}, @now) ==
                {attempt, [{:deliver, 3, @plan, 5000, :session_replaced, :keep}]}
@@ -356,6 +356,18 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttemptTest do
              })
 
       refute PlaybackAttempt.playing?(direct, %{})
+    end
+
+    test "a restore succeeds only when the requested stream was replaced by a healthy one" do
+      before = streaming()
+      replaced = %{before | session: %{@session | id: "s2"}}
+
+      assert PlaybackAttempt.restored?(before, replaced, "s1")
+      refute PlaybackAttempt.restored?(before, replaced, "other")
+      refute PlaybackAttempt.restored?(before, before, "s1")
+      refute PlaybackAttempt.restored?(before, %{replaced | error: {:preparation, :busy}}, "s1")
+      refute PlaybackAttempt.restored?(before, %{replaced | session: nil}, "s1")
+      refute PlaybackAttempt.restored?(%{before | session: nil}, replaced, "s1")
     end
 
     test "a reset starts empty and stops the displayed session" do

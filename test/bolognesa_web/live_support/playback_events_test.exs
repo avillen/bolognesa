@@ -225,7 +225,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
                  socket
                )
 
-      assert next.assigns.playback.paused?
+      assert next.assigns.playback.stream_paused?
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     end
   end

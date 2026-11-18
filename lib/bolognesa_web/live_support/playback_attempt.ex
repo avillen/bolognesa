@@ -71,9 +71,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
           compatible_available?: boolean(),
           recovery_used?: boolean(),
           session: TranscodeSession.t() | nil,
-          ready?: boolean(),
-          paused?: boolean(),
-          autoplay?: boolean(),
+          stream_ready?: boolean(),
+          stream_paused?: boolean(),
+          stream_autoplay?: boolean(),
           deadline: integer() | nil,
           error: error() | nil,
           refresh_used?: boolean(),
@@ -91,9 +91,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
             compatible_available?: false,
             recovery_used?: false,
             session: nil,
-            ready?: false,
-            paused?: false,
-            autoplay?: false,
+            stream_ready?: false,
+            stream_paused?: false,
+            stream_autoplay?: false,
             deadline: nil,
             error: nil,
             refresh_used?: false,
@@ -177,7 +177,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
   def refresh(attempt), do: {attempt, []}
 
   @spec pause(t(), String.t()) :: {t(), [effect()]}
-  def pause(%{session: %{id: id}} = attempt, id), do: {%{attempt | paused?: true}, []}
+  def pause(%{session: %{id: id}} = attempt, id), do: {%{attempt | stream_paused?: true}, []}
   def pause(attempt, _id), do: {attempt, []}
 
   @spec resume(t(), map()) :: {t(), [effect()]}
@@ -191,7 +191,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
 
   @spec ended(t(), map()) :: {t(), [effect()]}
   def ended(%{session: %{id: id}} = attempt, %{"session_id" => id}),
-    do: {%{attempt | paused?: true}, stop(attempt, :ended)}
+    do: {%{attempt | stream_paused?: true}, stop(attempt, :ended)}
 
   def ended(attempt, _params), do: {attempt, []}
 
@@ -208,9 +208,16 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
 
   def playing?(_attempt, _params), do: false
 
+  @doc "Whether restoring `session_id` replaced it with a different, healthy stream."
+  @spec restored?(t(), t(), String.t()) :: boolean()
+  def restored?(%{session: %{id: id}}, %{session: %{id: next_id}, error: nil}, id),
+    do: next_id != id
+
+  def restored?(_before, _after, _session_id), do: false
+
   @doc "Handles a scheduled preparation poll for the session still preparing."
   @spec poll_due(t(), String.t()) :: {t(), [effect()]}
-  def poll_due(%{phase: :preparing, ready?: false, session: %{id: id}} = attempt, id),
+  def poll_due(%{phase: :preparing, stream_ready?: false, session: %{id: id}} = attempt, id),
     do: {attempt, [{:fetch_status, id}]}
 
   def poll_due(attempt, _id), do: {attempt, []}
@@ -277,12 +284,12 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
 
     case {next, autoplay} do
       {next, :keep} -> next
-      {{attempt, effects}, autoplay} -> {%{attempt | autoplay?: autoplay}, effects}
+      {{attempt, effects}, autoplay} -> {%{attempt | stream_autoplay?: autoplay}, effects}
     end
   end
 
   def resolve(attempt, {:fetch_status, _id}, :ready, _now_ms),
-    do: {%{attempt | phase: :ready, ready?: true, paused?: true}, []}
+    do: {%{attempt | phase: :ready, stream_ready?: true, stream_paused?: true}, []}
 
   def resolve(attempt, {:fetch_status, id}, :waiting, now_ms) do
     if now_ms < attempt.deadline do
@@ -334,7 +341,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
     do: {preparation_failed(attempt, reason), []}
 
   def resolve(attempt, {:resume_session, _, _}, :ok, _now_ms),
-    do: {%{attempt | paused?: false}, []}
+    do: {%{attempt | stream_paused?: false}, []}
 
   def resolve(attempt, {:resume_session, _, nil}, _result, _now_ms), do: {attempt, []}
 
@@ -373,9 +380,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
     %{
       attempt
       | session: nil,
-        ready?: false,
-        paused?: false,
-        autoplay?: false,
+        stream_ready?: false,
+        stream_paused?: false,
+        stream_autoplay?: false,
         error: nil
     }
   end
@@ -387,7 +394,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
         phase: :preparing,
         deadline: now_ms + @preparation_ms,
         session: session,
-        autoplay?: true
+        stream_autoplay?: true
     }
   end
 
