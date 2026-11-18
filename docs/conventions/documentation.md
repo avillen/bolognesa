@@ -42,5 +42,5 @@ Edit the repository Markdown directly, using the normal Git review workflow. Edi
 - Use descriptive filenames and relative links. Keep an index for collections of decision records.
 - Prefer editing the current document over appending a dated log.
 - Remove links when their targets are removed; check all Markdown links after reorganizing documentation.
-- Do not add tool-specific documentation directories. Tool workflows must follow the repository's document structure.
+- Do not add tool-specific documentation directories. Tool workflows must follow the repository's document structure. Exception: `docs/agents/` holds the configuration that agent skills read from the root `AGENTS.md`, so the skills can be removed as a unit.
 - Document only behavior that exists or a clearly labeled open question. Avoid duplicating instructions from the root README or contributor guide.

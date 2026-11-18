@@ -18,7 +18,7 @@ A Phoenix web application for learning and home use. Bolognesa's decisions and c
 
 ## Documentation organization
 
-Consult [docs/README.md](docs/README.md) and follow the [documentation convention](docs/conventions/documentation.md). Keep public content in English and free of private details. Track work and release scope in GitHub issues and milestones. When temporary work is finished, remove its notes or summarize lasting information in a convention or decision. Do not create directories for individual tools or duplicate instructions in agent-specific files.
+Consult [docs/README.md](docs/README.md) and follow the [documentation convention](docs/conventions/documentation.md). Keep public content in English and free of private details. Track work and release scope in GitHub issues and milestones. When temporary work is finished, remove its notes or summarize lasting information in a convention or decision. Do not create directories for individual tools (except `docs/agents/`, see [Agent skills](#agent-skills)) or duplicate instructions in agent-specific files.
 
 ## Conventions by area
 
@@ -33,6 +33,20 @@ Consult [docs/README.md](docs/README.md) and follow the [documentation conventio
 | Project documentation | [Documentation](docs/conventions/documentation.md) |
 
 Read all applicable conventions before modifying an area.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub issues for `avillen/bolognesa`, via `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+`needs-triage`, `question` (needs-info), `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context; decisions live in `docs/decisions/`. See `docs/agents/domain.md`.
 
 ## Operations
 
