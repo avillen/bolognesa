@@ -128,10 +128,7 @@ defmodule BolognesaWeb.InterfaceLanguageTest do
           kind: :movie,
           entry_id: 1,
           viewer_id: 1,
-          selected_file_id: 1,
-          transcode_ready?: false,
-          transcode_paused?: false,
-          transcode_autoplay?: false
+          attempt: %BolognesaWeb.LiveSupport.PlaybackAttempt{file_id: 1}
         )
       end)
 

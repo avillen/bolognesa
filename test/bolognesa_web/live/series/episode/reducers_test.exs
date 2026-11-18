@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Series.Episode.ReducersTest do
   use ExUnit.Case, async: true
   alias Bolognesa.Series.Domain.ReadModels.Episode
+  alias BolognesaWeb.LiveSupport.PlaybackAttempt
   alias BolognesaWeb.Series.Episode.Live
   alias BolognesaWeb.Series.Episode.Reducer.Advance
   alias BolognesaWeb.Series.Episode.Reducer.ApplyAdvanceResult
@@ -14,7 +15,7 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
       assigns: %{
         __changed__: %{},
         advance_request: request,
-        transcode_session: nil,
+        playback: PlaybackAttempt.new(),
         detail: %{
           versions: [%{id: 2, part_number: 2, availability: :missing}],
           episode: %{id: 1},
@@ -36,9 +37,7 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
         __changed__: %{},
         loading?: true,
         advance_request: nil,
-        transcode_session: nil,
-        selected_file_id: 1,
-        playback_error: nil
+        playback: %PlaybackAttempt{phase: :ready, file_id: 1}
       }
     }
 
@@ -50,7 +49,7 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
       assigns: %{
         __changed__: %{},
         advance_request: make_ref(),
-        transcode_session: %{id: "active"}
+        playback: %PlaybackAttempt{session: %{id: "active"}}
       }
     }
 
@@ -62,7 +61,7 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
     request = make_ref()
 
     socket = %Phoenix.LiveView.Socket{
-      assigns: %{__changed__: %{}, advance_request: request, transcode_session: nil}
+      assigns: %{__changed__: %{}, advance_request: request, playback: PlaybackAttempt.new()}
     }
 
     {:noreply, restarted} =
@@ -86,14 +85,11 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
         __changed__: %{},
         advance_request: request,
         current_scope: %{actor: nil},
-        selected_file_id: 1,
-        playback_phase: :ready,
-        delivery_plan: nil,
         content_ref: {:episode, 1},
-        transcode_session: %{
-          id: "current",
-          duration_ms: nil,
-          file_id: 1
+        playback: %PlaybackAttempt{
+          phase: :ready,
+          file_id: 1,
+          session: %{id: "current", duration_ms: nil, file_id: 1}
         }
       }
     }
@@ -120,7 +116,7 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
         loading?: true,
         error: nil,
         detail: %{episode: %{id: 1}},
-        transcode_session: nil
+        playback: PlaybackAttempt.new()
       }
     }
 
@@ -129,7 +125,7 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
     assert updated.assigns.loading? == false
     assert updated.assigns.error =~ "100"
     assert updated.assigns.detail == nil
-    assert updated.assigns.selected_file_id == nil
+    assert updated.assigns.playback == PlaybackAttempt.new()
     assert ApplyResultCoordinator.call(socket, make_ref(), result) == socket
   end
 end

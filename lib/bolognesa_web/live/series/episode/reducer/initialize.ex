@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.Series.Episode.Reducer.Initialize do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
-  alias BolognesaWeb.LiveSupport.PlaybackState
+  alias BolognesaWeb.LiveSupport.PlaybackAttempt
 
   @spec call(Phoenix.LiveView.Socket.t(), integer()) :: Phoenix.LiveView.Socket.t()
   def call(socket, id) do
@@ -18,6 +18,6 @@ defmodule BolognesaWeb.Series.Episode.Reducer.Initialize do
     |> assign(:next_target, nil)
     |> assign(:loading?, true)
     |> assign(:error, nil)
-    |> PlaybackState.initialize()
+    |> assign(:playback, PlaybackAttempt.new())
   end
 end

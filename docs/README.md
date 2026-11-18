@@ -4,6 +4,7 @@ Start with the repository [README](../README.md). Track work and release scope i
 
 - [Video compatibility](playback.md): format limits, delivery choices, and verified devices.
 - [Playback verification](playback-testing.md): synthetic browser and FFmpeg procedures and their limits.
+- [Glossary](../GLOSSARY.md): domain terms with a precise meaning.
 - [Conventions](conventions/README.md): current backend, frontend, Elixir, Phoenix, testing, observability, documentation, and commit rules.
 - [Architecture decisions](decisions/README.md): accepted choices, rationale, and trade-offs.
 - [HLS playback optimization plan](design/hls-playback-optimization-plan.md): pending incremental work and verification gates from the streaming audit.

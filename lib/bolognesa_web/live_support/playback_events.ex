@@ -1,24 +1,30 @@
 defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
-  alias Bolognesa.Libraries, as: BolognesaLibraries
-  alias Ecto.UUID
-  alias Phoenix.Component
-  @moduledoc "Shared LiveView lifecycle for authorized direct and HLS playback."
-  alias Bolognesa.Infrastructure.Observability
-  alias Bolognesa.Playback
-  alias BolognesaWeb.LiveSupport.PlaybackControl
-  alias BolognesaWeb.LiveSupport.PlaybackDiagnostics
-  alias BolognesaWeb.LiveSupport.PlaybackState
-  alias BolognesaWeb.Params
+  @moduledoc """
+  Shared LiveView lifecycle for authorized direct and HLS playback.
 
-  @spec handle_event(binary(), PlaybackControl.capability_payload(), Phoenix.LiveView.Socket.t()) ::
+  Decodes browser events into `PlaybackAttempt` transitions held in the
+  `:playback` assign and performs the effects they return.
+  """
+  alias Bolognesa.Infrastructure.Observability
+  alias Bolognesa.Libraries
+  alias Bolognesa.Playback
+  alias BolognesaWeb.LiveSupport.PlaybackAttempt
+  alias BolognesaWeb.LiveSupport.PlaybackDiagnostics
+  alias BolognesaWeb.Params
+  alias Phoenix.Component
+
+  @type capability_payload :: map() | list() | binary() | number() | boolean() | nil
+
+  @spec handle_event(binary(), capability_payload(), Phoenix.LiveView.Socket.t()) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
+          | {:reply, map(), Phoenix.LiveView.Socket.t()}
   def handle_event("playback_diagnostic", params, socket),
     do: {:noreply, PlaybackDiagnostics.record(socket, params)}
 
   def handle_event("play", %{"file_id" => file_id}, socket) do
     case Params.positive_integer(file_id) do
       nil -> {:noreply, socket}
-      file_id -> {:noreply, PlaybackControl.select_version(socket, file_id)}
+      file_id -> {:noreply, select_version(socket, file_id)}
     end
   end
 
@@ -26,256 +32,174 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
 
   def handle_event("playback_restore", %{"session_id" => id, "position_ms" => _} = params, socket) do
     {:noreply, next} = handle_event("playback_seek", params, socket)
-    previous = socket.assigns[:transcode_session]
-    session = next.assigns[:transcode_session]
-
-    accepted =
-      not is_nil(previous) and previous.id == id and not is_nil(session) and
-        session.id != previous.id and is_nil(next.assigns[:playback_error])
-
+    accepted = PlaybackAttempt.restored?(socket.assigns.playback, next.assigns.playback, id)
     {:reply, %{accepted: accepted}, next}
   end
 
   def handle_event("playback_restore", _params, socket),
     do: {:reply, %{accepted: false}, socket}
 
-  def handle_event("playback_capabilities", params, socket),
-    do: {:noreply, PlaybackControl.accept_report(socket, params)}
+  def handle_event("playback_capabilities", params, socket) when is_map(params),
+    do: {:noreply, unless_loading(socket, &PlaybackAttempt.report(&1, params))}
+
+  def handle_event("playback_capabilities", _params, socket), do: {:noreply, socket}
 
   def handle_event("playback_compatible", _params, socket),
-    do: {:noreply, PlaybackControl.play_compatible(socket)}
+    do: {:noreply, unless_loading(socket, &PlaybackAttempt.play_compatible/1)}
 
-  def handle_event("playback_original", _params, socket) do
-    if socket.assigns.selected_file_id do
-      case Playback.prepare_original(
-             socket.assigns.current_scope.actor,
-             socket.assigns.content_ref,
-             socket.assigns.selected_file_id
-           ) do
-        {:ok, :direct} ->
-          PlaybackControl.stop_transcode(socket, :version_selected)
+  def handle_event("playback_original", _params, socket),
+    do: {:noreply, transition(socket, &PlaybackAttempt.play_original/1)}
 
-          {:noreply,
-           socket
-           |> Component.assign(:playback_attempt_id, UUID.generate())
-           |> Component.assign(:capability_report, nil)
-           |> Component.assign(:compatible_playback_available?, false)
-           |> Component.assign(:recovery_used?, true)
-           |> Component.assign(:delivery_plan, nil)
-           |> PlaybackState.direct(socket.assigns.selected_file_id)}
+  def handle_event("playback_refresh", _params, socket),
+    do: {:noreply, transition(socket, &PlaybackAttempt.refresh/1)}
 
-        {:error, reason} ->
-          {:noreply, PlaybackState.preparation_failed(socket, reason)}
-      end
-    else
-      {:noreply, socket}
-    end
-  end
+  def handle_event("playback_error", params, socket),
+    do: {:noreply, unless_loading(socket, &PlaybackAttempt.client_failed(&1, :file, params))}
 
-  def handle_event("playback_refresh", _params, socket) do
-    if socket.assigns.selected_file_id && !socket.assigns.inspection_refresh_used? do
-      actor = socket.assigns.current_scope.actor
-      socket = Component.assign(socket, :inspection_refresh_used?, true)
+  def handle_event("transcode_error", params, socket),
+    do: {:noreply, unless_loading(socket, &PlaybackAttempt.client_failed(&1, :session, params))}
 
-      with {:ok, source} <-
-             Playback.start_video(
-               actor,
-               socket.assigns.content_ref,
-               socket.assigns.selected_file_id
-             ),
-           {:ok, _} <-
-             BolognesaLibraries.request_inspection_refresh(
-               actor,
-               socket.assigns.selected_file_id,
-               source.revision
-             ) do
-        {:noreply, Component.assign(socket, :inspection_refresh_requested?, true)}
-      else
-        {:error, reason} -> {:noreply, PlaybackState.preparation_failed(socket, reason)}
-      end
-    else
-      {:noreply, socket}
-    end
-  end
+  def handle_event("playback_seek", params, socket),
+    do: {:noreply, transition(socket, &PlaybackAttempt.seek(&1, params))}
 
-  def handle_event("playback_error", %{"file_id" => id} = params, socket) do
-    if socket.assigns.selected_file_id && to_string(socket.assigns.selected_file_id) == id &&
-         is_nil(socket.assigns.transcode_session) do
-      client_failure(socket, params)
-    else
-      {:noreply, socket}
-    end
-  end
+  def handle_event("playback_pause", %{"session_id" => id}, socket),
+    do: {:noreply, transition(socket, &PlaybackAttempt.pause(&1, id))}
 
-  def handle_event("playback_error", _params, socket), do: {:noreply, socket}
+  def handle_event("playback_resume", params, socket),
+    do: {:noreply, transition(socket, &PlaybackAttempt.resume(&1, params))}
 
-  def handle_event(
-        "playback_seek",
-        %{"session_id" => id, "position_ms" => position} = params,
-        socket
-      ) do
-    session = socket.assigns.transcode_session
-    offset = session && offset(position, session.duration_ms)
-
-    if offset && session.id == id && socket.assigns.playback_phase == :ready do
-      next = PlaybackControl.deliver(socket, offset, :seek)
-      {:noreply, Component.assign(next, :transcode_autoplay?, params["playing"] == "true")}
-    else
-      {:noreply, socket}
-    end
-  end
-
-  def handle_event("playback_pause", %{"session_id" => id}, socket) do
-    case socket.assigns.transcode_session do
-      %{id: ^id} ->
-        {:noreply, PlaybackState.paused(socket, true)}
-
-      _ ->
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("playback_resume", %{"session_id" => id, "position_ms" => position}, socket) do
-    case socket.assigns.transcode_session do
-      %{id: ^id} = session ->
-        resume_session(socket, session, position)
-
-      _ ->
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("playback_ended", %{"file_id" => _id}, socket), do: {:noreply, socket}
-
-  def handle_event("playback_ended", %{"session_id" => id}, socket) do
-    case socket.assigns.transcode_session do
-      %{id: ^id} ->
-        PlaybackControl.stop_transcode(socket, :ended)
-        {:noreply, PlaybackState.paused(socket, true)}
-
-      _ ->
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("transcode_error", %{"session_id" => id} = params, socket) do
-    case socket.assigns.transcode_session do
-      %{id: ^id} -> client_failure(socket, params)
-      _ -> {:noreply, socket}
-    end
-  end
-
-  def handle_event("transcode_error", _params, socket), do: {:noreply, socket}
+  def handle_event("playback_ended", params, socket),
+    do: {:noreply, transition(socket, &PlaybackAttempt.ended(&1, params))}
 
   @spec handle_info(
           {:transcode_poll | :capability_timeout, binary()},
           Phoenix.LiveView.Socket.t()
         ) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
-  def handle_info({:capability_timeout, generation}, socket) do
-    if socket.assigns.playback_phase == :checking &&
-         socket.assigns.playback_probe.generation == generation do
-      {:noreply, PlaybackState.preparation_failed(socket, :detection_unknown)}
-    else
-      {:noreply, socket}
-    end
-  end
+  def handle_info({:capability_timeout, generation}, socket),
+    do: {:noreply, transition(socket, &PlaybackAttempt.capability_timed_out(&1, generation))}
 
-  def handle_info({:transcode_poll, id}, socket) do
-    case {socket.assigns.transcode_session, socket.assigns.transcode_ready?,
-          socket.assigns.playback_phase} do
-      {%{id: ^id}, false, :preparing} -> poll_transcode(socket, id)
-      _ -> {:noreply, socket}
-    end
-  end
+  def handle_info({:transcode_poll, id}, socket),
+    do: {:noreply, transition(socket, &PlaybackAttempt.poll_due(&1, id))}
 
   @spec terminate(term(), Phoenix.LiveView.Socket.t()) :: :ok
   def terminate(reason, socket) do
-    session = socket.assigns[:transcode_session]
+    attempt = socket.assigns[:playback] || PlaybackAttempt.new()
+    session = attempt.session
 
     :telemetry.execute([:bolognesa, :playback, :liveview, :terminated], %{count: 1}, %{
       session_id: session && session.id,
-      file_id: socket.assigns[:selected_file_id],
+      file_id: attempt.file_id,
       termination_reason: Observability.exit_reason(reason)
     })
 
-    if session, do: PlaybackControl.stop_transcode(socket, :liveview_terminated)
+    if session, do: perform({:stop_session, session.id, :liveview_terminated}, socket)
     :ok
   end
 
-  defp poll_transcode(socket, id) do
-    case Playback.video_transcode_status(id) do
-      :ready ->
-        {:noreply, PlaybackState.ready(socket)}
-
-      :waiting ->
-        wait_or_timeout(socket, id)
-
-      _ ->
-        {:noreply, PlaybackState.transcode_failed(socket, :preparation)}
-    end
-  end
-
-  defp wait_or_timeout(socket, id) do
-    if System.monotonic_time(:millisecond) < socket.assigns.preparation_deadline do
-      Process.send_after(self(), {:transcode_poll, id}, 500)
-
-      {:noreply,
-       Component.assign(
-         socket,
-         :transcode_poll_attempts,
-         socket.assigns.transcode_poll_attempts + 1
-       )}
+  @doc "Starts a new attempt for one of the loaded detail's available versions."
+  @spec select_version(Phoenix.LiveView.Socket.t(), pos_integer()) :: Phoenix.LiveView.Socket.t()
+  def select_version(socket, file_id) do
+    with %{versions: versions} <- socket.assigns.detail,
+         true <- file_id > 0,
+         %{availability: :available} <- Enum.find(versions, &(&1.id == file_id)) do
+      transition(socket, &PlaybackAttempt.select(&1, file_id))
     else
-      PlaybackControl.stop_transcode(socket, :preparation_timeout)
-      {:noreply, PlaybackState.transcode_failed(socket, :preparation)}
+      _ -> socket
     end
   end
 
-  defp resume_session(%{assigns: %{playback_phase: phase}} = socket, _session, _position)
-       when phase != :ready, do: {:noreply, socket}
+  @doc "Stops any displayed session and starts over with no selected file."
+  @spec reset(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
+  def reset(socket), do: transition(socket, &PlaybackAttempt.reset/1)
 
-  defp resume_session(socket, session, position) do
-    case Playback.resume_video_transcode(socket.assigns.current_scope.actor, session.id) do
-      :ok -> {:noreply, PlaybackState.paused(socket, false)}
-      _ -> resume_expired(socket, session, position)
+  @doc "Ends the displayed stream once the browser reports it finished."
+  @spec ended(Phoenix.LiveView.Socket.t(), String.t()) :: Phoenix.LiveView.Socket.t()
+  def ended(socket, session_id),
+    do: transition(socket, &PlaybackAttempt.ended(&1, %{"session_id" => session_id}))
+
+  # The screen's loading flag is not part of the attempt.
+  defp unless_loading(socket, fun),
+    do: if(socket.assigns[:loading?], do: socket, else: transition(socket, fun))
+
+  defp transition(socket, fun) do
+    {attempt, effects} = fun.(socket.assigns.playback)
+    run(socket, attempt, effects)
+  end
+
+  defp run(socket, attempt, effects) do
+    socket = if attempt == socket.assigns.playback, do: socket, else: assign(socket, attempt)
+    Enum.reduce(effects, socket, &execute/2)
+  end
+
+  defp execute(effect, socket) do
+    case perform(effect, socket) do
+      :ok ->
+        socket
+
+      {:result, result} ->
+        now = System.monotonic_time(:millisecond)
+        {attempt, effects} = PlaybackAttempt.resolve(socket.assigns.playback, effect, result, now)
+        run(socket, attempt, effects)
     end
   end
 
-  defp resume_expired(socket, session, position) do
-    case offset(position, session.duration_ms) do
-      nil -> {:noreply, socket}
-      offset -> {:noreply, PlaybackControl.deliver(socket, offset, :session_replaced)}
-    end
+  defp assign(socket, attempt), do: Component.assign(socket, :playback, attempt)
+
+  defp perform({:schedule_capability_timeout, generation, after_ms}, _socket) do
+    Process.send_after(self(), {:capability_timeout, generation}, after_ms)
+    :ok
   end
 
-  defp client_failure(socket, params) do
-    with true <- socket.assigns.playback_phase == :ready and !socket.assigns[:loading?],
-         attempt when is_binary(attempt) <- socket.assigns[:playback_attempt_id],
-         ^attempt <- params["attempt_id"],
-         offset when is_integer(offset) <-
-           offset(params["position_ms"], socket.assigns[:playback_duration_ms]) do
-      handle_client_failure(socket, params["error_kind"], offset)
+  defp perform({:schedule_poll, id, after_ms}, _socket) do
+    Process.send_after(self(), {:transcode_poll, id}, after_ms)
+    :ok
+  end
+
+  defp perform({:stop_session, id, reason}, socket) do
+    Playback.stop_video_transcode(actor(socket), id, reason)
+    :ok
+  end
+
+  defp perform({:load_candidates, file_id}, socket),
+    do: {:result, Playback.video_candidates(actor(socket), content_ref(socket), file_id)}
+
+  defp perform({:select_plan, _purpose, file_id, candidates, raw}, socket) do
+    {:result,
+     Playback.select_video_plan(
+       actor(socket),
+       content_ref(socket),
+       file_id,
+       candidates,
+       raw,
+       raw["generation"]
+     )}
+  end
+
+  defp perform({:deliver, file_id, plan, offset_ms, reason, _autoplay}, socket) do
+    {:result,
+     Playback.prepare_video(actor(socket), content_ref(socket), file_id, plan, offset_ms, reason)}
+  end
+
+  defp perform({:fetch_status, id}, _socket), do: {:result, Playback.video_transcode_status(id)}
+
+  defp perform({:prepare_original, file_id}, socket),
+    do: {:result, Playback.prepare_original(actor(socket), content_ref(socket), file_id)}
+
+  defp perform({:refresh_inspection, file_id}, socket) do
+    actor = actor(socket)
+
+    with {:ok, source} <- Playback.start_video(actor, content_ref(socket), file_id),
+         {:ok, _} <- Libraries.request_inspection_refresh(actor, file_id, source.revision) do
+      {:result, :ok}
     else
-      _ -> {:noreply, socket}
+      {:error, reason} -> {:result, {:error, reason}}
     end
   end
 
-  defp handle_client_failure(socket, "media", offset) do
-    {:noreply, PlaybackControl.recover(socket, offset)}
-  end
+  defp perform({:resume_session, id, _offset}, socket),
+    do: {:result, Playback.resume_video_transcode(actor(socket), id)}
 
-  defp handle_client_failure(socket, kind, _offset)
-       when kind in ["network", "aborted", "unknown"] do
-    PlaybackControl.stop_transcode(socket, :client_error)
-    {:noreply, PlaybackState.transcode_failed(socket, :interrupted)}
-  end
-
-  defp handle_client_failure(socket, _kind, _offset), do: {:noreply, socket}
-
-  # Offsets are whole-file milliseconds within the media duration when it is known.
-  defp offset(value, duration_ms) do
-    offset = Params.integer(value, 0..2_147_483_647)
-    if offset && (is_nil(duration_ms) or offset <= duration_ms), do: offset
-  end
+  defp actor(socket), do: socket.assigns.current_scope.actor
+  defp content_ref(socket), do: socket.assigns.content_ref
 end

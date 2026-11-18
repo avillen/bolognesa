@@ -62,7 +62,7 @@ defmodule BolognesaWeb.Series.Episode.Live do
       {:noreply, updated} = handle_playback_action("play", params, socket)
 
       updated =
-        if updated.assigns.selected_file_id == version.id,
+        if updated.assigns.playback.file_id == version.id,
           do: Parts.assign_part(updated, version.part_number),
           else: updated
 

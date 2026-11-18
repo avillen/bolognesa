@@ -4,7 +4,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
   import Phoenix.LiveView, only: [start_async: 3]
   alias Bolognesa.Movies
 
-  alias BolognesaWeb.LiveSupport.PlaybackState
+  alias BolognesaWeb.LiveSupport.PlaybackAttempt
 
   @spec call(
           Phoenix.LiveView.Socket.t(),
@@ -20,7 +20,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
     |> assign(:detail, nil)
     |> assign(:loading?, true)
     |> assign(:error, nil)
-    |> PlaybackState.initialize()
+    |> assign(:playback, PlaybackAttempt.new())
     |> assign(:request_id, request_id)
     |> start_async({:movie, request_id}, fn -> Movies.get_movie(actor, id) end)
   end

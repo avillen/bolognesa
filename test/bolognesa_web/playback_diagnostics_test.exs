@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.PlaybackDiagnosticsTest do
   alias Ecto.UUID
   use ExUnit.Case, async: true
+  alias BolognesaWeb.LiveSupport.PlaybackAttempt
   alias BolognesaWeb.LiveSupport.PlaybackEvents
 
   test "browser observations are bounded and do not change playback" do
@@ -14,8 +15,7 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
     socket = %Phoenix.LiveView.Socket{
       assigns: %{
         __changed__: %{},
-        selected_file_id: 3,
-        transcode_session: %{id: id},
+        playback: %PlaybackAttempt{file_id: 3, session: %{id: id}},
         playback_diagnostic_count: 0
       }
     }
@@ -35,7 +35,7 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
     }
 
     assert {:noreply, next} = PlaybackEvents.handle_event("playback_diagnostic", params, socket)
-    assert next.assigns.transcode_session == socket.assigns.transcode_session
+    assert next.assigns.playback == socket.assigns.playback
     assert_receive {^event, %{count: 1}, metadata}
     assert metadata.session_id == id
     assert metadata.tab_id == tab
@@ -124,7 +124,9 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
   end
 
   test "a stale recovery seek receives an explicit refusal" do
-    socket = %Phoenix.LiveView.Socket{assigns: %{__changed__: %{}, transcode_session: nil}}
+    socket = %Phoenix.LiveView.Socket{
+      assigns: %{__changed__: %{}, playback: PlaybackAttempt.new()}
+    }
 
     assert {:reply, %{accepted: false}, ^socket} =
              PlaybackEvents.handle_event(
@@ -142,9 +144,9 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
     socket = %Phoenix.LiveView.Socket{
       assigns: %{
         __changed__: %{},
-        transcode_session: %{
-          id: UUID.generate(),
-          duration_ms: nil
+        playback: %PlaybackAttempt{
+          phase: :ready,
+          session: %{id: UUID.generate(), duration_ms: nil}
         }
       }
     }

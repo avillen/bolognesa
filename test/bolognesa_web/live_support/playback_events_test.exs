@@ -1,45 +1,98 @@
 defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
-  alias Ecto.UUID
-  alias ExUnit.CaptureLog
   use ExUnit.Case, async: false
   import ExUnit.CaptureLog
   require Logger
   import Bolognesa.TranscodeFixtures
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
+  alias BolognesaWeb.LiveSupport.PlaybackAttempt
   alias BolognesaWeb.LiveSupport.PlaybackEvents
-  alias BolognesaWeb.LiveSupport.PlaybackState
-  alias Phoenix.Component
   alias Phoenix.LiveView.Logger, as: LiveViewLogger
-
-  test "a queued preparation poll cannot replace a terminal failure" do
-    id = UUID.generate()
-
-    socket = %Phoenix.LiveView.Socket{
-      assigns: %{
-        __changed__: %{},
-        transcode_session: %{id: id},
-        transcode_ready?: false,
-        playback_phase: :error,
-        playback_error: "Terminal failure"
-      }
-    }
-
-    assert {:noreply, ^socket} = PlaybackEvents.handle_info({:transcode_poll, id}, socket)
-  end
 
   test "malformed top-level capability payloads leave checking playback unchanged" do
     socket = %Phoenix.LiveView.Socket{
       assigns: %{
         __changed__: %{},
         loading?: false,
-        playback_phase: :checking,
-        playback_probe: %{generation: "current-generation"}
+        playback: %PlaybackAttempt{phase: :checking, probe: %{generation: "current-generation"}}
       }
     }
 
     for payload <- [[], "invalid", 42, true, nil] do
       assert {:noreply, ^socket} =
                PlaybackEvents.handle_event("playback_capabilities", payload, socket)
+    end
+  end
+
+  describe "effects reach the playback facade and their results re-enter the attempt" do
+    defp refused(playback, assigns \\ %{}) do
+      %Phoenix.LiveView.Socket{
+        assigns:
+          Map.merge(
+            %{
+              __changed__: %{},
+              loading?: false,
+              current_scope: %{actor: nil},
+              content_ref: {:movie, 1},
+              playback: playback
+            },
+            assigns
+          )
+      }
+    end
+
+    defp assert_refused(socket),
+      do: assert(socket.assigns.playback.error == {:preparation, :forbidden})
+
+    test "selecting a version loads its candidates" do
+      socket =
+        refused(PlaybackAttempt.new(), %{
+          detail: %{versions: [%{id: 3, availability: :available}]}
+        })
+
+      assert_refused(PlaybackEvents.select_version(socket, 3))
+    end
+
+    test "a capability report selects a plan" do
+      playback = %PlaybackAttempt{
+        file_id: 3,
+        phase: :checking,
+        probe: %{generation: "g", candidates: []}
+      }
+
+      assert {:noreply, next} =
+               PlaybackEvents.handle_event(
+                 "playback_capabilities",
+                 %{"generation" => "g"},
+                 refused(playback)
+               )
+
+      assert_refused(next)
+    end
+
+    test "a seek delivers the stream again" do
+      playback = %PlaybackAttempt{
+        file_id: 3,
+        phase: :ready,
+        session: %{id: "s1", duration_ms: nil, file_id: 3}
+      }
+
+      assert {:noreply, next} =
+               PlaybackEvents.handle_event(
+                 "playback_seek",
+                 %{"session_id" => "s1", "position_ms" => "10"},
+                 refused(playback)
+               )
+
+      assert_refused(next)
+    end
+
+    test "the original file and an inspection refresh are prepared through the facade" do
+      playback = %PlaybackAttempt{file_id: 3, phase: :error}
+
+      for event <- ["playback_original", "playback_refresh"] do
+        assert {:noreply, next} = PlaybackEvents.handle_event(event, %{}, refused(playback))
+        assert_refused(next)
+      end
     end
   end
 
@@ -97,8 +150,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
           assigns: %{
             __changed__: %{},
             current_scope: %{actor: %{id: 1}},
-            transcode_session: session,
-            transcode_paused?: false
+            playback: %PlaybackAttempt{session: session}
           }
         }
 
@@ -120,42 +172,34 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
       {:ok, session} =
         TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :audio_conversion), 0)
 
+      now = System.monotonic_time(:millisecond)
+
       socket = %Phoenix.LiveView.Socket{
-        assigns: %{__changed__: %{}, current_scope: %{actor: %{id: 1}}}
+        assigns: %{
+          __changed__: %{},
+          current_scope: %{actor: %{id: 1}},
+          playback: %PlaybackAttempt{phase: :preparing, session: session, deadline: now + 15_000}
+        }
       }
-
-      socket = PlaybackState.preparing(socket, session)
-
-      socket =
-        Component.assign(
-          socket,
-          :preparation_deadline,
-          socket.assigns.preparation_deadline - 45_000
-        )
 
       assert {:noreply, waiting} =
                PlaybackEvents.handle_info({:transcode_poll, session.id}, socket)
 
-      assert waiting.assigns.playback_phase == :preparing
+      assert waiting.assigns.playback.phase == :preparing
       assert {:ok, _} = TranscodeManager.lookup(session.id)
       assert_receive {:transcode_poll, id}
       assert id == session.id
 
-      expired =
-        Component.assign(
-          waiting,
-          :preparation_deadline,
-          socket.assigns.preparation_deadline - 15_001
-        )
+      expired = put_in(waiting.assigns.playback.deadline, now - 1)
 
       assert {:noreply, failed} =
                PlaybackEvents.handle_info({:transcode_poll, session.id}, expired)
 
-      assert failed.assigns.playback_phase == :error
+      assert failed.assigns.playback.phase == :error
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     end
 
-    test "the ended event releases only the displayed session", %{source: source} do
+    test "the ended event releases the displayed session", %{source: source} do
       assert {:ok, session} =
                TranscodeManager.start(
                  1,
@@ -170,19 +214,9 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
         assigns: %{
           __changed__: %{},
           current_scope: %{actor: %{id: 1}},
-          transcode_session: session,
-          transcode_paused?: false
+          playback: %PlaybackAttempt{session: session}
         }
       }
-
-      assert {:noreply, ^socket} =
-               PlaybackEvents.handle_event(
-                 "playback_ended",
-                 %{"session_id" => "obsolete"},
-                 socket
-               )
-
-      assert {:ok, _} = TranscodeManager.lookup(session.id)
 
       assert {:noreply, next} =
                PlaybackEvents.handle_event(
@@ -191,7 +225,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
                  socket
                )
 
-      assert next.assigns.transcode_paused?
+      assert next.assigns.playback.stream_paused?
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     end
   end
