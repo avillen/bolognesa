@@ -72,7 +72,7 @@
           <span>{gettext("Episodio %{number}", number: @detail.episode.number)}</span>
           <span
             :for={version <- @playback_versions}
-            :if={version.id == @selected_file_id && version.duration_ms}
+            :if={version.id == @playback.file_id && version.duration_ms}
           >
             <span aria-hidden="true">·</span>
             {gettext("%{minutes} min", minutes: div(version.duration_ms, 60_000))}
@@ -106,21 +106,8 @@
           @detail.episode.still_path &&
             "https://image.tmdb.org/t/p/w780#{@detail.episode.still_path}"
         }
+        attempt={@playback}
         entry_id={elem(@content_ref, 1)}
-        playback_phase={@playback_phase}
-        selected_file_id={@selected_file_id}
-        transcode_session={@transcode_session}
-        playback_attempt_id={@playback_attempt_id}
-        playback_probe={@playback_probe}
-        delivery_plan={@delivery_plan}
-        compatible_playback_available?={@compatible_playback_available?}
-        inspection_refresh_used?={@inspection_refresh_used?}
-        inspection_refresh_requested?={@inspection_refresh_requested?}
-        transcode_ready?={@transcode_ready?}
-        transcode_paused?={@transcode_paused?}
-        transcode_autoplay?={@transcode_autoplay?}
-        playback_error={@playback_error}
-        playback_error_reason={@playback_error_reason}
       />
       <EpisodeNavigation.episode_navigation
         :if={@previous_target || @next_target}
@@ -175,18 +162,13 @@
         <p class="mb-4 text-xs leading-6 text-muted">
           {gettext("Las versiones pueden proceder de otras bibliotecas.")}
         </p>
-        <Player.playback_mode
-          playback_phase={@playback_phase}
-          selected_file_id={@selected_file_id}
-          transcode_session={@transcode_session}
-          playback_error={@playback_error}
-        />
+        <Player.playback_mode attempt={@playback} />
         <div id="episode-versions" class="space-y-4">
           <VersionCard.version_card
             :for={version <- @playback_versions}
             version={version}
             parts={@parts}
-            selected_file_id={@selected_file_id}
+            selected_file_id={@playback.file_id}
           />
         </div>
         <p :if={@detail.versions == []} id="episode-no-versions" class="mt-4 text-sm text-muted">

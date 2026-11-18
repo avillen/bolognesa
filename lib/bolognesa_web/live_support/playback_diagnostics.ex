@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
+  alias BolognesaWeb.LiveSupport.PlaybackAttempt
   alias Ecto.UUID
   @moduledoc "Validate bounded, untrusted browser observations without affecting playback."
   import Phoenix.Component, only: [assign: 3]
@@ -60,9 +61,8 @@ defmodule BolognesaWeb.LiveSupport.PlaybackDiagnostics do
   end
 
   defp validate(socket, params) do
-    session = socket.assigns[:transcode_session]
+    %{session: session, file_id: file_id} = socket.assigns[:playback] || PlaybackAttempt.new()
     expected_session = session && session.id
-    file_id = socket.assigns[:selected_file_id]
 
     with true <- is_integer(file_id) and params["file_id"] == Integer.to_string(file_id),
          {:ok, extra} <- extra_fields(params),

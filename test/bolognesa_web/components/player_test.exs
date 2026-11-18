@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.PlayerTest do
+  alias BolognesaWeb.LiveSupport.PlaybackAttempt
   alias BolognesaWeb.Player, as: BolognesaWebPlayer
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: true
@@ -11,13 +12,11 @@ defmodule BolognesaWeb.PlayerTest do
         kind: :movie,
         entry_id: 1,
         viewer_id: 1,
-        selected_file_id: 2,
-        playback_phase: :checking,
-        playback_probe: %{generation: "g1", candidates: []},
-        delivery_plan: nil,
-        transcode_ready?: false,
-        transcode_paused?: false,
-        transcode_autoplay?: false
+        attempt: %PlaybackAttempt{
+          file_id: 2,
+          phase: :checking,
+          probe: %{generation: "g1", candidates: []}
+        }
       )
 
     assert html =~ ~s(phx-hook="VideoPlayer")

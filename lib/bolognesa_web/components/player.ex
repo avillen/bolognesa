@@ -5,29 +5,33 @@ defmodule BolognesaWeb.Player do
   attr :kind, :atom, required: true
   attr :entry_id, :integer, required: true
   attr :viewer_id, :integer, required: true
-  attr :selected_file_id, :integer, default: nil
-  attr :playback_phase, :atom, default: :idle
-  attr :playback_attempt_id, :string, default: nil
-  attr :playback_probe, :map, default: nil
-  attr :compatible_playback_available?, :boolean, default: false
-  attr :delivery_plan, :any, default: nil
-  attr :inspection_refresh_used?, :boolean, default: false
-  attr :inspection_refresh_requested?, :boolean, default: false
-  attr :transcode_session, :any, default: nil
-  attr :transcode_ready?, :boolean, required: true
-  attr :transcode_paused?, :boolean, required: true
-  attr :transcode_autoplay?, :boolean, required: true
-  attr :playback_error, :string, default: nil
-  attr :playback_error_reason, :string, default: nil
+  attr :attempt, BolognesaWeb.LiveSupport.PlaybackAttempt, required: true
   attr :class, :string, default: "mt-10 space-y-3"
   attr :poster, :string, default: nil
   attr :retry_file_id, :integer, default: nil
   @spec player(map()) :: Phoenix.LiveView.Rendered.t()
   def player(assigns) do
+    attempt = assigns.attempt
+
     assigns =
       assigns
-      |> assign(:video_id, video_id(assigns))
-      |> assign(:video_src, video_src(assigns))
+      |> assign(
+        selected_file_id: attempt.file_id,
+        playback_phase: attempt.phase,
+        playback_attempt_id: attempt.id,
+        playback_probe: attempt.probe,
+        delivery_plan: attempt.plan,
+        compatible_playback_available?: attempt.compatible_available?,
+        inspection_refresh_used?: attempt.refresh_used?,
+        inspection_refresh_requested?: attempt.refresh_requested?,
+        transcode_session: attempt.session,
+        transcode_ready?: attempt.ready?,
+        transcode_paused?: attempt.paused?,
+        transcode_autoplay?: attempt.autoplay?,
+        playback_error: error_message(attempt.error),
+        playback_error_reason: error_reason(attempt.error)
+      )
+      |> then(&assign(&1, video_id: video_id(&1), video_src: video_src(&1)))
 
     ~H"""
     <section
@@ -150,16 +154,15 @@ defmodule BolognesaWeb.Player do
     """
   end
 
-  attr :playback_phase, :atom, default: :idle
-  attr :selected_file_id, :integer, default: nil
-  attr :transcode_session, :any, default: nil
-  attr :playback_error, :string, default: nil
+  attr :attempt, BolognesaWeb.LiveSupport.PlaybackAttempt, required: true
 
   @spec playback_mode(map()) :: Phoenix.LiveView.Rendered.t()
   def playback_mode(assigns) do
+    assigns = assign(assigns, :transcode_session, assigns.attempt.session)
+
     ~H"""
     <p
-      :if={@selected_file_id && @playback_phase in [:ready, :preparing] && !@playback_error}
+      :if={@attempt.file_id && @attempt.phase in [:ready, :preparing] && !@attempt.error}
       id="playback-mode"
       class="text-xs leading-6 text-muted"
     >
@@ -180,6 +183,40 @@ defmodule BolognesaWeb.Player do
     </p>
     """
   end
+
+  @file_unavailable [:missing, :source_changed, :source_inaccessible, :unreadable, :unsafe_entry]
+
+  defp error_message(nil), do: nil
+
+  defp error_message({:preparation, reason}) when reason in @file_unavailable,
+    do: gettext("El archivo ya no está disponible. Revisa la biblioteca y vuelve a escanear.")
+
+  defp error_message({:preparation, :metadata_required}),
+    do: gettext("Faltan datos técnicos. Actualiza el análisis o prueba el archivo original.")
+
+  defp error_message({:preparation, :no_video}),
+    do: gettext("Este archivo no contiene una pista de vídeo reproducible.")
+
+  defp error_message({:preparation, :detection_unknown}),
+    do: gettext("No se pudo detectar la compatibilidad de este navegador.")
+
+  defp error_message({:preparation, reason})
+       when reason in [:unsupported, :unsupported_conversion],
+       do: gettext("Este navegador no admite una versión segura de este vídeo.")
+
+  defp error_message({:transcode, :interrupted}),
+    do: gettext("La reproducción se ha interrumpido. Vuelve a intentarlo.")
+
+  defp error_message(_error),
+    do: gettext("No se pudo preparar esta versión. Vuelve a intentarlo.")
+
+  defp error_reason(nil), do: nil
+
+  defp error_reason({:preparation, reason}) when reason in @file_unavailable,
+    do: "file_unavailable"
+
+  defp error_reason({:preparation, _reason}), do: "preparation_failed"
+  defp error_reason({:transcode, _stage}), do: "transcode_failed"
 
   defp video_id(%{transcode_session: %{id: id}, prefix: prefix}),
     do: "#{prefix}-video-#{id}"

@@ -2,8 +2,7 @@ defmodule BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator do
   @moduledoc "Applies the loaded episode and, when it loads, selects the requested part."
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
-  alias BolognesaWeb.LiveSupport.PlaybackControl
-  alias BolognesaWeb.LiveSupport.PlaybackState
+  alias BolognesaWeb.LiveSupport.PlaybackEvents
   alias BolognesaWeb.Series.Episode.Reducer.SelectPart
 
   @spec call(Phoenix.LiveView.Socket.t(), reference(), term()) :: Phoenix.LiveView.Socket.t()
@@ -31,10 +30,8 @@ defmodule BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator do
   defp apply_result(socket, _), do: failed(socket, gettext("No se encontró el episodio."))
 
   defp failed(socket, message) do
-    PlaybackControl.stop_transcode(socket, :version_selected)
-
     socket
-    |> PlaybackState.initialize()
+    |> PlaybackEvents.reset()
     |> assign(:detail, nil)
     |> assign(:playback_versions, [])
     |> assign(:loading?, false)

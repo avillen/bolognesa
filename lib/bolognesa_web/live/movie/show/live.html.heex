@@ -41,21 +41,8 @@
         retry_file_id={
           Enum.find_value(@detail.versions, &(&1.availability == :available && &1.id))
         }
+        attempt={@playback}
         entry_id={elem(@content_ref, 1)}
-        playback_phase={@playback_phase}
-        selected_file_id={@selected_file_id}
-        transcode_session={@transcode_session}
-        playback_attempt_id={@playback_attempt_id}
-        playback_probe={@playback_probe}
-        delivery_plan={@delivery_plan}
-        compatible_playback_available?={@compatible_playback_available?}
-        inspection_refresh_used?={@inspection_refresh_used?}
-        inspection_refresh_requested?={@inspection_refresh_requested?}
-        transcode_ready?={@transcode_ready?}
-        transcode_paused?={@transcode_paused?}
-        transcode_autoplay?={@transcode_autoplay?}
-        playback_error={@playback_error}
-        playback_error_reason={@playback_error_reason}
       />
       <section id="movie-synopsis" class="movie-synopsis">
         <h2 class="mb-3 text-base font-semibold text-ink">{gettext("Sinopsis")}</h2>
@@ -74,12 +61,7 @@
         phx-mounted={JS.ignore_attributes("open")}
       >
         <summary>{gettext("Opciones de reproducción")}</summary>
-        <Player.playback_mode
-          playback_phase={@playback_phase}
-          selected_file_id={@selected_file_id}
-          transcode_session={@transcode_session}
-          playback_error={@playback_error}
-        />
+        <Player.playback_mode attempt={@playback} />
         <h2 class="movie-versions-heading text-xl font-semibold text-ink">
           {gettext("Versiones en tu biblioteca")}
         </h2>
@@ -87,7 +69,7 @@
           <VersionCard.card
             :for={version <- @detail.versions}
             version={version}
-            selected_file_id={@selected_file_id}
+            selected_file_id={@playback.file_id}
           />
         </div>
         <p :if={@detail.versions == []} id="movie-no-versions" class="mt-4 text-sm text-muted">
