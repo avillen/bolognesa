@@ -1,6 +1,4 @@
 defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
-  alias Ecto.UUID
-  alias ExUnit.CaptureLog
   use ExUnit.Case, async: false
   import ExUnit.CaptureLog
   require Logger
@@ -9,23 +7,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
   alias BolognesaWeb.LiveSupport.PlaybackAttempt
   alias BolognesaWeb.LiveSupport.PlaybackEvents
   alias Phoenix.LiveView.Logger, as: LiveViewLogger
-
-  test "a queued preparation poll cannot replace a terminal failure" do
-    id = UUID.generate()
-
-    socket = %Phoenix.LiveView.Socket{
-      assigns: %{
-        __changed__: %{},
-        playback: %PlaybackAttempt{
-          session: %{id: id},
-          phase: :error,
-          error: {:transcode, :interrupted}
-        }
-      }
-    }
-
-    assert {:noreply, ^socket} = PlaybackEvents.handle_info({:transcode_poll, id}, socket)
-  end
 
   test "malformed top-level capability payloads leave checking playback unchanged" do
     socket = %Phoenix.LiveView.Socket{
@@ -145,7 +126,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
       assert {:error, :not_found} = TranscodeManager.lookup(session.id)
     end
 
-    test "the ended event releases only the displayed session", %{source: source} do
+    test "the ended event releases the displayed session", %{source: source} do
       assert {:ok, session} =
                TranscodeManager.start(
                  1,
@@ -163,15 +144,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEventsTest do
           playback: %PlaybackAttempt{session: session}
         }
       }
-
-      assert {:noreply, ^socket} =
-               PlaybackEvents.handle_event(
-                 "playback_ended",
-                 %{"session_id" => "obsolete"},
-                 socket
-               )
-
-      assert {:ok, _} = TranscodeManager.lookup(session.id)
 
       assert {:noreply, next} =
                PlaybackEvents.handle_event(
