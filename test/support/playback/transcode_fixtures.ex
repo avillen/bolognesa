@@ -65,7 +65,8 @@ defmodule Bolognesa.TranscodeFixtures do
         [
           [:bolognesa, :playback, :session, :started],
           [:bolognesa, :playback, :session, :closed],
-          [:bolognesa, :playback, :session, :preparation]
+          [:bolognesa, :playback, :session, :preparation],
+          [:bolognesa, :playback, :session, :paced]
         ],
         &__MODULE__.handle_telemetry/4,
         self()

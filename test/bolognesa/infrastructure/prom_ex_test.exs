@@ -147,7 +147,7 @@ defmodule Bolognesa.Infrastructure.PromExTest do
     end
   end
 
-  test "playback diagnostics distinguish buffer waits and failed FFmpeg exits with bounded labels" do
+  test "playback diagnostics distinguish buffer waits, FFmpeg pacing, and failed exits with bounded labels" do
     enable_metrics()
 
     CaptureLog.capture_log(fn ->
@@ -164,9 +164,19 @@ defmodule Bolognesa.Infrastructure.PromExTest do
         reason: :failed,
         session_id: "private-session"
       })
+
+      for action <- [:suspend, :resume, :private_action] do
+        :telemetry.execute([:bolognesa, :playback, :session, :paced], %{count: 1}, %{
+          action: action,
+          session_id: "private-session"
+        })
+      end
     end)
 
     export = PromEx.get_metrics(Metrics)
+    assert export =~ ~s(bolognesa_playback_ffmpeg_pacing_total{action="suspend"} 1)
+    assert export =~ ~s(bolognesa_playback_ffmpeg_pacing_total{action="resume"} 1)
+    assert export =~ ~s(bolognesa_playback_ffmpeg_pacing_total{action="other"} 1)
     assert export =~ ~s(bolognesa_playback_browser_observations_total{diagnostic="waiting"} 1)
     assert export =~ ~s(bolognesa_playback_browser_observations_total{diagnostic="recovered"} 1)
     assert export =~ ~s(bolognesa_playback_ffmpeg_exits_total{result="failed"} 1)

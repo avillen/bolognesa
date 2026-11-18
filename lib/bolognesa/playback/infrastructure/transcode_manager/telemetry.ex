@@ -3,7 +3,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager.Telemetry do
   alias Bolognesa.Infrastructure.Observability.PlaybackEvents
   alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
 
-  @type event :: :started | :preparation | :exited | :closed
+  @type event :: :started | :preparation | :paced | :exited | :closed
 
   @spec emit(event(), TranscodeSession.t(), map(), map()) :: :ok
   def emit(event, session, measurements, metadata) do

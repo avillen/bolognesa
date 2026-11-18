@@ -59,6 +59,13 @@ defmodule Bolognesa.Infrastructure.Observability.PlaybackMetrics do
         tags: [:result],
         tag_values: fn metadata -> %{result: bounded(metadata[:reason], [:finished, :failed])} end
       ),
+      counter("bolognesa.playback.ffmpeg.pacing.total",
+        event_name: [:bolognesa, :playback, :session, :paced],
+        tags: [:action],
+        tag_values: fn metadata ->
+          %{action: bounded(metadata[:action], [:suspend, :resume])}
+        end
+      ),
       counter("bolognesa.playback.session.closures.total",
         event_name: [:bolognesa, :playback, :session, :closed],
         tags: [:reason],

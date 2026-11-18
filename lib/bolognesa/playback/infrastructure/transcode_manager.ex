@@ -30,6 +30,7 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
     last_activity: nil,
     started_at: nil,
     suspended?: false,
+    suspended_at: nil,
     requested: -1,
     preparation: nil
   }
@@ -230,9 +231,20 @@ defmodule Bolognesa.Playback.Infrastructure.TranscodeManager do
 
   defp signal(state, action) do
     case FfmpegProcess.signal(state.port, action) do
-      :ok -> %{state | suspended?: action == :suspend}
+      :ok -> paced(state, action, now())
       _ -> clear(state, :process_missing)
     end
+  end
+
+  defp paced(state, :suspend, at) do
+    Telemetry.emit(:paced, state.current, %{count: 1}, %{action: :suspend})
+    %{state | suspended?: true, suspended_at: at}
+  end
+
+  defp paced(state, :resume, at) do
+    measurements = %{count: 1, duration_ms: at - state.suspended_at}
+    Telemetry.emit(:paced, state.current, measurements, %{action: :resume})
+    %{state | suspended?: false, suspended_at: nil}
   end
 
   defp available_slot(%{current: nil}, _actor_id), do: :ok

@@ -271,6 +271,8 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
   test "production pauses ahead of the browser's requests and continues as it catches up", %{
     source: source
   } do
+    attach_lifecycle()
+
     assert {:ok, session} =
              TranscodeManager.start(1, {:movie, 2}, 3, source, plan(source, :full_conversion), 0)
 
@@ -283,11 +285,22 @@ defmodule Bolognesa.Playback.TranscodeManagerTest do
     send(TranscodeManager, :tick)
     assert suspended?()
 
+    assert_receive {[:bolognesa, :playback, :session, :paced], %{count: 1} = suspend,
+                    %{action: :suspend, session_id: id}}
+
+    assert id == session.id
+    refute Map.has_key?(suspend, :duration_ms)
+
     # Requests while paused keep it suspended until the lead drops to five segments.
     assert :ok = TranscodeManager.touch(session.id, 2)
     assert suspended?()
     assert :ok = TranscodeManager.touch(session.id, 3)
     refute suspended?()
+
+    assert_receive {[:bolognesa, :playback, :session, :paced], %{count: 1, duration_ms: ms},
+                    %{action: :resume}}
+
+    assert ms >= 0
 
     # A request without a segment (resume) only renews activity.
     assert :ok = TranscodeManager.touch(session.id)
