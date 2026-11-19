@@ -5,6 +5,7 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader
   alias Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification
+  alias Bolognesa.Series.Application.UseCases.FetchContinueTarget
   alias Bolognesa.Series.Application.UseCases.FetchEpisode
   alias Bolognesa.Series.Application.UseCases.FetchEpisode.Response, as: EpisodeDetail
   alias Bolognesa.Series.Application.UseCases.FetchNextPlayableEpisode
@@ -23,6 +24,7 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Series.Application.UseCases.SearchSeries.Response, as: SeriesPage
   alias Bolognesa.Series.Application.UseCases.SearchSeriesCandidates
   alias Bolognesa.Series.Domain.Entities.Identification
+  alias Bolognesa.Series.Domain.ReadModels.ContinueTarget
   alias Bolognesa.Series.Domain.ReadModels.WatchedEntry
   alias Bolognesa.Series.Infrastructure.Providers.TmdbSeriesProvider
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader
@@ -137,6 +139,12 @@ defmodule Bolognesa.Series do
           {:ok, [WatchedEntry.t()]} | {:error, :forbidden | :unavailable}
   def list_watched_entries(actor, scope),
     do: ListWatchedEntries.call(actor, scope, EctoWatchedEntriesReader)
+
+  @doc "Derive this account's Start, Continue or Replay target for a series; nil without regular entries."
+  @spec fetch_continue_target(AuthenticatedUser.t() | nil, pos_integer()) ::
+          {:ok, ContinueTarget.t() | nil} | {:error, :forbidden | :unavailable}
+  def fetch_continue_target(actor, series_id),
+    do: FetchContinueTarget.call(actor, series_id, EctoWatchedEntriesReader)
 
   @doc "Record a client-qualified playback; the caller must correlate and deduplicate the current attempt."
   @spec record_watched_entries(AuthenticatedUser.t() | nil, pos_integer(), pos_integer()) ::

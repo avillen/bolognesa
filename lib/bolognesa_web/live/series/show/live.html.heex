@@ -24,7 +24,12 @@
       {@error} <button phx-click="retry" class="min-h-11 px-4">{gettext("Reintentar")}</button>
     </p>
     <div :if={@detail} class="media-detail-panel series-detail-panel">
-      <SeriesHero.series_hero series={@detail.series} total={@total} />
+      <SeriesHero.series_hero
+        series={@detail.series}
+        total={@total}
+        continue_target={@continue_target}
+        series_params={@series_params}
+      />
       <div class="series-seasons-body">
         <MediaComponents.synopsis
           :if={@detail.series.overview}

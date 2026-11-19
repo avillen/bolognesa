@@ -1,8 +1,9 @@
 defmodule BolognesaWeb.Series.Show.LiveTest do
   alias Bolognesa.Repo
+  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository, as: Repository
   alias Ecto.Changeset
   alias Phoenix.ConnTest
-  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
   alias BolognesaWeb.SeriesFixtures
@@ -49,5 +50,24 @@ defmodule BolognesaWeb.Series.Show.LiveTest do
            )
 
     assert has_element?(view, ".media-hero-copy", "1 temporada en tu biblioteca")
+  end
+
+  test "offers Start, then Continue, to the regular entries and ignores specials", ctx do
+    file = Bolognesa.SeriesFixtures.file(ctx.library.id, "Serie S01E01E02.mp4")
+    [first, second] = Bolognesa.SeriesFixtures.identify(file, 1, [1, 2]).episode_ids
+    {:ok, view, _} = live(ctx.conn, "/series/#{ctx.series_id}")
+    render_async(view)
+    assert has_element?(view, "#series-continue[href='/episodes/#{first}']", "Empezar")
+
+    :ok =
+      Repository.upsert(
+        ctx.actor.id,
+        [%SeasonEntry{episode_id: first, part_number: nil}],
+        DateTime.utc_now()
+      )
+
+    {:ok, view, _} = live(ctx.conn, "/series/#{ctx.series_id}")
+    render_async(view)
+    assert has_element?(view, "#series-continue[href='/episodes/#{second}']", "Continuar T1·E2")
   end
 end

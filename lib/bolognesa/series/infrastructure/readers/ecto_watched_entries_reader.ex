@@ -9,6 +9,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesWatchedEntrySchema
   alias Bolognesa.Repo
+  alias Bolognesa.Series.Domain.ReadModels.ContinueEntry
   alias Bolognesa.Series.Domain.ReadModels.WatchedEntry
   alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
   alias Bolognesa.Series.Infrastructure.Readers.EpisodeEntries
@@ -49,6 +50,37 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
 
   defp in_scope(query, {:series, id}),
     do: where(query, [_watched, _episode, season], season.series_id == ^id)
+
+  @impl true
+  def list_continue_entries(user_id, series_id) do
+    rows =
+      Repo.all(
+        from(entry in subquery(EpisodeEntries.query()),
+          join: season in SeasonSchema,
+          on: season.id == entry.season_id,
+          left_join: watched in SeriesWatchedEntrySchema,
+          on:
+            watched.episode_id == entry.id and watched.user_id == ^user_id and
+              fragment("? IS NOT DISTINCT FROM ?", watched.part_number, entry.part_number),
+          where: season.series_id == ^series_id and season.number > 0,
+          order_by: [season.number, entry.number, asc_nulls_first: entry.part_number],
+          select: %ContinueEntry{
+            season_number: season.number,
+            number: entry.number,
+            episode_id: entry.id,
+            part_number: entry.part_number,
+            available?: entry.available_version_count > 0,
+            last_watched_at: watched.last_watched_at
+          }
+        ),
+        log: false
+      )
+
+    {:ok, rows}
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
 
   @impl true
   def fetch_played_entries(episode_id, file_id) do

@@ -6,9 +6,11 @@ defmodule BolognesaWeb.Series.Show.Live do
   alias BolognesaWeb.Series.Navigation
   alias BolognesaWeb.Series.Show.Components.SeasonCard
   alias BolognesaWeb.Series.Show.Components.SeriesHero
+  alias BolognesaWeb.Series.Show.Reducer.ApplyContinueTarget
   alias BolognesaWeb.Series.Show.Reducer.ApplyResult
   alias BolognesaWeb.Series.Show.Reducer.Initialize
   alias BolognesaWeb.Series.Show.Reducer.Load
+  alias BolognesaWeb.Series.Show.Reducer.LoadContinueTarget
   @impl true
   def mount(_params, _session, socket), do: {:ok, Initialize.call(socket)}
   @impl true
@@ -16,14 +18,21 @@ defmodule BolognesaWeb.Series.Show.Live do
     id = parse(text, 0)
     page = parse(Map.get(params, "page", "1"), 1)
     socket = Navigation.assign_context(socket, params)
-    {:noreply, Load.call(socket, id, page)}
+    {:noreply, socket |> Load.call(id, page) |> LoadContinueTarget.call(id)}
   end
 
   @impl true
   def handle_event("retry", _params, socket),
-    do: {:noreply, Load.call(socket, socket.assigns.content_id, socket.assigns.page)}
+    do:
+      {:noreply,
+       socket
+       |> Load.call(socket.assigns.content_id, socket.assigns.page)
+       |> LoadContinueTarget.call(socket.assigns.content_id)}
 
   @impl true
+  def handle_async({:continue_target, id}, result, socket),
+    do: {:noreply, ApplyContinueTarget.call(socket, id, result)}
+
   def handle_async({:series_detail, request}, result, socket),
     do: {:noreply, ApplyResult.call(socket, request, result)}
 
