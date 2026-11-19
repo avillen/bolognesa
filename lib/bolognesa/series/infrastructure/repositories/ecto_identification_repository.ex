@@ -5,14 +5,15 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
 
   @behaviour Bolognesa.Series.Application.Ports.Repositories.IdentificationRepository
 
+  alias Bolognesa.Infrastructure.Jobs.IdentificationRecovery
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
   alias Bolognesa.Repo
   alias Bolognesa.Series.Domain.Entities.Identification
   alias Bolognesa.Series.Domain.ReadModels.FileToIdentify
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.EntryStore
-  alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.ObanJobRecovery
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.RequestWriter
   alias Bolognesa.Series.Infrastructure.Repositories.IdentificationMapper
   alias Bolognesa.Series.Infrastructure.Repositories.IdentifiedSeriesWriter
@@ -182,7 +183,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
           {:ok, non_neg_integer()} | {:error, :unavailable, non_neg_integer()}
   @impl true
   def reconcile_jobs_result(now) do
-    ObanJobRecovery.interrupted(Repo, now)
+    IdentificationRecovery.interrupted(Repo, now, SeriesIdentificationSchema, :series)
     |> Enum.reduce({:ok, 0}, fn {file_id, token, state}, result ->
       reason = if state == "discarded", do: :attempts_exhausted, else: :unexpected_failure
       recovery_result(fail(file_id, token, reason), result)

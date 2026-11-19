@@ -1,4 +1,5 @@
 defmodule Bolognesa.Application do
+  alias Bolognesa.Infrastructure.Jobs.IdentificationReconciler
   alias BolognesaWeb.Endpoint
   @moduledoc false
 
@@ -28,8 +29,16 @@ defmodule Bolognesa.Application do
            operation: :inspection}
         ]) ++
         optional_children(:identification_reconciler, [
-          Bolognesa.Movies.Infrastructure.Jobs.Reconcilers.IdentificationReconciler,
-          Bolognesa.Series.Infrastructure.Jobs.Reconcilers.IdentificationReconciler
+          {IdentificationReconciler,
+           context: :movies,
+           name: Bolognesa.Movies.Infrastructure.Jobs.Reconcilers.IdentificationReconciler,
+           use_case: Bolognesa.Movies.Application.UseCases.ReconcileIdentifications,
+           repository: Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository},
+          {IdentificationReconciler,
+           context: :series,
+           name: Bolognesa.Series.Infrastructure.Jobs.Reconcilers.IdentificationReconciler,
+           use_case: Bolognesa.Series.Application.UseCases.ReconcileIdentifications,
+           repository: Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository}
         ]) ++
         optional_children(:music_import_reconciler, [
           Bolognesa.Music.Infrastructure.Jobs.Reconcilers.ImportReconciler
