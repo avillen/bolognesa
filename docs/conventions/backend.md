@@ -57,8 +57,8 @@ Original media remains read-only. Inventory identity follows library and relativ
 ### Series watched entries
 
 Series owns one latest watched timestamp per account, catalog episode, and optional
-numbered part. File-independent identity, qualifying playback observation, and sibling
-read/write contracts follow [decision 0029](../decisions/0029-series-watched-entries.md).
+numbered part. See [decision 0029](../decisions/0029-series-watched-entries.md) for
+file-independent identity and qualifying playback observation.
 Keep these durable dates separate from Playback's temporary same-tab position recovery.
 
 ### Music listening contracts

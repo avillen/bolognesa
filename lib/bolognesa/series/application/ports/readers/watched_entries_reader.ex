@@ -12,13 +12,7 @@ defmodule Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader do
           | {:season, Season.id()}
           | {:series, Series.id()}
 
-  @doc """
-  Return watched entries ordered by episode ID then part (nil first).
-  The read is bounded by its scope: at most the season entries of one series.
-  Missing scope or no activity returns an empty list. Includes unavailable and historical
-  entries; no inventory join. Continue ordering belongs to its use case, not timestamp
-  or ID order here.
-  """
+  @doc "List account-watched entries bounded by one episode, season or series, ordered by episode ID then part (nil first)."
   @callback list_watched_entries(user_id :: pos_integer(), scope()) ::
               {:ok, [WatchedEntry.t()]} | {:error, :unavailable}
 

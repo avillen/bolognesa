@@ -1,6 +1,7 @@
 defmodule Bolognesa.Series.WatchedEntriesTest do
   use Bolognesa.DataCase, async: true
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
+  alias Bolognesa.Infrastructure.Persistence.SeriesWatchedEntrySchema
   alias Bolognesa.Infrastructure.Persistence.UserSchema
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
@@ -16,8 +17,6 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     @behaviour Bolognesa.Series.Application.Ports.Repositories.WatchedEntriesRepository
     @impl true
     def upsert(_, _, _), do: {:error, :unavailable}
-    @impl true
-    def delete(_, _), do: :ok
   end
 
   setup do
@@ -103,7 +102,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:series, ctx.series_id})
   end
 
-  test "latest timestamp wins for nil and numbered parts, with account-scoped reads and deletes",
+  test "latest timestamp wins for nil and numbered parts, with account-scoped reads",
        ctx do
     earlier = ~U[2026-01-01 00:00:00.000000Z]
     later = ~U[2026-02-01 00:00:00.000000Z]
@@ -122,15 +121,25 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
       assert Enum.all?(entries, &(&1.last_watched_at == later))
     end
 
-    assert :ok = Repository.delete(ctx.actor.id, [ctx.entry])
-
-    assert {:ok, [%{season_entry: %SeasonEntry{part_number: 1}}]} =
-             Reader.list_watched_entries(ctx.actor.id, {:episode, ctx.episode_id})
-
     assert {:ok, [%{last_watched_at: ^earlier}]} =
              Reader.list_watched_entries(ctx.other.id, {:episode, ctx.episode_id})
 
     assert {:error, :forbidden} = Series.list_watched_entries(nil, {:episode, ctx.episode_id})
+  end
+
+  test "upsert uses the NULLS NOT DISTINCT index for an unsplit entry", ctx do
+    earlier = ~U[2026-01-01 00:00:00.000000Z]
+    later = ~U[2026-02-01 00:00:00.000000Z]
+    assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry], earlier)
+    assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry], later)
+    assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry], earlier)
+
+    assert Repo.all(
+             from row in SeriesWatchedEntrySchema,
+               where: row.user_id == ^ctx.actor.id,
+               select: {row.episode_id, row.part_number, row.last_watched_at}
+           ) ==
+             [{ctx.episode_id, nil, later}]
   end
 
   test "played files resolve a single part, every whole-file part, and every associated episode",
@@ -196,7 +205,6 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
 
   test "empty writes are no-ops", ctx do
     assert :ok = Repository.upsert(ctx.actor.id, [], DateTime.utc_now())
-    assert :ok = Repository.delete(ctx.actor.id, [])
     assert {:ok, []} = Reader.list_watched_entries(ctx.actor.id, {:series, ctx.series_id})
   end
 

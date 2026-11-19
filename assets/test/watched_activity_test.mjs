@@ -78,7 +78,7 @@ test("preparation and source changes break sampling without resetting the attemp
   assert.equal(f.reports.length, 1)
 })
 
-test("a failed acknowledgement allows only one retry after fifteen seconds in the same attempt", async () => {
+test("failed acknowledgements retry every fifteen seconds in the same attempt", async () => {
   let now = 0, reports = 0
   const activity = createWatchedActivity({clock: () => now, report: () => {
     reports++
@@ -94,8 +94,14 @@ test("a failed acknowledgement allows only one retry after fifteen seconds in th
   sample()
   assert.equal(reports, 2)
   await new Promise(resolve => setImmediate(resolve))
-  for (; now <= 250; now++) sample()
+  for (; now < 211; now++) sample()
   assert.equal(reports, 2)
+  sample()
+  assert.equal(reports, 3)
+  await new Promise(resolve => setImmediate(resolve))
+  activity.select("another-attempt", "8")
+  for (; now <= 250; now++) sample()
+  assert.equal(reports, 3)
 })
 
 test("a late failure from an old attempt cannot enable a retry on a new one", async () => {

@@ -2,9 +2,12 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
   @moduledoc false
   @behaviour Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader
   import Ecto.Query
+  alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.SeasonSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.SeriesWatchedEntrySchema
   alias Bolognesa.Repo
   alias Bolognesa.Series.Domain.ReadModels.WatchedEntry
   alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
@@ -12,30 +15,24 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
 
   @impl true
   def list_watched_entries(user_id, scope) do
-    {filter, id} = scope_filter(scope)
-    read_watched(user_id, filter, id)
-  end
-
-  defp read_watched(user_id, filter, id) do
-    %{rows: rows} =
-      Repo.query!(
-        """
-        SELECT watched.episode_id, watched.part_number, watched.last_watched_at
-        FROM series_watched_entries AS watched
-        JOIN episodes AS episode ON episode.id = watched.episode_id
-        JOIN seasons AS season ON season.id = episode.season_id
-        WHERE watched.user_id = $1 AND #{filter}
-        ORDER BY watched.episode_id, watched.part_number NULLS FIRST
-        """,
-        [user_id, id],
-        log: false
+    rows =
+      from(watched in SeriesWatchedEntrySchema,
+        join: episode in EpisodeSchema,
+        on: episode.id == watched.episode_id,
+        join: season in SeasonSchema,
+        on: season.id == episode.season_id,
+        where: watched.user_id == ^user_id,
+        order_by: [watched.episode_id, asc_nulls_first: watched.part_number],
+        select: {watched.episode_id, watched.part_number, watched.last_watched_at}
       )
+      |> in_scope(scope)
+      |> Repo.all(log: false)
 
     entries =
-      Enum.map(rows, fn [episode_id, part, timestamp] ->
+      Enum.map(rows, fn {episode_id, part, timestamp} ->
         %WatchedEntry{
           season_entry: %SeasonEntry{episode_id: episode_id, part_number: part},
-          last_watched_at: DateTime.from_naive!(timestamp, "Etc/UTC")
+          last_watched_at: timestamp
         }
       end)
 
@@ -45,9 +42,13 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  defp scope_filter({:episode, id}), do: {"episode.id = $2", id}
-  defp scope_filter({:season, id}), do: {"season.id = $2", id}
-  defp scope_filter({:series, id}), do: {"season.series_id = $2", id}
+  defp in_scope(query, {:episode, id}), do: where(query, [watched], watched.episode_id == ^id)
+
+  defp in_scope(query, {:season, id}),
+    do: where(query, [_watched, episode], episode.season_id == ^id)
+
+  defp in_scope(query, {:series, id}),
+    do: where(query, [_watched, _episode, season], season.series_id == ^id)
 
   @impl true
   def fetch_played_entries(episode_id, file_id) do

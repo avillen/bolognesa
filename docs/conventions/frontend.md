@@ -75,10 +75,14 @@ its internal collaborators and provides the public playback facade.
 | Module area | Allowed internal dependencies |
 | --- | --- |
 | `model/` | Other model modules only; no DOM, HTTP, clock, or browser APIs |
-| `operations/` | Operations and models; receive effects, cancellation, clock, and callbacks as dependencies |
+| `operations/` | Operations, models and the shared observed-playback helper; receive effects, cancellation, clock, and callbacks as dependencies |
 | `adapters/` | Adapters and models; no session, operations, hooks, or UI |
 | `ui/` | UI and models; receive snapshots and commands without importing the session or transport |
 | Session/bootstrap/runtime | Compose the concrete collaborators and own their lifetime |
+
+The browser-independent observed-playback accumulator lives in `shared/` and receives
+its clock, reporting effect and qualifying rule from callers. Shared helpers do not
+import Music or video modules.
 
 `assets/test/browser_architecture_test.mjs` verifies these Music dependency boundaries
 using the actual bundled import graph. A session owns one playback/lifecycle record;

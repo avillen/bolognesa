@@ -10,4 +10,4 @@ Domain terms with a precise meaning in Bolognesa. Use them as defined in code, i
 
 **Season entry**: one item in a season list: a provider episode, or one numbered part of it when the episode is split across files. Known unavailable entries are still entries. Several physical sources can represent the same entry. _Avoid_: episode card, file, version.
 
-**Watched entry**: an account's recorded latest watched date for one season entry, identified by catalog episode and optional part number. It records neither a viewing history nor a watch count, and does not prove that every moment was played. Manual marking uses the same state.
+**Watched entry**: an account's recorded latest watched date for one season entry, identified by catalog episode and optional part number. It records neither a viewing history nor a watch count, and does not prove that every moment was played.
