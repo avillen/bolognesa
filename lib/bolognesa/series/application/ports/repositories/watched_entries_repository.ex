@@ -9,4 +9,7 @@ defmodule Bolognesa.Series.Application.Ports.Repositories.WatchedEntriesReposito
   @doc "Atomically upsert explicit entries, retaining the greatest timestamp. Empty is a no-op."
   @callback upsert(user_id :: pos_integer(), [SeasonEntry.t()], WatchedEntry.last_watched_at()) ::
               result()
+
+  @doc "Delete one explicit entry for the account. A missing row is a no-op."
+  @callback delete(user_id :: pos_integer(), SeasonEntry.t()) :: result()
 end

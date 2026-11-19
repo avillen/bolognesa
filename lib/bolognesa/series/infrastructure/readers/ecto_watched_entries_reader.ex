@@ -83,6 +83,25 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
   end
 
   @impl true
+  def list_season_entries(scope) do
+    entries =
+      from(entry in subquery(EpisodeEntries.query()),
+        order_by: [entry.id, asc_nulls_first: entry.part_number],
+        select: %SeasonEntry{episode_id: entry.id, part_number: entry.part_number}
+      )
+      |> entries_in(scope)
+      |> Repo.all(log: false)
+
+    {:ok, entries}
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp entries_in(query, {:episode, id}), do: where(query, [entry], entry.id == ^id)
+  defp entries_in(query, {:season, id}), do: where(query, [entry], entry.season_id == ^id)
+
+  @impl true
   def fetch_played_entries(episode_id, file_id) do
     # The guard association prevents a file from another episode selecting its entries.
     decisions =

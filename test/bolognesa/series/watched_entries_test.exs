@@ -17,6 +17,8 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     @behaviour Bolognesa.Series.Application.Ports.Repositories.WatchedEntriesRepository
     @impl true
     def upsert(_, _, _), do: {:error, :unavailable}
+    @impl true
+    def delete(_, _), do: {:error, :unavailable}
   end
 
   setup do
@@ -227,5 +229,43 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     assert {:ok, []} = Reader.list_watched_entries(ctx.actor.id, {:episode, ctx.episode_id})
     assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry, ctx.entry], DateTime.utc_now())
     assert {:ok, [_]} = Reader.list_watched_entries(ctx.actor.id, {:episode, ctx.episode_id})
+  end
+
+  test "marking an entry sets it watched now and unmarking deletes only that account's row",
+       ctx do
+    before = DateTime.utc_now()
+    assert :ok = Series.mark_entries_watched(ctx.actor, {:entry, ctx.entry})
+
+    assert {:ok, [%{season_entry: entry, last_watched_at: at}]} =
+             Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
+
+    assert entry == ctx.entry
+    assert DateTime.compare(at, before) != :lt
+
+    assert :ok = Repository.upsert(ctx.other.id, [ctx.entry], at)
+    assert :ok = Series.unmark_entry_watched(ctx.actor, ctx.entry)
+    assert :ok = Series.unmark_entry_watched(ctx.actor, ctx.entry)
+    assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
+    assert {:ok, [_]} = Reader.list_watched_entries(ctx.other.id, {:episode, ctx.episode_id})
+  end
+
+  test "marking an unknown entry or season records nothing", ctx do
+    unknown = %{ctx.entry | part_number: 3}
+    assert {:error, :not_found} = Series.mark_entries_watched(ctx.actor, {:entry, unknown})
+    assert {:error, :not_found} = Series.mark_entries_watched(ctx.actor, {:season, 0})
+    assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:series, ctx.series_id})
+  end
+
+  test "marking a season includes unavailable entries and requires an admin", ctx do
+    missing = SeriesFixtures.file(ctx.library.id, "Example S01E02.mp4")
+    [missing_id] = SeriesFixtures.identify(missing, 1, [2]).episode_ids
+    missing |> Changeset.change(availability: :missing) |> Repo.update!()
+
+    assert {:error, :forbidden} =
+             Series.mark_entries_watched(%{ctx.actor | role: :member}, {:season, ctx.season_id})
+
+    assert :ok = Series.mark_entries_watched(ctx.actor, {:season, ctx.season_id})
+    assert {:ok, entries} = Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})
+    assert Enum.map(entries, & &1.season_entry.episode_id) == [ctx.episode_id, missing_id]
   end
 end

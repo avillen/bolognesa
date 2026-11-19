@@ -34,6 +34,11 @@ HLS uses whole-file offsets. Source changes break sampling; new attempts reset i
 The LiveView correlates the current attempt/file and deduplicates successful saves.
 Acknowledgements permit retries; late failures cannot affect a new attempt. Recording
 failures emit sanitized Series observations through the shared Events contract.
+Accounts can also mark a known season entry, or every known entry of a season
+including unavailable ones, as watched now, and unmark one entry by deleting its row.
+Series validates the entry against the catalog; manual and observed viewings are not
+distinguished.
+
 This is best-effort client observation, not proof of consumption. There is no count,
 history, source reference, manual flag, durable attempt log or cross-device position.
 
