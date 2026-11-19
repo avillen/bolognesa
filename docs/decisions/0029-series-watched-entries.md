@@ -72,7 +72,7 @@ Continue must derive catalog order explicitly. The index shelf's query belongs t
 [#87](https://github.com/avillen/bolognesa/issues/87).
 
 Within Series, `WatchedEntriesReader` declares these reads and
-`list_played_entries(episode_id, file_id)`. `WatchedEntriesRepository` declares
+`fetch_played_entries(episode_id, file_id)`. `WatchedEntriesRepository` declares
 `upsert(user_id, entries, watched_at)` and `delete(user_id, entries)`, accepting
 explicit `SeasonEntry` values with `episode_id` and nullable `part_number`.
 Both writes are atomic single SQL statements for the explicit entries;

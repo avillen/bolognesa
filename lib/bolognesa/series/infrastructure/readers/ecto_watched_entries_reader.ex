@@ -51,7 +51,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
   defp scope_filter({:series, id}), do: {"season.series_id = $2", id}
 
   @impl true
-  def list_played_entries(episode_id, file_id) do
+  def fetch_played_entries(episode_id, file_id) do
     # The guard association prevents a file from another episode selecting its entries.
     decisions =
       from relation in SeriesIdentificationEpisodeSchema,

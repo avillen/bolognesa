@@ -21,7 +21,7 @@ defmodule Bolognesa.Series.Application.UseCases.RecordWatchedEntries do
     result =
       with :ok <- Accounts.authorize(actor, :admin),
            {:ok, _source} <- Playback.start_video(actor, {:episode, episode_id}, file_id),
-           {:ok, entries} <- reader.list_played_entries(episode_id, file_id) do
+           {:ok, entries} <- reader.fetch_played_entries(episode_id, file_id) do
         repository.upsert(actor.id, entries, DateTime.utc_now())
       else
         :not_found -> {:error, :not_found}

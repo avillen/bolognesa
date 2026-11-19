@@ -125,18 +125,18 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     second |> Changeset.change(availability: :missing) |> Repo.update!()
 
     assert {:ok, [%SeasonEntry{part_number: 1}]} =
-             Reader.list_played_entries(ctx.episode_id, first.id)
+             Reader.fetch_played_entries(ctx.episode_id, first.id)
 
-    assert {:ok, entries} = Reader.list_played_entries(ctx.episode_id, ctx.media_file.id)
+    assert {:ok, entries} = Reader.fetch_played_entries(ctx.episode_id, ctx.media_file.id)
     assert Enum.map(entries, & &1.part_number) == [1, 2]
     multi = SeriesFixtures.file(ctx.library.id, "Example S01E01E02.mp4")
     decision = SeriesFixtures.identify(multi, 1, [1, 2])
-    assert {:ok, entries} = Reader.list_played_entries(ctx.episode_id, multi.id)
+    assert {:ok, entries} = Reader.fetch_played_entries(ctx.episode_id, multi.id)
 
     assert Enum.map(entries, &{&1.episode_id, &1.part_number}) ==
              [{ctx.episode_id, 1}, {ctx.episode_id, 2}, {List.last(decision.episode_ids), nil}]
 
-    assert :not_found = Reader.list_played_entries(ctx.episode_id, -1)
+    assert :not_found = Reader.fetch_played_entries(ctx.episode_id, -1)
   end
 
   test "watched state survives inventory revision, missing files, rename, replacement and correction",

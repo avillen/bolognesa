@@ -55,7 +55,7 @@ defmodule BolognesaWeb.Series.Episode.Live do
   @impl true
   def handle_event("record_watched_entries", params, socket) do
     socket = RecordWatchedEntries.call(socket, params)
-    {:reply, %{ok: socket.assigns.watched_reply_ok?}, socket}
+    {:reply, %{ok: socket.assigns.watched_attempt_id == params["attempt_id"]}, socket}
   end
 
   def handle_event("playback_ended", params, socket),

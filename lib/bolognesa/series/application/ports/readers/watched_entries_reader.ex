@@ -14,6 +14,7 @@ defmodule Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader do
 
   @doc """
   Return watched entries ordered by episode ID then part (nil first).
+  The read is bounded by its scope: at most the season entries of one series.
   Missing scope or no activity returns an empty list. Includes unavailable and historical
   entries; no inventory join. Continue ordering belongs to its use case, not timestamp
   or ID order here.
@@ -22,6 +23,6 @@ defmodule Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader do
               {:ok, [WatchedEntry.t()]} | {:error, :unavailable}
 
   @doc "Resolve a confirmed available file associated with the episode, including all parts for whole files."
-  @callback list_played_entries(Episode.id(), file_id :: pos_integer()) ::
+  @callback fetch_played_entries(Episode.id(), file_id :: pos_integer()) ::
               {:ok, [SeasonEntry.t()]} | :not_found | {:error, :unavailable}
 end
