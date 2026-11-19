@@ -24,7 +24,10 @@ the difficult dependency and state relationships.
   services and the persistent host.
 - Models import only models; operations import operations/models; adapters import
   adapters/models; UI imports UI/models. Effects and outward commands cross those
-  boundaries through explicit dependencies. Verify the Music import graph in Node tests.
+  boundaries through explicit dependencies. Music operations and video may reuse the
+  browser-independent observed-playback helper in `shared/`, with injected clock,
+  reporting effect and qualifying rule. Shared code never imports either context.
+  Verify these dependencies in Node tests.
 - Video uses source controllers, UI, recovery, diagnostics and timeline modules under
   `video/player/`. Retain direct/native-HLS fallback, source replacement, cleanup and
   stable fullscreen elements. Its simpler responsibilities do not require Music's exact

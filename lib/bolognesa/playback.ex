@@ -27,6 +27,10 @@ defmodule Bolognesa.Playback do
           | :unsupported
           | :invalid_offset
 
+  @doc """
+  Authorize and resolve a currently linked, available video source.
+  This does not start media delivery or create a transcode session.
+  """
   @spec start_video(AuthenticatedUser.t(), ContentRef.t(), integer()) ::
           {:ok, Source.t()} | {:error, :forbidden | :not_found | :missing | :unavailable}
   def start_video(actor, content_ref, file_id),

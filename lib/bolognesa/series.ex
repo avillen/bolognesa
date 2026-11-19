@@ -3,6 +3,7 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Dto.SeriesReviewItem
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
+  alias Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader
   alias Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification
   alias Bolognesa.Series.Application.UseCases.FetchEpisode
   alias Bolognesa.Series.Application.UseCases.FetchEpisode.Response, as: EpisodeDetail
@@ -15,15 +16,20 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Series.Application.UseCases.ListEpisodes.Response, as: EpisodePage
   alias Bolognesa.Series.Application.UseCases.ListSeriesReviewItems
   alias Bolognesa.Series.Application.UseCases.ListSeriesReviewItems.Response, as: SeriesReviewPage
+  alias Bolognesa.Series.Application.UseCases.ListWatchedEntries
+  alias Bolognesa.Series.Application.UseCases.RecordWatchedEntries
   alias Bolognesa.Series.Application.UseCases.RetryIdentification
   alias Bolognesa.Series.Application.UseCases.SearchSeries
   alias Bolognesa.Series.Application.UseCases.SearchSeries.Response, as: SeriesPage
   alias Bolognesa.Series.Application.UseCases.SearchSeriesCandidates
   alias Bolognesa.Series.Domain.Entities.Identification
+  alias Bolognesa.Series.Domain.ReadModels.WatchedEntry
   alias Bolognesa.Series.Infrastructure.Providers.TmdbSeriesProvider
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReviewReader
+  alias Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository
 
   @type reason ::
           :forbidden
@@ -124,6 +130,25 @@ defmodule Bolognesa.Series do
           | {:error, reason()}
   def fetch_series_season(actor, id, number),
     do: FetchSeriesSeason.call(actor, id, number, provider())
+
+  @doc "Read this account's watched entries for an episode, season, or series."
+  @spec list_watched_entries(AuthenticatedUser.t() | nil, WatchedEntriesReader.scope()) ::
+          {:ok, [WatchedEntry.t()]} | {:error, :forbidden | :unavailable}
+  def list_watched_entries(actor, scope),
+    do: ListWatchedEntries.call(actor, scope, EctoWatchedEntriesReader)
+
+  @doc "Record a client-qualified playback; the caller must correlate and deduplicate the current attempt."
+  @spec record_watched_entries(AuthenticatedUser.t() | nil, pos_integer(), pos_integer()) ::
+          RecordWatchedEntries.result()
+  def record_watched_entries(actor, episode_id, file_id),
+    do:
+      RecordWatchedEntries.call(
+        actor,
+        episode_id,
+        file_id,
+        EctoWatchedEntriesReader,
+        EctoWatchedEntriesRepository
+      )
 
   defp provider, do: Application.get_env(:bolognesa, :series_provider_adapter, TmdbSeriesProvider)
 end

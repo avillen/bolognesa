@@ -6,6 +6,7 @@ export function createSourceController(hook, {Hls, direct = createDirectControll
   const {video, el, recovery} = hook
   let controller = null, signature = null, playbackError = null
   function clearSource() {
+    hook.watched?.suspend()
     controller?.destroy()
     controller = null
     video.pause()

@@ -3,6 +3,7 @@ import {createPlayer, videoFeatures, timeFeature, bufferFeature} from "../../../
 import {fileTimeFeature, fileBufferFeature} from "../player/timeline.mjs"
 import {createPlaybackDiagnostics} from "../player/playback_diagnostics.mjs"
 import {createPlaybackRecovery} from "../player/playback_recovery.mjs"
+import {createWatchedPlayback} from "../player/watched_playback.mjs"
 import Hls from "../../../vendor/hls.min.mjs"
 import {probePlaybackCapabilities} from "../player/playback_capabilities.mjs"
 import {createSourceController} from "../player/source_controller.mjs"
@@ -23,6 +24,9 @@ const VideoPlayer = {
     this.recovery = createPlaybackRecovery(this)
     this.scope = this.el.dataset.recoveryScope
     this.diagnostics = createPlaybackDiagnostics(this)
+    this.watched = createWatchedPlayback({video: this.video, report: report => new Promise((resolve, reject) => {
+      this.pushEvent("record_watched_entries", report, reply => reply.ok ? resolve() : reject(new Error("watched recording failed")))
+    })})
     this.sources = createSourceController(this, {Hls})
     this.sync = () => {
       const data = this.el.dataset
@@ -32,6 +36,7 @@ const VideoPlayer = {
         this.scope = data.recoveryScope
         this.diagnostics = createPlaybackDiagnostics(this)
       }
+      this.watched.update({...data})
       this.sources.update()
       if (data.playbackPhase === "checking" && data.playbackProbe) {
         const probe = JSON.parse(data.playbackProbe)
@@ -56,6 +61,7 @@ const VideoPlayer = {
     this.unregisterMedia = null
     this.recovery?.destroy()
     this.diagnostics?.destroy()
+    this.watched?.destroy()
     this.sources?.destroy()
     this.frame?.destroy()
   },

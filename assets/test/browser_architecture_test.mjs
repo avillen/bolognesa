@@ -25,8 +25,17 @@ for (const [layer, allowed] of [
     const result = await build({entryPoints, bundle: true, write: false, metafile: true,
       outdir: "tmp/architecture-check", platform: "neutral", logLevel: "silent"})
     for (const dependency of Object.keys(result.metafile.inputs)) {
-      assert.ok(allowed.some(folder => dependency.startsWith(`${player}${folder}/`)),
+      const sharedObserver = layer === "operations" && dependency === "assets/js/shared/observed_playback.mjs"
+      assert.ok(sharedObserver || allowed.some(folder => dependency.startsWith(`${player}${folder}/`)),
         `${layer} imports forbidden dependency ${dependency}; inject the effect or command instead`)
     }
   })
 }
+
+
+test("shared playback observation has no module dependencies", async () => {
+  const entry = "assets/js/shared/observed_playback.mjs"
+  const result = await build({entryPoints: [entry], bundle: true, write: false, metafile: true,
+    platform: "neutral", logLevel: "silent"})
+  assert.deepEqual(Object.keys(result.metafile.inputs), [entry])
+})
