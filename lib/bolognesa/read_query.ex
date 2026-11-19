@@ -1,19 +1,33 @@
 defmodule Bolognesa.ReadQuery do
   @moduledoc "Bounds shared by read queries: search text, page and identifiers."
 
-  @spec valid?(term(), term(), term()) :: boolean()
-  def valid?(text, page, library_id),
-    do: valid_text?(text) and valid_page?(page) and valid_optional_id?(library_id)
+  @type error :: {:error, :not_found | :invalid_query | :invalid_page}
 
-  @spec valid_text?(term()) :: boolean()
-  def valid_text?(text), do: is_binary(text) and byte_size(text) <= 256 and String.valid?(text)
+  @spec validate(term(), term(), term()) :: :ok | error()
+  def validate(text, page, library_id) do
+    with :ok <- validate_text(text),
+         :ok <- validate_page(page) do
+      validate_optional_id(library_id)
+    end
+  end
 
-  @spec valid_page?(term()) :: boolean()
-  def valid_page?(page), do: is_integer(page) and page in 1..100_000
+  @spec validate_text(term()) :: :ok | {:error, :invalid_query}
+  def validate_text(text) when is_binary(text) and byte_size(text) <= 256 do
+    if String.valid?(text), do: :ok, else: {:error, :invalid_query}
+  end
 
-  @spec valid_id?(term()) :: boolean()
-  def valid_id?(id), do: is_integer(id) and id > 0
+  def validate_text(_), do: {:error, :invalid_query}
 
-  @spec valid_optional_id?(term()) :: boolean()
-  def valid_optional_id?(id), do: is_nil(id) or valid_id?(id)
+  @spec validate_page(term()) :: :ok | {:error, :invalid_page}
+  def validate_page(page) when is_integer(page) and page in 1..100_000, do: :ok
+  def validate_page(_), do: {:error, :invalid_page}
+
+  @spec validate_id(term()) :: :ok | {:error, :not_found}
+  def validate_id(id) when is_integer(id) and id > 0, do: :ok
+  def validate_id(_), do: {:error, :not_found}
+
+  @spec validate_optional_id(term()) :: :ok | {:error, :invalid_query}
+  def validate_optional_id(nil), do: :ok
+  def validate_optional_id(id) when is_integer(id) and id > 0, do: :ok
+  def validate_optional_id(_), do: {:error, :invalid_query}
 end

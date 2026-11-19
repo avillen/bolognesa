@@ -88,8 +88,8 @@ defmodule Bolognesa.Series.SeriesReviewQueriesTest do
 
     assert id == file.id
     assert {:error, :forbidden} = Series.fetch_review_item(nil, file.id)
-    assert :not_found = Series.fetch_review_item(@actor, 0)
-    assert :not_found = Series.fetch_review_item(@actor, 9_999_999)
+    assert {:error, :not_found} = Series.fetch_review_item(@actor, 0)
+    assert {:error, :not_found} = Series.fetch_review_item(@actor, 9_999_999)
   end
 
   defp count_queries(fun) do

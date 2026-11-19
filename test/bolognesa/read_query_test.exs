@@ -4,20 +4,21 @@ defmodule Bolognesa.ReadQueryTest do
   alias Bolognesa.ReadQuery
 
   test "validates text, page and optional library together" do
-    assert ReadQuery.valid?("", 1, nil)
-    assert ReadQuery.valid?(String.duplicate("a", 256), 100_000, 1)
-    refute ReadQuery.valid?(String.duplicate("a", 257), 1, nil)
-    refute ReadQuery.valid?(<<255>>, 1, nil)
-    refute ReadQuery.valid?(nil, 1, nil)
-    refute ReadQuery.valid?("", 0, nil)
-    refute ReadQuery.valid?("", 100_001, nil)
-    refute ReadQuery.valid?("", 1, 0)
+    assert :ok = ReadQuery.validate("", 1, nil)
+    assert :ok = ReadQuery.validate(String.duplicate("a", 256), 100_000, 1)
+    assert {:error, :invalid_query} = ReadQuery.validate(String.duplicate("a", 257), 1, nil)
+    assert {:error, :invalid_query} = ReadQuery.validate(<<255>>, 1, nil)
+    assert {:error, :invalid_query} = ReadQuery.validate(nil, 1, nil)
+    assert {:error, :invalid_page} = ReadQuery.validate("", 0, nil)
+    assert {:error, :invalid_page} = ReadQuery.validate("", 100_001, nil)
+    assert {:error, :invalid_query} = ReadQuery.validate("", 1, 0)
   end
 
   test "ids are positive integers" do
-    assert ReadQuery.valid_id?(1)
-    refute ReadQuery.valid_id?(0)
-    refute ReadQuery.valid_id?("1")
-    assert ReadQuery.valid_optional_id?(nil)
+    assert :ok = ReadQuery.validate_id(1)
+    assert {:error, :not_found} = ReadQuery.validate_id(0)
+    assert {:error, :not_found} = ReadQuery.validate_id("1")
+    assert :ok = ReadQuery.validate_optional_id(nil)
+    assert {:error, :invalid_query} = ReadQuery.validate_optional_id(0)
   end
 end

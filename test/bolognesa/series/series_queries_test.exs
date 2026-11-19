@@ -56,7 +56,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     assert {:error, :part_unavailable} =
              Series.fetch_next_playable_episode(@actor, episode_id, first.id)
 
-    assert :not_found = Series.fetch_next_playable_episode(@actor, episode_id, next.id)
+    assert {:error, :not_found} = Series.fetch_next_playable_episode(@actor, episode_id, next.id)
     assert {:error, :forbidden} = Series.fetch_next_playable_episode(nil, episode_id, first.id)
   end
 
@@ -103,8 +103,8 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
              Series.fetch_next_playable_episode(@actor, hd(decision.episode_ids), first.id)
 
     assert episode.id == hd(next_decision.episode_ids)
-    assert :not_found = Series.fetch_next_playable_episode(@actor, episode.id, next.id)
-    assert :not_found = Series.fetch_next_playable_episode(@actor, episode.id, first.id)
+    assert {:error, :not_found} = Series.fetch_next_playable_episode(@actor, episode.id, next.id)
+    assert {:error, :not_found} = Series.fetch_next_playable_episode(@actor, episode.id, first.id)
     assert {:error, :forbidden} = Series.fetch_next_playable_episode(nil, episode.id, next.id)
   end
 
@@ -123,7 +123,7 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
              )
 
     assert episode.id == hd(later_decision.episode_ids)
-    assert :not_found = Series.fetch_next_playable_episode(@actor, episode.id, later.id)
+    assert {:error, :not_found} = Series.fetch_next_playable_episode(@actor, episode.id, later.id)
   end
 
   test "detail neighbors use episode order rather than insertion order and stay in the season" do
@@ -229,10 +229,10 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     assert {:ok, %{items: [], total: 0}} = Series.search_series(@actor, "", 1)
     assert {:error, :forbidden} = Series.fetch_series(nil, 1)
     assert {:error, :forbidden} = Series.fetch_episode(nil, 1)
-    assert :not_found = Series.fetch_series(@actor, 0)
-    assert :not_found = Series.fetch_episode(@actor, "invalid")
-    assert :not_found = Series.fetch_series(@actor, 9_999_999)
-    assert :not_found = Series.fetch_episode(@actor, 9_999_999)
+    assert {:error, :not_found} = Series.fetch_series(@actor, 0)
+    assert {:error, :not_found} = Series.fetch_episode(@actor, "invalid")
+    assert {:error, :not_found} = Series.fetch_series(@actor, 9_999_999)
+    assert {:error, :not_found} = Series.fetch_episode(@actor, 9_999_999)
     assert {:error, :not_found} = Series.list_episodes(@actor, 9_999_999, 1)
   end
 

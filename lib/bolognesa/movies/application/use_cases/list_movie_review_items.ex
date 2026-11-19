@@ -15,7 +15,7 @@ defmodule Bolognesa.Movies.Application.UseCases.ListMovieReviewItems do
           {:ok, MovieReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}
   def call(actor, page, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
-         true <- ReadQuery.valid_page?(page) || {:error, :invalid_page},
+         :ok <- ReadQuery.validate_page(page),
          {:ok, {entries, total}} <- reader.list_review_items(page) do
       {:ok,
        %MovieReviewPage{items: Enum.map(entries, &MovieReviewItem.from_domain/1), total: total}}

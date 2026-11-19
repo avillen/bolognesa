@@ -12,7 +12,7 @@ defmodule Bolognesa.Movies.Application.UseCases.GetMovie do
           | {:error, :forbidden | :not_found | :unavailable | :too_many_versions}
   def call(actor, id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
-         true <- ReadQuery.valid_id?(id) || {:error, :not_found},
+         :ok <- ReadQuery.validate_id(id),
          {:ok, result} <- reader.get_movie(id) do
       {:ok, MovieDetail.from_domain(result)}
     end

@@ -15,7 +15,7 @@ defmodule Bolognesa.Movies.Application.UseCases.ListMovies do
           {:ok, MoviePage.t()} | {:error, :forbidden | :invalid_query | :unavailable}
   def call(actor, query, page, reader, library_id \\ nil) do
     with :ok <- Accounts.authorize(actor, :admin),
-         true <- ReadQuery.valid?(query, page, library_id) || {:error, :invalid_query},
+         :ok <- ReadQuery.validate(query, page, library_id),
          {:ok, result} <- reader.list_movies(String.trim(query), page, library_id) do
       {:ok, MoviePage.from_domain(result)}
     end

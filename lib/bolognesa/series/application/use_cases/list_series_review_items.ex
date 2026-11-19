@@ -11,7 +11,7 @@ defmodule Bolognesa.Series.Application.UseCases.ListSeriesReviewItems do
           {:ok, SeriesReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}
   def call(actor, page, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
-         true <- ReadQuery.valid_page?(page) || {:error, :invalid_page},
+         :ok <- ReadQuery.validate_page(page),
          {:ok, {rows, total}} <- reader.list_series_review_items(page) do
       {:ok,
        %SeriesReviewPage{items: Enum.map(rows, &SeriesReviewItem.from_domain/1), total: total}}

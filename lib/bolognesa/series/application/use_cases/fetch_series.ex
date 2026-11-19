@@ -9,11 +9,10 @@ defmodule Bolognesa.Series.Application.UseCases.FetchSeries do
 
   @spec call(AuthenticatedUser.t(), Series.id(), SeriesReader.adapter()) ::
           {:ok, SeriesDetail.t()}
-          | :not_found
-          | {:error, :forbidden | :unavailable | :too_many_seasons}
+          | {:error, :forbidden | :not_found | :unavailable | :too_many_seasons}
   def call(actor, id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
-         true <- ReadQuery.valid_id?(id) || :not_found,
+         :ok <- ReadQuery.validate_id(id),
          {:ok, result} <- reader.fetch_series(id) do
       {:ok, SeriesDetail.from_domain(result)}
     end

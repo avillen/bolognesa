@@ -16,8 +16,7 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReader do
   @doc "At most 100 seasons, ordered by number then ID; larger collections return an error."
   @callback fetch_series(Series.id()) ::
               {:ok, {Series.t(), [{Season.t(), Episode.count()}]}}
-              | :not_found
-              | {:error, :unavailable | :too_many_seasons}
+              | {:error, :not_found | :unavailable | :too_many_seasons}
 
   @callback list_episodes(Season.id(), page :: page_number()) ::
               {:ok,
@@ -34,10 +33,8 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReader do
                {Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()],
                 {Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil,
                  Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil}}}
-              | :not_found
-              | {:error, :unavailable | :too_many_versions}
+              | {:error, :not_found | :unavailable | :too_many_versions}
   @callback fetch_next_playable_episode(Episode.id(), pos_integer()) ::
               {:ok, Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t()}
-              | :not_found
-              | {:error, :unavailable | :part_unavailable}
+              | {:error, :not_found | :unavailable | :part_unavailable}
 end

@@ -7,17 +7,13 @@ defmodule Bolognesa.Series.Application.UseCases.FetchSeriesSeason do
 
   @spec call(AuthenticatedUser.t(), pos_integer(), non_neg_integer(), SeriesProvider.adapter()) ::
           {:ok, SeasonDetails.t()}
-          | :not_found
           | {:error, :forbidden | :invalid_selection | SeriesProvider.reason()}
   def call(actor, id, number, provider) do
     with :ok <- Accounts.authorize(actor, :admin),
          :ok <- valid_ids(id, number) do
-      not_found(provider.season(id, number))
+      provider.season(id, number)
     end
   end
-
-  defp not_found({:error, :not_found}), do: :not_found
-  defp not_found(result), do: result
 
   defp valid_ids(id, number)
        when is_integer(id) and id > 0 and is_integer(number) and number >= 0, do: :ok

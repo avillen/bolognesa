@@ -5,8 +5,7 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReviewReader do
   @type adapter :: module()
   @callback fetch_series_review_item(pos_integer()) ::
               {:ok, {ReviewSeriesFile.t(), [ReviewEpisode.t()]}}
-              | :not_found
-              | {:error, :unavailable}
+              | {:error, :not_found | :unavailable}
   @callback list_series_review_items(page :: pos_integer()) ::
               {:ok, {[{ReviewSeriesFile.t(), [ReviewEpisode.t()]}], non_neg_integer()}}
               | {:error, :unavailable}

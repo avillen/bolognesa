@@ -68,7 +68,7 @@ defmodule Bolognesa.Series do
     do: SearchSeries.call(actor, query, page, EctoSeriesReader, library_id)
 
   @spec fetch_series(AuthenticatedUser.t(), pos_integer()) ::
-          {:ok, SeriesDetail.t()} | :not_found | {:error, reason()}
+          {:ok, SeriesDetail.t()} | {:error, reason()}
   def fetch_series(actor, id), do: FetchSeries.call(actor, id, EctoSeriesReader)
 
   @spec list_episodes(AuthenticatedUser.t(), pos_integer(), pos_integer()) ::
@@ -77,13 +77,12 @@ defmodule Bolognesa.Series do
     do: ListEpisodes.call(actor, id, page, EctoSeriesReader, EctoWatchedEntriesReader)
 
   @spec fetch_episode(AuthenticatedUser.t(), pos_integer()) ::
-          {:ok, EpisodeDetail.t()} | :not_found | {:error, reason()}
+          {:ok, EpisodeDetail.t()} | {:error, reason()}
   def fetch_episode(actor, id), do: FetchEpisode.call(actor, id, EctoSeriesReader)
 
   @spec fetch_next_playable_episode(AuthenticatedUser.t(), pos_integer(), pos_integer()) ::
           {:ok, Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t()}
-          | :not_found
-          | {:error, :forbidden | :unavailable | :part_unavailable}
+          | {:error, :forbidden | :not_found | :unavailable | :part_unavailable}
   def fetch_next_playable_episode(actor, episode_id, file_id),
     do:
       FetchNextPlayableEpisode.call(
@@ -126,13 +125,12 @@ defmodule Bolognesa.Series do
     do: EctoIdentificationRepository.request_batch!(repo, entries)
 
   @spec fetch_review_item(AuthenticatedUser.t(), pos_integer()) ::
-          {:ok, SeriesReviewItem.t()} | :not_found | {:error, reason()}
+          {:ok, SeriesReviewItem.t()} | {:error, reason()}
   def fetch_review_item(actor, id),
     do: FetchSeriesReviewItem.call(actor, id, EctoSeriesReviewReader)
 
   @spec fetch_series_season(AuthenticatedUser.t(), pos_integer(), non_neg_integer()) ::
           {:ok, Bolognesa.Series.Domain.ValueObjects.SeasonDetails.t()}
-          | :not_found
           | {:error, reason()}
   def fetch_series_season(actor, id, number),
     do: FetchSeriesSeason.call(actor, id, number, provider())

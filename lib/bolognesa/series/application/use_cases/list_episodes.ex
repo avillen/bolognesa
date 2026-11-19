@@ -19,8 +19,8 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes do
           | {:error, :forbidden | :not_found | :invalid_page | :unavailable}
   def call(actor, id, page, series_reader, watched_reader) do
     with :ok <- Accounts.authorize(actor, :admin),
-         true <- ReadQuery.valid_id?(id) || {:error, :not_found},
-         true <- ReadQuery.valid_page?(page) || {:error, :invalid_page},
+         :ok <- ReadQuery.validate_id(id),
+         :ok <- ReadQuery.validate_page(page),
          {:ok, result} <- series_reader.list_episodes(id, page),
          {:ok, watched} <- watched_reader.list_watched_entries(actor.id, {:season, id}) do
       {:ok, EpisodePage.from_domain(result, watched)}

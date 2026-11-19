@@ -130,7 +130,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
 
     case rows do
       [] ->
-        :not_found
+        {:error, :not_found}
 
       rows ->
         {:ok,

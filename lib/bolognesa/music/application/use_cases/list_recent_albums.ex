@@ -13,12 +13,9 @@ defmodule Bolognesa.Music.Application.UseCases.ListRecentAlbums do
   @spec call(AuthenticatedUser.t() | nil, pos_integer() | nil, BrowseReader.adapter()) :: result()
   def call(actor, library_id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
-         true <- ReadQuery.valid_optional_id?(library_id),
+         :ok <- ReadQuery.validate_optional_id(library_id),
          {:ok, albums} <- reader.list_recent_albums(library_id, actor.id) do
       {:ok, Enum.map(albums, &RecentAlbum.from_domain/1)}
-    else
-      false -> {:error, :invalid_query}
-      other -> other
     end
   end
 end
