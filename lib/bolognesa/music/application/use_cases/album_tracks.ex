@@ -3,10 +3,10 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Ports.Readers.TracksReader
-  alias Bolognesa.Music.Application.ReadQuery
   alias Bolognesa.Music.Domain.Entities.Album
   alias Bolognesa.Music.Domain.ReadModels.TrackPage
   alias Bolognesa.Music.Domain.ReadModels.TrackRow
+  alias Bolognesa.ReadQuery
   @type error :: :forbidden | :invalid_query | :not_found | :unavailable | :album_too_large
   @type result :: {:ok, TrackPage.t()} | {:error, error()}
   @type queue_result :: {:ok, [TrackRow.t()]} | {:error, error()}

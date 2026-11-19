@@ -3,9 +3,9 @@ defmodule Bolognesa.Music.Application.UseCases.Browse do
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Ports.Readers.BrowseReader
-  alias Bolognesa.Music.Application.ReadQuery
   alias Bolognesa.Music.Domain.Entities.Artist
   alias Bolognesa.Music.Domain.ReadModels.BrowsePage
+  alias Bolognesa.ReadQuery
 
   @type result ::
           {:ok, BrowsePage.t()}

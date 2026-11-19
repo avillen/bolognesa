@@ -3,6 +3,7 @@ defmodule Bolognesa.Movies.Application.UseCases.ListMovies do
   alias Bolognesa.Accounts
   alias Bolognesa.Movies.Application.Ports.Readers.MoviesReader
   alias Bolognesa.Movies.Application.UseCases.ListMovies.Response, as: MoviePage
+  alias Bolognesa.ReadQuery
 
   @spec call(
           Bolognesa.Accounts.Domain.Entities.AuthenticatedUser.t(),
@@ -14,21 +15,9 @@ defmodule Bolognesa.Movies.Application.UseCases.ListMovies do
           {:ok, MoviePage.t()} | {:error, :forbidden | :invalid_query | :unavailable}
   def call(actor, query, page, reader, library_id \\ nil) do
     with :ok <- Accounts.authorize(actor, :admin),
-         :ok <- validate_library(library_id),
-         :ok <- validate(query, page),
+         true <- ReadQuery.valid?(query, page, library_id) || {:error, :invalid_query},
          {:ok, result} <- reader.list_movies(String.trim(query), page, library_id) do
       {:ok, MoviePage.from_domain(result)}
     end
   end
-
-  defp validate_library(nil), do: :ok
-  defp validate_library(id) when is_integer(id) and id > 0, do: :ok
-  defp validate_library(_), do: {:error, :invalid_query}
-
-  defp validate(query, page)
-       when is_binary(query) and is_integer(page) and page > 0 and page <= 100_000 do
-    if String.valid?(query) and byte_size(query) <= 256, do: :ok, else: {:error, :invalid_query}
-  end
-
-  defp validate(_, _), do: {:error, :invalid_query}
 end

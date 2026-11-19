@@ -5,18 +5,16 @@ defmodule Bolognesa.Movies.Application.UseCases.GetMovie do
   alias Bolognesa.Movies.Application.Ports.Readers.MoviesReader
   alias Bolognesa.Movies.Application.UseCases.GetMovie.Response, as: MovieDetail
   alias Bolognesa.Movies.Domain.ReadModels.Movie
+  alias Bolognesa.ReadQuery
 
   @spec call(AuthenticatedUser.t(), Movie.id(), MoviesReader.adapter()) ::
           {:ok, MovieDetail.t()}
           | {:error, :forbidden | :not_found | :unavailable | :too_many_versions}
   def call(actor, id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
-         :ok <- validate_id(id),
+         true <- ReadQuery.valid_id?(id) || {:error, :not_found},
          {:ok, result} <- reader.get_movie(id) do
       {:ok, MovieDetail.from_domain(result)}
     end
   end
-
-  defp validate_id(id) when is_integer(id) and id > 0, do: :ok
-  defp validate_id(_id), do: {:error, :not_found}
 end

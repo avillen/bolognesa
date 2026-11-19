@@ -5,6 +5,7 @@ defmodule Bolognesa.Movies.Application.UseCases.ListMovieReviewItems do
   alias Bolognesa.Movies.Application.Ports.Readers.MovieReviewReader
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems.Item, as: MovieReviewItem
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems.Response, as: MovieReviewPage
+  alias Bolognesa.ReadQuery
 
   @spec call(
           Bolognesa.Accounts.Domain.Entities.AuthenticatedUser.t(),
@@ -14,13 +15,10 @@ defmodule Bolognesa.Movies.Application.UseCases.ListMovieReviewItems do
           {:ok, MovieReviewPage.t()} | {:error, :forbidden | :invalid_page | :unavailable}
   def call(actor, page, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
-         :ok <- validate_page(page),
+         true <- ReadQuery.valid_page?(page) || {:error, :invalid_page},
          {:ok, {entries, total}} <- reader.list_review_items(page) do
       {:ok,
        %MovieReviewPage{items: Enum.map(entries, &MovieReviewItem.from_domain/1), total: total}}
     end
   end
-
-  defp validate_page(page) when is_integer(page) and page > 0 and page <= 100_000, do: :ok
-  defp validate_page(_page), do: {:error, :invalid_page}
 end

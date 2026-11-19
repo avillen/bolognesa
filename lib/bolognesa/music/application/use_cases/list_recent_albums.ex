@@ -4,7 +4,7 @@ defmodule Bolognesa.Music.Application.UseCases.ListRecentAlbums do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Dto.RecentAlbum
   alias Bolognesa.Music.Application.Ports.Readers.BrowseReader
-  alias Bolognesa.Music.Application.ReadQuery
+  alias Bolognesa.ReadQuery
 
   @type result ::
           {:ok, [RecentAlbum.t()]}
