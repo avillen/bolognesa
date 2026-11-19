@@ -2226,12 +2226,12 @@ msgstr "Marked as unwatched."
 msgid "No se pudo actualizar el estado de visto."
 msgstr "Could not update the watched state."
 
-#: lib/bolognesa_web/live/series/season/reducer/mark_season_watched.ex:14
+#: lib/bolognesa_web/live/series/season/reducer/mark_season_watched_coordinator.ex:14
 #, elixir-autogen, elixir-format
 msgid "Temporada marcada como vista."
 msgstr "Season marked as watched."
 
-#: lib/bolognesa_web/live/series/season/reducer/mark_season_watched.ex:15
+#: lib/bolognesa_web/live/series/season/reducer/mark_season_watched_coordinator.ex:15
 #, elixir-autogen, elixir-format
 msgid "No se pudo marcar la temporada."
 msgstr "Could not mark the season as watched."

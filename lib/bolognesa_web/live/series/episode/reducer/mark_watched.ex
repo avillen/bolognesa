@@ -8,14 +8,16 @@ defmodule BolognesaWeb.Series.Episode.Reducer.MarkWatched do
 
   @spec call(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def call(%{assigns: %{detail: detail, active_part: part}} = socket) do
-    entry = %SeasonEntry{episode_id: detail.episode.id, part_number: part}
+    actor = socket.assigns.current_scope.actor
+    id = detail.episode.id
+    entry = %SeasonEntry{episode_id: id, part_number: part}
 
-    case Series.mark_entries_watched(socket.assigns.current_scope.actor, {:entry, entry}) do
-      :ok ->
-        socket
-        |> assign(:watched_parts, MapSet.put(socket.assigns.watched_parts, part))
-        |> put_flash(:info, gettext("Marcado como visto."))
-
+    with :ok <- Series.mark_entries_watched(actor, {:entry, entry}),
+         {:ok, watched} <- Series.list_watched_entries(actor, {:episode, id}) do
+      socket
+      |> assign(:watched_at, Map.new(watched, &{&1.season_entry.part_number, &1.last_watched_at}))
+      |> put_flash(:info, gettext("Marcado como visto."))
+    else
       {:error, _reason} ->
         put_flash(socket, :error, gettext("No se pudo actualizar el estado de visto."))
     end

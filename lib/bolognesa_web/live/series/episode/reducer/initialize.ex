@@ -8,7 +8,6 @@ defmodule BolognesaWeb.Series.Episode.Reducer.Initialize do
     socket
     |> assign(:content_ref, {:episode, id})
     |> assign(:watched_attempt_id, nil)
-    |> assign(:watched_parts, nil)
     |> assign(:multi_episode?, false)
     |> assign(:detail, nil)
     |> assign(:watched_at, %{})

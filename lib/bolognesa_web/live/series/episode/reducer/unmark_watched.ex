@@ -13,7 +13,7 @@ defmodule BolognesaWeb.Series.Episode.Reducer.UnmarkWatched do
     case Series.unmark_entry_watched(socket.assigns.current_scope.actor, entry) do
       :ok ->
         socket
-        |> assign(:watched_parts, MapSet.delete(socket.assigns.watched_parts, part))
+        |> assign(:watched_at, Map.delete(socket.assigns.watched_at, part))
         |> put_flash(:info, gettext("Marcado como no visto."))
 
       {:error, _reason} ->

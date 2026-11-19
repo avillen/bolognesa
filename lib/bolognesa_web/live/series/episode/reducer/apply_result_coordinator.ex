@@ -3,7 +3,6 @@ defmodule BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator do
   use Gettext, backend: BolognesaWeb.Gettext
   import Phoenix.Component, only: [assign: 3]
   alias BolognesaWeb.LiveSupport.PlaybackEvents
-  alias BolognesaWeb.Series.Episode.Reducer.LoadWatched
   alias BolognesaWeb.Series.Episode.Reducer.SelectPart
 
   @spec call(Phoenix.LiveView.Socket.t(), reference(), term()) :: Phoenix.LiveView.Socket.t()
@@ -23,7 +22,6 @@ defmodule BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator do
       :multi_episode?,
       Enum.any?(detail.versions, &(length(&1.episode_numbers) > 1))
     )
-    |> LoadWatched.call()
     |> SelectPart.call(socket.assigns.requested_part)
   end
 

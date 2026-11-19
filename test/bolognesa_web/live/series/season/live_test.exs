@@ -127,11 +127,15 @@ defmodule BolognesaWeb.Series.Season.LiveTest do
     {:ok, view, _} = live(ctx.conn, "/series/seasons/#{ctx.season_id}")
     render_async(view)
     refute has_element?(view, "#episode-list button")
+    refute has_element?(view, "#episode-watched-#{ctx.episode_id}")
 
     assert view
            |> element("#season-watched-action", "Marcar temporada como vista")
            |> render_click() =~
              "Temporada marcada como vista."
+
+    render_async(view)
+    assert has_element?(view, "#episode-watched-#{ctx.episode_id}", "Visto")
 
     assert {:ok, entries} =
              Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})

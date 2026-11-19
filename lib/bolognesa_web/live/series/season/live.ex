@@ -8,7 +8,7 @@ defmodule BolognesaWeb.Series.Season.Live do
   alias BolognesaWeb.Series.Season.Reducer.ApplyResult
   alias BolognesaWeb.Series.Season.Reducer.Initialize
   alias BolognesaWeb.Series.Season.Reducer.Load
-  alias BolognesaWeb.Series.Season.Reducer.MarkSeasonWatched
+  alias BolognesaWeb.Series.Season.Reducer.MarkSeasonWatchedCoordinator
   @impl true
   def mount(_params, _session, socket), do: {:ok, Initialize.call(socket)}
   @impl true
@@ -24,7 +24,7 @@ defmodule BolognesaWeb.Series.Season.Live do
     do: {:noreply, Load.call(socket, socket.assigns.content_id, socket.assigns.page)}
 
   def handle_event("mark_season_watched", _params, socket),
-    do: {:noreply, MarkSeasonWatched.call(socket)}
+    do: {:noreply, MarkSeasonWatchedCoordinator.call(socket)}
 
   @impl true
   def handle_async({:season_episodes, request}, result, socket),
