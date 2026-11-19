@@ -10,6 +10,10 @@ defmodule BolognesaWeb.Series.Season.Reducer.Load do
 
     socket
     |> assign(content_id: id, page: page, request_id: request, loading?: true, error: nil)
-    |> start_async({:season_episodes, request}, fn -> Series.list_episodes(actor, id, page) end)
+    |> start_async({:season_episodes, request}, fn ->
+      with {:ok, detail} <- Series.list_episodes(actor, id, page),
+           {:ok, watched} <- Series.list_watched_entries(actor, {:season, id}),
+           do: {:ok, detail, watched}
+    end)
   end
 end

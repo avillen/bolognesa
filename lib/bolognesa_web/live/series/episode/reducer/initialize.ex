@@ -10,6 +10,7 @@ defmodule BolognesaWeb.Series.Episode.Reducer.Initialize do
     |> assign(:watched_attempt_id, nil)
     |> assign(:multi_episode?, false)
     |> assign(:detail, nil)
+    |> assign(:watched_at, %{})
     |> assign(:requested_part, nil)
     |> assign(:active_part, nil)
     |> assign(:parts, [])

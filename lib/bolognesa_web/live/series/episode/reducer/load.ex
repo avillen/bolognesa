@@ -18,6 +18,10 @@ defmodule BolognesaWeb.Series.Episode.Reducer.Load do
     |> assign(:error, nil)
     |> assign(:advance_request, nil)
     |> assign(:request_id, request_id)
-    |> start_async({:episode, request_id}, fn -> Series.fetch_episode(actor, id) end)
+    |> start_async({:episode, request_id}, fn ->
+      with {:ok, detail} <- Series.fetch_episode(actor, id),
+           {:ok, watched} <- Series.list_watched_entries(actor, {:episode, id}),
+           do: {:ok, detail, watched}
+    end)
   end
 end

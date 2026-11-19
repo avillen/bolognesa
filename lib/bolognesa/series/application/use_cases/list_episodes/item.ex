@@ -15,7 +15,8 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Item do
           air_date: Date.t() | nil,
           still_path: String.t() | nil,
           version_count: EpisodeVersion.count(),
-          available_version_count: EpisodeVersion.count()
+          available_version_count: EpisodeVersion.count(),
+          watched_at: DateTime.t() | nil
         }
 
   defstruct [
@@ -29,7 +30,8 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Item do
     :air_date,
     :still_path,
     :version_count,
-    :available_version_count
+    :available_version_count,
+    :watched_at
   ]
 
   @spec from_domain(

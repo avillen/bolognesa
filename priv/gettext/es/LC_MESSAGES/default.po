@@ -2170,3 +2170,8 @@ msgstr "Probar reproducción compatible"
 #, elixir-autogen, elixir-format
 msgid "TMDb ha movido estos episodios a otra temporada o número."
 msgstr "TMDb ha movido estos episodios a otra temporada o número."
+
+#: lib/bolognesa_web/live/series/components/watched_state.ex:17
+#, elixir-autogen, elixir-format
+msgid "Visto"
+msgstr "Visto"
