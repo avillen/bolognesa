@@ -5,6 +5,7 @@ defmodule Bolognesa.Series.Application.UseCases.MarkWatchedEntries do
   alias Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader
   alias Bolognesa.Series.Application.Ports.Repositories.WatchedEntriesRepository
   alias Bolognesa.Series.Domain.ReadModels.Season
+  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
   alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
 
   @type scope :: {:entry, SeasonEntry.t()} | {:season, Season.id()}
@@ -37,5 +38,5 @@ defmodule Bolognesa.Series.Application.UseCases.MarkWatchedEntries do
   end
 
   defp season_entries(entries),
-    do: Enum.map(entries, &%SeasonEntry{episode_id: &1.episode_id, part_number: &1.part_number})
+    do: Enum.map(entries, &SeasonEntryStatus.season_entry/1)
 end

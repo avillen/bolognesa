@@ -109,13 +109,19 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:series, ctx.series_id})
   end
 
-  test "latest timestamp wins, with account-scoped reads",
-       ctx do
+  test "latest timestamp wins for numbered parts, with account-scoped reads", ctx do
     earlier = ~U[2026-01-01 00:00:00.000000Z]
     later = ~U[2026-02-01 00:00:00.000000Z]
-    assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry], later)
-    assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry], earlier)
-    assert :ok = Repository.upsert(ctx.other.id, [ctx.entry], earlier)
+
+    for part <- [1, 2] do
+      file = SeriesFixtures.file(ctx.library.id, "Example S01E01-part#{part}.mp4")
+      SeriesFixtures.identify(file, 1, [1])
+    end
+
+    [part1, _part2] = parts = for part <- [1, 2], do: %{ctx.entry | part_number: part}
+    assert :ok = Repository.upsert(ctx.actor.id, parts, later)
+    assert :ok = Repository.upsert(ctx.actor.id, parts, earlier)
+    assert :ok = Repository.upsert(ctx.other.id, [part1], earlier)
 
     for scope <- [
           {:episode, ctx.episode_id},
@@ -123,8 +129,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
           {:series, ctx.series_id}
         ] do
       assert {:ok, entries} = Series.list_watched_entries(ctx.actor, scope)
-      assert [%{episode_id: id, part_number: nil}] = entries
-      assert id == ctx.episode_id
+      assert Enum.map(entries, & &1.part_number) == [1, 2]
       assert Enum.all?(entries, &(&1.last_watched_at == later))
     end
 

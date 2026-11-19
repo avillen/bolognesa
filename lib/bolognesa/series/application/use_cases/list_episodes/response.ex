@@ -24,12 +24,7 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Response do
           [SeasonEntryStatus.t()]
         ) :: t()
   def from_domain({season, series, rows, total}, watched) do
-    watched_at =
-      Map.new(
-        watched,
-        &{%SeasonEntry{episode_id: &1.episode_id, part_number: &1.part_number},
-         &1.last_watched_at}
-      )
+    watched_at = Map.new(watched, &{SeasonEntryStatus.season_entry(&1), &1.last_watched_at})
 
     %__MODULE__{
       season: season,

@@ -13,4 +13,8 @@ defmodule Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus do
         }
   @enforce_keys [:season_number, :number, :episode_id, :part_number, :available?]
   defstruct [:season_number, :number, :episode_id, :part_number, :available?, :last_watched_at]
+
+  @spec season_entry(t()) :: SeasonEntry.t()
+  def season_entry(status),
+    do: %SeasonEntry{episode_id: status.episode_id, part_number: status.part_number}
 end

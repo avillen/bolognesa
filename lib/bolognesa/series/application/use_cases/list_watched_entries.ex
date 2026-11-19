@@ -12,10 +12,9 @@ defmodule Bolognesa.Series.Application.UseCases.ListWatchedEntries do
         ) ::
           {:ok, [SeasonEntryStatus.t()]} | {:error, :forbidden | :unavailable}
   def call(actor, scope, reader) do
-    with :ok <- Accounts.authorize(actor, :admin) do
-      with {:ok, entries} <- reader.list_entries(actor.id, scope) do
-        {:ok, Enum.filter(entries, & &1.last_watched_at)}
-      end
+    with :ok <- Accounts.authorize(actor, :admin),
+         {:ok, entries} <- reader.list_entries(actor.id, scope) do
+      {:ok, Enum.filter(entries, & &1.last_watched_at)}
     end
   end
 end
