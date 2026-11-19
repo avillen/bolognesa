@@ -1,25 +1,22 @@
-defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.ObanJobRecovery do
+defmodule Bolognesa.Infrastructure.Jobs.IdentificationRecovery do
   @moduledoc false
   import Ecto.Query
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
-  alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
-  alias Bolognesa.Series.Domain.Entities.Identification
-  alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
   alias Oban.Job
 
-  @spec interrupted(DecisionStore.repo(), DateTime.t()) ::
-          [{pos_integer(), Identification.token(), binary() | nil}]
-  def interrupted(repo, now) do
+  @spec interrupted(atom(), DateTime.t(), module(), :movie | :series) ::
+          [{pos_integer(), String.t(), String.t() | nil}]
+  def interrupted(repo, now, schema, content_type) do
     cutoff = DateTime.add(now, -60, :second)
 
     repo.all(
-      from(identification in SeriesIdentificationSchema,
+      from(identification in schema,
         join: file in MediaFileSchema,
         on: file.id == identification.media_file_id,
         join: library in LibrarySchema,
         on: library.id == file.library_id,
-        where: library.content_type == :series,
+        where: library.content_type == ^content_type,
         left_join: job in Job,
         on: job.id == identification.job_id,
         where: identification.state == :pending and not is_nil(identification.job_id),

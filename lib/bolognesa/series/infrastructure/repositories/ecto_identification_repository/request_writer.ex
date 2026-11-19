@@ -6,10 +6,11 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
 
   import Ecto.Query
 
+  alias Bolognesa.Infrastructure.Jobs.IdentificationJob
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Series.Domain.Entities.Identification
-  alias Bolognesa.Series.Infrastructure.Jobs.Oban.ObanIdentificationJob
+  alias Bolognesa.Series.Infrastructure.Jobs.Workers.IdentificationWorker
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
   alias Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationRepository.EntryStore
   alias Bolognesa.Series.Infrastructure.Repositories.IdentificationMapper
@@ -72,7 +73,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   defp insert_job!(repo, decision) do
     {:ok, %{job: job}} =
       Multi.new()
-      |> ObanIdentificationJob.insert(decision)
+      |> IdentificationJob.insert(IdentificationWorker, decision)
       |> repo.transaction()
 
     decision |> Changeset.change(job_id: job.id) |> repo.update!(log: false)

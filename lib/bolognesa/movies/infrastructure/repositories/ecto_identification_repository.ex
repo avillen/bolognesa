@@ -5,12 +5,13 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
 
   @behaviour Bolognesa.Movies.Application.Ports.Repositories.IdentificationRepository
 
+  alias Bolognesa.Infrastructure.Jobs.IdentificationRecovery
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Movies.Domain.Entities.Identification
   alias Bolognesa.Movies.Domain.ReadModels.FileToIdentify
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.DecisionStore
-  alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.ObanJobRecovery
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository.RequestWriter
   alias Bolognesa.Movies.Infrastructure.Repositories.IdentificationMapper
   alias Bolognesa.Movies.Infrastructure.Repositories.IdentifiedMovieWriter
@@ -146,7 +147,7 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationReposit
 
   @impl true
   def reconcile_jobs_result(now) do
-    ObanJobRecovery.interrupted(Repo, now)
+    IdentificationRecovery.interrupted(Repo, now, MovieIdentificationSchema, :movie)
     |> Enum.reduce({:ok, 0}, fn {file_id, token, state}, result ->
       reason = if state == "discarded", do: :attempts_exhausted, else: :unexpected_failure
       recovery_result(fail(file_id, token, reason), result)
