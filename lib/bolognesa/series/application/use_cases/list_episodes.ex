@@ -16,11 +16,11 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes do
         ) ::
           {:ok, EpisodePage.t()}
           | {:error, :forbidden | :not_found | :invalid_page | :unavailable}
-  def call(actor, id, page, reader, watched_reader) do
+  def call(actor, id, page, series_reader, watched_reader) do
     with :ok <- Accounts.authorize(actor, :admin),
          :ok <- valid_id(id),
          :ok <- valid_page(page),
-         {:ok, result} <- reader.list_episodes(id, page),
+         {:ok, result} <- series_reader.list_episodes(id, page),
          {:ok, watched} <- watched_reader.list_watched_entries(actor.id, {:season, id}) do
       {:ok, EpisodePage.from_domain(result, watched)}
     end
