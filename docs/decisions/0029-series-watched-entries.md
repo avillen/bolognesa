@@ -37,7 +37,7 @@ entry. A multi-episode file marks the current entries of every associated episod
 using the same whole-file rule. No arbitrary episode IDs from the browser become
 a write batch. Resolution and the read-side season list use the same entry query.
 
-The browser reports once per issued playback attempt when whole-file position
+The browser reports qualifying playback for the issued attempt when whole-file position
 reaches at least 90% of duration (or the media ends), and at least 120 seconds of
 playback have actually been observed in that attempt. Accumulate plausible media
 advancement bounded by monotonic wall time; pauses, seek jumps, source replacement,
@@ -50,27 +50,32 @@ The episode LiveView accepts only the current ready attempt UUID and file and
 suppresses duplicate successful recordings for that attempt. Report before the
 existing ended event advances to the next entry. This follows Music's best-effort
 client-observation approach; it cannot prove consumption or prevent a modified
-client from claiming a viewing. Unlike Music's listening observer, a failed or lost
-watched report is not retried: the once-per-attempt rule takes priority. No browser
+client from claiming a viewing. The LiveView replies with `ok: true` after a successful
+save or a duplicate successful report, and `ok: false` for a failed or invalid report.
+Following Music's acknowledgement and retry pattern, a failed reply permits one retry
+after 15 seconds while the same attempt remains selected. Late failures from a previous
+attempt cannot change the current observation. Successful saves remain deduplicated.
+The application emits sanitized `[:bolognesa, :series, :watched_entries, :failed]`
+observations through the shared Events contract on recording failures. No browser
 storage, durable attempt rows, new endpoint, or Playback-owned watched state is added.
 Music's document lifetime in [0027](0027-persistent-music-player.md) is unchanged.
 
 ## Contracts for sibling tasks
 
 `Series.list_watched_entries(actor, scope)` authorizes the account and returns
-`{:ok, [WatchedEntry]}`. Scope is `{:episode, id}`, `{:season, id}`, `{:series, id}`,
-or `{:series, [ids]}` (at most 100 series in one query). Each model has `episode_id`,
+`{:ok, [WatchedEntry]}`. Scope is `{:episode, id}`, `{:season, id}`, or `{:series, id}`,
+with a single ID. Each model has `episode_id`,
 nullable `part_number`, and `last_watched_at`. Reads retain unavailable and historical
 keys, order by episode ID then part with null first, and return an empty list for
 no activity or a missing scope. Failures return an error, never an empty success.
-Collections are bounded at 10,000 entries; larger results return `:too_many_entries`
-rather than an incomplete collection. Continue must derive catalog order explicitly.
+Continue must derive catalog order explicitly. The index shelf's query belongs to
+[#87](https://github.com/avillen/bolognesa/issues/87).
 
 Within Series, `WatchedEntriesReader` declares these reads and
 `list_played_entries(episode_id, file_id)`. `WatchedEntriesRepository` declares
 `upsert(user_id, entries, watched_at)` and `delete(user_id, entries)`, accepting
 explicit `SeasonEntry` values with `episode_id` and nullable `part_number`.
-Both writes are atomic single SQL statements for at most 10,000 distinct entries;
+Both writes are atomic single SQL statements for the explicit entries;
 empty batches are no-ops. Upsert preserves the latest timestamp; deletion affects
 only the selected account and keys. Application use cases own authorization and
 selection. Web callers use the Series facade, never these internal adapters.

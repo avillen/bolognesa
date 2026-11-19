@@ -3,8 +3,6 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesReposit
   @behaviour Bolognesa.Series.Application.Ports.Repositories.WatchedEntriesRepository
   alias Bolognesa.Repo
 
-  @max_entries 10_000
-
   @impl true
   def upsert(user_id, entries, watched_at) do
     write(entries, fn batch ->
@@ -47,9 +45,6 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesReposit
     case Enum.uniq(entries) do
       [] ->
         :ok
-
-      entries when length(entries) > @max_entries ->
-        {:error, :too_many_entries}
 
       entries ->
         operation.(entries)

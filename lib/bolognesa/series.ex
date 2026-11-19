@@ -131,9 +131,9 @@ defmodule Bolognesa.Series do
   def fetch_series_season(actor, id, number),
     do: FetchSeriesSeason.call(actor, id, number, provider())
 
-  @doc "Read this account's watched entries for an episode, season, series, or up to 100 series."
+  @doc "Read this account's watched entries for an episode, season, or series."
   @spec list_watched_entries(AuthenticatedUser.t() | nil, WatchedEntriesReader.scope()) ::
-          {:ok, [WatchedEntry.t()]} | {:error, :forbidden | :unavailable | :too_many_entries}
+          {:ok, [WatchedEntry.t()]} | {:error, :forbidden | :unavailable}
   def list_watched_entries(actor, scope),
     do: ListWatchedEntries.call(actor, scope, EctoWatchedEntriesReader)
 

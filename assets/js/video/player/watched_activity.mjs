@@ -1,10 +1,11 @@
-/** Best-effort client observation, once per issued playback attempt. Clock uses seconds. */
+/** Best-effort client observation, with one delayed retry per issued playback attempt. Clock uses seconds. */
 export function createWatchedActivity({clock, report}) {
   let attempt = null, file = null, previous = null, elapsed = 0, reported = false
+  let generation = 0, retryAt = 0, retries = 0
   return {
     select(attemptId, fileId) {
       if (attempt === attemptId && file === fileId) return
-      attempt = attemptId; file = fileId; previous = null; elapsed = 0; reported = false
+      attempt = attemptId; file = fileId; previous = null; elapsed = 0; reported = false; retryAt = 0; retries = 0; generation++
     },
     suspend() { previous = null },
     update({position, duration, playing, seeking = false, ended = false}) {
@@ -16,11 +17,16 @@ export function createWatchedActivity({clock, report}) {
         if (played > 0 && wall > 0 && played <= wall * 2 + 0.5) elapsed += Math.min(played, wall)
       }
       previous = {position, playing, seeking, now}
-      if (reported || elapsed < 120 ||
+      if (reported || now < retryAt || elapsed < 120 ||
           !(ended || (Number.isFinite(duration) && duration > 0 && position >= duration * 0.9))) return
       reported = true
-      // A lost observation is allowed, and must not turn into another report for this attempt.
-      try { Promise.resolve(report({attempt_id: attempt, file_id: file})).catch(() => {}) } catch {}
+      const selection = generation
+      const failed = () => {
+        if (generation === selection && retries < 1) {
+          retries++; reported = false; retryAt = clock() + 15
+        }
+      }
+      try { Promise.resolve(report({attempt_id: attempt, file_id: file})).catch(failed) } catch { failed() }
     },
   }
 }

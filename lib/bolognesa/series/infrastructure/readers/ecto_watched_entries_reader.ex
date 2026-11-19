@@ -10,17 +10,13 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
   alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
   alias Bolognesa.Series.Infrastructure.Readers.EpisodeEntries
 
-  @max_entries 10_000
-
   @impl true
   def list_watched_entries(user_id, scope) do
-    case scope_filter(scope) do
-      {:ok, filter, ids} -> read_watched(user_id, filter, ids)
-      error -> error
-    end
+    {filter, id} = scope_filter(scope)
+    read_watched(user_id, filter, id)
   end
 
-  defp read_watched(user_id, filter, ids) do
+  defp read_watched(user_id, filter, id) do
     %{rows: rows} =
       Repo.query!(
         """
@@ -30,34 +26,29 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
         JOIN seasons AS season ON season.id = episode.season_id
         WHERE watched.user_id = $1 AND #{filter}
         ORDER BY watched.episode_id, watched.part_number NULLS FIRST
-        LIMIT 10001
         """,
-        [user_id, ids],
+        [user_id, id],
         log: false
       )
 
-    bounded(rows, fn [episode_id, part, timestamp] ->
-      %WatchedEntry{
-        episode_id: episode_id,
-        part_number: part,
-        last_watched_at: DateTime.from_naive!(timestamp, "Etc/UTC")
-      }
-    end)
+    entries =
+      Enum.map(rows, fn [episode_id, part, timestamp] ->
+        %WatchedEntry{
+          episode_id: episode_id,
+          part_number: part,
+          last_watched_at: DateTime.from_naive!(timestamp, "Etc/UTC")
+        }
+      end)
+
+    {:ok, entries}
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  defp scope_filter({:episode, id}), do: {:ok, "episode.id = ANY($2::bigint[])", [id]}
-  defp scope_filter({:season, id}), do: {:ok, "season.id = ANY($2::bigint[])", [id]}
-
-  defp scope_filter({:series, ids}) when is_list(ids) and length(ids) > 100,
-    do: {:error, :too_many_entries}
-
-  defp scope_filter({:series, ids}) when is_list(ids),
-    do: {:ok, "season.series_id = ANY($2::bigint[])", Enum.uniq(ids)}
-
-  defp scope_filter({:series, id}), do: scope_filter({:series, [id]})
+  defp scope_filter({:episode, id}), do: {"episode.id = $2", id}
+  defp scope_filter({:season, id}), do: {"season.id = $2", id}
+  defp scope_filter({:series, id}), do: {"season.series_id = $2", id}
 
   @impl true
   def list_played_entries(episode_id, file_id) do
@@ -81,21 +72,21 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
               file.availability == :available and decision.state in [:automatic, :manual] and
               (is_nil(decision.part_number) or decision.part_number == entry.part_number),
           order_by: [entry.id, asc_nulls_first: entry.part_number],
-          limit: ^(@max_entries + 1),
           select: {entry.id, entry.part_number}
         ),
         log: false
       )
 
     case rows do
-      [] -> :not_found
-      rows -> bounded(rows, fn {id, part} -> %SeasonEntry{episode_id: id, part_number: part} end)
+      [] ->
+        :not_found
+
+      rows ->
+        {:ok,
+         Enum.map(rows, fn {id, part} -> %SeasonEntry{episode_id: id, part_number: part} end)}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
-
-  defp bounded(rows, _mapper) when length(rows) > @max_entries, do: {:error, :too_many_entries}
-  defp bounded(rows, mapper), do: {:ok, Enum.map(rows, mapper)}
 end

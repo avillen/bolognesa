@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createWatchedPlayback} from "../js/series/player/watched_playback.mjs"
+import {createWatchedPlayback} from "../js/video/player/watched_playback.mjs"
 
 class Video extends EventTarget {
   constructor() { super(); this.currentTime = 0; this.duration = 500; this.paused = false; this.seeking = false; this.ended = false; this.dataset = {} }

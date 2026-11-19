@@ -4,12 +4,12 @@ defmodule Bolognesa.Series.Application.Ports.Repositories.WatchedEntriesReposito
   alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
 
   @type adapter :: module()
-  @type result :: :ok | {:error, :unavailable | :too_many_entries}
+  @type result :: :ok | {:error, :unavailable}
 
-  @doc "Atomically upsert up to 10,000 distinct entries, retaining the greatest timestamp. Empty is a no-op."
+  @doc "Atomically upsert explicit entries, retaining the greatest timestamp. Empty is a no-op."
   @callback upsert(user_id :: pos_integer(), [SeasonEntry.t()], WatchedEntry.last_watched_at()) ::
               result()
 
-  @doc "Atomically delete up to 10,000 distinct entries for this account only. Empty is a no-op."
+  @doc "Atomically delete explicit entries for this account only. Empty is a no-op."
   @callback delete(user_id :: pos_integer(), [SeasonEntry.t()]) :: result()
 end

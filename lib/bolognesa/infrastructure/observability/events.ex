@@ -38,6 +38,7 @@ defmodule Bolognesa.Infrastructure.Observability.Events do
       :stale,
       :rejected
     ],
+    {:series, :watched_entries} => [:failed],
     {:series, :correction} => [:completed, :failed, :stale],
     {:series, :provider} => [:failed],
     {:series, :reconciliation} => [:recovered, :failed],
@@ -66,6 +67,7 @@ defmodule Bolognesa.Infrastructure.Observability.Events do
       :operation,
       :result
     ],
+    watched_entries: [:user_id, :file_id, :reason],
     correction: [:user_id, :file_id, :revision, :reason, :failure_stage, :result],
     provider: [:user_id, :reason, :failure_stage, :operation],
     import: [
@@ -194,6 +196,7 @@ defmodule Bolognesa.Infrastructure.Observability.Events do
           | :reconciliation
           | :notification
           | :delivery
+          | :watched_entries
   @type outcome ::
           :requested
           | :started

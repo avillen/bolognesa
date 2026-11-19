@@ -5,11 +5,20 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Series
+  alias Bolognesa.Series.Application.UseCases.RecordWatchedEntries
   alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
   alias Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader, as: Reader
   alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository, as: Repository
   alias Bolognesa.SeriesFixtures
   alias Ecto.Changeset
+
+  defmodule FailingRepository do
+    @behaviour Bolognesa.Series.Application.Ports.Repositories.WatchedEntriesRepository
+    @impl true
+    def upsert(_, _, _), do: {:error, :unavailable}
+    @impl true
+    def delete(_, _), do: :ok
+  end
 
   setup do
     user =
@@ -47,6 +56,36 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     }
   end
 
+  test "failed persistence emits a sanitized watched-entry failure observation", ctx do
+    reference = make_ref()
+    owner = self()
+    event = [:bolognesa, :series, :watched_entries, :failed]
+
+    :ok =
+      :telemetry.attach(
+        reference,
+        event,
+        fn name, measurements, metadata, _ ->
+          send(owner, {name, measurements, metadata})
+        end,
+        nil
+      )
+
+    on_exit(fn -> :telemetry.detach(reference) end)
+
+    assert {:error, :unavailable} =
+             RecordWatchedEntries.call(
+               ctx.actor,
+               ctx.episode_id,
+               ctx.media_file.id,
+               Reader,
+               FailingRepository
+             )
+
+    assert_receive {^event, %{count: 1}, metadata}
+    assert metadata == %{user_id: ctx.actor.id, file_id: ctx.media_file.id, reason: :unavailable}
+  end
+
   test "latest timestamp wins for nil and numbered parts, with account-scoped reads and deletes",
        ctx do
     earlier = ~U[2026-01-01 00:00:00.000000Z]
@@ -59,8 +98,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     for scope <- [
           {:episode, ctx.episode_id},
           {:season, ctx.season_id},
-          {:series, ctx.series_id},
-          {:series, [ctx.series_id]}
+          {:series, ctx.series_id}
         ] do
       assert {:ok, entries} = Series.list_watched_entries(ctx.actor, scope)
       assert Enum.map(entries, & &1.part_number) == [nil, 1]
@@ -139,13 +177,10 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     end
   end
 
-  test "empty writes are no-ops and collection reads reject oversize series batches", ctx do
+  test "empty writes are no-ops", ctx do
     assert :ok = Repository.upsert(ctx.actor.id, [], DateTime.utc_now())
     assert :ok = Repository.delete(ctx.actor.id, [])
-    assert {:ok, []} = Reader.list_watched_entries(ctx.actor.id, {:series, []})
-
-    assert {:error, :too_many_entries} =
-             Reader.list_watched_entries(ctx.actor.id, {:series, Enum.to_list(1..101)})
+    assert {:ok, []} = Reader.list_watched_entries(ctx.actor.id, {:series, ctx.series_id})
   end
 
   test "batch writes roll back on invalid episode references and nil keys are unique", ctx do

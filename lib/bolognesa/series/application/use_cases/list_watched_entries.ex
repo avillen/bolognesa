@@ -10,7 +10,7 @@ defmodule Bolognesa.Series.Application.UseCases.ListWatchedEntries do
           WatchedEntriesReader.scope(),
           WatchedEntriesReader.adapter()
         ) ::
-          {:ok, [WatchedEntry.t()]} | {:error, :forbidden | :unavailable | :too_many_entries}
+          {:ok, [WatchedEntry.t()]} | {:error, :forbidden | :unavailable}
   def call(actor, scope, reader) do
     with :ok <- Accounts.authorize(actor, :admin) do
       reader.list_watched_entries(actor.id, scope)

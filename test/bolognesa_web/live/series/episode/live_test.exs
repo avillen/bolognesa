@@ -4,7 +4,6 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
   alias Bolognesa.Series
   alias Ecto.Changeset
   alias Phoenix.ConnTest
-  alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
@@ -12,13 +11,47 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     only: [inspect!: 1, negotiate: 1, negotiate: 2, report: 1]
 
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
+  alias BolognesaWeb.LiveSupport.PlaybackAttempt
+  alias BolognesaWeb.Series.Episode.Live
   alias BolognesaWeb.SeriesFixtures
+  alias Phoenix.LiveView.Socket
 
   setup %{conn: conn} do
     ctx = SeriesFixtures.setup(conn)
     inspect!(ctx.media_file)
     on_exit(fn -> File.rm_rf!(ctx.directory) end)
     ctx
+  end
+
+  test "LiveView acknowledges a failed report and accepts a later retry only once", ctx do
+    socket = %Socket{
+      assigns: %{
+        __changed__: %{},
+        loading?: false,
+        watched_attempt_id: nil,
+        content_ref: {:episode, ctx.episode_id},
+        current_scope: %{actor: ctx.actor},
+        playback: %PlaybackAttempt{id: "attempt", phase: :ready, file_id: ctx.media_file.id}
+      }
+    }
+
+    report = %{"attempt_id" => "attempt", "file_id" => to_string(ctx.media_file.id)}
+    missing = ctx.media_file |> Changeset.change(availability: :missing) |> Repo.update!()
+
+    assert {:reply, %{ok: false}, failed} =
+             Live.handle_event("record_watched_entries", report, socket)
+
+    assert failed.assigns.watched_attempt_id == nil
+    missing |> Changeset.change(availability: :available) |> Repo.update!()
+
+    assert {:reply, %{ok: true}, saved} =
+             Live.handle_event("record_watched_entries", report, failed)
+
+    assert {:ok, entries} = Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
+    assert entries != []
+    assert {:reply, %{ok: true}, _} = Live.handle_event("record_watched_entries", report, saved)
+    assert {:ok, ^entries} = Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
+    assert {:reply, %{ok: false}, _} = Live.handle_event("record_watched_entries", %{}, saved)
   end
 
   test "watched reports require the current attempt and record at most once", ctx do

@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import {createWatchedActivity} from "../js/series/player/operations/watched_activity.mjs"
+import {createWatchedActivity} from "../js/video/player/watched_activity.mjs"
 
 function fixture() {
   let now = 0
@@ -76,4 +76,42 @@ test("preparation and source changes break sampling without resetting the attemp
   assert.equal(f.reports.length, 0)
   f.update(181)
   assert.equal(f.reports.length, 1)
+})
+
+test("a failed acknowledgement allows only one retry after fifteen seconds in the same attempt", async () => {
+  let now = 0, reports = 0
+  const activity = createWatchedActivity({clock: () => now, report: () => {
+    reports++
+    return Promise.reject(new Error("server unavailable"))
+  }})
+  activity.select("attempt", "7")
+  const sample = () => activity.update({position: now, duration: 200, playing: true})
+  for (now = 0; now <= 180; now++) sample()
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(reports, 1)
+  for (; now < 196; now++) sample()
+  assert.equal(reports, 1)
+  sample()
+  assert.equal(reports, 2)
+  await new Promise(resolve => setImmediate(resolve))
+  for (; now <= 250; now++) sample()
+  assert.equal(reports, 2)
+})
+
+test("a late failure from an old attempt cannot enable a retry on a new one", async () => {
+  let now = 0, rejectOld, reports = 0
+  const activity = createWatchedActivity({clock: () => now, report: () => {
+    reports++
+    return reports === 1 ? new Promise((_, reject) => { rejectOld = reject }) : Promise.resolve()
+  }})
+  const sample = () => activity.update({position: now, duration: 200, playing: true})
+  activity.select("old", "7")
+  for (now = 0; now <= 180; now++) sample()
+  activity.select("new", "7")
+  for (now = 0; now <= 180; now++) sample()
+  assert.equal(reports, 2)
+  rejectOld(new Error("late failure"))
+  await new Promise(resolve => setImmediate(resolve))
+  for (; now <= 220; now++) sample()
+  assert.equal(reports, 2)
 })

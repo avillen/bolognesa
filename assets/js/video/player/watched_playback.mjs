@@ -1,4 +1,4 @@
-import {createWatchedActivity} from "./operations/watched_activity.mjs"
+import {createWatchedActivity} from "./watched_activity.mjs"
 
 /** Adapts the stable video element and whole-file HLS timeline to Series observations. */
 export function createWatchedPlayback({video, report, clock = () => performance.now() / 1000}) {
