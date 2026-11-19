@@ -33,3 +33,4 @@
 | [0027](0027-persistent-music-player.md) | Implemented locally; target-device checks pending | Document-owned playback session and authenticated cross-screen music continuity |
 | [0028](0028-context-owned-browser-modules.md) | Implemented | Context-owned browser layers, explicit operations and one playback state owner |
 | [0029](0029-series-watched-entries.md) | Implemented locally | Account-owned watched season entries, file-independent identity and playback observation |
+| [0030](0030-shared-identification-jobs.md) | Implemented locally | Shared Movies and Series job mechanics without shared business rules |
