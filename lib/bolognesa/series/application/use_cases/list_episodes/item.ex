@@ -15,7 +15,8 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Item do
           air_date: Date.t() | nil,
           still_path: String.t() | nil,
           version_count: EpisodeVersion.count(),
-          available_version_count: EpisodeVersion.count()
+          available_version_count: EpisodeVersion.count(),
+          watched_at: DateTime.t() | nil
         }
 
   defstruct [
@@ -29,13 +30,15 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Item do
     :air_date,
     :still_path,
     :version_count,
-    :available_version_count
+    :available_version_count,
+    :watched_at
   ]
 
   @spec from_domain(
-          {Episode.t(), pos_integer() | nil, EpisodeVersion.count(), EpisodeVersion.count()}
+          {Episode.t(), pos_integer() | nil, EpisodeVersion.count(), EpisodeVersion.count()},
+          DateTime.t() | nil
         ) :: t()
-  def from_domain({row, part, version_count, available_version_count}),
+  def from_domain({row, part, version_count, available_version_count}, watched_at),
     do: %__MODULE__{
       id: row.id,
       key: if(part, do: "#{row.id}-part-#{part}", else: to_string(row.id)),
@@ -47,6 +50,7 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Item do
       air_date: row.air_date,
       still_path: row.still_path,
       version_count: version_count,
-      available_version_count: available_version_count
+      available_version_count: available_version_count,
+      watched_at: watched_at
     }
 end

@@ -11,6 +11,8 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     only: [inspect!: 1, negotiate: 1, negotiate: 2, report: 1]
 
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
+  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository
   alias BolognesaWeb.LiveSupport.PlaybackAttempt
   alias BolognesaWeb.Series.Episode.Live
   alias BolognesaWeb.SeriesFixtures
@@ -271,6 +273,33 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     render_patch(view, "/episodes/0?part=1")
     assert has_element?(view, "#episode-error")
     refute has_element?(view, "#episode-video-frame")
+  end
+
+  test "the watched state follows the selected entry", ctx do
+    for part <- [1, 2] do
+      file = Bolognesa.SeriesFixtures.file(ctx.library.id, "Example S00E01-part#{part}.mp4")
+      Bolognesa.SeriesFixtures.identify(file, 0, [1])
+    end
+
+    entry = %SeasonEntry{episode_id: ctx.episode_id, part_number: 2}
+
+    :ok =
+      EctoWatchedEntriesRepository.upsert(ctx.actor.id, [entry], ~U[2026-11-19 10:00:00.000000Z])
+
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=2")
+    render_async(view)
+    assert has_element?(view, "#episode-watched time[datetime='2026-11-19']", "19/11/2026")
+    assert has_element?(view, "#episode-watched", "Visto")
+
+    render_patch(view, "/episodes/#{ctx.episode_id}?part=1")
+    refute has_element?(view, "#episode-watched")
+  end
+
+  test "an unwatched episode shows no watched state", ctx do
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    assert has_element?(view, "#episode-title")
+    refute has_element?(view, "#episode-watched")
   end
 
   test "compact heading and localized air date below the synopsis", ctx do

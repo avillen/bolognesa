@@ -5,6 +5,8 @@ defmodule BolognesaWeb.Series.Season.LiveTest do
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
+  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository
   alias BolognesaWeb.SeriesFixtures
 
   setup %{conn: conn} do
@@ -43,6 +45,44 @@ defmodule BolognesaWeb.Series.Season.LiveTest do
     end
 
     refute has_element?(view, "#episode-label-#{ctx.episode_id}")
+  end
+
+  test "watched entries show their date while unwatched entries stay neutral", ctx do
+    [first, second] = ctx.episode_ids
+    watched_at = ~U[2026-11-19 10:00:00.000000Z]
+    entry = %SeasonEntry{episode_id: first, part_number: nil}
+    :ok = EctoWatchedEntriesRepository.upsert(ctx.actor.id, [entry], watched_at)
+
+    {:ok, view, _} = live(ctx.conn, "/series/seasons/#{ctx.season_id}")
+    render_async(view)
+
+    assert has_element?(view, "#episode-watched-#{first}", "Visto")
+
+    assert has_element?(
+             view,
+             "#episode-watched-#{first} time[datetime='2026-11-19']",
+             "19/11/2026"
+           )
+
+    refute has_element?(view, "#episode-watched-#{second}")
+  end
+
+  test "only the watched part shows the watched state", ctx do
+    for part <- [1, 2] do
+      file = Bolognesa.SeriesFixtures.file(ctx.library.id, "Example S00E01-part#{part}.mp4")
+      Bolognesa.SeriesFixtures.identify(file, 0, [1])
+    end
+
+    entry = %SeasonEntry{episode_id: ctx.episode_id, part_number: 2}
+
+    :ok =
+      EctoWatchedEntriesRepository.upsert(ctx.actor.id, [entry], ~U[2026-11-19 10:00:00.000000Z])
+
+    {:ok, view, _} = live(ctx.conn, "/series/seasons/#{ctx.season_id}")
+    render_async(view)
+
+    assert has_element?(view, "#episode-watched-#{ctx.episode_id}-part-2", "Visto")
+    refute has_element?(view, "#episode-watched-#{ctx.episode_id}-part-1")
   end
 
   test "rejects anonymous visitors", %{conn: _conn} do

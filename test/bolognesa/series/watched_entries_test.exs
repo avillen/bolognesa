@@ -127,6 +127,16 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     assert {:error, :forbidden} = Series.list_watched_entries(nil, {:episode, ctx.episode_id})
   end
 
+  test "season episode items carry the account's watched date per entry", ctx do
+    second = SeriesFixtures.file(ctx.library.id, "Example S01E02.mp4")
+    SeriesFixtures.identify(second, 1, [2])
+    watched_at = ~U[2026-02-01 00:00:00.000000Z]
+    assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry], watched_at)
+
+    assert {:ok, page} = Series.list_episodes(ctx.actor, ctx.season_id, 1)
+    assert Enum.map(page.items, &{&1.number, &1.watched_at}) == [{1, watched_at}, {2, nil}]
+  end
+
   test "upsert uses the NULLS NOT DISTINCT index for an unsplit entry", ctx do
     earlier = ~U[2026-01-01 00:00:00.000000Z]
     later = ~U[2026-02-01 00:00:00.000000Z]
