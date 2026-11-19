@@ -34,8 +34,9 @@ Organize domain modules by concept type where useful: `entities/`, `value_object
 
 ## Queries and migrations
 
+- Access each table through its persistence schema and Ecto queries. Use raw SQL only when Ecto cannot express the statement, and state the reason in one line.
 - Select only the data the operation needs. Load related records in batches or joins instead of issuing one query per result; add a query-count regression when collection growth could reintroduce an N+1 problem.
-- Bound collection reads and background batches. Paginated queries need deterministic ordering with a unique tie-breaker, such as title followed by ID. Define ordering and missing-value behavior in the read contract when callers depend on them.
+- Bound collection reads and background batches. A read already bounded by its scope, such as the entries of one series, needs no extra limit; state that bound in the port documentation. Paginated queries need deterministic ordering with a unique tie-breaker, such as title followed by ID. Define ordering and missing-value behavior in the read contract when callers depend on them.
 - Review indexes against actual filters, joins, and ordering. Use query plans and representative data when investigating expensive reads; avoid adding indexes solely because a column exists.
 - Review migrations for table size, lock duration, backfill cost, and compatibility with application activation. Choose staged changes or bounded backfills when a single migration would hold locks or run for too long.
 - Preserve existing identities and durable user data. Make rollback behavior explicit; refuse a destructive rollback when later-created data cannot be represented safely. Verify migrations and relevant constraints with PostgreSQL, following the [deployment guide](../../deploy/compose/README.md) for release operations.
