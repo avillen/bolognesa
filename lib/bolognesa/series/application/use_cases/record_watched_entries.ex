@@ -18,6 +18,7 @@ defmodule Bolognesa.Series.Application.UseCases.RecordWatchedEntries do
           WatchedEntriesRepository.adapter()
         ) :: result()
   def call(actor, episode_id, file_id, reader, repository) do
+    # Revalidate the browser's selected episode/file; start_video only resolves an authorized source.
     result =
       with :ok <- Accounts.authorize(actor, :admin),
            {:ok, _source} <- Playback.start_video(actor, {:episode, episode_id}, file_id),
