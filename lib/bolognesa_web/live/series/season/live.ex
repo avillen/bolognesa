@@ -4,9 +4,11 @@ defmodule BolognesaWeb.Series.Season.Live do
   alias BolognesaWeb.Params
   alias BolognesaWeb.Series.Navigation
   alias BolognesaWeb.Series.Season.Components.EpisodeCard
+  alias BolognesaWeb.Series.Season.Components.SeasonWatchedAction
   alias BolognesaWeb.Series.Season.Reducer.ApplyResult
   alias BolognesaWeb.Series.Season.Reducer.Initialize
   alias BolognesaWeb.Series.Season.Reducer.Load
+  alias BolognesaWeb.Series.Season.Reducer.MarkSeasonWatched
   @impl true
   def mount(_params, _session, socket), do: {:ok, Initialize.call(socket)}
   @impl true
@@ -20,6 +22,9 @@ defmodule BolognesaWeb.Series.Season.Live do
   @impl true
   def handle_event("retry", _params, socket),
     do: {:noreply, Load.call(socket, socket.assigns.content_id, socket.assigns.page)}
+
+  def handle_event("mark_season_watched", _params, socket),
+    do: {:noreply, MarkSeasonWatched.call(socket)}
 
   @impl true
   def handle_async({:season_episodes, request}, result, socket),

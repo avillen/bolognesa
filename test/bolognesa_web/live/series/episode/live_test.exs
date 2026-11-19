@@ -132,6 +132,33 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     refute has_element?(view, "#episode-playback-error")
   end
 
+  test "an entry can be marked as watched and unmarked", ctx do
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    assert has_element?(view, "#episode-watched-action", "Marcar como visto")
+
+    assert view |> element("#episode-watched-action") |> render_click() =~ "Marcado como visto."
+    assert has_element?(view, "#episode-watched-action", "Marcar como no visto")
+    assert {:ok, [_]} = Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
+
+    assert view |> element("#episode-watched-action") |> render_click() =~
+             "Marcado como no visto."
+
+    assert has_element?(view, "#episode-watched-action", "Marcar como visto")
+    assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
+  end
+
+  test "a part is marked independently of other parts", ctx do
+    add_part(ctx, 1)
+    add_part(ctx, 2)
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}?part=2")
+    render_async(view)
+    view |> element("#episode-watched-action") |> render_click()
+
+    assert {:ok, [%{season_entry: %{part_number: 2}}]} =
+             Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
+  end
+
   test "a part link opens its own file and navigation follows parts", ctx do
     first = add_part(ctx, 1)
     second = add_part(ctx, 2)

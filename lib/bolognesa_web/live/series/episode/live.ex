@@ -9,14 +9,17 @@ defmodule BolognesaWeb.Series.Episode.Live do
   alias BolognesaWeb.Series.Components.WatchedState
   alias BolognesaWeb.Series.Episode.Components.EpisodeNavigation
   alias BolognesaWeb.Series.Episode.Components.VersionCard
+  alias BolognesaWeb.Series.Episode.Components.WatchedAction
   alias BolognesaWeb.Series.Episode.Parts
   alias BolognesaWeb.Series.Episode.Reducer.Advance
   alias BolognesaWeb.Series.Episode.Reducer.ApplyAdvanceResult
   alias BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator
   alias BolognesaWeb.Series.Episode.Reducer.Initialize
   alias BolognesaWeb.Series.Episode.Reducer.Load
+  alias BolognesaWeb.Series.Episode.Reducer.MarkWatched
   alias BolognesaWeb.Series.Episode.Reducer.RecordWatchedEntries
   alias BolognesaWeb.Series.Episode.Reducer.SelectPart
+  alias BolognesaWeb.Series.Episode.Reducer.UnmarkWatched
   alias BolognesaWeb.Series.Navigation
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -58,6 +61,11 @@ defmodule BolognesaWeb.Series.Episode.Live do
     socket = RecordWatchedEntries.call(socket, params)
     {:reply, %{ok: socket.assigns.watched_attempt_id == params["attempt_id"]}, socket}
   end
+
+  def handle_event("mark_watched", _params, socket), do: {:noreply, MarkWatched.call(socket)}
+
+  def handle_event("unmark_watched", _params, socket),
+    do: {:noreply, UnmarkWatched.call(socket)}
 
   def handle_event("playback_ended", params, socket),
     do: {:noreply, Advance.call(socket, params)}

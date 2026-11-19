@@ -116,6 +116,10 @@
         series_params={@series_params}
         season_params={@season_params}
       />
+      <WatchedAction.watched_action
+        :if={@watched_parts && (@active_part || @parts == [])}
+        watched?={MapSet.member?(@watched_parts, @active_part)}
+      />
       <p
         :if={!Enum.any?(@part_versions, &(&1.availability == :available))}
         id="episode-unavailable"
