@@ -53,11 +53,6 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
 
   @impl true
   def list_continue_entries(user_id, series_id) do
-    seasons =
-      from season in SeasonSchema,
-        where: season.series_id == ^series_id and season.number > 0,
-        select: season.id
-
     rows =
       Repo.all(
         from(entry in subquery(EpisodeEntries.query()),
@@ -67,7 +62,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
           on:
             watched.episode_id == entry.id and watched.user_id == ^user_id and
               fragment("? IS NOT DISTINCT FROM ?", watched.part_number, entry.part_number),
-          where: entry.season_id in subquery(seasons),
+          where: season.series_id == ^series_id and season.number > 0,
           order_by: [season.number, entry.number, asc_nulls_first: entry.part_number],
           select: %ContinueEntry{
             season_number: season.number,

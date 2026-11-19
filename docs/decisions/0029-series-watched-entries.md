@@ -37,7 +37,7 @@ failures emit sanitized Series observations through the shared Events contract.
 This is best-effort client observation, not proof of consumption. There is no count,
 history, source reference, manual flag, durable attempt log or cross-device position.
 
-The series page derives its Continue target from these rows as defined in the backend conventions. It stores no progress state of its own.
+The series page derives its Continue target from these rows as defined for **Continue target** in GLOSSARY.md. It stores no progress state of its own.
 
 ## Consequences
 
