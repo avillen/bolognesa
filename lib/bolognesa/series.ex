@@ -18,14 +18,17 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Series.Application.UseCases.ListSeriesReviewItems
   alias Bolognesa.Series.Application.UseCases.ListSeriesReviewItems.Response, as: SeriesReviewPage
   alias Bolognesa.Series.Application.UseCases.ListWatchedEntries
+  alias Bolognesa.Series.Application.UseCases.MarkWatchedEntries
   alias Bolognesa.Series.Application.UseCases.RecordWatchedEntries
   alias Bolognesa.Series.Application.UseCases.RetryIdentification
   alias Bolognesa.Series.Application.UseCases.SearchSeries
   alias Bolognesa.Series.Application.UseCases.SearchSeries.Response, as: SeriesPage
   alias Bolognesa.Series.Application.UseCases.SearchSeriesCandidates
+  alias Bolognesa.Series.Application.UseCases.UnmarkWatchedEntry
   alias Bolognesa.Series.Domain.Entities.Identification
   alias Bolognesa.Series.Domain.ReadModels.ContinueTarget
   alias Bolognesa.Series.Domain.ReadModels.WatchedEntry
+  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
   alias Bolognesa.Series.Infrastructure.Providers.TmdbSeriesProvider
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReviewReader
@@ -158,6 +161,24 @@ defmodule Bolognesa.Series do
         EctoWatchedEntriesReader,
         EctoWatchedEntriesRepository
       )
+
+  @doc "Mark a known season entry, or every known entry of a season, as watched now."
+  @spec mark_entries_watched(AuthenticatedUser.t() | nil, MarkWatchedEntries.scope()) ::
+          MarkWatchedEntries.result()
+  def mark_entries_watched(actor, scope),
+    do:
+      MarkWatchedEntries.call(
+        actor,
+        scope,
+        EctoWatchedEntriesReader,
+        EctoWatchedEntriesRepository
+      )
+
+  @doc "Remove one season entry from this account's watched entries."
+  @spec unmark_entry_watched(AuthenticatedUser.t() | nil, SeasonEntry.t()) ::
+          :ok | {:error, :forbidden | :unavailable}
+  def unmark_entry_watched(actor, entry),
+    do: UnmarkWatchedEntry.call(actor, entry, EctoWatchedEntriesRepository)
 
   defp provider, do: Application.get_env(:bolognesa, :series_provider_adapter, TmdbSeriesProvider)
 end

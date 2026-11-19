@@ -39,4 +39,21 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesReposit
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
+
+  @impl true
+  def delete(user_id, entry) do
+    from(watched in SeriesWatchedEntrySchema,
+      where: watched.user_id == ^user_id and watched.episode_id == ^entry.episode_id
+    )
+    |> with_part(entry.part_number)
+    |> Repo.delete_all(log: false)
+
+    :ok
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  defp with_part(query, nil), do: where(query, [watched], is_nil(watched.part_number))
+  defp with_part(query, part), do: where(query, [watched], watched.part_number == ^part)
 end

@@ -2184,6 +2184,46 @@ msgstr ""
 msgid "Visto"
 msgstr ""
 
+#: lib/bolognesa_web/live/series/episode/components/watched_action.ex:17
+#, elixir-autogen, elixir-format
+msgid "Marcar como no visto"
+msgstr ""
+
+#: lib/bolognesa_web/live/series/episode/components/watched_action.ex:17
+#, elixir-autogen, elixir-format
+msgid "Marcar como visto"
+msgstr ""
+
+#: lib/bolognesa_web/live/series/season/components/season_watched_action.ex:14
+#, elixir-autogen, elixir-format
+msgid "Marcar temporada como vista"
+msgstr ""
+
+#: lib/bolognesa_web/live/series/episode/reducer/mark_watched.ex:19
+#, elixir-autogen, elixir-format
+msgid "Marcado como visto."
+msgstr ""
+
+#: lib/bolognesa_web/live/series/episode/reducer/unmark_watched.ex:19
+#, elixir-autogen, elixir-format
+msgid "Marcado como no visto."
+msgstr ""
+
+#: lib/bolognesa_web/live/series/episode/reducer/mark_watched.ex:23
+#, elixir-autogen, elixir-format
+msgid "No se pudo actualizar el estado de visto."
+msgstr ""
+
+#: lib/bolognesa_web/live/series/season/reducer/mark_season_watched_coordinator.ex:14
+#, elixir-autogen, elixir-format
+msgid "Temporada marcada como vista."
+msgstr ""
+
+#: lib/bolognesa_web/live/series/season/reducer/mark_season_watched_coordinator.ex:15
+#, elixir-autogen, elixir-format
+msgid "No se pudo marcar la temporada."
+msgstr ""
+
 #: lib/bolognesa_web/live/series/show/components/series_hero.ex
 #, elixir-autogen, elixir-format
 msgid "Empezar"

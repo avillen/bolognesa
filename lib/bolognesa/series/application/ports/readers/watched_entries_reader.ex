@@ -21,6 +21,10 @@ defmodule Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader do
   @callback list_continue_entries(user_id :: pos_integer(), Series.id()) ::
               {:ok, [ContinueEntry.t()]} | {:error, :unavailable}
 
+  @doc "List the known season entries of an episode or season, including unavailable ones, ordered by episode ID then part (nil first)."
+  @callback list_season_entries({:episode, Episode.id()} | {:season, Season.id()}) ::
+              {:ok, [SeasonEntry.t()]} | {:error, :unavailable}
+
   @doc "Resolve a confirmed available file associated with the episode, including all parts for whole files."
   @callback fetch_played_entries(Episode.id(), file_id :: pos_integer()) ::
               {:ok, [SeasonEntry.t()]} | :not_found | {:error, :unavailable}

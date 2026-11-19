@@ -1,5 +1,6 @@
 defmodule BolognesaWeb.Series.Season.LiveTest do
   alias Bolognesa.Repo
+  alias Bolognesa.Series
   alias Ecto.Changeset
   alias Phoenix.ConnTest
   alias Phoenix.LiveViewTest
@@ -118,5 +119,27 @@ defmodule BolognesaWeb.Series.Season.LiveTest do
     assert has_element?(view, "#episode-list a[href='/episodes/#{ctx.episode_id}']")
     refute has_element?(view, "#episode-play-#{ctx.episode_id}")
     assert has_element?(view, "#episode-availability-#{ctx.episode_id}", "No disponible")
+  end
+
+  test "marking the season watched covers unavailable entries and leaves cards without actions",
+       ctx do
+    ctx.media_file |> Changeset.change(availability: :missing) |> Repo.update!()
+    {:ok, view, _} = live(ctx.conn, "/series/seasons/#{ctx.season_id}")
+    render_async(view)
+    refute has_element?(view, "#episode-list button")
+    refute has_element?(view, "#episode-watched-#{ctx.episode_id}")
+
+    assert view
+           |> element("#season-watched-action", "Marcar temporada como vista")
+           |> render_click() =~
+             "Temporada marcada como vista."
+
+    render_async(view)
+    assert has_element?(view, "#episode-watched-#{ctx.episode_id}", "Visto")
+
+    assert {:ok, entries} =
+             Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})
+
+    assert Enum.map(entries, & &1.season_entry.episode_id) == Enum.sort(ctx.episode_ids)
   end
 end
