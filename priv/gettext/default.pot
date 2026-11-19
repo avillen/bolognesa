@@ -2183,3 +2183,23 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Visto"
 msgstr ""
+
+#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#, elixir-autogen, elixir-format
+msgid "Empezar"
+msgstr ""
+
+#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#, elixir-autogen, elixir-format
+msgid "Continuar %{entry}"
+msgstr ""
+
+#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#, elixir-autogen, elixir-format
+msgid "Volver a ver desde %{entry}"
+msgstr ""
+
+#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#, elixir-autogen, elixir-format
+msgid "T%{season}·E%{number}"
+msgstr ""

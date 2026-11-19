@@ -2175,3 +2175,23 @@ msgstr "TMDb ha movido estos episodios a otra temporada o número."
 #, elixir-autogen, elixir-format
 msgid "Visto"
 msgstr "Visto"
+
+#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#, elixir-autogen, elixir-format
+msgid "Empezar"
+msgstr "Empezar"
+
+#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#, elixir-autogen, elixir-format
+msgid "Continuar %{entry}"
+msgstr "Continuar %{entry}"
+
+#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#, elixir-autogen, elixir-format
+msgid "Volver a ver desde %{entry}"
+msgstr "Volver a ver desde %{entry}"
+
+#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#, elixir-autogen, elixir-format
+msgid "T%{season}·E%{number}"
+msgstr "T%{season}·E%{number}"

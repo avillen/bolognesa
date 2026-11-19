@@ -13,6 +13,7 @@ defmodule BolognesaWeb.Series.Show.Reducer.Initialize do
         content_id: 0,
         page: 1,
         total: 0,
+        continue_target: nil,
         request_id: nil
       )
       |> stream(:seasons, [])

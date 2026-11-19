@@ -11,6 +11,7 @@ Boloñesa is a self-hosted media center for movies, TV series, and local music, 
 - Add media folders, scan their files, and browse each library. Original files stay untouched.
 - Identify movies and series with TMDb, review matches, and correct mistakes.
 - Play movies and episodes, choose file versions, and continue to the next episode or numbered part.
+- On a series page, start, continue after the episode you watched most recently, or replay from the first regular episode once you reach the end; specials are not part of that order.
 - Browse local tracks, artists, and albums. Play individual songs or an album in order, add tracks or albums to the current queue, and see what comes next in the expanded player.
 - Open Music home to revisit up to three recently heard albums, and use the tabs to browse artists, albums, and songs. Continue starts at the beginning of the latest qualifying track and follows the album queue; Replay starts the album from the beginning. Both play without leaving Music home; click the album card to open its track list. These account-specific actions are inferred from listening dates, not proof of album completion.
 
