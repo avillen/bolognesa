@@ -118,13 +118,13 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
           {:series, ctx.series_id}
         ] do
       assert {:ok, entries} = Series.list_watched_entries(ctx.actor, scope)
-      assert Enum.map(entries, & &1.part_number) == [nil, 1]
+      assert Enum.map(entries, & &1.season_entry) == [ctx.entry, part]
       assert Enum.all?(entries, &(&1.last_watched_at == later))
     end
 
     assert :ok = Repository.delete(ctx.actor.id, [ctx.entry])
 
-    assert {:ok, [%{part_number: 1}]} =
+    assert {:ok, [%{season_entry: %SeasonEntry{part_number: 1}}]} =
              Reader.list_watched_entries(ctx.actor.id, {:episode, ctx.episode_id})
 
     assert {:ok, [%{last_watched_at: ^earlier}]} =
@@ -165,7 +165,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     renamed |> Changeset.change(revision: 2, size_bytes: 100) |> Repo.update!()
     SeriesFixtures.identify(renamed, 1, [2])
 
-    assert {:ok, [%{episode_id: id}]} =
+    assert {:ok, [%{season_entry: %SeasonEntry{episode_id: id}}]} =
              Series.list_watched_entries(ctx.actor, {:series, ctx.series_id})
 
     assert id == ctx.episode_id
@@ -187,7 +187,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
       assert {:ok, _} = EctoScanRepository.save_batch(scan.id, running.generation, entries)
       assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
 
-      assert {:ok, [%{episode_id: id}]} =
+      assert {:ok, [%{season_entry: %SeasonEntry{episode_id: id}}]} =
                Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
 
       assert id == ctx.episode_id

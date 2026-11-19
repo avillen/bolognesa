@@ -66,9 +66,10 @@ Music's document lifetime in [0027](0027-persistent-music-player.md) is unchange
 
 `Series.list_watched_entries(actor, scope)` authorizes the account and returns
 `{:ok, [WatchedEntry]}`. Scope is `{:episode, id}`, `{:season, id}`, or `{:series, id}`,
-with a single ID. Each model has `episode_id`,
-nullable `part_number`, and `last_watched_at`. Reads retain unavailable and historical
-keys, order by episode ID then part with null first, and return an empty list for
+with a single ID. Each model contains `season_entry: SeasonEntry` and
+`last_watched_at`. The nested value object owns the `episode_id` and nullable
+`part_number`, sharing the entry identity used by repository writes. Reads retain
+unavailable and historical keys, order by episode ID then part with null first, and return an empty list for
 no activity or a missing scope. Failures return an error, never an empty success.
 Continue must derive catalog order explicitly. The index shelf's query belongs to
 [#87](https://github.com/avillen/bolognesa/issues/87).

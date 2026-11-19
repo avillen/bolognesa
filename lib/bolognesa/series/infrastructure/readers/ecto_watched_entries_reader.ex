@@ -34,8 +34,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
     entries =
       Enum.map(rows, fn [episode_id, part, timestamp] ->
         %WatchedEntry{
-          episode_id: episode_id,
-          part_number: part,
+          season_entry: %SeasonEntry{episode_id: episode_id, part_number: part},
           last_watched_at: DateTime.from_naive!(timestamp, "Etc/UTC")
         }
       end)
