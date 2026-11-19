@@ -77,7 +77,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
              Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})
   end
 
-  test "watched reports reauthorize the file after playback started", ctx do
+  test "watched reports validate file availability after playback started", ctx do
     {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
     render_async(view)
     if has_element?(view, "[data-playback-probe]"), do: negotiate(view)

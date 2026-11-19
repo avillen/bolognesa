@@ -86,6 +86,23 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     assert metadata == %{user_id: ctx.actor.id, file_id: ctx.media_file.id, reason: :unavailable}
   end
 
+  test "unassociated and missing files cannot record watched entries", ctx do
+    unrelated = SeriesFixtures.file(ctx.library.id, "Example S01E02.mp4")
+    SeriesFixtures.identify(unrelated, 1, [2])
+
+    assert {:error, :not_found} =
+             Series.record_watched_entries(ctx.actor, ctx.episode_id, unrelated.id)
+
+    assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:series, ctx.series_id})
+
+    ctx.media_file |> Changeset.change(availability: :missing) |> Repo.update!()
+
+    assert {:error, :not_found} =
+             Series.record_watched_entries(ctx.actor, ctx.episode_id, ctx.media_file.id)
+
+    assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:series, ctx.series_id})
+  end
+
   test "latest timestamp wins for nil and numbered parts, with account-scoped reads and deletes",
        ctx do
     earlier = ~U[2026-01-01 00:00:00.000000Z]

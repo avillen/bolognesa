@@ -29,11 +29,13 @@ episode cascades its watched entries. If the observed part layout changes, store
 keys remain historical facts: this change does not infer migration from an old
 unsplit entry to newly discovered parts or vice versa.
 
-Resolve the reported file's confirmed associations inside Series after Playback
-reauthorizes the episode/file through its public facade. One part marks that
-entry. A whole-file alternative marks every currently known numbered part of its
-episode, including unavailable parts; without numbered parts it marks the unsplit
-entry. A multi-episode file marks the current entries of every associated episode,
+After Accounts authorizes the actor, Series validates that the reported file is
+available and has a confirmed automatic/manual association with the episode.
+Missing or unassociated files return `:not_found` and record nothing. The Series
+reader resolves the affected season entries without loading a Playback source.
+One part marks that entry. A whole-file alternative marks every currently known
+numbered part of its episode, including unavailable parts; without numbered parts
+it marks the unsplit entry. A multi-episode file marks the current entries of every associated episode,
 using the same whole-file rule. No arbitrary episode IDs from the browser become
 a write batch. Resolution and the read-side season list use the same entry query.
 
