@@ -27,7 +27,7 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Series.Application.UseCases.UnmarkWatchedEntry
   alias Bolognesa.Series.Domain.Entities.Identification
   alias Bolognesa.Series.Domain.ReadModels.ContinueTarget
-  alias Bolognesa.Series.Domain.ReadModels.WatchedEntry
+  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
   alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
   alias Bolognesa.Series.Infrastructure.Providers.TmdbSeriesProvider
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader
@@ -139,7 +139,7 @@ defmodule Bolognesa.Series do
 
   @doc "Read this account's watched entries for an episode, season, or series."
   @spec list_watched_entries(AuthenticatedUser.t() | nil, WatchedEntriesReader.scope()) ::
-          {:ok, [WatchedEntry.t()]} | {:error, :forbidden | :unavailable}
+          {:ok, [SeasonEntryStatus.t()]} | {:error, :forbidden | :unavailable}
   def list_watched_entries(actor, scope),
     do: ListWatchedEntries.call(actor, scope, EctoWatchedEntriesReader)
 

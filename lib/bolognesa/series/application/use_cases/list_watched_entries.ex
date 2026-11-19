@@ -3,17 +3,19 @@ defmodule Bolognesa.Series.Application.UseCases.ListWatchedEntries do
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader
-  alias Bolognesa.Series.Domain.ReadModels.WatchedEntry
+  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
 
   @spec call(
           AuthenticatedUser.t() | nil,
           WatchedEntriesReader.scope(),
           WatchedEntriesReader.adapter()
         ) ::
-          {:ok, [WatchedEntry.t()]} | {:error, :forbidden | :unavailable}
+          {:ok, [SeasonEntryStatus.t()]} | {:error, :forbidden | :unavailable}
   def call(actor, scope, reader) do
     with :ok <- Accounts.authorize(actor, :admin) do
-      reader.list_watched_entries(actor.id, scope)
+      with {:ok, entries} <- reader.list_entries(actor.id, scope) do
+        {:ok, Enum.filter(entries, & &1.last_watched_at)}
+      end
     end
   end
 end

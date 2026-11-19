@@ -15,7 +15,7 @@ defmodule BolognesaWeb.Series.Episode.Reducer.MarkWatched do
     with :ok <- Series.mark_entries_watched(actor, {:entry, entry}),
          {:ok, watched} <- Series.list_watched_entries(actor, {:episode, id}) do
       socket
-      |> assign(:watched_at, Map.new(watched, &{&1.season_entry.part_number, &1.last_watched_at}))
+      |> assign(:watched_at, Map.new(watched, &{&1.part_number, &1.last_watched_at}))
       |> put_flash(:info, gettext("Marcado como visto."))
     else
       {:error, _reason} ->

@@ -72,7 +72,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     assert {:ok, entries} =
              Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})
 
-    assert Enum.sort(Enum.map(entries, & &1.season_entry.episode_id)) ==
+    assert Enum.sort(Enum.map(entries, & &1.episode_id)) ==
              Enum.sort(ctx.episode_ids)
 
     render_hook(view, "record_watched_entries", report)
@@ -158,7 +158,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     render_async(view)
     view |> element("#episode-watched-action") |> render_click()
 
-    assert {:ok, [%{season_entry: %{part_number: 2}}]} =
+    assert {:ok, [%{part_number: 2}]} =
              Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
   end
 

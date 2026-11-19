@@ -21,6 +21,11 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     def delete(_, _), do: {:error, :unavailable}
   end
 
+  defp watched(user_id, scope) do
+    with {:ok, entries} <- Reader.list_entries(user_id, scope),
+         do: {:ok, Enum.filter(entries, & &1.last_watched_at)}
+  end
+
   setup do
     user =
       Repo.insert!(%UserSchema{
@@ -104,13 +109,12 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:series, ctx.series_id})
   end
 
-  test "latest timestamp wins for nil and numbered parts, with account-scoped reads",
+  test "latest timestamp wins, with account-scoped reads",
        ctx do
     earlier = ~U[2026-01-01 00:00:00.000000Z]
     later = ~U[2026-02-01 00:00:00.000000Z]
-    part = %{ctx.entry | part_number: 1}
-    assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry, part], later)
-    assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry, part], earlier)
+    assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry], later)
+    assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry], earlier)
     assert :ok = Repository.upsert(ctx.other.id, [ctx.entry], earlier)
 
     for scope <- [
@@ -119,12 +123,13 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
           {:series, ctx.series_id}
         ] do
       assert {:ok, entries} = Series.list_watched_entries(ctx.actor, scope)
-      assert Enum.map(entries, & &1.season_entry) == [ctx.entry, part]
+      assert [%{episode_id: id, part_number: nil}] = entries
+      assert id == ctx.episode_id
       assert Enum.all?(entries, &(&1.last_watched_at == later))
     end
 
     assert {:ok, [%{last_watched_at: ^earlier}]} =
-             Reader.list_watched_entries(ctx.other.id, {:episode, ctx.episode_id})
+             watched(ctx.other.id, {:episode, ctx.episode_id})
 
     assert {:error, :forbidden} = Series.list_watched_entries(nil, {:episode, ctx.episode_id})
   end
@@ -186,7 +191,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     renamed |> Changeset.change(revision: 2, size_bytes: 100) |> Repo.update!()
     SeriesFixtures.identify(renamed, 1, [2])
 
-    assert {:ok, [%{season_entry: %SeasonEntry{episode_id: id}}]} =
+    assert {:ok, [%{episode_id: id}]} =
              Series.list_watched_entries(ctx.actor, {:series, ctx.series_id})
 
     assert id == ctx.episode_id
@@ -208,7 +213,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
       assert {:ok, _} = EctoScanRepository.save_batch(scan.id, running.generation, entries)
       assert {:ok, _} = EctoScanRepository.complete(scan.id, running.generation)
 
-      assert {:ok, [%{season_entry: %SeasonEntry{episode_id: id}}]} =
+      assert {:ok, [%{episode_id: id}]} =
                Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
 
       assert id == ctx.episode_id
@@ -217,7 +222,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
 
   test "empty writes are no-ops", ctx do
     assert :ok = Repository.upsert(ctx.actor.id, [], DateTime.utc_now())
-    assert {:ok, []} = Reader.list_watched_entries(ctx.actor.id, {:series, ctx.series_id})
+    assert {:ok, []} = watched(ctx.actor.id, {:series, ctx.series_id})
   end
 
   test "batch writes roll back on invalid episode references and nil keys are unique", ctx do
@@ -226,9 +231,9 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     assert {:error, :unavailable} =
              Repository.upsert(ctx.actor.id, [ctx.entry, invalid], DateTime.utc_now())
 
-    assert {:ok, []} = Reader.list_watched_entries(ctx.actor.id, {:episode, ctx.episode_id})
+    assert {:ok, []} = watched(ctx.actor.id, {:episode, ctx.episode_id})
     assert :ok = Repository.upsert(ctx.actor.id, [ctx.entry, ctx.entry], DateTime.utc_now())
-    assert {:ok, [_]} = Reader.list_watched_entries(ctx.actor.id, {:episode, ctx.episode_id})
+    assert {:ok, [_]} = watched(ctx.actor.id, {:episode, ctx.episode_id})
   end
 
   test "marking an entry sets it watched now and unmarking deletes only that account's row",
@@ -236,17 +241,17 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     before = DateTime.utc_now()
     assert :ok = Series.mark_entries_watched(ctx.actor, {:entry, ctx.entry})
 
-    assert {:ok, [%{season_entry: entry, last_watched_at: at}]} =
+    assert {:ok, [%{episode_id: id, part_number: part, last_watched_at: at}]} =
              Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
 
-    assert entry == ctx.entry
+    assert %SeasonEntry{episode_id: id, part_number: part} == ctx.entry
     assert DateTime.compare(at, before) != :lt
 
     assert :ok = Repository.upsert(ctx.other.id, [ctx.entry], at)
     assert :ok = Series.unmark_entry_watched(ctx.actor, ctx.entry)
     assert :ok = Series.unmark_entry_watched(ctx.actor, ctx.entry)
     assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
-    assert {:ok, [_]} = Reader.list_watched_entries(ctx.other.id, {:episode, ctx.episode_id})
+    assert {:ok, [_]} = watched(ctx.other.id, {:episode, ctx.episode_id})
   end
 
   test "marking an unknown entry or season records nothing", ctx do
@@ -266,6 +271,6 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
 
     assert :ok = Series.mark_entries_watched(ctx.actor, {:season, ctx.season_id})
     assert {:ok, entries} = Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})
-    assert Enum.map(entries, & &1.season_entry.episode_id) == [ctx.episode_id, missing_id]
+    assert Enum.map(entries, & &1.episode_id) == [ctx.episode_id, missing_id]
   end
 end

@@ -16,7 +16,7 @@ Series owns one row per account, catalog episode and optional numbered part, wit
 only `last_watched_at`. A null part represents an unsplit entry. The unique index
 uses `NULLS NOT DISTINCT`; atomic Ecto upserts retain the greatest timestamp.
 The global persistence schema follows [0008](0008-global-persistence-schemas.md).
-`WatchedEntry` composes the `SeasonEntry` identity and its latest watched timestamp.
+`SeasonEntryStatus` composes the `SeasonEntry` identity, its availability and the account's latest watched timestamp, if any.
 
 After account authorization, Series requires an available file with a confirmed
 automatic/manual association to the reported episode. Missing or unrelated files

@@ -140,6 +140,6 @@ defmodule BolognesaWeb.Series.Season.LiveTest do
     assert {:ok, entries} =
              Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})
 
-    assert Enum.map(entries, & &1.season_entry.episode_id) == Enum.sort(ctx.episode_ids)
+    assert Enum.map(entries, & &1.episode_id) == Enum.sort(ctx.episode_ids)
   end
 end

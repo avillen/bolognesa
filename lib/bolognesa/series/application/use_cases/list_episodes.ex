@@ -21,7 +21,7 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes do
          :ok <- valid_id(id),
          :ok <- valid_page(page),
          {:ok, result} <- series_reader.list_episodes(id, page),
-         {:ok, watched} <- watched_reader.list_watched_entries(actor.id, {:season, id}) do
+         {:ok, watched} <- watched_reader.list_entries(actor.id, {:season, id}) do
       {:ok, EpisodePage.from_domain(result, watched)}
     end
   end

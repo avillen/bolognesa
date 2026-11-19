@@ -1,11 +1,11 @@
 defmodule Bolognesa.Series.ContinueTargetPolicyTest do
   use ExUnit.Case, async: true
   alias Bolognesa.Series.Domain.Policies.ContinueTargetPolicy
-  alias Bolognesa.Series.Domain.ReadModels.ContinueEntry
+  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
 
   defp entry(id, opts \\ []) do
-    %ContinueEntry{
-      season_number: 1,
+    %SeasonEntryStatus{
+      season_number: Keyword.get(opts, :season, 1),
       number: id,
       episode_id: id,
       part_number: opts[:part],
@@ -23,6 +23,12 @@ defmodule Bolognesa.Series.ContinueTargetPolicyTest do
 
   test "without entries there is no target" do
     assert ContinueTargetPolicy.call([]) == nil
+  end
+
+  test "specials are not part of the order" do
+    assert ContinueTargetPolicy.call([entry(1, season: 0, watched: 10)]) == nil
+    assert target([entry(1, season: 0, watched: 10), entry(2)]) == {:start, 2}
+    assert target([entry(1, season: 0), entry(2, watched: 10), entry(3)]) == {:continue, 3}
   end
 
   test "starts at the first entry when nothing is watched" do
