@@ -5,6 +5,8 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Response do
   alias Bolognesa.Series.Domain.ReadModels.EpisodeVersion
   alias Bolognesa.Series.Domain.ReadModels.Season
   alias Bolognesa.Series.Domain.ReadModels.Series
+  alias Bolognesa.Series.Domain.ReadModels.WatchedEntry
+  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
 
   @type t :: %__MODULE__{
           season: Season.t(),
@@ -17,13 +19,22 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Response do
 
   @spec from_domain(
           {Season.t(), Series.t(),
-           [{Episode.t(), EpisodeVersion.count(), EpisodeVersion.count()}], Episode.count()}
+           [{Episode.t(), pos_integer() | nil, EpisodeVersion.count(), EpisodeVersion.count()}],
+           Episode.count()},
+          [WatchedEntry.t()]
         ) :: t()
-  def from_domain({season, series, rows, total}),
-    do: %__MODULE__{
+  def from_domain({season, series, rows, total}, watched) do
+    watched_at = Map.new(watched, &{&1.season_entry, &1.last_watched_at})
+
+    %__MODULE__{
       season: season,
       series: series,
-      items: Enum.map(rows, &EpisodeListItem.from_domain/1),
+      items:
+        Enum.map(rows, fn {episode, part, _, _} = row ->
+          entry = %SeasonEntry{episode_id: episode.id, part_number: part}
+          EpisodeListItem.from_domain(row, watched_at[entry])
+        end),
       total: total
     }
+  end
 end

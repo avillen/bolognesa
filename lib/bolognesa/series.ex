@@ -68,7 +68,8 @@ defmodule Bolognesa.Series do
 
   @spec list_episodes(AuthenticatedUser.t(), pos_integer(), pos_integer()) ::
           {:ok, EpisodePage.t()} | {:error, reason()}
-  def list_episodes(actor, id, page), do: ListEpisodes.call(actor, id, page, EctoSeriesReader)
+  def list_episodes(actor, id, page),
+    do: ListEpisodes.call(actor, id, page, EctoSeriesReader, EctoWatchedEntriesReader)
 
   @spec fetch_episode(AuthenticatedUser.t(), pos_integer()) ::
           {:ok, EpisodeDetail.t()} | :not_found | {:error, reason()}

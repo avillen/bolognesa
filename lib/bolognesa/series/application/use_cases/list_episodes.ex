@@ -3,6 +3,7 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes do
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Ports.Readers.SeriesReader
+  alias Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader
   alias Bolognesa.Series.Application.UseCases.ListEpisodes.Response, as: EpisodePage
   alias Bolognesa.Series.Domain.ReadModels.Season
 
@@ -10,16 +11,18 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes do
           AuthenticatedUser.t(),
           Season.id(),
           SeriesReader.page_number(),
-          SeriesReader.adapter()
+          SeriesReader.adapter(),
+          WatchedEntriesReader.adapter()
         ) ::
           {:ok, EpisodePage.t()}
           | {:error, :forbidden | :not_found | :invalid_page | :unavailable}
-  def call(actor, id, page, reader) do
+  def call(actor, id, page, reader, watched_reader) do
     with :ok <- Accounts.authorize(actor, :admin),
          :ok <- valid_id(id),
          :ok <- valid_page(page),
-         {:ok, result} <- reader.list_episodes(id, page) do
-      {:ok, EpisodePage.from_domain(result)}
+         {:ok, result} <- reader.list_episodes(id, page),
+         {:ok, watched} <- watched_reader.list_watched_entries(actor.id, {:season, id}) do
+      {:ok, EpisodePage.from_domain(result, watched)}
     end
   end
 

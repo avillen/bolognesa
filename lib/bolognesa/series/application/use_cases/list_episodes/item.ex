@@ -35,9 +35,10 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Item do
   ]
 
   @spec from_domain(
-          {Episode.t(), pos_integer() | nil, EpisodeVersion.count(), EpisodeVersion.count()}
+          {Episode.t(), pos_integer() | nil, EpisodeVersion.count(), EpisodeVersion.count()},
+          DateTime.t() | nil
         ) :: t()
-  def from_domain({row, part, version_count, available_version_count}),
+  def from_domain({row, part, version_count, available_version_count}, watched_at),
     do: %__MODULE__{
       id: row.id,
       key: if(part, do: "#{row.id}-part-#{part}", else: to_string(row.id)),
@@ -49,6 +50,7 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Item do
       air_date: row.air_date,
       still_path: row.still_path,
       version_count: version_count,
-      available_version_count: available_version_count
+      available_version_count: available_version_count,
+      watched_at: watched_at
     }
 end
