@@ -2195,7 +2195,6 @@ msgstr "Replay from %{entry}"
 #, elixir-autogen, elixir-format
 msgid "T%{season}·E%{number}"
 msgstr "S%{season}·E%{number}"
-
 #: lib/bolognesa_web/live/series/episode/components/watched_action.ex:17
 #, elixir-autogen, elixir-format
 msgid "Marcar como no visto"

@@ -2182,6 +2182,8 @@ msgstr ""
 #: lib/bolognesa_web/live/series/components/watched_state.ex:17
 #, elixir-autogen, elixir-format
 msgid "Visto"
+msgstr ""
+
 #: lib/bolognesa_web/live/series/episode/components/watched_action.ex:17
 #, elixir-autogen, elixir-format
 msgid "Marcar como no visto"
