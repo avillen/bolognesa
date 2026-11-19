@@ -14,6 +14,7 @@ defmodule BolognesaWeb.Series.Episode.Live do
   alias BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator
   alias BolognesaWeb.Series.Episode.Reducer.Initialize
   alias BolognesaWeb.Series.Episode.Reducer.Load
+  alias BolognesaWeb.Series.Episode.Reducer.RecordWatchedEntries
   alias BolognesaWeb.Series.Episode.Reducer.SelectPart
   alias BolognesaWeb.Series.Navigation
   @impl true
@@ -52,6 +53,9 @@ defmodule BolognesaWeb.Series.Episode.Live do
     do: {:noreply, ApplyResultCoordinator.call(socket, request_id, result)}
 
   @impl true
+  def handle_event("record_watched_entries", params, socket),
+    do: {:noreply, RecordWatchedEntries.call(socket, params)}
+
   def handle_event("playback_ended", params, socket),
     do: {:noreply, Advance.call(socket, params)}
 

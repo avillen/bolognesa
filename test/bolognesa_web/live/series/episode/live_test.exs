@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Series.Episode.LiveTest do
   alias Bolognesa.Playback, as: PlaybackContext
   alias Bolognesa.Repo
+  alias Bolognesa.Series
   alias Ecto.Changeset
   alias Phoenix.ConnTest
   alias Phoenix.LiveViewTest
@@ -18,6 +19,43 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     inspect!(ctx.media_file)
     on_exit(fn -> File.rm_rf!(ctx.directory) end)
     ctx
+  end
+
+  test "watched reports require the current attempt and record at most once", ctx do
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
+    report = %{file_id: to_string(ctx.media_file.id), attempt_id: playback_attempt(view)}
+
+    render_hook(view, "record_watched_entries", %{report | attempt_id: "stale"})
+    assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})
+    render_hook(view, "record_watched_entries", %{report | file_id: "99999999"})
+    assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})
+
+    render_hook(view, "record_watched_entries", report)
+
+    assert {:ok, entries} =
+             Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})
+
+    assert Enum.sort(Enum.map(entries, & &1.episode_id)) == Enum.sort(ctx.episode_ids)
+    render_hook(view, "record_watched_entries", report)
+
+    assert {:ok, ^entries} =
+             Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})
+  end
+
+  test "watched reports reauthorize the file after playback started", ctx do
+    {:ok, view, _} = live(ctx.conn, "/episodes/#{ctx.episode_id}")
+    render_async(view)
+    if has_element?(view, "[data-playback-probe]"), do: negotiate(view)
+    mark_unavailable(ctx.media_file)
+
+    render_hook(view, "record_watched_entries", %{
+      file_id: to_string(ctx.media_file.id),
+      attempt_id: playback_attempt(view)
+    })
+
+    assert {:ok, []} = Series.list_watched_entries(ctx.actor, {:season, ctx.season_id})
   end
 
   test "automatically loads the first version and shows the multi episode warning", ctx do

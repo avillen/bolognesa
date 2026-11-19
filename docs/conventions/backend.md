@@ -54,6 +54,13 @@ Protected operations receive an `Accounts.Domain.Entities.AuthenticatedUser` est
 
 Original media remains read-only. Inventory identity follows library and relative path, with size and modification time identifying the observed revision. Only a complete successful scan can mark unseen files absent. Manual corrections take precedence over later automatic results; request tokens and revisions reject stale work. Libraries routes handoffs through explicit transaction-aware owner facades; inventory, requests, and jobs commit together. [Decision 0020](../decisions/0020-direct-durable-jobs.md) supersedes the older outbox mechanisms in the linked records.
 
+### Series watched entries
+
+Series owns one latest watched timestamp per account, catalog episode, and optional
+numbered part. File-independent identity, qualifying playback observation, and sibling
+read/write contracts follow [decision 0029](../decisions/0029-series-watched-entries.md).
+Keep these durable dates separate from Playback's temporary same-tab position recovery.
+
 ### Music listening contracts
 
 Listening activity stores at most one latest timestamp per account and track. The browser reports after 30 seconds of observed playback, or half a shorter track; pauses and seeks do not count. Retry transient failures only while that selection remains active. This is a best-effort client observation. Refreshes and replacements at the same path retain activity; renames create a new identity. Deleting an account or track deletes its activity.
