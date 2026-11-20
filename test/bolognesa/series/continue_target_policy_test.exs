@@ -5,6 +5,7 @@ defmodule Bolognesa.Series.ContinueTargetPolicyTest do
 
   defp entry(id, opts \\ []) do
     %SeasonEntryStatus{
+      season_id: Keyword.get(opts, :season, 1),
       season_number: Keyword.get(opts, :season, 1),
       number: id,
       episode_id: id,
