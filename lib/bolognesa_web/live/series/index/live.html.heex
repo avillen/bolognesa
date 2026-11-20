@@ -60,6 +60,30 @@
         {ngettext("%{count} serie", "%{count} series", @total)}
       </p>
     </div>
+    <section
+      :if={@recent_series != []}
+      id="series-continue-shelf"
+      aria-labelledby="series-continue-shelf-title"
+    >
+      <h2 id="series-continue-shelf-title" class="text-xl font-semibold text-ink">
+        {gettext("Seguir viendo")}
+      </h2>
+      <div class="media-poster-grid mt-4">
+        <SeriesCard.series_card
+          :for={{series, target} <- @recent_series}
+          id={"recent-series-#{series.id}"}
+          series={series}
+          series_params={@series_params}
+        >
+          <ContinueLink.continue_link
+            id={"recent-series-continue-#{series.id}"}
+            target={target}
+            series_params={@series_params}
+            class="media-primary-action w-full"
+          />
+        </SeriesCard.series_card>
+      </div>
+    </section>
     <p :if={@loading?} id="series-loading" role="status" class="text-muted">
       {gettext("Cargando series…")}
     </p>

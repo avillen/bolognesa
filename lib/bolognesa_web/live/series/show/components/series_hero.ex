@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.Series.Show.Components.SeriesHero do
   @moduledoc false
   use BolognesaWeb, :html
-  alias BolognesaWeb.Series.Navigation
+  alias BolognesaWeb.Series.Components.ContinueLink
 
   attr :series, :any, required: true
   attr :total, :integer, required: true
@@ -51,39 +51,16 @@ defmodule BolognesaWeb.Series.Show.Components.SeriesHero do
               @total
             )}</span>
           </p>
-          <.link
+          <ContinueLink.continue_link
             :if={@continue_target}
             id="series-continue"
-            navigate={
-              ~p"/episodes/#{@continue_target.entry.episode_id}?#{Navigation.episode_target_params(@series_params, 1, @continue_target.entry)}"
-            }
+            target={@continue_target}
+            series_params={@series_params}
             class="media-primary-action mt-5"
-          >
-            <.icon
-              name={if @continue_target.action == :replay, do: "hero-arrow-path", else: "hero-play"}
-              class="size-5"
-            />
-            {action_label(@continue_target)}
-          </.link>
+          />
         </div>
       </div>
     </div>
     """
-  end
-
-  defp action_label(%{action: :start}), do: gettext("Empezar")
-
-  defp action_label(%{action: :continue, entry: entry}),
-    do: gettext("Continuar %{entry}", entry: entry_label(entry))
-
-  defp action_label(%{action: :replay, entry: entry}),
-    do: gettext("Volver a ver desde %{entry}", entry: entry_label(entry))
-
-  defp entry_label(entry) do
-    label = gettext("T%{season}·E%{number}", season: entry.season_number, number: entry.number)
-
-    if entry.part_number,
-      do: gettext("%{title} (Parte %{number})", title: label, number: entry.part_number),
-      else: label
   end
 end
