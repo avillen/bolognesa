@@ -247,7 +247,7 @@ defmodule Bolognesa.Music.BrowseTest do
              Music.browse(f.actor, :albums, other.track.artist_id, "", 1, f.library.id)
 
     assert {:error, :not_found} = Music.album_queue(f.actor, other.track.album_id, f.library.id)
-    assert {:error, :invalid_query} = Music.browse(f.actor, :artists, nil, "", 0, nil)
+    assert {:error, :invalid_page} = Music.browse(f.actor, :artists, nil, "", 0, nil)
   end
 
   test "album queue follows disc, track, path and ID with missing numbers last" do

@@ -3,13 +3,13 @@ defmodule Bolognesa.Music.Application.UseCases.Browse do
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Ports.Readers.BrowseReader
-  alias Bolognesa.Music.Application.ReadQuery
   alias Bolognesa.Music.Domain.Entities.Artist
   alias Bolognesa.Music.Domain.ReadModels.BrowsePage
+  alias Bolognesa.ReadQuery
 
   @type result ::
           {:ok, BrowsePage.t()}
-          | {:error, :forbidden | :invalid_query | :not_found | :unavailable}
+          | {:error, :forbidden | :invalid_query | :invalid_page | :not_found | :unavailable}
   @spec call(
           AuthenticatedUser.t() | nil,
           BrowseReader.kind(),
@@ -21,13 +21,13 @@ defmodule Bolognesa.Music.Application.UseCases.Browse do
         ) :: result()
   def call(actor, kind, artist_id, query, page, library_id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
-         true <-
-           kind in [:artists, :albums] and ReadQuery.valid_optional_id?(artist_id) and
-             ReadQuery.valid?(query, page, library_id) do
+         :ok <- validate_kind(kind),
+         :ok <- ReadQuery.validate_optional_id(artist_id),
+         :ok <- ReadQuery.validate(query, page, library_id) do
       reader.browse(kind, artist_id, query, page, library_id, actor.id)
-    else
-      false -> {:error, :invalid_query}
-      error -> error
     end
   end
+
+  defp validate_kind(kind) when kind in [:artists, :albums], do: :ok
+  defp validate_kind(_), do: {:error, :invalid_query}
 end

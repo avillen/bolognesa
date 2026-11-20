@@ -27,5 +27,5 @@ defmodule Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader do
 
   @doc "Resolve a confirmed available file associated with the episode, including all parts for whole files."
   @callback fetch_played_entries(Episode.id(), file_id :: pos_integer()) ::
-              {:ok, [SeasonEntry.t()]} | :not_found | {:error, :unavailable}
+              {:ok, [SeasonEntry.t()]} | {:error, :not_found | :unavailable}
 end

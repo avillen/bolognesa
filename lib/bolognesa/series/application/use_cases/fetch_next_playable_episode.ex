@@ -7,8 +7,7 @@ defmodule Bolognesa.Series.Application.UseCases.FetchNextPlayableEpisode do
 
   @spec call(AuthenticatedUser.t(), pos_integer(), pos_integer(), SeriesReader.adapter()) ::
           {:ok, EpisodeTarget.t()}
-          | :not_found
-          | {:error, :forbidden | :unavailable | :part_unavailable}
+          | {:error, :forbidden | :not_found | :unavailable | :part_unavailable}
   def call(actor, episode_id, file_id, reader) do
     with :ok <- Accounts.authorize(actor, :admin) do
       reader.fetch_next_playable_episode(episode_id, file_id)

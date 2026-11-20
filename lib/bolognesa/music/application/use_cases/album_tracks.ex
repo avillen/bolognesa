@@ -3,11 +3,18 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Music.Application.Ports.Readers.TracksReader
-  alias Bolognesa.Music.Application.ReadQuery
   alias Bolognesa.Music.Domain.Entities.Album
   alias Bolognesa.Music.Domain.ReadModels.TrackPage
   alias Bolognesa.Music.Domain.ReadModels.TrackRow
-  @type error :: :forbidden | :invalid_query | :not_found | :unavailable | :album_too_large
+  alias Bolognesa.ReadQuery
+
+  @type error ::
+          :forbidden
+          | :invalid_query
+          | :invalid_page
+          | :not_found
+          | :unavailable
+          | :album_too_large
   @type result :: {:ok, TrackPage.t()} | {:error, error()}
   @type queue_result :: {:ok, [TrackRow.t()]} | {:error, error()}
   @spec call(
@@ -44,11 +51,8 @@ defmodule Bolognesa.Music.Application.UseCases.AlbumTracks do
 
   defp validate(actor, id, query, page, library) do
     with :ok <- Accounts.authorize(actor, :admin),
-         true <- ReadQuery.valid_id?(id) and ReadQuery.valid?(query, page, library) do
-      :ok
-    else
-      false -> {:error, :invalid_query}
-      error -> error
+         :ok <- ReadQuery.validate_id(id) do
+      ReadQuery.validate(query, page, library)
     end
   end
 end

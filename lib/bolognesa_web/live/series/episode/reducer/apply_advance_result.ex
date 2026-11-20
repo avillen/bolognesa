@@ -25,7 +25,7 @@ defmodule BolognesaWeb.Series.Episode.Reducer.ApplyAdvanceResult do
       |> assign(:advance_request, nil)
       |> put_flash(:error, gettext("La siguiente parte no está disponible."))
 
-  defp finish(socket, {:ok, :not_found}), do: assign(socket, :advance_request, nil)
+  defp finish(socket, {:ok, {:error, :not_found}}), do: assign(socket, :advance_request, nil)
 
   defp finish(socket, _result),
     do:

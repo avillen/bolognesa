@@ -17,7 +17,7 @@ defmodule Bolognesa.Series.Application.Ports.Repositories.IdentificationReposito
   @type reason ::
           :not_found | :unavailable | :wrong_content_type | :source_changed | :manual_locked
   @callback fetch_file(file_id :: pos_integer()) ::
-              {:ok, FileToIdentify.t()} | :not_found | {:error, :unavailable}
+              {:ok, FileToIdentify.t()} | {:error, :not_found | :unavailable}
   @callback complete_series(
               file_id :: pos_integer(),
               token :: Identification.token(),

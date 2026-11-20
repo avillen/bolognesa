@@ -126,7 +126,6 @@ defmodule Bolognesa.Series.Application.UseCases.CorrectSeriesIdentification do
   end
 
   defp observe(_result, _actor, _file_id, _started), do: :ok
-  defp normalize(:not_found), do: {:error, :not_found}
   defp normalize({:provider_error, reason, _, _}), do: {:error, reason}
   defp normalize(result), do: result
 end

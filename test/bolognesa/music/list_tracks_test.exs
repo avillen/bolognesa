@@ -26,8 +26,12 @@ defmodule Bolognesa.Music.ListTracksTest do
     assert {:ok, %{total: 1}} = Music.list_tracks(fixture.actor, "%_", 1, nil)
     assert {:ok, %{total: 0}} = Music.list_tracks(fixture.actor, "missing%", 1, nil)
 
-    for {query, page} <- [{<<255>>, 1}, {String.duplicate("a", 257), 1}, {"", 0}, {"", 100_001}] do
+    for {query, page} <- [{<<255>>, 1}, {String.duplicate("a", 257), 1}] do
       assert {:error, :invalid_query} = Music.list_tracks(fixture.actor, query, page, nil)
+    end
+
+    for page <- [0, 100_001] do
+      assert {:error, :invalid_page} = Music.list_tracks(fixture.actor, "", page, nil)
     end
   end
 

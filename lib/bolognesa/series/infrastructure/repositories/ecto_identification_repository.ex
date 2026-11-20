@@ -28,7 +28,7 @@ defmodule Bolognesa.Series.Infrastructure.Repositories.EctoIdentificationReposit
   def fetch_file(id) do
     case Repo.get(MediaFileSchema, id, log: false) do
       %{availability: :available} = file -> {:ok, file_projection(file)}
-      _ -> :not_found
+      _ -> {:error, :not_found}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}

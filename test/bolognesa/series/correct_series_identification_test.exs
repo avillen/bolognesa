@@ -61,7 +61,7 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
   end
 
   test "returns not found when the file does not exist" do
-    assert :not_found = Repository.fetch_file(0)
+    assert {:error, :not_found} = Repository.fetch_file(0)
     assert {:error, :not_found} = correct(@actor, 0, :unidentified)
   end
 
@@ -195,7 +195,7 @@ defmodule Bolognesa.Series.CorrectSeriesIdentificationTest do
     assert {:error, :invalid_selection} =
              FetchSeriesSeason.call(@actor, 201, -1, SyntheticSeriesProvider)
 
-    assert :not_found = FetchSeriesSeason.call(@actor, 404, 1, SyntheticSeriesProvider)
+    assert {:error, :not_found} = FetchSeriesSeason.call(@actor, 404, 1, SyntheticSeriesProvider)
 
     assert {:error, :provider_unavailable} =
              FetchSeriesSeason.call(@actor, 503, 1, SyntheticSeriesProvider)

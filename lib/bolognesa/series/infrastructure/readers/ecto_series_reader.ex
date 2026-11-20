@@ -94,7 +94,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   def fetch_series(id) do
     case series_row(id) do
       nil ->
-        :not_found
+        {:error, :not_found}
 
       series ->
         seasons =
@@ -181,7 +181,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
 
     case row do
       nil ->
-        :not_found
+        {:error, :not_found}
 
       {episode, season, series} ->
         episode_detail(episode, season, series)
@@ -240,7 +240,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  defp next_episode(nil), do: :not_found
+  defp next_episode(nil), do: {:error, :not_found}
   defp next_episode(episode), do: {:ok, SeriesMapper.episode(episode)}
 
   defp episode_detail(episode, season, series) do
@@ -305,7 +305,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
       )
 
     case current do
-      nil -> :not_found
+      nil -> {:error, :not_found}
       %{part_number: nil} -> next_episode_target(episode_id, file_id)
       %{part_number: part} -> next_part_target(episode_id, file_id, part)
     end
@@ -350,7 +350,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
     end
   end
 
-  defp first_target(nil), do: :not_found
+  defp first_target(nil), do: {:error, :not_found}
 
   defp first_target(%{available_version_count: available, part_number: part} = entry)
        when available > 0 and part in [nil, 1], do: {:ok, target(entry)}

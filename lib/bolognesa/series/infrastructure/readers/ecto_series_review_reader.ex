@@ -70,7 +70,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReviewReader do
 
     case row do
       nil ->
-        :not_found
+        {:error, :not_found}
 
       {decision, _file} = value ->
         episodes = episodes_by_decision([decision.id])

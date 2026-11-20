@@ -174,7 +174,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     assert Enum.map(entries, &{&1.episode_id, &1.part_number}) ==
              [{ctx.episode_id, 1}, {ctx.episode_id, 2}, {List.last(decision.episode_ids), nil}]
 
-    assert :not_found = Reader.fetch_played_entries(ctx.episode_id, -1)
+    assert {:error, :not_found} = Reader.fetch_played_entries(ctx.episode_id, -1)
   end
 
   test "watched state survives inventory revision, missing files, rename, replacement and correction",

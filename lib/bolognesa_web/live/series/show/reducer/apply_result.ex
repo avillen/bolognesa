@@ -8,8 +8,7 @@ defmodule BolognesaWeb.Series.Show.Reducer.ApplyResult do
   @type result ::
           {:ok,
            {:ok, SeriesDetail.t()}
-           | :not_found
-           | {:error, :forbidden | :invalid_page | :unavailable | :too_many_seasons}}
+           | {:error, :forbidden | :not_found | :unavailable | :too_many_seasons}}
           | {:exit, term()}
   @spec call(Phoenix.LiveView.Socket.t(), reference(), result()) :: Phoenix.LiveView.Socket.t()
   def call(socket, request, result) do
