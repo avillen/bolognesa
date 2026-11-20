@@ -9,6 +9,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   alias Bolognesa.Infrastructure.Persistence.MusicAlbumSchema
   alias Bolognesa.Infrastructure.Persistence.MusicArtistSchema
   alias Bolognesa.Infrastructure.Persistence.MusicImportSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicListeningActivitySchema
   alias Bolognesa.Infrastructure.Persistence.MusicTrackSchema
 
   alias Bolognesa.Music.Domain.ReadModels.TrackPage
@@ -131,12 +132,12 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
         on: album.id == track.album_id,
         left_join: import_state in MusicImportSchema,
         on: import_state.media_file_id == file.id,
-        left_join: activity in "music_listening_activity",
+        left_join: activity in MusicListeningActivitySchema,
         on: activity.track_id == track.id and activity.user_id == ^user_id,
         where: library.content_type == :music and file.availability == :available,
         select:
           {file, inspection, track, artist.name, album.title, import_state,
-           type(activity.last_played_at, :utc_datetime_usec)}
+           activity.last_played_at}
       )
 
     if library_id, do: where(query, [file], file.library_id == ^library_id), else: query

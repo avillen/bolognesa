@@ -6,6 +6,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MusicAlbumSchema
   alias Bolognesa.Infrastructure.Persistence.MusicArtistSchema
+  alias Bolognesa.Infrastructure.Persistence.MusicListeningActivitySchema
   alias Bolognesa.Infrastructure.Persistence.MusicTrackSchema
 
   alias Bolognesa.Music.Domain.ReadModels.BrowseItem
@@ -19,7 +20,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
     with :ok <- QueryFilters.library_scope(library_id) do
       latest =
         from(track in MusicTrackSchema,
-          join: activity in "music_listening_activity",
+          join: activity in MusicListeningActivitySchema,
           on: activity.track_id == track.id and activity.user_id == ^user_id,
           join: file in MediaFileSchema,
           on: file.id == track.media_file_id,
@@ -31,7 +32,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
             file_id: file.id,
             track_title: track.title,
             track_available?: file.availability == :available,
-            last_played_at: type(activity.last_played_at, :utc_datetime_usec)
+            last_played_at: activity.last_played_at
           }
         )
 
@@ -109,7 +110,7 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
   defp with_activity(query, :albums, user_id) do
     latest =
       from(track in MusicTrackSchema,
-        join: activity in "music_listening_activity",
+        join: activity in MusicListeningActivitySchema,
         on: activity.track_id == track.id and activity.user_id == ^user_id,
         where: track.album_id == parent_as(:album).id,
         select: max(activity.last_played_at)
