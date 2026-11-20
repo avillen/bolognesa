@@ -17,9 +17,7 @@ defmodule Bolognesa.Series.Application.UseCases.SearchSeries do
           | {:error, :forbidden | :invalid_query | :invalid_page | :unavailable}
   def call(actor, query, page, reader, library_id \\ nil) do
     with :ok <- Accounts.authorize(actor, :admin),
-         :ok <- ReadQuery.validate_optional_id(library_id),
-         :ok <- ReadQuery.validate_text(query),
-         :ok <- ReadQuery.validate_page(page),
+         :ok <- ReadQuery.validate(query, page, library_id),
          {:ok, result} <- reader.list_series(String.trim(query), page, library_id) do
       {:ok, SeriesPage.from_domain(result)}
     end
