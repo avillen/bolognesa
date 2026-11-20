@@ -87,5 +87,9 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
            )
 
     assert has_element?(view, "#series-list #series-#{ctx.series_id}")
+
+    {:ok, view, _} = live(ctx.conn, "/series?query=Serie")
+    render_async(view)
+    refute has_element?(view, "#series-continue-shelf")
   end
 end
