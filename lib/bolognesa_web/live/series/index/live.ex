@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Series.Index.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
   alias BolognesaWeb.Params
-  alias BolognesaWeb.Series.Components.ContinueLink
+  alias BolognesaWeb.Series.Index.Components.ContinueTile
   alias BolognesaWeb.Series.Index.Components.SeriesCard
   alias BolognesaWeb.Series.Index.Reducer.ApplyRecentSeries
   alias BolognesaWeb.Series.Index.Reducer.ApplyResult
