@@ -89,7 +89,7 @@ defmodule Bolognesa.Series do
         actor,
         episode_id,
         file_id,
-        EctoSeriesReader
+        EctoWatchedEntriesReader
       )
 
   @spec list_review_items(AuthenticatedUser.t(), pos_integer()) ::

@@ -181,52 +181,6 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
     Postgrex.Error -> {:error, :unavailable}
   end
 
-  defp fetch_next_available_episode(episode_id, file_id) do
-    completed =
-      from [relation, decision] in ConfirmedFiles.query(),
-        join: episode in EpisodeSchema,
-        on: episode.id == relation.episode_id,
-        join: season in SeasonSchema,
-        on: season.id == episode.season_id,
-        where: decision.media_file_id == ^file_id,
-        select: %{
-          id: episode.id,
-          number: episode.number,
-          season_number: season.number,
-          series_id: season.series_id
-        }
-
-    boundary =
-      from row in subquery(completed),
-        where: exists(from current in subquery(completed), where: current.id == ^episode_id),
-        order_by: [desc: row.season_number, desc: row.number],
-        limit: 1
-
-    query =
-      from episode in EpisodeSchema,
-        join: season in SeasonSchema,
-        on: season.id == episode.season_id,
-        join: previous in subquery(boundary),
-        on: previous.series_id == season.series_id,
-        join: file in ^ConfirmedFiles.rows(),
-        on: file.episode_id == episode.id,
-        where: file.availability == :available,
-        where:
-          season.number > previous.season_number or
-            (season.number == previous.season_number and episode.number > previous.number),
-        order_by: [asc: season.number, asc: episode.number, asc: episode.id],
-        limit: 1,
-        select: episode
-
-    next_episode(Repo.one(query, log: false))
-  rescue
-    DBConnection.ConnectionError -> {:error, :unavailable}
-    Postgrex.Error -> {:error, :unavailable}
-  end
-
-  defp next_episode(nil), do: {:error, :not_found}
-  defp next_episode(episode), do: {:ok, SeriesMapper.episode(episode)}
-
   defp episode_detail(episode, season, series) do
     with {:ok, versions} <- versions(episode.id) do
       {:ok,
@@ -271,80 +225,6 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
 
     {previous, next}
   end
-
-  @impl true
-  def fetch_next_playable_episode(episode_id, file_id) do
-    current =
-      Repo.one(
-        from([relation, decision, file] in ConfirmedFiles.query(),
-          where:
-            relation.episode_id == ^episode_id and file.id == ^file_id and
-              file.availability == :available,
-          select: %{part_number: decision.part_number},
-          limit: 1
-        ),
-        log: false
-      )
-
-    case current do
-      nil -> {:error, :not_found}
-      %{part_number: nil} -> next_episode_target(episode_id, file_id)
-      %{part_number: part} -> next_part_target(episode_id, file_id, part)
-    end
-  rescue
-    DBConnection.ConnectionError -> {:error, :unavailable}
-    Postgrex.Error -> {:error, :unavailable}
-  end
-
-  defp next_part_target(episode_id, file_id, part) do
-    entry =
-      Repo.one(
-        from(row in subquery(EpisodeEntries.query()),
-          where: row.id == ^episode_id and row.part_number > ^part,
-          order_by: row.part_number,
-          limit: 1
-        ),
-        log: false
-      )
-
-    case entry do
-      nil ->
-        next_episode_target(episode_id, file_id)
-
-      %{part_number: next, available_version_count: available}
-      when next == part + 1 and available > 0 ->
-        {:ok, target(entry)}
-
-      _ ->
-        {:error, :part_unavailable}
-    end
-  end
-
-  defp next_episode_target(episode_id, file_id) do
-    with {:ok, episode} <- fetch_next_available_episode(episode_id, file_id) do
-      entry =
-        Repo.one(
-          from(row in subquery(EpisodeEntries.query()),
-            where: row.id == ^episode.id,
-            order_by: row.part_number,
-            limit: 1
-          ),
-          log: false
-        )
-
-      first_target(entry)
-    end
-  end
-
-  defp first_target(nil), do: {:error, :not_found}
-
-  defp first_target(%{available_version_count: available, part_number: part} = entry)
-       when available > 0 and part in [nil, 1], do: {:ok, target(entry)}
-
-  defp first_target(_), do: {:error, :part_unavailable}
-
-  defp target(entry),
-    do: %EpisodeTarget{id: entry.id, season_id: entry.season_id, part_number: entry.part_number}
 
   defp versions(id) do
     rows =

@@ -2,6 +2,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
   @moduledoc false
   @behaviour Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader
   import Ecto.Query
+  alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.SeasonSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesWatchedEntrySchema
@@ -23,6 +24,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
             fragment("? IS NOT DISTINCT FROM ?", watched.part_number, entry.part_number),
         order_by: [season.number, entry.number, asc_nulls_first: entry.part_number],
         select: %SeasonEntryStatus{
+          season_id: entry.season_id,
           season_number: season.number,
           number: entry.number,
           episode_id: entry.id,
@@ -45,6 +47,17 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
 
   defp in_scope(query, {:series, id}),
     do: where(query, [_entry, season], season.series_id == ^id)
+
+  defp in_scope(query, {:series_of, episode_id}) do
+    series_id =
+      from episode in EpisodeSchema,
+        join: season in SeasonSchema,
+        on: season.id == episode.season_id,
+        where: episode.id == ^episode_id,
+        select: season.series_id
+
+    where(query, [_entry, season], season.series_id in subquery(series_id))
+  end
 
   @impl true
   def fetch_played_entries(episode_id, file_id) do
