@@ -14,7 +14,7 @@ defmodule BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator do
 
   defp apply_result(socket, {:ok, {:ok, detail, watched}}) do
     socket
-    |> assign(:watched_at, Map.new(watched, &{&1.season_entry.part_number, &1.last_watched_at}))
+    |> assign(:watched_at, Map.new(watched, &{&1.part_number, &1.last_watched_at}))
     |> assign(:loading?, false)
     |> assign(:content_ref, {:episode, detail.episode.id})
     |> assign(:detail, detail)

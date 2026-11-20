@@ -5,14 +5,13 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
 
   alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.InspectionSchema
-  alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.SeasonSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema
-  alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesSchema
   alias Bolognesa.Repo
   alias Bolognesa.Series.Domain.ReadModels.EpisodeTarget
   alias Bolognesa.Series.Domain.ReadModels.EpisodeVersion
+  alias Bolognesa.Series.Infrastructure.Readers.ConfirmedFiles
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader.SeriesMapper
   alias Bolognesa.Series.Infrastructure.Readers.EpisodeEntries
 
@@ -37,14 +36,9 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
           on: season.series_id == series.id,
           left_join: episode in EpisodeSchema,
           on: episode.season_id == season.id,
-          left_join: relation in SeriesIdentificationEpisodeSchema,
-          on: relation.episode_id == episode.id,
-          left_join: decision in SeriesIdentificationSchema,
-          on:
-            decision.id == relation.identification_id and decision.state in [:automatic, :manual],
-          left_join: file in MediaFileSchema,
+          left_join: file in ^ConfirmedFiles.rows(),
           as: :file,
-          on: file.id == decision.media_file_id,
+          on: file.episode_id == episode.id,
           group_by: series.id,
           order_by: [asc: series.title, asc: series.id],
           limit: @page_size,
@@ -70,16 +64,12 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
 
   defp restrict_library(query, library_id) do
     ids =
-      from episode in EpisodeSchema,
+      from [relation, _decision, file] in ConfirmedFiles.query(),
+        join: episode in EpisodeSchema,
+        on: episode.id == relation.episode_id,
         join: season in SeasonSchema,
         on: season.id == episode.season_id,
-        join: relation in SeriesIdentificationEpisodeSchema,
-        on: relation.episode_id == episode.id,
-        join: decision in SeriesIdentificationSchema,
-        on: decision.id == relation.identification_id,
-        join: file in MediaFileSchema,
-        on: file.id == decision.media_file_id,
-        where: file.library_id == ^library_id and decision.state in [:automatic, :manual],
+        where: file.library_id == ^library_id,
         select: season.series_id
 
     from entry in query, where: entry.id in subquery(ids)
@@ -140,7 +130,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
 
   defp list_season_episodes(season, page) do
     entries = from entry in subquery(EpisodeEntries.query()), where: entry.season_id == ^season.id
-    total = Repo.aggregate(entries, :count)
+    total = Repo.aggregate(entries, :count, log: false)
 
     rows =
       Repo.all(
@@ -193,14 +183,12 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
 
   defp fetch_next_available_episode(episode_id, file_id) do
     completed =
-      from relation in SeriesIdentificationEpisodeSchema,
-        join: decision in SeriesIdentificationSchema,
-        on: decision.id == relation.identification_id,
+      from [relation, decision] in ConfirmedFiles.query(),
         join: episode in EpisodeSchema,
         on: episode.id == relation.episode_id,
         join: season in SeasonSchema,
         on: season.id == episode.season_id,
-        where: decision.media_file_id == ^file_id and decision.state in [:automatic, :manual],
+        where: decision.media_file_id == ^file_id,
         select: %{
           id: episode.id,
           number: episode.number,
@@ -220,13 +208,9 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
         on: season.id == episode.season_id,
         join: previous in subquery(boundary),
         on: previous.series_id == season.series_id,
-        join: relation in SeriesIdentificationEpisodeSchema,
-        on: relation.episode_id == episode.id,
-        join: decision in SeriesIdentificationSchema,
-        on: decision.id == relation.identification_id,
-        join: file in MediaFileSchema,
-        on: file.id == decision.media_file_id,
-        where: decision.state in [:automatic, :manual] and file.availability == :available,
+        join: file in ^ConfirmedFiles.rows(),
+        on: file.episode_id == episode.id,
+        where: file.availability == :available,
         where:
           season.number > previous.season_number or
             (season.number == previous.season_number and episode.number > previous.number),
@@ -292,16 +276,14 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   def fetch_next_playable_episode(episode_id, file_id) do
     current =
       Repo.one(
-        from relation in SeriesIdentificationEpisodeSchema,
-          join: decision in SeriesIdentificationSchema,
-          on: decision.id == relation.identification_id,
-          join: file in MediaFileSchema,
-          on: file.id == decision.media_file_id,
+        from([relation, decision, file] in ConfirmedFiles.query(),
           where:
             relation.episode_id == ^episode_id and file.id == ^file_id and
-              decision.state in [:automatic, :manual] and file.availability == :available,
+              file.availability == :available,
           select: %{part_number: decision.part_number},
           limit: 1
+        ),
+        log: false
       )
 
     case current do
@@ -317,10 +299,12 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   defp next_part_target(episode_id, file_id, part) do
     entry =
       Repo.one(
-        from row in subquery(EpisodeEntries.query()),
+        from(row in subquery(EpisodeEntries.query()),
           where: row.id == ^episode_id and row.part_number > ^part,
           order_by: row.part_number,
           limit: 1
+        ),
+        log: false
       )
 
     case entry do
@@ -340,10 +324,12 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
     with {:ok, episode} <- fetch_next_available_episode(episode_id, file_id) do
       entry =
         Repo.one(
-          from row in subquery(EpisodeEntries.query()),
+          from(row in subquery(EpisodeEntries.query()),
             where: row.id == ^episode.id,
             order_by: row.part_number,
             limit: 1
+          ),
+          log: false
         )
 
       first_target(entry)
@@ -363,16 +349,12 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   defp versions(id) do
     rows =
       Repo.all(
-        from(relation in SeriesIdentificationEpisodeSchema,
-          join: decision in SeriesIdentificationSchema,
-          on: decision.id == relation.identification_id,
-          join: file in MediaFileSchema,
-          on: file.id == decision.media_file_id,
+        from([relation, decision, file] in ConfirmedFiles.query(),
           left_join: inspection in InspectionSchema,
           on:
             inspection.media_file_id == file.id and inspection.state == :succeeded and
               inspection.observed_revision == file.revision,
-          where: relation.episode_id == ^id and decision.state in [:automatic, :manual],
+          where: relation.episode_id == ^id,
           limit: ^(@max_versions + 1),
           order_by: file.id,
           select: {decision, file, inspection}

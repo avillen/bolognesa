@@ -4,8 +4,8 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Response do
   alias Bolognesa.Series.Domain.ReadModels.Episode
   alias Bolognesa.Series.Domain.ReadModels.EpisodeVersion
   alias Bolognesa.Series.Domain.ReadModels.Season
+  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
   alias Bolognesa.Series.Domain.ReadModels.Series
-  alias Bolognesa.Series.Domain.ReadModels.WatchedEntry
   alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
 
   @type t :: %__MODULE__{
@@ -21,10 +21,10 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Response do
           {Season.t(), Series.t(),
            [{Episode.t(), pos_integer() | nil, EpisodeVersion.count(), EpisodeVersion.count()}],
            Episode.count()},
-          [WatchedEntry.t()]
+          [SeasonEntryStatus.t()]
         ) :: t()
   def from_domain({season, series, rows, total}, watched) do
-    watched_at = Map.new(watched, &{&1.season_entry, &1.last_watched_at})
+    watched_at = Map.new(watched, &{SeasonEntryStatus.season_entry(&1), &1.last_watched_at})
 
     %__MODULE__{
       season: season,

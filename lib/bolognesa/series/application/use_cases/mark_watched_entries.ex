@@ -5,6 +5,7 @@ defmodule Bolognesa.Series.Application.UseCases.MarkWatchedEntries do
   alias Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader
   alias Bolognesa.Series.Application.Ports.Repositories.WatchedEntriesRepository
   alias Bolognesa.Series.Domain.ReadModels.Season
+  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
   alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
 
   @type scope :: {:entry, SeasonEntry.t()} | {:season, Season.id()}
@@ -17,21 +18,25 @@ defmodule Bolognesa.Series.Application.UseCases.MarkWatchedEntries do
         ) :: result()
   def call(actor, scope, reader, repository) do
     with :ok <- Accounts.authorize(actor, :admin),
-         {:ok, entries} <- resolve(scope, reader) do
+         {:ok, entries} <- resolve(scope, actor.id, reader) do
       repository.upsert(actor.id, entries, DateTime.utc_now())
     end
   end
 
-  defp resolve({:entry, entry}, reader) do
-    with {:ok, entries} <- reader.list_season_entries({:episode, entry.episode_id}) do
-      if entry in entries, do: {:ok, [entry]}, else: {:error, :not_found}
+  defp resolve({:entry, entry}, user_id, reader) do
+    with {:ok, entries} <- reader.list_entries(user_id, {:episode, entry.episode_id}) do
+      if entry in season_entries(entries), do: {:ok, [entry]}, else: {:error, :not_found}
     end
   end
 
-  defp resolve({:season, id}, reader) do
-    case reader.list_season_entries({:season, id}) do
+  defp resolve({:season, id}, user_id, reader) do
+    case reader.list_entries(user_id, {:season, id}) do
       {:ok, []} -> {:error, :not_found}
-      result -> result
+      {:ok, entries} -> {:ok, season_entries(entries)}
+      error -> error
     end
   end
+
+  defp season_entries(entries),
+    do: Enum.map(entries, &SeasonEntryStatus.season_entry/1)
 end

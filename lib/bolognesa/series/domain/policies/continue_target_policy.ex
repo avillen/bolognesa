@@ -1,23 +1,27 @@
 defmodule Bolognesa.Series.Domain.Policies.ContinueTargetPolicy do
   @moduledoc """
-  Chooses the Continue target from regular entries in series order.
+  Chooses the Continue target from the regular entries (season 0 excluded) in series order.
 
   Start at the first entry when nothing is watched. Otherwise continue at the entry
   after the most recently watched one, with ties going to the furthest entry, even
   when it is unavailable. Replay from the first entry when no available entry follows.
   """
-  alias Bolognesa.Series.Domain.ReadModels.ContinueEntry
   alias Bolognesa.Series.Domain.ReadModels.ContinueTarget
+  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
 
-  @spec call([ContinueEntry.t()]) :: ContinueTarget.t() | nil
-  def call([first | _] = entries) do
+  @spec call([SeasonEntryStatus.t()]) :: ContinueTarget.t() | nil
+  def call(entries) do
+    entries |> Enum.reject(&(&1.season_number == 0)) |> choose()
+  end
+
+  defp choose([first | _] = entries) do
     case last_watched_index(entries) do
       nil -> %ContinueTarget{action: :start, entry: first}
       index -> after_watched(first, Enum.drop(entries, index + 1))
     end
   end
 
-  def call([]), do: nil
+  defp choose([]), do: nil
 
   defp after_watched(first, [next | _] = rest) do
     if Enum.any?(rest, & &1.available?),

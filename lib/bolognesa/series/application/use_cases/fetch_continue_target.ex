@@ -11,7 +11,7 @@ defmodule Bolognesa.Series.Application.UseCases.FetchContinueTarget do
           {:ok, ContinueTarget.t() | nil} | {:error, :forbidden | :unavailable}
   def call(actor, series_id, reader) do
     with :ok <- Accounts.authorize(actor, :admin),
-         {:ok, entries} <- reader.list_continue_entries(actor.id, series_id) do
+         {:ok, entries} <- reader.list_entries(actor.id, {:series, series_id}) do
       {:ok, ContinueTargetPolicy.call(entries)}
     end
   end
