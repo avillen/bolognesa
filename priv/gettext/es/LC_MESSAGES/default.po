@@ -2176,22 +2176,22 @@ msgstr "TMDb ha movido estos episodios a otra temporada o número."
 msgid "Visto"
 msgstr "Visto"
 
-#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#: lib/bolognesa_web/live/series/components/continue_link.ex
 #, elixir-autogen, elixir-format
 msgid "Empezar"
 msgstr "Empezar"
 
-#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#: lib/bolognesa_web/live/series/components/continue_link.ex
 #, elixir-autogen, elixir-format
 msgid "Continuar %{entry}"
 msgstr "Continuar %{entry}"
 
-#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#: lib/bolognesa_web/live/series/components/continue_link.ex
 #, elixir-autogen, elixir-format
 msgid "Volver a ver desde %{entry}"
 msgstr "Volver a ver desde %{entry}"
 
-#: lib/bolognesa_web/live/series/show/components/series_hero.ex
+#: lib/bolognesa_web/live/series/components/continue_link.ex
 #, elixir-autogen, elixir-format
 msgid "T%{season}·E%{number}"
 msgstr "T%{season}·E%{number}"
@@ -2234,3 +2234,8 @@ msgstr "Temporada marcada como vista."
 #, elixir-autogen, elixir-format
 msgid "No se pudo marcar la temporada."
 msgstr "No se pudo marcar la temporada."
+
+#: lib/bolognesa_web/live/series/index/live.html.heex
+#, elixir-autogen, elixir-format
+msgid "Seguir viendo"
+msgstr "Seguir viendo"

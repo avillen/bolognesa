@@ -1,7 +1,9 @@
 defmodule Bolognesa.Series.Infrastructure.Readers.ConfirmedFiles do
   @moduledoc false
   import Ecto.Query
+  alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
+  alias Bolognesa.Infrastructure.Persistence.SeasonSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationSchema
 
@@ -29,5 +31,17 @@ defmodule Bolognesa.Series.Infrastructure.Readers.ConfirmedFiles do
           availability: file.availability
         }
     )
+  end
+
+  @doc "The series with a confirmed file in the library."
+  @spec series_ids(pos_integer()) :: Ecto.Query.t()
+  def series_ids(library_id) do
+    from [relation, _decision, file] in query(),
+      join: episode in EpisodeSchema,
+      on: episode.id == relation.episode_id,
+      join: season in SeasonSchema,
+      on: season.id == episode.season_id,
+      where: file.library_id == ^library_id,
+      select: season.series_id
   end
 end

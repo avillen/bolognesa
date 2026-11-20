@@ -5,6 +5,7 @@ defmodule BolognesaWeb.Series.Index.Components.SeriesCard do
   attr :id, :string, required: true
   attr :series, :any, required: true
   attr :series_params, :map, required: true
+  slot :inner_block
 
   @spec series_card(map()) :: Phoenix.LiveView.Rendered.t()
   def series_card(assigns) do
@@ -21,7 +22,7 @@ defmodule BolognesaWeb.Series.Index.Components.SeriesCard do
           </div>
           <img
             :if={@series.poster_path}
-            id={"series-poster-#{@series.id}"}
+            id={"#{@id}-poster"}
             phx-hook="ImageFallback"
             phx-update="ignore"
             src={"https://image.tmdb.org/t/p/w342#{@series.poster_path}"}
@@ -33,7 +34,8 @@ defmodule BolognesaWeb.Series.Index.Components.SeriesCard do
         </div>
         <h2 class="mt-4 text-base font-semibold leading-snug text-ink">{@series.title}</h2>
       </.link>
-      <p class="mt-2 text-xs leading-5 text-muted">
+      <div :if={@inner_block != []} class="mt-3">{render_slot(@inner_block)}</div>
+      <p :if={@inner_block == []} class="mt-2 text-xs leading-5 text-muted">
         {ngettext(
           "%{count} episodio disponible",
           "%{count} episodios disponibles",

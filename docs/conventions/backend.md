@@ -70,6 +70,8 @@ Album `last_played_at` is the account's latest activity across its current track
 
 Recent listening returns at most three distinct available albums in the selected library, or across libraries when none is selected. Order by activity descending, then album ID ascending; choose the latest heard track by activity descending, then track ID ascending. No activity returns an empty list; failed reads return an error. Continue must select that exact track from the current authorized queue, preserving a missing selection on retry. Replay starts at the beginning when it is the last available track. Album order is disc, track, path, ID, with missing numbers last. Do not store a separate album-completion state.
 
+Recent series returns at most three distinct series with watched state in the selected library, or across libraries when none is selected. Order by latest watched date descending, then series ID ascending; read their entries in a fixed number of queries, not one per series. Finished series stay with Replay and there is no age cutoff.
+
 ## Background work, events, and recovery
 
 Run long tasks outside web requests with durable jobs, bounded retries, and measured concurrency. Job uniqueness limits duplicate insertion; it does not guarantee idempotent execution or serialize workers. Workers call use cases; the domain does not depend on Oban. Delivery is at least once, so consumers tolerate duplicates. A generation or request token rejects stale results; do not promise exactly-once execution.

@@ -15,6 +15,7 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Series.Application.UseCases.FetchSeriesSeason
   alias Bolognesa.Series.Application.UseCases.ListEpisodes
   alias Bolognesa.Series.Application.UseCases.ListEpisodes.Response, as: EpisodePage
+  alias Bolognesa.Series.Application.UseCases.ListRecentSeries
   alias Bolognesa.Series.Application.UseCases.ListSeriesReviewItems
   alias Bolognesa.Series.Application.UseCases.ListSeriesReviewItems.Response, as: SeriesReviewPage
   alias Bolognesa.Series.Application.UseCases.ListWatchedEntries
@@ -146,6 +147,12 @@ defmodule Bolognesa.Series do
           {:ok, ContinueTarget.t() | nil} | {:error, :forbidden | :unavailable}
   def fetch_continue_target(actor, series_id),
     do: FetchContinueTarget.call(actor, series_id, EctoWatchedEntriesReader)
+
+  @doc "Lists up to three recently watched series with their Continue targets within the selected library, or all libraries."
+  @spec list_recent_series(AuthenticatedUser.t() | nil, pos_integer() | nil) ::
+          ListRecentSeries.result()
+  def list_recent_series(actor, library_id),
+    do: ListRecentSeries.call(actor, library_id, EctoWatchedEntriesReader)
 
   @doc "Record a client-qualified playback; the caller must correlate and deduplicate the current attempt."
   @spec record_watched_entries(AuthenticatedUser.t() | nil, pos_integer(), pos_integer()) ::

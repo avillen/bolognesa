@@ -3,6 +3,8 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
+  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository, as: Repository
   alias BolognesaWeb.SeriesFixtures
 
   setup %{conn: conn} do
@@ -59,5 +61,31 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
     render_async(view)
     assert has_element?(view, "#series-empty")
     refute has_element?(view, "#series-list a")
+  end
+
+  test "shows the Continue shelf only for watched series", ctx do
+    file = Bolognesa.SeriesFixtures.file(ctx.library.id, "Serie S01E01E02.mp4")
+    [first, second] = Bolognesa.SeriesFixtures.identify(file, 1, [1, 2]).episode_ids
+    {:ok, view, _} = live(ctx.conn, "/series")
+    render_async(view)
+    refute has_element?(view, "#series-continue-shelf")
+
+    :ok =
+      Repository.upsert(
+        ctx.actor.id,
+        [%SeasonEntry{episode_id: first, part_number: nil}],
+        DateTime.utc_now()
+      )
+
+    {:ok, view, _} = live(ctx.conn, "/series")
+    render_async(view)
+
+    assert has_element?(
+             view,
+             "#recent-series-continue-#{ctx.series_id}[href='/episodes/#{second}']",
+             "Continuar T1·E2"
+           )
+
+    assert has_element?(view, "#series-list #series-#{ctx.series_id}")
   end
 end
