@@ -44,6 +44,8 @@ history, source reference, manual flag, durable attempt log or cross-device posi
 
 The series page derives its Continue target from these rows as defined for **Continue target** in GLOSSARY.md. It stores no progress state of its own.
 
+The Series index lists up to three series with watched state in the selected library, newest `last_watched_at` first, each with its Continue target. Their entries are read in a fixed number of queries, not per series, and finished series remain with Replay.
+
 ## Consequences
 
 Watched state follows catalog identity across rescans, missing files, renames,

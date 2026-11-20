@@ -17,6 +17,10 @@ defmodule Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader do
   @callback list_entries(user_id :: pos_integer(), scope()) ::
               {:ok, [SeasonEntryStatus.t()]} | {:error, :unavailable}
 
+  @doc "List up to three series the account watched most recently, newest first, with all their known entries; optionally only series with a confirmed file in the library."
+  @callback list_recent_series(user_id :: pos_integer(), library_id :: pos_integer() | nil) ::
+              {:ok, [{Series.t(), [SeasonEntryStatus.t()]}]} | {:error, :unavailable}
+
   @doc "Resolve a confirmed available file associated with the episode, including all parts for whole files."
   @callback fetch_played_entries(Episode.id(), file_id :: pos_integer()) ::
               {:ok, [SeasonEntry.t()]} | {:error, :not_found | :unavailable}

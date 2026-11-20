@@ -62,18 +62,8 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
 
   defp restrict_library(query, nil), do: query
 
-  defp restrict_library(query, library_id) do
-    ids =
-      from [relation, _decision, file] in ConfirmedFiles.query(),
-        join: episode in EpisodeSchema,
-        on: episode.id == relation.episode_id,
-        join: season in SeasonSchema,
-        on: season.id == episode.season_id,
-        where: file.library_id == ^library_id,
-        select: season.series_id
-
-    from entry in query, where: entry.id in subquery(ids)
-  end
+  defp restrict_library(query, library_id),
+    do: from(entry in query, where: entry.id in subquery(ConfirmedFiles.series_ids(library_id)))
 
   defp restrict_files(query, nil), do: query
 

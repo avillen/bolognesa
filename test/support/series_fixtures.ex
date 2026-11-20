@@ -32,13 +32,14 @@ defmodule Bolognesa.SeriesFixtures do
         last_seen_generation: UUID.generate()
       })
 
-  @spec identify(MediaFileSchema.t(), non_neg_integer(), [pos_integer()]) :: Identification.t()
-  def identify(file, season, numbers) do
+  @spec identify(MediaFileSchema.t(), non_neg_integer(), [pos_integer()], pos_integer()) ::
+          Identification.t()
+  def identify(file, season, numbers, provider_id \\ 201) do
     {:ok, decision} =
       CorrectSeriesIdentification.call(
         %AuthenticatedUser{id: 1, role: :admin},
         file.id,
-        {:tmdb, 201, season, numbers},
+        {:tmdb, provider_id, season, numbers},
         EctoIdentificationRepository,
         SyntheticSeriesProvider
       )
