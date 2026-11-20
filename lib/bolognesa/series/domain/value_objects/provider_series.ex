@@ -1,5 +1,5 @@
-defmodule Bolognesa.Series.Domain.ValueObjects.SeriesDetails do
-  @moduledoc "Normalized series provider data owned by Identification."
+defmodule Bolognesa.Series.Domain.ValueObjects.ProviderSeries do
+  @moduledoc "Provider metadata for a series, validated before it enters the catalog."
   alias Bolognesa.Series.Domain.ValueObjects.SeriesCandidate
 
   @type t :: %__MODULE__{

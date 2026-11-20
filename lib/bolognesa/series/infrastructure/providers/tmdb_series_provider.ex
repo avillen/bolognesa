@@ -3,9 +3,9 @@ defmodule Bolognesa.Series.Infrastructure.Providers.TmdbSeriesProvider do
   @behaviour Bolognesa.Series.Application.Ports.Providers.SeriesProvider
   alias Bolognesa.Infrastructure.Providers.TmdbClient
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonDetails
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderSeason
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderSeries
   alias Bolognesa.Series.Domain.ValueObjects.SeriesCandidate
-  alias Bolognesa.Series.Domain.ValueObjects.SeriesDetails
   alias Bolognesa.Series.Infrastructure.Providers.TmdbSeriesResponse
 
   @impl true
@@ -27,7 +27,7 @@ defmodule Bolognesa.Series.Infrastructure.Providers.TmdbSeriesProvider do
   def details(id), do: details(id, [])
 
   @spec details(pos_integer(), keyword()) ::
-          {:ok, SeriesDetails.t()} | {:error, SeriesProvider.reason()}
+          {:ok, ProviderSeries.t()} | {:error, SeriesProvider.reason()}
   def details(id, opts) do
     with {:ok, body} <- TmdbClient.get("/tv/#{id}", [language: "es-ES"], opts),
          {:ok, details} <- TmdbSeriesResponse.details(body) do
@@ -39,7 +39,7 @@ defmodule Bolognesa.Series.Infrastructure.Providers.TmdbSeriesProvider do
   def season(id, number), do: season(id, number, [])
 
   @spec season(pos_integer(), non_neg_integer(), keyword()) ::
-          {:ok, SeasonDetails.t()} | {:error, SeriesProvider.reason()}
+          {:ok, ProviderSeason.t()} | {:error, SeriesProvider.reason()}
   def season(id, number, opts) do
     with {:ok, body} <- TmdbClient.get("/tv/#{id}/season/#{number}", [language: "es-ES"], opts),
          do: TmdbSeriesResponse.season(body, id, number)

@@ -2,6 +2,12 @@
 
 Domain terms with a precise meaning in Bolognesa. Use them as defined in code, issues, and documentation.
 
+## Catalog
+
+**Catalog**: the movies, series, seasons and episodes Bolognesa keeps because at least one file is identified with them. Anything no file is identified with any more is dropped.
+
+**Provider metadata**: what an external provider reports about a movie, series, season or episode, known only by the provider's identifier and not yet part of the catalog. A season's provider metadata lists all its episodes, including those no file matches. _Avoid_: details.
+
 ## Playback
 
 **Playback attempt**: one browser's try at playing a video file, from version selection until it is ready, fails, or ends. It owns the probe, delivery plan, temporary transcode session, and a single recovery to a compatible plan. Events that do not belong to the current attempt are ignored. _Avoid_: playback session (that is the server-side transcode session), playback state.

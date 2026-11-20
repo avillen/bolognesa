@@ -1,6 +1,6 @@
-defmodule Bolognesa.Series.Domain.ValueObjects.SeasonDetails do
-  @moduledoc "Normalized series provider data owned by Identification."
-  alias Bolognesa.Series.Domain.ValueObjects.EpisodeDetails
+defmodule Bolognesa.Series.Domain.ValueObjects.ProviderSeason do
+  @moduledoc "Provider metadata for a season and all its episodes, validated before it enters the catalog."
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderEpisode
 
   @type t :: %__MODULE__{
           provider_id: pos_integer(),
@@ -8,7 +8,7 @@ defmodule Bolognesa.Series.Domain.ValueObjects.SeasonDetails do
           number: non_neg_integer(),
           title: binary() | nil,
           poster_path: binary() | nil,
-          episodes: [Bolognesa.Series.Domain.ValueObjects.EpisodeDetails.t()]
+          episodes: [Bolognesa.Series.Domain.ValueObjects.ProviderEpisode.t()]
         }
 
   defstruct [:provider_id, :series_provider_id, :number, :title, :poster_path, :episodes]
@@ -38,8 +38,8 @@ defmodule Bolognesa.Series.Domain.ValueObjects.SeasonDetails do
 
   defp valid_episodes?(_), do: false
 
-  defp valid_episode?(%EpisodeDetails{} = item, number),
-    do: EpisodeDetails.valid?(item) and item.season_number == number
+  defp valid_episode?(%ProviderEpisode{} = item, number),
+    do: ProviderEpisode.valid?(item) and item.season_number == number
 
   defp valid_episode?(_, _), do: false
 end

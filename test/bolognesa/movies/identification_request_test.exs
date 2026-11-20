@@ -6,7 +6,7 @@ defmodule Bolognesa.Movies.IdentificationRequestTest do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
-  alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
+  alias Bolognesa.Movies.Domain.ValueObjects.ProviderMovie
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
 
   test "music is excluded at the explicit request boundary" do
@@ -33,7 +33,7 @@ defmodule Bolognesa.Movies.IdentificationRequestTest do
 
   test "explicit requests preserve an existing manual choice" do
     file = file_fixture("manual.mp4")
-    details = %MovieDetails{provider_id: 81_001, title: "Manual"}
+    details = %ProviderMovie{provider_id: 81_001, title: "Manual"}
     assert {:ok, manual} = Repository.correct(file.id, file.revision, details)
 
     assert {:ok, 0} =

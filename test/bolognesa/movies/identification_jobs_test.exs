@@ -8,7 +8,7 @@ defmodule Bolognesa.Movies.IdentificationJobsTest do
   alias Bolognesa.Libraries.Domain.ValueObjects.Files.NewMediaFile
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Movies.Domain.ValueObjects.MovieCandidate
-  alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
+  alias Bolognesa.Movies.Domain.ValueObjects.ProviderMovie
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
 
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository
@@ -221,7 +221,7 @@ defmodule Bolognesa.Movies.IdentificationJobsTest do
   defp confirm_movie(event) do
     id = 10_000_000 + event.media_file_id
     candidate = %MovieCandidate{provider_id: id, title: "Synthetic match"}
-    details = %MovieDetails{provider_id: id, title: "Synthetic match"}
+    details = %ProviderMovie{provider_id: id, title: "Synthetic match"}
 
     assert :ok =
              Repository.complete(event.media_file_id, event.token, [candidate], details, false)

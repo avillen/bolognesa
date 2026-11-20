@@ -3,11 +3,11 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.IdentifiedMovieWriter do
   import Ecto.Query
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
-  alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
+  alias Bolognesa.Movies.Domain.ValueObjects.ProviderMovie
   alias Bolognesa.Repo
 
-  @spec upsert!(MovieDetails.t()) :: pos_integer()
-  def upsert!(%MovieDetails{} = details) do
+  @spec upsert!(ProviderMovie.t()) :: pos_integer()
+  def upsert!(%ProviderMovie{} = details) do
     attrs = details |> Map.from_struct() |> Map.put(:provider, :tmdb)
 
     row =

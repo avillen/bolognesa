@@ -1,9 +1,9 @@
 defmodule Bolognesa.Series.Infrastructure.Providers.TmdbSeriesResponse do
   @moduledoc false
-  alias Bolognesa.Series.Domain.ValueObjects.EpisodeDetails
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonDetails
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderEpisode
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderSeason
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderSeries
   alias Bolognesa.Series.Domain.ValueObjects.SeriesCandidate
-  alias Bolognesa.Series.Domain.ValueObjects.SeriesDetails
 
   @spec search(binary()) :: {:ok, [SeriesCandidate.t()]} | {:error, :invalid_response}
   def search(body) do
@@ -23,10 +23,10 @@ defmodule Bolognesa.Series.Infrastructure.Providers.TmdbSeriesResponse do
     end
   end
 
-  @spec details(binary()) :: {:ok, SeriesDetails.t()} | {:error, :invalid_response}
+  @spec details(binary()) :: {:ok, ProviderSeries.t()} | {:error, :invalid_response}
   def details(body) do
     with {:ok, raw} when is_map(raw) <- Jason.decode(body),
-         {:ok, result} <- SeriesDetails.new(attrs(raw)) do
+         {:ok, result} <- ProviderSeries.new(attrs(raw)) do
       {:ok, result}
     else
       _ -> {:error, :invalid_response}
@@ -34,21 +34,21 @@ defmodule Bolognesa.Series.Infrastructure.Providers.TmdbSeriesResponse do
   end
 
   @spec season(binary(), pos_integer(), non_neg_integer()) ::
-          {:ok, SeasonDetails.t()} | {:error, :invalid_response}
+          {:ok, ProviderSeason.t()} | {:error, :invalid_response}
   def season(body, series_id, season_number) do
     with {:ok, raw} when is_map(raw) <- Jason.decode(body),
          true <- raw["season_number"] == season_number,
          episodes when is_list(episodes) <- raw["episodes"],
          {:ok, values} <- episodes(episodes),
-         season = %SeasonDetails{
-           provider_id: raw["id"],
-           series_provider_id: series_id,
-           number: season_number,
-           title: optional_text(raw["name"], 256),
-           poster_path: SeriesCandidate.image_path(raw["poster_path"]),
-           episodes: values
-         },
-         {:ok, season} <- SeasonDetails.new(Map.from_struct(season)) do
+         {:ok, season} <-
+           ProviderSeason.new(%{
+             provider_id: raw["id"],
+             series_provider_id: series_id,
+             number: season_number,
+             title: optional_text(raw["name"], 256),
+             poster_path: SeriesCandidate.image_path(raw["poster_path"]),
+             episodes: values
+           }) do
       {:ok, season}
     else
       _ -> {:error, :invalid_response}
@@ -94,7 +94,7 @@ defmodule Bolognesa.Series.Infrastructure.Providers.TmdbSeriesResponse do
   end
 
   defp episode(raw) when is_map(raw),
-    do: %EpisodeDetails{
+    do: %ProviderEpisode{
       provider_id: raw["id"],
       season_number: raw["season_number"],
       number: raw["episode_number"],
