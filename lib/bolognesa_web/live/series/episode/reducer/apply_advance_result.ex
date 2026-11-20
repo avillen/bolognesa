@@ -16,8 +16,8 @@ defmodule BolognesaWeb.Series.Episode.Reducer.ApplyAdvanceResult do
     end
   end
 
-  defp finish(socket, {:ok, {:ok, episode}}),
-    do: push_patch(socket, to: ~p"/episodes/#{episode.id}?#{advance_params(socket, episode)}")
+  defp finish(socket, {:ok, {:ok, entry}}),
+    do: push_patch(socket, to: ~p"/episodes/#{entry.episode_id}?#{advance_params(socket, entry)}")
 
   defp finish(socket, {:ok, {:error, :part_unavailable}}),
     do:
@@ -37,15 +37,15 @@ defmodule BolognesaWeb.Series.Episode.Reducer.ApplyAdvanceResult do
          %{assigns: %{detail: %{season: %{id: season_id}}}} = socket,
          %{
            season_id: season_id
-         } = episode
+         } = entry
        ),
        do:
          Navigation.episode_target_params(
            socket.assigns.series_params,
            Map.get(socket.assigns.season_params, :page, 1),
-           episode
+           entry
          )
 
-  defp advance_params(socket, episode),
-    do: Navigation.episode_target_params(Map.get(socket.assigns, :series_params, %{}), 1, episode)
+  defp advance_params(socket, entry),
+    do: Navigation.episode_target_params(Map.get(socket.assigns, :series_params, %{}), 1, entry)
 end

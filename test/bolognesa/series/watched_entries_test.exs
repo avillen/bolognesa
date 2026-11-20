@@ -7,7 +7,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
   alias Bolognesa.Libraries.Infrastructure.Repositories.EctoScanRepository
   alias Bolognesa.Series
   alias Bolognesa.Series.Application.UseCases.RecordWatchedEntries
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
   alias Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader, as: Reader
   alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository, as: Repository
   alias Bolognesa.SeriesFixtures
@@ -58,7 +58,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
       episode_id: episode_id,
       season_id: detail.season.id,
       series_id: detail.series.id,
-      entry: %SeasonEntry{episode_id: episode_id, part_number: nil}
+      entry: %Entry{episode_id: episode_id, part_number: nil}
     }
   end
 
@@ -172,7 +172,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     SeriesFixtures.identify(second, 1, [1])
     second |> Changeset.change(availability: :missing) |> Repo.update!()
 
-    assert {:ok, [%SeasonEntry{part_number: 1}]} =
+    assert {:ok, [%Entry{part_number: 1}]} =
              Reader.fetch_played_entries(ctx.episode_id, first.id)
 
     assert {:ok, entries} = Reader.fetch_played_entries(ctx.episode_id, ctx.media_file.id)
@@ -231,7 +231,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
   end
 
   test "batch writes roll back on invalid episode references and nil keys are unique", ctx do
-    invalid = %SeasonEntry{episode_id: 999_999_999, part_number: nil}
+    invalid = %Entry{episode_id: 999_999_999, part_number: nil}
 
     assert {:error, :unavailable} =
              Repository.upsert(ctx.actor.id, [ctx.entry, invalid], DateTime.utc_now())
@@ -249,7 +249,7 @@ defmodule Bolognesa.Series.WatchedEntriesTest do
     assert {:ok, [%{episode_id: id, part_number: part, last_watched_at: at}]} =
              Series.list_watched_entries(ctx.actor, {:episode, ctx.episode_id})
 
-    assert %SeasonEntry{episode_id: id, part_number: part} == ctx.entry
+    assert %Entry{episode_id: id, part_number: part} == ctx.entry
     assert DateTime.compare(at, before) != :lt
 
     assert :ok = Repository.upsert(ctx.other.id, [ctx.entry], at)

@@ -8,8 +8,8 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
   alias Bolognesa.Infrastructure.Persistence.SeriesSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesWatchedEntrySchema
   alias Bolognesa.Repo
-  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ReadModels.EntryStatus
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
   alias Bolognesa.Series.Infrastructure.Readers.ConfirmedFiles
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader.SeriesMapper
   alias Bolognesa.Series.Infrastructure.Readers.EpisodeEntries
@@ -63,7 +63,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
         watched.episode_id == entry.id and watched.user_id == ^user_id and
           fragment("? IS NOT DISTINCT FROM ?", watched.part_number, entry.part_number),
       order_by: [season.number, entry.number, asc_nulls_first: entry.part_number],
-      select: %SeasonEntryStatus{
+      select: %EntryStatus{
         series_id: season.series_id,
         season_id: entry.season_id,
         season_number: season.number,
@@ -134,8 +134,7 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoWatchedEntriesReader do
         {:error, :not_found}
 
       rows ->
-        {:ok,
-         Enum.map(rows, fn {id, part} -> %SeasonEntry{episode_id: id, part_number: part} end)}
+        {:ok, Enum.map(rows, fn {id, part} -> %Entry{episode_id: id, part_number: part} end)}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}

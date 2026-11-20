@@ -1,14 +1,14 @@
 defmodule Bolognesa.Series.Application.UseCases.MarkWatchedEntries do
-  @moduledoc "Mark one known season entry, or every known entry of a season, as watched now."
+  @moduledoc "Mark one known entry, or every known entry of a season, as watched now."
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader
   alias Bolognesa.Series.Application.Ports.Repositories.WatchedEntriesRepository
+  alias Bolognesa.Series.Domain.ReadModels.EntryStatus
   alias Bolognesa.Series.Domain.ReadModels.Season
-  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
 
-  @type scope :: {:entry, SeasonEntry.t()} | {:season, Season.id()}
+  @type scope :: {:entry, Entry.t()} | {:season, Season.id()}
   @type result :: :ok | {:error, :forbidden | :not_found | :unavailable}
   @spec call(
           AuthenticatedUser.t() | nil,
@@ -25,18 +25,18 @@ defmodule Bolognesa.Series.Application.UseCases.MarkWatchedEntries do
 
   defp resolve({:entry, entry}, user_id, reader) do
     with {:ok, entries} <- reader.list_entries(user_id, {:episode, entry.episode_id}) do
-      if entry in season_entries(entries), do: {:ok, [entry]}, else: {:error, :not_found}
+      if entry in to_entries(entries), do: {:ok, [entry]}, else: {:error, :not_found}
     end
   end
 
   defp resolve({:season, id}, user_id, reader) do
     case reader.list_entries(user_id, {:season, id}) do
       {:ok, []} -> {:error, :not_found}
-      {:ok, entries} -> {:ok, season_entries(entries)}
+      {:ok, entries} -> {:ok, to_entries(entries)}
       error -> error
     end
   end
 
-  defp season_entries(entries),
-    do: Enum.map(entries, &SeasonEntryStatus.season_entry/1)
+  defp to_entries(entries),
+    do: Enum.map(entries, &EntryStatus.entry/1)
 end

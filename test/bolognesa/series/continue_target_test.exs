@@ -3,7 +3,7 @@ defmodule Bolognesa.Series.ContinueTargetTest do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.UserSchema
   alias Bolognesa.Series
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
   alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository, as: Repository
   alias Bolognesa.SeriesFixtures
   alias Ecto.Changeset
@@ -50,7 +50,7 @@ defmodule Bolognesa.Series.ContinueTargetTest do
   defp watch(user, episode_id, part \\ nil, at \\ DateTime.utc_now()),
     do:
       :ok =
-        Repository.upsert(user.id, [%SeasonEntry{episode_id: episode_id, part_number: part}], at)
+        Repository.upsert(user.id, [%Entry{episode_id: episode_id, part_number: part}], at)
 
   defp target(ctx) do
     {:ok, %{action: action, entry: entry}} =

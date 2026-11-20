@@ -3,7 +3,7 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
   alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository, as: Repository
   alias BolognesaWeb.SeriesFixtures
 
@@ -73,7 +73,7 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
     :ok =
       Repository.upsert(
         ctx.actor.id,
-        [%SeasonEntry{episode_id: first, part_number: nil}],
+        [%Entry{episode_id: first, part_number: nil}],
         DateTime.utc_now()
       )
 

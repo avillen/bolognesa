@@ -1,4 +1,4 @@
-defmodule Bolognesa.Series.Domain.ValueObjects.SeasonEntry do
+defmodule Bolognesa.Series.Domain.ValueObjects.Entry do
   @moduledoc "A catalog episode or one numbered part, including known unavailable entries."
   alias Bolognesa.Series.Domain.ReadModels.Episode
 

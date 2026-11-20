@@ -22,7 +22,7 @@ defmodule BolognesaWeb.Series.Episode.Components.EpisodeNavigation do
         id="episode-previous"
         rel="prev"
         patch={
-          ~p"/episodes/#{@previous_target.id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), @previous_target)}"
+          ~p"/episodes/#{@previous_target.episode_id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), @previous_target)}"
         }
         aria-label={gettext("Anterior episodio")}
       >
@@ -36,7 +36,7 @@ defmodule BolognesaWeb.Series.Episode.Components.EpisodeNavigation do
         id="episode-next"
         rel="next"
         patch={
-          ~p"/episodes/#{@next_target.id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), @next_target)}"
+          ~p"/episodes/#{@next_target.episode_id}?#{Navigation.episode_target_params(@series_params, Map.get(@season_params, :page, 1), @next_target)}"
         }
         aria-label={gettext("Siguiente episodio")}
       >

@@ -9,7 +9,6 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
   alias Bolognesa.Infrastructure.Persistence.SeriesIdentificationEpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesSchema
   alias Bolognesa.Repo
-  alias Bolognesa.Series.Domain.ReadModels.EpisodeTarget
   alias Bolognesa.Series.Domain.ReadModels.EpisodeVersion
   alias Bolognesa.Series.Infrastructure.Readers.ConfirmedFiles
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader.SeriesMapper
@@ -175,45 +174,8 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
     with {:ok, versions} <- versions(episode.id) do
       {:ok,
        {SeriesMapper.episode(episode), SeriesMapper.season(season), SeriesMapper.series(series),
-        versions, adjacent_episode_ids(episode)}}
+        versions}}
     end
-  end
-
-  defp adjacent_episode_ids(episode) do
-    base =
-      from row in subquery(EpisodeEntries.query()), where: row.season_id == ^episode.season_id
-
-    previous =
-      Repo.one(
-        from(row in base,
-          where: row.number < ^episode.number,
-          order_by: [desc: row.number, desc: row.part_number],
-          limit: 1,
-          select: %EpisodeTarget{
-            id: row.id,
-            season_id: row.season_id,
-            part_number: row.part_number
-          }
-        ),
-        log: false
-      )
-
-    next =
-      Repo.one(
-        from(row in base,
-          where: row.number > ^episode.number,
-          order_by: [asc: row.number, asc: row.part_number],
-          limit: 1,
-          select: %EpisodeTarget{
-            id: row.id,
-            season_id: row.season_id,
-            part_number: row.part_number
-          }
-        ),
-        log: false
-      )
-
-    {previous, next}
   end
 
   defp versions(id) do

@@ -1,11 +1,11 @@
 defmodule Bolognesa.Series.Application.UseCases.UnmarkWatchedEntry do
-  @moduledoc "Remove one season entry from the authenticated account's watched entries."
+  @moduledoc "Remove one entry from the authenticated account's watched entries."
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Ports.Repositories.WatchedEntriesRepository
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
 
-  @spec call(AuthenticatedUser.t() | nil, SeasonEntry.t(), WatchedEntriesRepository.adapter()) ::
+  @spec call(AuthenticatedUser.t() | nil, Entry.t(), WatchedEntriesRepository.adapter()) ::
           :ok | {:error, :forbidden | :unavailable}
   def call(actor, entry, repository) do
     with :ok <- Accounts.authorize(actor, :admin), do: repository.delete(actor.id, entry)

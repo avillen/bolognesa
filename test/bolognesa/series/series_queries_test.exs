@@ -42,13 +42,13 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     SeriesFixtures.identify(whole, 1, [1])
     [next_id] = SeriesFixtures.identify(next, 1, [2]).episode_ids
 
-    assert {:ok, %{id: ^episode_id, part_number: 2}} =
+    assert {:ok, %{episode_id: ^episode_id, part_number: 2}} =
              Series.fetch_next_playable_episode(@actor, episode_id, first.id)
 
-    assert {:ok, %{id: ^next_id, part_number: 1}} =
+    assert {:ok, %{episode_id: ^next_id, part_number: 1}} =
              Series.fetch_next_playable_episode(@actor, episode_id, second.id)
 
-    assert {:ok, %{id: ^next_id, part_number: 1}} =
+    assert {:ok, %{episode_id: ^next_id, part_number: 1}} =
              Series.fetch_next_playable_episode(@actor, episode_id, whole.id)
 
     second |> Changeset.change(availability: :missing) |> Repo.update!()
@@ -102,10 +102,16 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     assert {:ok, episode} =
              Series.fetch_next_playable_episode(@actor, hd(decision.episode_ids), first.id)
 
-    assert episode.id == hd(next_decision.episode_ids)
-    assert {:error, :not_found} = Series.fetch_next_playable_episode(@actor, episode.id, next.id)
-    assert {:error, :not_found} = Series.fetch_next_playable_episode(@actor, episode.id, first.id)
-    assert {:error, :forbidden} = Series.fetch_next_playable_episode(nil, episode.id, next.id)
+    assert episode.episode_id == hd(next_decision.episode_ids)
+
+    assert {:error, :not_found} =
+             Series.fetch_next_playable_episode(@actor, episode.episode_id, next.id)
+
+    assert {:error, :not_found} =
+             Series.fetch_next_playable_episode(@actor, episode.episode_id, first.id)
+
+    assert {:error, :forbidden} =
+             Series.fetch_next_playable_episode(nil, episode.episode_id, next.id)
   end
 
   test "next episode follows episode number within the same season" do
@@ -122,11 +128,13 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
                earlier.id
              )
 
-    assert episode.id == hd(later_decision.episode_ids)
-    assert {:error, :not_found} = Series.fetch_next_playable_episode(@actor, episode.id, later.id)
+    assert episode.episode_id == hd(later_decision.episode_ids)
+
+    assert {:error, :not_found} =
+             Series.fetch_next_playable_episode(@actor, episode.episode_id, later.id)
   end
 
-  test "detail neighbors use episode order rather than insertion order and stay in the season" do
+  test "detail entries use episode order rather than insertion order and stay in the season" do
     library = SeriesFixtures.library()
     later = SeriesFixtures.file(library.id, "later.mkv")
     [later_id] = SeriesFixtures.identify(later, 1, [2]).episode_ids
@@ -135,11 +143,8 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     other = SeriesFixtures.file(library.id, "other.mkv")
     SeriesFixtures.identify(other, 2, [1])
 
-    assert {:ok, %{previous_entry: nil, next_entry: %{id: ^later_id}}} =
-             Series.fetch_episode(@actor, earlier_id)
-
-    assert {:ok, %{previous_entry: %{id: ^earlier_id}, next_entry: nil}} =
-             Series.fetch_episode(@actor, later_id)
+    assert {:ok, %{entries: entries}} = Series.fetch_episode(@actor, later_id)
+    assert Enum.map(entries, & &1.episode_id) == [earlier_id, later_id]
   end
 
   test "episode detail query count stays constant as physical versions increase" do

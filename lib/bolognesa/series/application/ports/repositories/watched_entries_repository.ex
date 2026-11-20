@@ -1,15 +1,15 @@
 defmodule Bolognesa.Series.Application.Ports.Repositories.WatchedEntriesRepository do
-  @moduledoc "Atomic account-scoped writes for explicit season entries; no inventory references."
+  @moduledoc "Atomic account-scoped writes for explicit entries; no inventory references."
   alias Bolognesa.Series.Domain.ReadModels.WatchedEntry
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
 
   @type adapter :: module()
   @type result :: :ok | {:error, :unavailable}
 
   @doc "Atomically upsert explicit entries, retaining the greatest timestamp. Empty is a no-op."
-  @callback upsert(user_id :: pos_integer(), [SeasonEntry.t()], WatchedEntry.last_watched_at()) ::
+  @callback upsert(user_id :: pos_integer(), [Entry.t()], WatchedEntry.last_watched_at()) ::
               result()
 
   @doc "Delete one explicit entry for the account. A missing row is a no-op."
-  @callback delete(user_id :: pos_integer(), SeasonEntry.t()) :: result()
+  @callback delete(user_id :: pos_integer(), Entry.t()) :: result()
 end

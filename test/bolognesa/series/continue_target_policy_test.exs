@@ -1,10 +1,10 @@
 defmodule Bolognesa.Series.ContinueTargetPolicyTest do
   use ExUnit.Case, async: true
   alias Bolognesa.Series.Domain.Policies.ContinueTargetPolicy
-  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
+  alias Bolognesa.Series.Domain.ReadModels.EntryStatus
 
   defp entry(id, opts \\ []) do
-    %SeasonEntryStatus{
+    %EntryStatus{
       season_id: Keyword.get(opts, :season, 1),
       season_number: Keyword.get(opts, :season, 1),
       number: id,

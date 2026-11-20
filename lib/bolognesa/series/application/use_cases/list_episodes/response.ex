@@ -1,12 +1,12 @@
 defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Response do
   @moduledoc "Public episode page result."
   alias Bolognesa.Series.Application.UseCases.ListEpisodes.Item, as: EpisodeListItem
+  alias Bolognesa.Series.Domain.ReadModels.EntryStatus
   alias Bolognesa.Series.Domain.ReadModels.Episode
   alias Bolognesa.Series.Domain.ReadModels.EpisodeVersion
   alias Bolognesa.Series.Domain.ReadModels.Season
-  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
   alias Bolognesa.Series.Domain.ReadModels.Series
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
 
   @type t :: %__MODULE__{
           season: Season.t(),
@@ -21,17 +21,17 @@ defmodule Bolognesa.Series.Application.UseCases.ListEpisodes.Response do
           {Season.t(), Series.t(),
            [{Episode.t(), pos_integer() | nil, EpisodeVersion.count(), EpisodeVersion.count()}],
            Episode.count()},
-          [SeasonEntryStatus.t()]
+          [EntryStatus.t()]
         ) :: t()
   def from_domain({season, series, rows, total}, watched) do
-    watched_at = Map.new(watched, &{SeasonEntryStatus.season_entry(&1), &1.last_watched_at})
+    watched_at = Map.new(watched, &{EntryStatus.entry(&1), &1.last_watched_at})
 
     %__MODULE__{
       season: season,
       series: series,
       items:
         Enum.map(rows, fn {episode, part, _, _} = row ->
-          entry = %SeasonEntry{episode_id: episode.id, part_number: part}
+          entry = %Entry{episode_id: episode.id, part_number: part}
           EpisodeListItem.from_domain(row, watched_at[entry])
         end),
       total: total
