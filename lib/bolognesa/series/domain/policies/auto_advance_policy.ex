@@ -7,15 +7,15 @@ defmodule Bolognesa.Series.Domain.Policies.AutoAdvancePolicy do
   available entry; it must be unsplit or part 1 and available. Specials (season 0) are
   ordered like any other season.
   """
-  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ReadModels.EntryStatus
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
 
-  @spec call([SeasonEntryStatus.t()], [SeasonEntry.t()]) ::
-          {:ok, SeasonEntryStatus.t()} | {:error, :not_found | :part_unavailable}
+  @spec call([EntryStatus.t()], [Entry.t()]) ::
+          {:ok, EntryStatus.t()} | {:error, :not_found | :part_unavailable}
   def call(entries, played) do
     case entries
          |> Enum.reverse()
-         |> Enum.split_while(&(SeasonEntryStatus.season_entry(&1) not in played)) do
+         |> Enum.split_while(&(EntryStatus.entry(&1) not in played)) do
       {following, [last | _]} -> advance(last, Enum.reverse(following))
       {_, []} -> {:error, :not_found}
     end

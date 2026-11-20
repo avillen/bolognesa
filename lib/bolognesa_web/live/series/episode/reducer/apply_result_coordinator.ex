@@ -12,9 +12,15 @@ defmodule BolognesaWeb.Series.Episode.Reducer.ApplyResultCoordinator do
       else: socket
   end
 
-  defp apply_result(socket, {:ok, {:ok, detail, watched}}) do
+  defp apply_result(socket, {:ok, {:ok, detail}}) do
+    watched_at =
+      for entry <- detail.entries,
+          entry.episode_id == detail.episode.id and entry.last_watched_at,
+          into: %{},
+          do: {entry.part_number, entry.last_watched_at}
+
     socket
-    |> assign(:watched_at, Map.new(watched, &{&1.part_number, &1.last_watched_at}))
+    |> assign(:watched_at, watched_at)
     |> assign(:loading?, false)
     |> assign(:content_ref, {:episode, detail.episode.id})
     |> assign(:detail, detail)

@@ -11,7 +11,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
     only: [inspect!: 1, negotiate: 1, negotiate: 2, report: 1]
 
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
   alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository
   alias BolognesaWeb.LiveSupport.PlaybackAttempt
   alias BolognesaWeb.Series.Episode.Live
@@ -311,7 +311,7 @@ defmodule BolognesaWeb.Series.Episode.LiveTest do
       Bolognesa.SeriesFixtures.identify(file, 0, [1])
     end
 
-    entry = %SeasonEntry{episode_id: ctx.episode_id, part_number: 2}
+    entry = %Entry{episode_id: ctx.episode_id, part_number: 2}
 
     :ok =
       EctoWatchedEntriesRepository.upsert(ctx.actor.id, [entry], ~U[2026-11-19 10:00:00.000000Z])

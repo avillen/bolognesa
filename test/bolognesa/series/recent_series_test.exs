@@ -3,7 +3,7 @@ defmodule Bolognesa.Series.RecentSeriesTest do
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.UserSchema
   alias Bolognesa.Series
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
   alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository, as: Repository
   alias Bolognesa.SeriesFixtures
 
@@ -37,7 +37,7 @@ defmodule Bolognesa.Series.RecentSeriesTest do
       :ok =
         Repository.upsert(
           user_id,
-          [%SeasonEntry{episode_id: episode_id, part_number: nil}],
+          [%Entry{episode_id: episode_id, part_number: nil}],
           DateTime.add(DateTime.utc_now(), -days_ago * 86_400)
         )
 

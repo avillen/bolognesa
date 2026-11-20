@@ -7,9 +7,9 @@ defmodule Bolognesa.Series.Domain.Policies.ContinueTargetPolicy do
   when it is unavailable. Replay from the first entry when no available entry follows.
   """
   alias Bolognesa.Series.Domain.ReadModels.ContinueTarget
-  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
+  alias Bolognesa.Series.Domain.ReadModels.EntryStatus
 
-  @spec call([SeasonEntryStatus.t()]) :: ContinueTarget.t() | nil
+  @spec call([EntryStatus.t()]) :: ContinueTarget.t() | nil
   def call(entries) do
     entries |> Enum.reject(&(&1.season_number == 0)) |> choose()
   end

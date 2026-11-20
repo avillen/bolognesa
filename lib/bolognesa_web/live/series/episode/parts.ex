@@ -1,29 +1,20 @@
 defmodule BolognesaWeb.Series.Episode.Parts do
   @moduledoc "Screen-local helper that assigns the active episode part and its navigation."
   import Phoenix.Component, only: [assign: 2]
-  alias Bolognesa.Series.Domain.ReadModels.EpisodeTarget
+  alias Bolognesa.Series.Domain.ReadModels.EntryStatus
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
 
-  @doc "Assigns the part, its versions, and the previous and next targets."
+  @doc "Assigns the part, its versions, and the previous and next entries."
   @spec assign_part(Phoenix.LiveView.Socket.t(), pos_integer() | nil) ::
           Phoenix.LiveView.Socket.t()
   def assign_part(socket, part) do
     detail = socket.assigns.detail
-    parts = numbers(detail.versions)
-    index = Enum.find_index(parts, &(&1 == part))
-
-    previous =
-      if index && index > 0,
-        do: target(detail, Enum.at(parts, index - 1)),
-        else: detail.previous_entry
-
-    next =
-      if index && index < length(parts) - 1,
-        do: target(detail, Enum.at(parts, index + 1)),
-        else: detail.next_entry
+    entry = %Entry{episode_id: detail.episode.id, part_number: part}
+    {previous, next} = EntryStatus.adjacent(detail.entries, entry)
 
     assign(socket,
       active_part: part,
-      parts: parts,
+      parts: numbers(detail.versions),
       part_versions: Enum.filter(detail.versions, &(&1.part_number == part)),
       playback_versions:
         Enum.filter(detail.versions, &(&1.part_number == part or is_nil(&1.part_number))),
@@ -42,7 +33,4 @@ defmodule BolognesaWeb.Series.Episode.Parts do
       |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
       |> Enum.sort()
-
-  defp target(detail, part),
-    do: %EpisodeTarget{id: detail.episode.id, season_id: detail.season.id, part_number: part}
 end

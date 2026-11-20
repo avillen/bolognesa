@@ -4,13 +4,13 @@ defmodule BolognesaWeb.Series.Episode.Reducer.MarkWatched do
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [put_flash: 3]
   alias Bolognesa.Series
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
 
   @spec call(Phoenix.LiveView.Socket.t()) :: Phoenix.LiveView.Socket.t()
   def call(%{assigns: %{detail: detail, active_part: part}} = socket) do
     actor = socket.assigns.current_scope.actor
     id = detail.episode.id
-    entry = %SeasonEntry{episode_id: id, part_number: part}
+    entry = %Entry{episode_id: id, part_number: part}
 
     with :ok <- Series.mark_entries_watched(actor, {:entry, entry}),
          {:ok, watched} <- Series.list_watched_entries(actor, {:episode, id}) do

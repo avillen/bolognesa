@@ -28,8 +28,8 @@ defmodule Bolognesa.Series do
   alias Bolognesa.Series.Application.UseCases.UnmarkWatchedEntry
   alias Bolognesa.Series.Domain.Entities.Identification
   alias Bolognesa.Series.Domain.ReadModels.ContinueTarget
-  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ReadModels.EntryStatus
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
   alias Bolognesa.Series.Infrastructure.Providers.TmdbSeriesProvider
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader
   alias Bolognesa.Series.Infrastructure.Readers.EctoSeriesReviewReader
@@ -79,10 +79,11 @@ defmodule Bolognesa.Series do
 
   @spec fetch_episode(AuthenticatedUser.t(), pos_integer()) ::
           {:ok, EpisodeDetail.t()} | {:error, reason()}
-  def fetch_episode(actor, id), do: FetchEpisode.call(actor, id, EctoSeriesReader)
+  def fetch_episode(actor, id),
+    do: FetchEpisode.call(actor, id, EctoSeriesReader, EctoWatchedEntriesReader)
 
   @spec fetch_next_playable_episode(AuthenticatedUser.t(), pos_integer(), pos_integer()) ::
-          {:ok, Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t()}
+          {:ok, EntryStatus.t()}
           | {:error, :forbidden | :not_found | :unavailable | :part_unavailable}
   def fetch_next_playable_episode(actor, episode_id, file_id),
     do:
@@ -138,7 +139,7 @@ defmodule Bolognesa.Series do
 
   @doc "Read this account's watched entries for an episode, season, or series."
   @spec list_watched_entries(AuthenticatedUser.t() | nil, WatchedEntriesReader.scope()) ::
-          {:ok, [SeasonEntryStatus.t()]} | {:error, :forbidden | :unavailable}
+          {:ok, [EntryStatus.t()]} | {:error, :forbidden | :unavailable}
   def list_watched_entries(actor, scope),
     do: ListWatchedEntries.call(actor, scope, EctoWatchedEntriesReader)
 
@@ -167,7 +168,7 @@ defmodule Bolognesa.Series do
         EctoWatchedEntriesRepository
       )
 
-  @doc "Mark a known season entry, or every known entry of a season, as watched now."
+  @doc "Mark a known entry, or every known entry of a season, as watched now."
   @spec mark_entries_watched(AuthenticatedUser.t() | nil, MarkWatchedEntries.scope()) ::
           MarkWatchedEntries.result()
   def mark_entries_watched(actor, scope),
@@ -179,8 +180,8 @@ defmodule Bolognesa.Series do
         EctoWatchedEntriesRepository
       )
 
-  @doc "Remove one season entry from this account's watched entries."
-  @spec unmark_entry_watched(AuthenticatedUser.t() | nil, SeasonEntry.t()) ::
+  @doc "Remove one entry from this account's watched entries."
+  @spec unmark_entry_watched(AuthenticatedUser.t() | nil, Entry.t()) ::
           :ok | {:error, :forbidden | :unavailable}
   def unmark_entry_watched(actor, entry),
     do: UnmarkWatchedEntry.call(actor, entry, EctoWatchedEntriesRepository)

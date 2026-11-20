@@ -27,11 +27,8 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReader do
                 ], Episode.count()}}
               | {:error, :not_found | :unavailable}
 
-  @doc "At most 100 versions by file ID, plus adjacent targets in same-season episode/part order."
+  @doc "At most 100 versions by file ID."
   @callback fetch_episode(Episode.id()) ::
-              {:ok,
-               {Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()],
-                {Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil,
-                 Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil}}}
+              {:ok, {Episode.t(), Season.t(), Series.t(), [EpisodeVersion.t()]}}
               | {:error, :not_found | :unavailable | :too_many_versions}
 end

@@ -1,5 +1,5 @@
 defmodule Bolognesa.Series.Application.UseCases.RecordWatchedEntries do
-  @moduledoc "Validate the reported file through Series, then record its current season entries."
+  @moduledoc "Validate the reported file through Series, then record its current entries."
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Observability.Events

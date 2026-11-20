@@ -6,7 +6,7 @@ defmodule BolognesaWeb.Series.Season.LiveTest do
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
   alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository
   alias BolognesaWeb.SeriesFixtures
 
@@ -51,7 +51,7 @@ defmodule BolognesaWeb.Series.Season.LiveTest do
   test "watched entries show their date while unwatched entries stay neutral", ctx do
     [first, second] = ctx.episode_ids
     watched_at = ~U[2026-11-19 10:00:00.000000Z]
-    entry = %SeasonEntry{episode_id: first, part_number: nil}
+    entry = %Entry{episode_id: first, part_number: nil}
     :ok = EctoWatchedEntriesRepository.upsert(ctx.actor.id, [entry], watched_at)
 
     {:ok, view, _} = live(ctx.conn, "/series/seasons/#{ctx.season_id}")
@@ -74,7 +74,7 @@ defmodule BolognesaWeb.Series.Season.LiveTest do
       Bolognesa.SeriesFixtures.identify(file, 0, [1])
     end
 
-    entry = %SeasonEntry{episode_id: ctx.episode_id, part_number: 2}
+    entry = %Entry{episode_id: ctx.episode_id, part_number: 2}
 
     :ok =
       EctoWatchedEntriesRepository.upsert(ctx.actor.id, [entry], ~U[2026-11-19 10:00:00.000000Z])

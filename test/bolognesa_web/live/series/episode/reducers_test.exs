@@ -1,6 +1,6 @@
 defmodule BolognesaWeb.Series.Episode.ReducersTest do
   use ExUnit.Case, async: true
-  alias Bolognesa.Series.Domain.ReadModels.Episode
+  alias Bolognesa.Series.Domain.ReadModels.EntryStatus
   alias BolognesaWeb.LiveSupport.PlaybackAttempt
   alias BolognesaWeb.Series.Episode.Live
   alias BolognesaWeb.Series.Episode.Reducer.Advance
@@ -20,15 +20,28 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
           versions: [%{id: 2, part_number: 2, availability: :missing}],
           episode: %{id: 1},
           season: %{id: 1},
-          previous_entry: nil,
-          next_entry: nil
+          entries: []
         }
       }
     }
 
     selected = SelectPart.call(socket, 2)
     assert selected.assigns.advance_request == nil
-    assert ApplyAdvanceResult.call(selected, request, {:ok, {:ok, %Episode{id: 123}}}) == selected
+
+    assert ApplyAdvanceResult.call(
+             selected,
+             request,
+             {:ok,
+              {:ok,
+               %EntryStatus{
+                 episode_id: 123,
+                 season_id: 1,
+                 season_number: 1,
+                 number: 1,
+                 part_number: nil,
+                 available?: true
+               }}}
+           ) == selected
   end
 
   test "completion during navigation cannot replace the requested episode" do
@@ -71,7 +84,17 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
         socket
       )
 
-    result = {:ok, {:ok, %Episode{id: 123}}}
+    result =
+      {:ok,
+       {:ok,
+        %EntryStatus{
+          episode_id: 123,
+          season_id: 1,
+          season_number: 1,
+          number: 1,
+          part_number: nil,
+          available?: true
+        }}}
 
     assert restarted == socket
     assert ApplyAdvanceResult.call(restarted, request, result).redirected != nil
@@ -101,7 +124,18 @@ defmodule BolognesaWeb.Series.Episode.ReducersTest do
         socket
       )
 
-    result = {:ok, {:ok, %Episode{id: 123}}}
+    result =
+      {:ok,
+       {:ok,
+        %EntryStatus{
+          episode_id: 123,
+          season_id: 1,
+          season_number: 1,
+          number: 1,
+          part_number: nil,
+          available?: true
+        }}}
+
     assert ApplyAdvanceResult.call(restarted, request, result) == restarted
     assert restarted.redirected == nil
   end

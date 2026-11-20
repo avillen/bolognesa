@@ -1,11 +1,11 @@
 defmodule Bolognesa.Series.AutoAdvancePolicyTest do
   use ExUnit.Case, async: true
   alias Bolognesa.Series.Domain.Policies.AutoAdvancePolicy
-  alias Bolognesa.Series.Domain.ReadModels.SeasonEntryStatus
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonEntry
+  alias Bolognesa.Series.Domain.ReadModels.EntryStatus
+  alias Bolognesa.Series.Domain.ValueObjects.Entry
 
   defp entry(id, opts \\ []) do
-    %SeasonEntryStatus{
+    %EntryStatus{
       season_id: Keyword.get(opts, :season, 1),
       season_number: Keyword.get(opts, :season, 1),
       number: id,
@@ -15,7 +15,7 @@ defmodule Bolognesa.Series.AutoAdvancePolicyTest do
     }
   end
 
-  defp played(id, part \\ nil), do: [%SeasonEntry{episode_id: id, part_number: part}]
+  defp played(id, part \\ nil), do: [%Entry{episode_id: id, part_number: part}]
 
   defp next(entries, played) do
     with {:ok, e} <- AutoAdvancePolicy.call(entries, played), do: {e.episode_id, e.part_number}
