@@ -34,7 +34,4 @@ defmodule Bolognesa.Series.Application.Ports.Readers.SeriesReader do
                 {Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil,
                  Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t() | nil}}}
               | {:error, :not_found | :unavailable | :too_many_versions}
-  @callback fetch_next_playable_episode(Episode.id(), pos_integer()) ::
-              {:ok, Bolognesa.Series.Domain.ReadModels.EpisodeTarget.t()}
-              | {:error, :not_found | :unavailable | :part_unavailable}
 end

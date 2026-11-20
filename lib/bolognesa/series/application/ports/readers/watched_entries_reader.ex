@@ -11,8 +11,9 @@ defmodule Bolognesa.Series.Application.Ports.Readers.WatchedEntriesReader do
           {:episode, Episode.id()}
           | {:season, Season.id()}
           | {:series, Series.id()}
+          | {:series_of, Episode.id()}
 
-  @doc "List the known season entries of an episode, season or series, including unavailable ones, by season, episode and part (nil first), with the account's watched date."
+  @doc "List the known season entries of an episode, season, series or the series of an episode, including unavailable ones, by season, episode and part (nil first), with the account's watched date."
   @callback list_entries(user_id :: pos_integer(), scope()) ::
               {:ok, [SeasonEntryStatus.t()]} | {:error, :unavailable}
 
