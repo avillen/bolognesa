@@ -132,7 +132,7 @@ defmodule Bolognesa.Series do
     do: FetchSeriesReviewItem.call(actor, id, EctoSeriesReviewReader)
 
   @spec fetch_series_season(AuthenticatedUser.t(), pos_integer(), non_neg_integer()) ::
-          {:ok, Bolognesa.Series.Domain.ValueObjects.SeasonDetails.t()}
+          {:ok, Bolognesa.Series.Domain.ValueObjects.ProviderSeason.t()}
           | {:error, reason()}
   def fetch_series_season(actor, id, number),
     do: FetchSeriesSeason.call(actor, id, number, provider())

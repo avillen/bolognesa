@@ -1,5 +1,5 @@
-defmodule Bolognesa.Movies.Domain.ValueObjects.MovieDetails do
-  @moduledoc "Bounded catalog details from a provider."
+defmodule Bolognesa.Movies.Domain.ValueObjects.ProviderMovie do
+  @moduledoc "Provider metadata for a movie, validated before it enters the catalog."
 
   alias Bolognesa.Movies.Domain.ValueObjects.MovieCandidate
 

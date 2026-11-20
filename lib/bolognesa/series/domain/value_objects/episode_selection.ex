@@ -1,24 +1,24 @@
 defmodule Bolognesa.Series.Domain.ValueObjects.EpisodeSelection do
   @moduledoc "A validated complete selection of episodes from one season."
-  alias Bolognesa.Series.Domain.ValueObjects.EpisodeDetails
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonDetails
-  alias Bolognesa.Series.Domain.ValueObjects.SeriesDetails
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderEpisode
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderSeason
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderSeries
 
   @type t :: %__MODULE__{
-          series: SeriesDetails.t(),
-          season: SeasonDetails.t(),
-          episodes: [EpisodeDetails.t()],
+          series: ProviderSeries.t(),
+          season: ProviderSeason.t(),
+          episodes: [ProviderEpisode.t()],
           part_number: pos_integer() | nil
         }
   @type error :: :invalid_selection | :invalid_response | :incomplete_episodes
 
   defstruct [:series, :season, :episodes, :part_number]
 
-  @spec new(SeriesDetails.t(), SeasonDetails.t(), [pos_integer()], pos_integer() | nil) ::
+  @spec new(ProviderSeries.t(), ProviderSeason.t(), [pos_integer()], pos_integer() | nil) ::
           {:ok, t()} | {:error, error()}
   def new(series, season, numbers, part_number \\ nil)
 
-  def new(%SeriesDetails{} = series, %SeasonDetails{} = season, numbers, part_number) do
+  def new(%ProviderSeries{} = series, %ProviderSeason{} = season, numbers, part_number) do
     with :ok <- validate_numbers(numbers),
          :ok <- validate_part(part_number, numbers),
          :ok <- validate_response(series, season),
@@ -44,7 +44,7 @@ defmodule Bolognesa.Series.Domain.ValueObjects.EpisodeSelection do
   def validate_numbers(_), do: {:error, :invalid_selection}
 
   defp validate_response(series, season) do
-    if valid_series?(series) and SeasonDetails.valid?(season) and
+    if valid_series?(series) and ProviderSeason.valid?(season) and
          season.series_provider_id == series.provider_id,
        do: :ok,
        else: {:error, :invalid_response}

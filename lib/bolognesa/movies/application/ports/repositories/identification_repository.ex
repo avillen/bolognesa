@@ -3,7 +3,7 @@ defmodule Bolognesa.Movies.Application.Ports.Repositories.IdentificationReposito
   alias Bolognesa.Movies.Domain.Entities.Identification
   alias Bolognesa.Movies.Domain.ReadModels.FileToIdentify
   alias Bolognesa.Movies.Domain.ValueObjects.MovieCandidate
-  alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
+  alias Bolognesa.Movies.Domain.ValueObjects.ProviderMovie
 
   alias Bolognesa.Movies.Domain.Policies.IdentificationPolicy
 
@@ -27,7 +27,7 @@ defmodule Bolognesa.Movies.Application.Ports.Repositories.IdentificationReposito
               file_id :: pos_integer(),
               token :: Identification.token(),
               candidates :: [MovieCandidate.t()],
-              details :: MovieDetails.t() | nil,
+              details :: ProviderMovie.t() | nil,
               needs_review? :: boolean()
             ) ::
               :ok | {:ok, :stale} | {:error, reason()}
@@ -40,7 +40,7 @@ defmodule Bolognesa.Movies.Application.Ports.Repositories.IdentificationReposito
   @callback correct(
               file_id :: pos_integer(),
               expected_revision :: pos_integer(),
-              choice :: :unidentified | MovieDetails.t()
+              choice :: :unidentified | ProviderMovie.t()
             ) ::
               {:ok, Identification.t()} | {:error, reason()}
   @callback retry(file_id :: pos_integer()) :: {:ok, Identification.t()} | {:error, reason()}

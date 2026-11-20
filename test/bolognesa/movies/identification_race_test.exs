@@ -9,7 +9,7 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
   alias Bolognesa.Movies.Application.UseCases.CorrectMovieIdentification
   alias Bolognesa.Movies.Application.UseCases.IdentifyMovieFile
   alias Bolognesa.Movies.Domain.ValueObjects.MovieCandidate
-  alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
+  alias Bolognesa.Movies.Domain.ValueObjects.ProviderMovie
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
   alias Ecto.Adapters.SQL
   alias Ecto.Adapters.SQL.Sandbox
@@ -26,11 +26,11 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
       end
     end
 
-    def details(71), do: {:ok, %MovieDetails{provider_id: 71, title: "Old result"}}
+    def details(71), do: {:ok, %ProviderMovie{provider_id: 71, title: "Old result"}}
   end
 
   defmodule CorrectionProvider do
-    def details(72), do: {:ok, %MovieDetails{provider_id: 72, title: "Manual result"}}
+    def details(72), do: {:ok, %ProviderMovie{provider_id: 72, title: "Manual result"}}
   end
 
   defmodule RevisionProvider do
@@ -38,7 +38,7 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
       send(Process.get(:owner), {:details_waiting, self()})
 
       receive do
-        :continue -> {:ok, %MovieDetails{provider_id: id, title: "Changed during lookup"}}
+        :continue -> {:ok, %ProviderMovie{provider_id: id, title: "Changed during lookup"}}
       end
     end
   end
@@ -94,7 +94,7 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
     {file, token} = fixture()
     assert {:ok, fresh} = Repository.retry(file.id)
     count = Repo.aggregate(MovieSchema, :count)
-    details = %MovieDetails{provider_id: 9183, title: "Old result"}
+    details = %ProviderMovie{provider_id: 9183, title: "Old result"}
 
     assert {:ok, :stale} = Repository.complete(file.id, token, [], details, false)
     assert {:ok, ^fresh} = Repository.get(file.id)
@@ -153,7 +153,7 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
                    file.id,
                    token,
                    [],
-                   %MovieDetails{provider_id: 9185, title: "Rejected"},
+                   %ProviderMovie{provider_id: 9185, title: "Rejected"},
                    false
                  )
 
@@ -177,7 +177,7 @@ defmodule Bolognesa.Movies.IdentificationRaceTest do
       {first, _} = fixture()
       {second, _} = fixture()
       supervisor = start_supervised!(TaskSupervisor)
-      details = %MovieDetails{provider_id: 9182, title: "Shared movie"}
+      details = %ProviderMovie{provider_id: 9182, title: "Shared movie"}
 
       try do
         tasks =

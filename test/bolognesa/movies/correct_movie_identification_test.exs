@@ -10,11 +10,11 @@ defmodule Bolognesa.Movies.CorrectIdentificationTest do
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Movies.Application.UseCases.CorrectMovieIdentification
   alias Bolognesa.Movies.Domain.Entities.Identification
-  alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
+  alias Bolognesa.Movies.Domain.ValueObjects.ProviderMovie
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
 
   defmodule Provider do
-    def details(id), do: {:ok, %MovieDetails{provider_id: id, title: "Elegida"}}
+    def details(id), do: {:ok, %ProviderMovie{provider_id: id, title: "Elegida"}}
   end
 
   test "admin decision is protected and persists over retry" do
@@ -45,7 +45,7 @@ defmodule Bolognesa.Movies.CorrectIdentificationTest do
     file = fixture()
 
     assert {:ok, old} =
-             Repository.correct(file.id, file.revision, %MovieDetails{
+             Repository.correct(file.id, file.revision, %ProviderMovie{
                provider_id: 51,
                title: "Anterior"
              })
@@ -53,7 +53,7 @@ defmodule Bolognesa.Movies.CorrectIdentificationTest do
     old_id = old.movie_id
 
     assert {:ok, new} =
-             Repository.correct(file.id, file.revision, %MovieDetails{
+             Repository.correct(file.id, file.revision, %ProviderMovie{
                provider_id: 52,
                title: "Nueva"
              })
@@ -69,7 +69,7 @@ defmodule Bolognesa.Movies.CorrectIdentificationTest do
   test "correction preserves the same movie and movies with another missing version" do
     first = fixture()
     second = fixture()
-    details = %MovieDetails{provider_id: 51, title: "Compartida"}
+    details = %ProviderMovie{provider_id: 51, title: "Compartida"}
     assert {:ok, original} = Repository.correct(first.id, first.revision, details)
     id = original.movie_id
     assert {:ok, %{movie_id: ^id}} = Repository.correct(first.id, first.revision, details)

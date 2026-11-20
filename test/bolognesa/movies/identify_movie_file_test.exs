@@ -9,21 +9,22 @@ defmodule Bolognesa.Movies.IdentifyMediaFileTest do
   alias Bolognesa.Movies.Domain.Entities.Identification
   alias Bolognesa.Movies.Domain.ReadModels.FileToIdentify
   alias Bolognesa.Movies.Domain.ValueObjects.MovieCandidate
-  alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
+  alias Bolognesa.Movies.Domain.ValueObjects.ProviderMovie
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository, as: Repository
 
   defmodule Provider do
     def search("Mi pelicula", 2001),
       do: {:ok, [%MovieCandidate{provider_id: 42, title: "Otra pelicula", year: 2002}]}
 
-    def details(42), do: {:ok, %MovieDetails{provider_id: 42, title: "Otra pelicula", year: 2002}}
+    def details(42),
+      do: {:ok, %ProviderMovie{provider_id: 42, title: "Otra pelicula", year: 2002}}
   end
 
   defmodule ExactProvider do
     def search("Film", nil),
       do: {:ok, [%MovieCandidate{provider_id: 43, title: "Film", year: nil}]}
 
-    def details(43), do: {:ok, %MovieDetails{provider_id: 43, title: "Film", year: nil}}
+    def details(43), do: {:ok, %ProviderMovie{provider_id: 43, title: "Film", year: nil}}
   end
 
   defmodule NeverCalledProvider do
@@ -107,7 +108,7 @@ defmodule Bolognesa.Movies.IdentifyMediaFileTest do
                file.id,
                token,
                [],
-               %MovieDetails{provider_id: 43, title: "Film"},
+               %ProviderMovie{provider_id: 43, title: "Film"},
                false
              )
 

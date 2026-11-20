@@ -5,10 +5,10 @@ defmodule Bolognesa.Series.IdentifiedSeriesWriterTest do
   alias Bolognesa.Infrastructure.Persistence.EpisodeSchema
   alias Bolognesa.Infrastructure.Persistence.SeasonSchema
   alias Bolognesa.Infrastructure.Persistence.SeriesSchema
-  alias Bolognesa.Series.Domain.ValueObjects.EpisodeDetails
   alias Bolognesa.Series.Domain.ValueObjects.EpisodeSelection
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonDetails
-  alias Bolognesa.Series.Domain.ValueObjects.SeriesDetails
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderEpisode
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderSeason
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderSeries
   alias Bolognesa.Series.Infrastructure.Repositories.IdentifiedSeriesWriter
   alias Ecto.Adapters.SQL.Sandbox
 
@@ -84,15 +84,15 @@ defmodule Bolognesa.Series.IdentifiedSeriesWriterTest do
   end
 
   defp selection do
-    series = %SeriesDetails{provider_id: 201, title: "Serie"}
+    series = %ProviderSeries{provider_id: 201, title: "Serie"}
 
-    season = %SeasonDetails{
+    season = %ProviderSeason{
       provider_id: 301,
       series_provider_id: 201,
       number: 0,
       episodes: [
-        %EpisodeDetails{provider_id: 401, season_number: 0, number: 1, title: "Uno"},
-        %EpisodeDetails{provider_id: 402, season_number: 0, number: 2, title: "Dos"}
+        %ProviderEpisode{provider_id: 401, season_number: 0, number: 1, title: "Uno"},
+        %ProviderEpisode{provider_id: 402, season_number: 0, number: 2, title: "Dos"}
       ]
     }
 

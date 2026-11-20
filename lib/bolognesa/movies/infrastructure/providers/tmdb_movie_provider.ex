@@ -24,7 +24,7 @@ defmodule Bolognesa.Movies.Infrastructure.Providers.TmdbMovieProvider do
   def details(id), do: details(id, [])
 
   @spec details(pos_integer(), keyword()) ::
-          {:ok, Bolognesa.Movies.Domain.ValueObjects.MovieDetails.t()}
+          {:ok, Bolognesa.Movies.Domain.ValueObjects.ProviderMovie.t()}
           | {:error, Bolognesa.Movies.Application.Ports.Providers.MovieProvider.reason()}
   def details(id, opts) when is_integer(id) and id > 0 do
     with {:ok, body} <- TmdbClient.get("/movie/#{id}", [language: "es-ES"], opts),

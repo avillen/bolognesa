@@ -3,10 +3,10 @@ defmodule Bolognesa.Series.Application.UseCases.FetchSeriesSeason do
   alias Bolognesa.Accounts
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Series.Application.Ports.Providers.SeriesProvider
-  alias Bolognesa.Series.Domain.ValueObjects.SeasonDetails
+  alias Bolognesa.Series.Domain.ValueObjects.ProviderSeason
 
   @spec call(AuthenticatedUser.t(), pos_integer(), non_neg_integer(), SeriesProvider.adapter()) ::
-          {:ok, SeasonDetails.t()}
+          {:ok, ProviderSeason.t()}
           | {:error, :forbidden | :invalid_selection | SeriesProvider.reason()}
   def call(actor, id, number, provider) do
     with :ok <- Accounts.authorize(actor, :admin),

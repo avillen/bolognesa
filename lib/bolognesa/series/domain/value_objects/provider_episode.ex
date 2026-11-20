@@ -1,5 +1,5 @@
-defmodule Bolognesa.Series.Domain.ValueObjects.EpisodeDetails do
-  @moduledoc "Normalized series provider data owned by Identification."
+defmodule Bolognesa.Series.Domain.ValueObjects.ProviderEpisode do
+  @moduledoc "Provider metadata for one episode, validated before it enters the catalog."
 
   @type t :: %__MODULE__{
           provider_id: pos_integer(),

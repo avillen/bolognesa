@@ -2,7 +2,7 @@ defmodule Bolognesa.Movies.Infrastructure.Providers.TmdbMovieResponse do
   @moduledoc false
 
   alias Bolognesa.Movies.Domain.ValueObjects.MovieCandidate
-  alias Bolognesa.Movies.Domain.ValueObjects.MovieDetails
+  alias Bolognesa.Movies.Domain.ValueObjects.ProviderMovie
 
   @spec search(binary()) :: {:ok, [MovieCandidate.t()]} | {:error, :invalid_response}
   def search(body) when is_binary(body) do
@@ -17,10 +17,10 @@ defmodule Bolognesa.Movies.Infrastructure.Providers.TmdbMovieResponse do
 
   def search(_body), do: {:error, :invalid_response}
 
-  @spec details(binary()) :: {:ok, MovieDetails.t()} | {:error, :invalid_response}
+  @spec details(binary()) :: {:ok, ProviderMovie.t()} | {:error, :invalid_response}
   def details(body) when is_binary(body) do
     with {:ok, raw} when is_map(raw) <- Jason.decode(body),
-         {:ok, value} <- MovieDetails.new(attrs(raw)) do
+         {:ok, value} <- ProviderMovie.new(attrs(raw)) do
       {:ok, value}
     else
       _ -> {:error, :invalid_response}
