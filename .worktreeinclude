@@ -1,0 +1,4 @@
+# Build caches copied into new worktrees by `wt step copy-ignored` (see .config/wt.toml).
+# Keep secrets, media and editor state out of this list.
+_build/
+deps/
