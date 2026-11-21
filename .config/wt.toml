@@ -1,0 +1,7 @@
+# Worktrunk hooks: a new worktree reuses the primary checkout's build caches
+# (copy-on-write) so its first `setup` skips fetching and compiling dependencies.
+[pre-start]
+copy = "wt step copy-ignored --require-include"
+
+[post-start]
+setup = "sh scripts/dev/local.sh setup"

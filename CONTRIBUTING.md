@@ -32,6 +32,11 @@ the port shown by `info`. Phoenix starts only when requested; stopping it does
 not delete the databases. If another process occupies the selected port, stop
 that process or use a different checkout.
 
+Worktrees created with worktrunk (`wt switch --create`) run the hooks in
+`.config/wt.toml`: they copy `_build/` and `deps/` from the primary checkout (listed in
+`.worktreeinclude`) and then run `setup` in the background. Dependencies are not fetched or
+recompiled; the application itself still compiles from scratch.
+
 ## Local demo data
 
 To try the interface with generated audio, a video, and sample catalog entries, prepare a separate demo database:
