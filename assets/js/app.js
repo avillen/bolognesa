@@ -14,6 +14,21 @@ import VideoPlayer from "./video/hooks/video_player.js"
 import NavigationMenu from "./shared/hooks/navigation_menu.js"
 import ExpandableSynopsis from "./shared/hooks/expandable_synopsis.js"
 import BrowsePosition from "./shared/hooks/browse_position.js"
+import SaladUI from "./ui/index.js";
+import "./ui/components/dialog.js";
+import "./ui/components/select.js";
+import "./ui/components/tabs.js";
+import "./ui/components/radio_group.js";
+import "./ui/components/popover.js";
+import "./ui/components/hover-card.js";
+import "./ui/components/collapsible.js";
+import "./ui/components/tooltip.js";
+import "./ui/components/accordion.js";
+import "./ui/components/slider.js";
+import "./ui/components/switch.js";
+import "./ui/components/dropdown_menu.js";
+import "./ui/components/toast.js";
+import "./ui/components/toast-flash.js";
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 window.bolognesaRuntime = initializeBrowserRuntime(document, {transport: createMusicTransport({csrfToken})})
