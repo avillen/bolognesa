@@ -62,6 +62,7 @@ defmodule Bolognesa.MixProject do
        app: false,
        compile: false,
        depth: 1},
+      {:salad_ui, "~> 1.0"},
       {:req, "~> 0.5"},
       {:prom_ex, "~> 1.12"},
       {:telemetry_metrics, "~> 1.0"},
