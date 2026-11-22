@@ -71,10 +71,10 @@ input, select, video, audio {
 
 /* Cinema layout: compact navigation, artwork and restrained surfaces. */
 .app-shell { min-height: 100vh; }
-.app-sidebar { background: #0b0e10; padding: 24px 16px; }
+.app-sidebar { background: #0b0e10; }
 .app-brand { display: flex; align-items: center; gap: 10px; color: var(--color-ink); font-size: 18px; font-weight: 650; letter-spacing: -.04em; }
 .app-navigation { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
-.app-nav-primary, .app-nav-secondary { display: flex; flex-wrap: wrap; gap: 4px; }
+.app-nav-primary, .app-nav-secondary { display: flex; gap: 4px; }
 .app-nav-secondary { padding-top: 8px; border-top: 1px solid var(--color-border); }
 .app-nav-caption { display: none; }
 .app-nav-link[aria-current="page"] .size-5 { color: var(--color-accent-soft); }

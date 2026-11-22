@@ -45,7 +45,15 @@
         </Button.button>
       </.form>
       <details id="series-library-options" class="series-library-options">
-        <summary aria-label={gettext("Opciones de biblioteca")} class="series-options-toggle">
+        <summary
+          aria-label={gettext("Opciones de biblioteca")}
+          class={
+            button_variant(
+              %{variant: "subtle", size: "icon"},
+              "list-none in-open:bg-secondary in-open:text-secondary-foreground [&::-webkit-details-marker]:hidden"
+            )
+          }
+        >
           <.icon name="hero-ellipsis-horizontal" class="size-5" />
         </summary>
         <div class="series-options-menu">

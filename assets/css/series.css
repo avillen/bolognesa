@@ -19,8 +19,6 @@
 .series-episode-card > .series-episode-play { grid-column: 2; margin-top: 10px; }
 .series-breadcrumbs { display: none; }
 .series-library-options { position: relative; flex-shrink: 0; }
-.series-options-toggle { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--color-border); border-radius: 7px; list-style: none; cursor: pointer; }
-.series-options-toggle::-webkit-details-marker { display: none; }
 .series-options-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; width: min(260px, calc(100vw - 40px)); padding: 8px; border: 1px solid var(--color-border-strong); border-radius: 8px; background: var(--color-surface); box-shadow: 0 8px 32px #0006; }
 .series-catalog .media-search-form { gap: 0; border: 1px solid var(--color-border-strong); border-radius: 7px; background: var(--color-surface); }
 .series-catalog .media-search-field { border: 0; background: transparent; }
@@ -74,7 +72,6 @@
 /* Size catalog columns from the available content width, including the sidebar. */
 .series-catalog { container-type: inline-size; }
 .series-catalog .media-poster-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, clamp(130px, 25cqi, 180px)), 1fr)); }
-.series-options-toggle:hover, .series-library-options[open] > .series-options-toggle { border-color: var(--color-border-strong); background: var(--color-raised); color: var(--color-accent-soft); }
 .series-breadcrumbs a:hover { color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; }
 
 /* Index marquee: the latest watched series leads; the others sit beside it as landscape tiles. */
