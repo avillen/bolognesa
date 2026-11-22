@@ -40,7 +40,7 @@ defmodule BolognesaWeb.Components.UI.Button do
       <Button.button type="submit" phx-disable-with="Saving...">Save Changes</Button.button>
   """
   attr :type, :string, default: nil
-  attr :class, :any, default: nil
+  attr :class, :string, default: nil
 
   attr :variant, :string,
     values: ~w(default play secondary destructive outline ghost nav link),
@@ -54,18 +54,10 @@ defmodule BolognesaWeb.Components.UI.Button do
 
   @spec button(map()) :: Phoenix.LiveView.Rendered.t()
   def button(assigns) do
-    assigns = assign(assigns, :variant_class, button_variant(assigns))
-
     ~H"""
     <button
       type={@type}
-      class={
-        classes([
-          "phx-submit-loading:opacity-75",
-          @variant_class,
-          @class
-        ])
-      }
+      class={button_variant(assigns, ["phx-submit-loading:opacity-75", @class])}
       {@rest}
     >
       {render_slot(@inner_block)}

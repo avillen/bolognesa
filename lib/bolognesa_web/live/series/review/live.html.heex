@@ -15,16 +15,12 @@
       >{gettext("Volver a series")}</.link>
     </div>
     <p :if={@loading?} role="status">{gettext("Cargando archivos…")}</p>
-    <Alert.alert
+    <MediaComponents.retry_alert
       :if={@error}
-      variant="destructive"
-      class="flex flex-wrap items-center justify-between gap-3"
+      patch={~p"/series/review?page=#{@page}&file_id=#{@selected_file_id}"}
     >
-      {@error}<.link
-        patch={~p"/series/review?page=#{@page}&file_id=#{@selected_file_id}"}
-        class={button_variant(%{variant: "outline"}, "text-foreground")}
-      >{gettext("Reintentar")}</.link>
-    </Alert.alert>
+      {@error}
+    </MediaComponents.retry_alert>
     <p :if={!@loading? && @total == 0}>{gettext("No hay archivos pendientes de revisión.")}</p>
     <div id="series-review-list" phx-update="stream" class="space-y-3">
       <ReviewItem.review_item

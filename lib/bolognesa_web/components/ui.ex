@@ -13,10 +13,6 @@ defmodule BolognesaWeb.Components.UI do
       use Phoenix.Component
 
       import BolognesaWeb.Components.UI.Helpers
-
-      defp classes(input) do
-        TwMerge.merge(List.flatten(input))
-      end
     end
   end
 end

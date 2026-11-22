@@ -1,6 +1,8 @@
 defmodule BolognesaWeb.Components.UI.Helpers do
   @moduledoc false
 
+  alias TwMerge.Config
+
   # Adapted from SaladUI: shadcn's `accent` (subtle hover surface) is `secondary` here,
   # because `accent` is Bolognesa's coral brand colour. Sizes keep 44px touch and remote
   # targets; focus uses the app-wide outline.
@@ -42,7 +44,7 @@ defmodule BolognesaWeb.Components.UI.Helpers do
   `px-3` or `whitespace-normal`) replaces the variant's own instead of losing to
   Tailwind's stylesheet order.
   """
-  @spec button_variant(map(), String.t() | nil) :: String.t()
+  @spec button_variant(map(), String.t() | [String.t() | nil] | nil) :: String.t()
   def button_variant(props \\ %{}, extra \\ nil) do
     variants = Map.take(props, ~w(variant size)a)
     variants = Map.merge(@default_variants, variants)
@@ -52,6 +54,28 @@ defmodule BolognesaWeb.Components.UI.Helpers do
     shared_classes =
       "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50"
 
-    TwMerge.merge([shared_classes, variation_classes, extra])
+    classes([shared_classes, variation_classes, extra])
+  end
+
+  @doc """
+  Joins classes with TwMerge, so a later conflicting utility wins.
+  """
+  @spec classes([String.t() | [String.t() | nil] | nil]) :: String.t()
+  def classes(input) do
+    TwMerge.merge(input, tw_merge_config())
+  end
+
+  # TwMerge.merge/1 rebuilds its whole config on every call (~170µs) before its cache
+  # lookup; build it once instead.
+  defp tw_merge_config do
+    case :persistent_term.get(__MODULE__, nil) do
+      nil ->
+        config = Config.config()
+        :persistent_term.put(__MODULE__, config)
+        config
+
+      config ->
+        config
+    end
   end
 end

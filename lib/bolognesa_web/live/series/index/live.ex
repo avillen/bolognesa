@@ -1,6 +1,7 @@
 defmodule BolognesaWeb.Series.Index.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
+  alias BolognesaWeb.MediaComponents
   alias BolognesaWeb.Params
   alias BolognesaWeb.Series.Index.Components.ContinueTile
   alias BolognesaWeb.Series.Index.Components.SeriesCard

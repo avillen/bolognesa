@@ -75,18 +75,13 @@
     <p :if={@loading?} id="series-loading" role="status" class="text-muted">
       {gettext("Cargando series…")}
     </p>
-    <Alert.alert
+    <MediaComponents.retry_alert
       :if={@error}
       id="series-error"
-      variant="destructive"
-      class="flex flex-wrap items-center justify-between gap-3"
+      patch={~p"/series?#{Map.merge(@library_params, %{query: @query, page: @page})}"}
     >
       {@error}
-      <.link
-        patch={~p"/series?#{Map.merge(@library_params, %{query: @query, page: @page})}"}
-        class={button_variant(%{variant: "outline"}, "text-foreground")}
-      >{gettext("Reintentar")}</.link>
-    </Alert.alert>
+    </MediaComponents.retry_alert>
     <p
       :if={!@loading? && !@error && @total == 0}
       id="series-empty"

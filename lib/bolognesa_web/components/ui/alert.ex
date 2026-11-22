@@ -14,9 +14,8 @@ defmodule BolognesaWeb.Components.UI.Alert do
   use BolognesaWeb.Components.UI, :component
 
   @variant_classes %{
-    "default" => "bg-background text-foreground",
-    "destructive" =>
-      "bg-background border-destructive/50 text-destructive [&>span]:text-destructive"
+    "default" => "text-foreground",
+    "destructive" => "border-destructive/50 text-destructive"
   }
 
   @doc """
@@ -25,7 +24,7 @@ defmodule BolognesaWeb.Components.UI.Alert do
   attr :variant, :string, default: "default", values: ~w(default destructive)
   attr :class, :string, default: nil
   slot :inner_block, required: true
-  attr :rest, :global, default: %{}
+  attr :rest, :global
 
   @spec alert(map()) :: Phoenix.LiveView.Rendered.t()
   def alert(assigns) do
@@ -34,10 +33,9 @@ defmodule BolognesaWeb.Components.UI.Alert do
     ~H"""
     <div
       role="alert"
-      data-part="root"
       class={
         classes([
-          "relative w-full rounded-lg border border-border p-4 [&>span~*]:pl-7 [&>span+div]:translate-y-[-3px] [&>span]:absolute [&>span]:left-4 [&>span]:top-4",
+          "relative w-full rounded-lg border border-border bg-background p-4",
           @variant_class,
           @class
         ])

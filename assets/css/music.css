@@ -132,7 +132,6 @@
 .music-track-row > button:not([data-music-action]), .music-track-row > a { grid-column: copy-start / -1; grid-row: 2; justify-self: start; margin: 8px 0 4px; }
 .music-track-list-album .music-track-row { grid-template-columns: 32px 44px minmax(0, 1fr) 56px 44px 44px; grid-template-areas: "num play copy duration queue menu"; }
 .music-track-list-album .music-track-art { display: grid; }
-.music-track-play, .music-track-queue { flex-shrink: 0; }
 
 /* Current track: tint, coral title, filled control and equalizer. */
 .music-pause-icon, .music-playing-label, .music-paused-label, .music-equalizer { display: none; }

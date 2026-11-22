@@ -15,7 +15,7 @@ defmodule BolognesaWeb.Components.UI.Card do
 
   attr :class, :string, default: nil
   # Bolognesa addition: keep list semantics, e.g. `tag="article"` for content items.
-  attr :tag, :string, default: "div", values: ~w(div article section li)
+  attr :tag, :string, default: "div", values: ~w(div article)
   slot :inner_block, required: true
   attr :rest, :global
 

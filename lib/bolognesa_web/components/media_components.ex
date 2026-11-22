@@ -23,8 +23,9 @@ defmodule BolognesaWeb.MediaComponents do
     """
   end
 
-  attr :id, :string, required: true
-  attr :retry, :string, required: true, doc: "the event the retry button pushes"
+  attr :id, :string, default: nil
+  attr :retry, :string, default: nil, doc: "the event the retry button pushes"
+  attr :patch, :string, default: nil, doc: "path to patch to instead of `retry`"
   slot :inner_block, required: true
 
   @spec retry_alert(map()) :: Phoenix.LiveView.Rendered.t()
@@ -36,7 +37,10 @@ defmodule BolognesaWeb.MediaComponents do
       class="flex flex-wrap items-center justify-between gap-3"
     >
       <Alert.alert_description>{render_slot(@inner_block)}</Alert.alert_description>
-      <Button.button type="button" phx-click={@retry} variant="outline">
+      <.link :if={@patch} patch={@patch} class={button_variant(%{variant: "outline"})}>
+        {gettext("Reintentar")}
+      </.link>
+      <Button.button :if={!@patch} type="button" phx-click={@retry} variant="outline">
         {gettext("Reintentar")}
       </Button.button>
     </Alert.alert>

@@ -210,7 +210,7 @@
  .music-player[data-expanded="true"][data-queue-open="true"] .music-queue-toggle { position: absolute; top: max(16px, env(safe-area-inset-top)); left: 20px; }
  .music-player[data-expanded="true"][data-queue-open="true"] .music-up-next { grid-row: 1 / -1; }
 }
-.music-player:not([data-expanded="true"]) [data-player-action="retry"] { position: absolute; right: 0; bottom: calc(100% + 8px); background: var(--color-raised); }
+.music-player:not([data-expanded="true"]) [data-player-action="retry"] { position: absolute; right: 0; bottom: calc(100% + 8px); }
 .music-player:not([data-expanded="true"]) #audio-error, .music-player:not([data-expanded="true"]) [data-player-loading], .music-player:not([data-expanded="true"]) #queue-finished { position: absolute; right: 56px; bottom: calc(100% + 8px); max-width: calc(100% - 56px); padding: 8px; border-radius: 8px; background: var(--color-surface); }
 @media (max-width: 1079px) {
  .music-player[data-expanded="true"] #audio-error, .music-player[data-expanded="true"] [data-player-loading], .music-player[data-expanded="true"] #queue-finished { grid-column: 1 / -1; grid-row: 7; width: 100%; min-width: 0; text-align: center; overflow-wrap: anywhere; }
@@ -248,7 +248,7 @@
 .music-player[data-expanded="true"] .music-player-art:hover { transform: none; }
 .music-player[data-expanded="true"] .music-player-title { font-weight: 750; letter-spacing: -.03em; }
 .music-player[data-expanded="true"] [data-player-time] { color: var(--color-muted); font-size: 12px; }
-.music-player[data-expanded="true"] .music-queue-toggle { padding-inline: 16px; color: var(--color-ink); border-color: var(--color-border-strong); background: color-mix(in srgb, var(--color-surface) 70%, transparent); }
+.music-player[data-expanded="true"] .music-queue-toggle { padding-inline: 16px; background: color-mix(in srgb, var(--color-surface) 70%, transparent); }
 .music-up-next { border-color: var(--color-border); border-radius: 18px; background: color-mix(in srgb, var(--color-surface) 92%, transparent); box-shadow: 0 24px 60px #0008; }
 .music-queue-art { background: radial-gradient(circle at 28% 18%, color-mix(in srgb, var(--color-accent) 42%, var(--color-raised)), var(--color-raised) 80%); }
 .music-up-next h4 { color: var(--color-muted); font-size: 11px; font-weight: 650; letter-spacing: .02em; text-transform: none; }
