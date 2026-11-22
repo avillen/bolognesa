@@ -19,6 +19,7 @@ defmodule BolognesaWeb.Components.UI.Button do
       * `"destructive"` - Buttons for destructive actions
       * `"outline"` - Button with outline style
       * `"ghost"` - Button with minimal styling
+      * `"subtle"` - Quiet bordered button with muted text, for secondary icon controls
       * `"nav"` - Navigation link, highlighted by `aria-current="page"`
       * `"link"` - Button that appears as a link
   * `:size` - Size of the button, all with 44px targets:
@@ -26,7 +27,8 @@ defmodule BolognesaWeb.Components.UI.Button do
       * `"sm"` - Compact text
       * `"lg"` - Large size
       * `"icon"` - Square button optimized for icons
-      * `"round"` - Round icon button
+      * `"round"` - Round icon button (`icon` with the `pill` shape)
+  * `:shape` - `"default"` or `"pill"` (fully rounded, for any size)
   * `:rest` - Additional HTML attributes including `disabled`, `form`, `name`, `value`
 
   ## Examples
@@ -43,11 +45,12 @@ defmodule BolognesaWeb.Components.UI.Button do
   attr :class, :string, default: nil
 
   attr :variant, :string,
-    values: ~w(default play secondary destructive outline ghost nav link),
+    values: ~w(default play secondary destructive outline ghost subtle nav link),
     default: "default",
     doc: "the button variant style"
 
   attr :size, :string, values: ~w(default sm lg icon round), default: "default"
+  attr :shape, :string, values: ~w(default pill), default: "default"
   attr :rest, :global, include: ~w(disabled form name value)
 
   slot :inner_block, required: true

@@ -15,12 +15,7 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
       assign(
         assigns,
         :link_class,
-        button_variant(
-          %{variant: "nav"},
-          "flex-none px-3 sm:px-4" <>
-            " aria-[current=page]:ring-1 aria-[current=page]:ring-inset aria-[current=page]:ring-primary/30" <>
-            " focus-visible:outline-offset-2!"
-        )
+        button_variant(%{variant: "nav"}, "flex-none")
       )
 
     ~H"""

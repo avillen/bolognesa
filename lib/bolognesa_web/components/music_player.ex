@@ -61,7 +61,8 @@ defmodule BolognesaWeb.MusicPlayer do
         <Button.button
           type="button"
           variant="outline"
-          class="music-queue-toggle rounded-full"
+          shape="pill"
+          class="music-queue-toggle"
           data-player-action="queue"
           data-show-label={gettext("A continuación")}
           data-hide-label={gettext("Volver al reproductor")}
