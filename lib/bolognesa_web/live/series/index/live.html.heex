@@ -34,14 +34,15 @@
             class="media-search-input"
           />
         </div>
-        <button
+        <Button.button
           type="submit"
-          class="media-primary-action series-search-submit"
+          variant="ghost"
+          class="px-3 text-muted-foreground"
           aria-label={gettext("Buscar series")}
         >
           <.icon name="hero-arrow-turn-down-left" class="size-5 sm:hidden" />
           <span class="hidden sm:inline">{gettext("Buscar")}</span>
-        </button>
+        </Button.button>
       </.form>
       <details id="series-library-options" class="series-library-options">
         <summary aria-label={gettext("Opciones de biblioteca")} class="series-options-toggle">
@@ -74,12 +75,13 @@
     <p :if={@loading?} id="series-loading" role="status" class="text-muted">
       {gettext("Cargando series…")}
     </p>
-    <p :if={@error} id="series-error" role="alert" class="text-red-200">
+    <MediaComponents.retry_alert
+      :if={@error}
+      id="series-error"
+      patch={~p"/series?#{Map.merge(@library_params, %{query: @query, page: @page})}"}
+    >
       {@error}
-      <.link patch={~p"/series?#{Map.merge(@library_params, %{query: @query, page: @page})}"}>{gettext(
-        "Reintentar"
-      )}</.link>
-    </p>
+    </MediaComponents.retry_alert>
     <p
       :if={!@loading? && !@error && @total == 0}
       id="series-empty"

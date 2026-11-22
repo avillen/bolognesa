@@ -14,14 +14,9 @@
     <p :if={@loading?} id="movie-loading" role="status" class="text-muted">
       {gettext("Cargando ficha…")}
     </p>
-    <p
-      :if={@error}
-      id="movie-error"
-      role="alert"
-      class="rounded-xl border border-red-300/30 p-5 text-red-100"
-    >
+    <Alert.alert :if={@error} id="movie-error" variant="destructive">
       {@error}
-    </p>
+    </Alert.alert>
     <div :if={@detail}>
       <header class="movie-heading">
         <h1 id="movie-title" class="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">

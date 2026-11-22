@@ -10,10 +10,7 @@ defmodule BolognesaWeb.Series.Review.Components.ReviewItem do
   @spec review_item(map()) :: Phoenix.LiveView.Rendered.t()
   def review_item(assigns) do
     ~H"""
-    <article
-      id={@id}
-      class="rounded-xl border border-border bg-surface p-4"
-    >
+    <Card.card tag="article" id={@id} class="p-5">
       <p class="font-semibold break-all">{@item.filename}</p>
       <p>{state_label(@item.state)} · {failure_label(@item.failure_reason)}</p>
       <p :if={@item.episode_numbers != []}>
@@ -26,16 +23,16 @@ defmodule BolognesaWeb.Series.Review.Components.ReviewItem do
       <.link
         :if={!@saving?}
         patch={~p"/series/review?page=#{@page}&file_id=#{@item.file_id}"}
-        class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
+        class={button_variant(%{variant: "outline"})}
         aria-disabled={@saving?}
       >{gettext("Corregir")}</.link>
-      <button
+      <Button.button
         phx-click="retry"
         phx-value-file_id={@item.file_id}
         disabled={@saving?}
-        class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
-      >{gettext("Reintentar identificación")}</button>
-    </article>
+        variant="outline"
+      >{gettext("Reintentar identificación")}</Button.button>
+    </Card.card>
     """
   end
 

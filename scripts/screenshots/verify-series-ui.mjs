@@ -73,6 +73,8 @@ export async function verifySeriesUI(page, {baseUrl, ids, waitForStablePage}) {
     await page.mouse.move(0, 0);
     const playBackground = await play.evaluate(el => getComputedStyle(el).backgroundColor);
     await play.hover();
+    // Button variants transition their colours; read the settled hover background.
+    await play.evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
     assert.notEqual(await play.evaluate(el => getComputedStyle(el).backgroundColor), playBackground, "Episode play lacks hover feedback");
 
     await page.goto(`${baseUrl}${routes[1]}`);

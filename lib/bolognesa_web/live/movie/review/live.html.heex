@@ -35,14 +35,9 @@
     <p :if={@saving?} id="correction-saving" role="status" class="text-sm text-muted">
       {gettext("Guardando corrección…")}
     </p>
-    <p
-      :if={@error}
-      id="review-error"
-      role="alert"
-      class="rounded-xl border border-red-300/30 p-4 text-red-100"
-    >
+    <Alert.alert :if={@error} id="review-error" variant="destructive">
       {@error}
-    </p>
+    </Alert.alert>
     <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]">
       <div id="review-list" phx-update="stream" class="space-y-3">
         <ReviewItem.item

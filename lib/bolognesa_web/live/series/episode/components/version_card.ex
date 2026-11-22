@@ -58,16 +58,17 @@ defmodule BolognesaWeb.Series.Episode.Components.VersionCard do
           {gettext("Corregir identificación")}
         </.link>
       </details>
-      <button
+      <Button.button
         :if={@version.availability == :available && @version.id != @selected_file_id}
         id={"episode-play-#{@version.id}"}
         type="button"
         phx-click="play"
         phx-value-file_id={@version.id}
+        variant="outline"
         class="series-episode-play"
       >
         {gettext("Elegir esta versión")}
-      </button>
+      </Button.button>
     </article>
     """
   end

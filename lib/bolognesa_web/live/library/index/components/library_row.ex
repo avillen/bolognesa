@@ -77,24 +77,24 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryRow do
         </p>
       </div>
       <div class="library-actions">
-        <button
+        <Button.button
           id={"library-scan-#{@library.id}"}
           type="button"
           phx-click="scan"
           phx-value-library_id={@library.id}
           disabled={@library.active?}
           phx-disable-with={gettext("Solicitando…")}
-          class="library-secondary"
+          variant="outline"
         >
           <.icon name="hero-arrow-path" class="size-4" />{@library.button_label}
-        </button>
+        </Button.button>
       </div>
       <.scan_details library={@library} />
-      <div
+      <Alert.alert
         :if={@library.error}
         id={"library-scan-error-#{@library.id}"}
-        role="alert"
-        class="mt-4 rounded-lg border border-red-300/20 bg-red-300/10 p-3 text-sm text-red-200"
+        variant="destructive"
+        class="mt-4 text-sm"
       >
         <p class="flex items-center gap-2 font-semibold">
           <.icon name="hero-exclamation-triangle" class="size-5 shrink-0" />
@@ -113,7 +113,7 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryRow do
             "El análisis de los archivos ya registrados continúa. Puedes salir de esta pantalla mientras termina."
           )}
         </p>
-      </div>
+      </Alert.alert>
     </article>
     """
   end
@@ -180,14 +180,14 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryRow do
             )}
           </p>
         </div>
-        <button
+        <Button.button
           id={"library-reinspect-#{@library.id}"}
           type="button"
           phx-click="prepare_reinspect"
           phx-value-library_id={@library.id}
           disabled={@library.active?}
-          class="library-secondary"
-        >{gettext("Reanalizar")}</button>
+          variant="outline"
+        >{gettext("Reanalizar")}</Button.button>
       </div>
     </details>
     """

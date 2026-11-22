@@ -56,12 +56,13 @@
         required
         class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
       />
-      <button
+      <Button.button
         id="setup-submit"
         type="submit"
         phx-disable-with={gettext("Creando cuenta…")}
-        class="mt-3 min-h-12 w-full rounded-xl bg-accent px-5 py-3 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >{gettext("Crear cuenta")}</button>
+        size="lg"
+        class="mt-3 w-full"
+      >{gettext("Crear cuenta")}</Button.button>
     </.form>
   </section>
 </Layouts.app>

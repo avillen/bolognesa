@@ -2,6 +2,7 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
   @moduledoc "Music home with recent listening."
   use BolognesaWeb, :html
 
+  alias BolognesaWeb.MediaComponents
   alias BolognesaWeb.Music.Index.Components.Artwork
 
   attr :albums, :list, required: true
@@ -25,17 +26,13 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
       <p :if={@status == :empty} id="music-last-listened-empty" class="music-feedback">
         {gettext("Todavía no has escuchado ningún álbum.")}
       </p>
-      <div
+      <MediaComponents.retry_alert
         :if={@status == :error}
         id="music-last-listened-error"
-        role="alert"
-        class="music-feedback music-feedback-error"
+        retry="retry-last-listened"
       >
         <p>{gettext("No se pudieron cargar las últimas escuchas.")}</p>
-        <button type="button" phx-click="retry-last-listened" class="min-h-11 text-accent">
-          {gettext("Reintentar")}
-        </button>
-      </div>
+      </MediaComponents.retry_alert>
       <div :if={@status == :ready} class="music-recent-grid">
         <.recent_album_card
           :for={album <- @albums}
@@ -54,7 +51,11 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
 
   defp recent_album_card(assigns) do
     ~H"""
-    <article id={"recent-album-#{@album.id}"} class="music-recent-card">
+    <Card.card
+      tag="article"
+      id={"recent-album-#{@album.id}"}
+      class="music-recent-card transition-colors hover:border-border-strong hover:bg-secondary/60 motion-reduce:transition-none"
+    >
       <.link
         class="music-recent-heading recent-album-open"
         patch={~p"/music?#{Map.merge(@library_params, %{view: :album, album_id: @album.id})}"}
@@ -82,7 +83,7 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
           </p>
         </div>
         <div class="music-recent-actions">
-          <button
+          <Button.button
             :if={!@album.restart?}
             id={"recent-continue-#{@album.id}"}
             type="button"
@@ -93,23 +94,25 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
             data-file-id={@album.file_id}
             disabled={!@album.track_available?}
             aria-label={gettext("Continuar %{title}", title: @album.title)}
-            class="music-recent-play"
-          ><.icon name="hero-play-solid" class="size-5" /><span class="sr-only">{gettext("Continuar")}</span></button>
-          <button
+            variant="play"
+            size="round"
+          ><.icon name="hero-play-solid" class="size-5" /><span class="sr-only">{gettext("Continuar")}</span></Button.button>
+          <Button.button
             id={"recent-play-#{@album.id}"}
             type="button"
             data-music-action="album"
             data-album-id={@album.id}
             data-library-id={@library_id}
             aria-label={gettext("Reproducir %{title} de nuevo", title: @album.title)}
-            class={if @album.restart?, do: "music-recent-play", else: "music-recent-replay"}
+            variant={if @album.restart?, do: "play", else: "outline"}
+            size="round"
           ><.icon
             name={if @album.restart?, do: "hero-play-solid", else: "hero-arrow-uturn-left"}
             class="size-5"
-          /><span class="sr-only">{gettext("Reproducir de nuevo")}</span></button>
+          /><span class="sr-only">{gettext("Reproducir de nuevo")}</span></Button.button>
         </div>
       </div>
-    </article>
+    </Card.card>
     """
   end
 end

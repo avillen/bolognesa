@@ -29,19 +29,18 @@ defmodule BolognesaWeb.Library.Index.Components.ReinspectConfirmation do
           )}
         </p>
         <div class="mt-4 flex flex-wrap gap-2">
-          <button
+          <Button.button
             id={"library-reinspect-confirm-button-#{@target.id}"}
             type="button"
             phx-click="confirm_reinspect"
             phx-value-library_id={@target.id}
-            class="min-h-11 rounded-xl bg-accent px-4 py-2 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >{gettext("Confirmar")}</button>
-          <button
+          >{gettext("Confirmar")}</Button.button>
+          <Button.button
             id={"library-reinspect-cancel-button-#{@target.id}"}
             type="button"
             phx-click="cancel_reinspect"
-            class="min-h-11 rounded-xl border border-border-strong px-4 py-2 text-ink transition hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >{gettext("Cancelar")}</button>
+            variant="outline"
+          >{gettext("Cancelar")}</Button.button>
         </div>
       </.focus_wrap>
     </div>

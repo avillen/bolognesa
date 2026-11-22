@@ -63,21 +63,27 @@ defmodule BolognesaWeb.Music.Index.Components.DetailHeading do
   defp album_actions(assigns) do
     ~H"""
     <div class="music-album-actions">
-      <button
+      <Button.button
         id="play-album"
         type="button"
+        variant="play"
+        size="lg"
+        class="rounded-full"
         data-music-action="album"
         data-album-id={@album_id}
         data-library-id={@active_library_id}
         aria-label={gettext("Reproducir álbum")}
-      ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir álbum")}</button>
-      <button
+      ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir álbum")}</Button.button>
+      <Button.button
         type="button"
+        variant="outline"
+        size="lg"
+        class="rounded-full"
         data-music-action="append-album"
         data-album-id={@album_id}
         data-library-id={@active_library_id}
         aria-label={gettext("Añadir álbum a la cola")}
-      ><.icon name="hero-plus" class="size-5" />{gettext("Añadir a la cola")}</button>
+      ><.icon name="hero-plus" class="size-5" />{gettext("Añadir a la cola")}</Button.button>
     </div>
     """
   end

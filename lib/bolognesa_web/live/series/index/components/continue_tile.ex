@@ -36,7 +36,7 @@ defmodule BolognesaWeb.Series.Index.Components.ContinueTile do
           id={"recent-series-continue-#{@series.id}"}
           target={@target}
           series_params={@series_params}
-          class={if @lead?, do: "media-primary-action", else: "series-continue-action"}
+          class={if @lead?, do: button_variant(%{}, "mt-5"), else: "series-continue-action"}
         />
       </div>
     </article>

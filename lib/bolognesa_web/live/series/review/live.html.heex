@@ -15,12 +15,12 @@
       >{gettext("Volver a series")}</.link>
     </div>
     <p :if={@loading?} role="status">{gettext("Cargando archivos…")}</p>
-    <div :if={@error} role="alert" class="rounded-xl border border-red-300/30 p-4 text-red-200">
-      {@error}<.link
-        patch={~p"/series/review?page=#{@page}&file_id=#{@selected_file_id}"}
-        class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
-      >{gettext("Reintentar")}</.link>
-    </div>
+    <MediaComponents.retry_alert
+      :if={@error}
+      patch={~p"/series/review?page=#{@page}&file_id=#{@selected_file_id}"}
+    >
+      {@error}
+    </MediaComponents.retry_alert>
     <p :if={!@loading? && @total == 0}>{gettext("No hay archivos pendientes de revisión.")}</p>
     <div id="series-review-list" phx-update="stream" class="space-y-3">
       <ReviewItem.review_item
@@ -72,21 +72,18 @@
           label={gettext("Buscar serie en TMDb")}
           disabled={@saving?}
         />
-        <button
-          class="media-primary-action disabled:cursor-wait disabled:opacity-50"
-          disabled={@saving? || @searching?}
-        >{gettext("Buscar")}</button>
+        <Button.button disabled={@saving? || @searching?}>{gettext("Buscar")}</Button.button>
       </.form>
       <p :if={@searching?} role="status">{gettext("Buscando series…")}</p>
       <div id="series-candidates" phx-update="stream" class="flex flex-wrap gap-2">
-        <button
+        <Button.button
           :for={{dom_id, candidate} <- @streams.candidates}
           id={dom_id}
           phx-click="choose"
           phx-value-id={candidate.provider_id}
           disabled={@saving?}
-          class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
-        >{candidate.title} {candidate.year}</button>
+          variant="outline"
+        >{candidate.title} {candidate.year}</Button.button>
       </div>
       <div :if={@series_id} class="space-y-4">
         <p>{gettext("Serie seleccionada:")} {@series_title}</p>
@@ -103,10 +100,9 @@
             min="0"
             disabled={@saving?}
           />
-          <button
-            class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
-            disabled={@saving? || @season_loading?}
-          >{gettext("Cargar episodios")}</button>
+          <Button.button disabled={@saving? || @season_loading?} variant="outline">
+            {gettext("Cargar episodios")}
+          </Button.button>
         </.form>
         <p :if={@season_loading?} role="status">{gettext("Cargando temporada…")}</p>
         <.form
@@ -132,17 +128,14 @@
               <span>{episode.number}. {episode.title}</span>
             </label>
           </div>
-          <button
-            class="media-primary-action disabled:cursor-wait disabled:opacity-50"
-            disabled={@saving? || @season_number == nil || @episode_numbers == []}
-          >{if @saving?, do: gettext("Guardando…"), else: gettext("Guardar selección completa")}</button>
+          <Button.button disabled={@saving? || @season_number == nil || @episode_numbers == []}>
+            {if @saving?, do: gettext("Guardando…"), else: gettext("Guardar selección completa")}
+          </Button.button>
         </.form>
       </div>
-      <button
-        phx-click="unidentified"
-        disabled={@saving?}
-        class="media-secondary-action disabled:cursor-wait disabled:opacity-50"
-      >{gettext("Marcar sin identificar")}</button>
+      <Button.button phx-click="unidentified" disabled={@saving?} variant="outline">
+        {gettext("Marcar sin identificar")}
+      </Button.button>
     </section>
     <p
       :if={@feedback}

@@ -7,10 +7,7 @@ defmodule BolognesaWeb.Movie.Review.Components.ReviewItem do
 
   def item(assigns) do
     ~H"""
-    <article
-      id={@dom_id}
-      class="rounded-2xl border border-border bg-surface p-5"
-    >
+    <Card.card tag="article" id={@dom_id} class="p-5">
       <h2 class="break-words font-semibold text-ink">{@item.filename}</h2>
       <p class="mt-2 text-xs text-muted">
         {state_label(@item.state)} · {if @item.availability == :available,
@@ -26,23 +23,22 @@ defmodule BolognesaWeb.Movie.Review.Components.ReviewItem do
         {failure_label(@item.failure_reason)}
       </p>
       <div class="mt-4 flex flex-wrap gap-2">
-        <button
+        <Button.button
           id={"review-select-#{@item.file_id}"}
           type="button"
           phx-click="select"
           phx-value-file_id={@item.file_id}
-          class="min-h-11 rounded-xl bg-accent px-4 text-sm font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >{gettext("Corregir")}</button>
-        <button
+        >{gettext("Corregir")}</Button.button>
+        <Button.button
           :if={@item.state != :manual_unidentified}
           id={"review-retry-#{@item.file_id}"}
           type="button"
           phx-click="retry"
           phx-value-file_id={@item.file_id}
-          class="min-h-11 rounded-xl border border-border-strong px-4 text-sm text-ink transition hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >{gettext("Reintentar")}</button>
+          variant="outline"
+        >{gettext("Reintentar")}</Button.button>
       </div>
-    </article>
+    </Card.card>
     """
   end
 

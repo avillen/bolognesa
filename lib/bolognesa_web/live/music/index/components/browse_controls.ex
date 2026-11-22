@@ -2,37 +2,55 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
   @moduledoc "Navigation, search, feedback and pagination for music browsing."
   use BolognesaWeb, :html
 
+  alias BolognesaWeb.MediaComponents
+
   attr :browse_kind, :atom, required: true
   attr :library_params, :map, required: true
   attr :artist_id, :integer, default: nil
 
   @spec navigation(map()) :: Phoenix.LiveView.Rendered.t()
   def navigation(assigns) do
+    # Links styled as ghost buttons; aria-current, not ARIA tabs, marks the section.
+    assigns =
+      assign(
+        assigns,
+        :link_class,
+        button_variant(
+          %{variant: "nav"},
+          "flex-none px-3 sm:px-4" <>
+            " aria-[current=page]:ring-1 aria-[current=page]:ring-inset aria-[current=page]:ring-primary/30" <>
+            " focus-visible:outline-offset-2!"
+        )
+      )
+
     ~H"""
-    <nav aria-label={gettext("Explorar música")} class="music-tabs">
+    <nav
+      aria-label={gettext("Explorar música")}
+      class="flex max-w-full gap-0.5 overflow-x-auto max-sm:self-start rounded-xl border border-border bg-card p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
       <.link
         id="music-home-link"
         patch={~p"/music?#{@library_params}"}
         aria-current={@browse_kind == :home && "page"}
-        class="music-tab"
+        class={@link_class}
       >{gettext("Inicio")}</.link>
       <.link
         id="music-artists-link"
         patch={~p"/music?#{Map.put(@library_params, :view, :artists)}"}
         aria-current={@browse_kind == :artists && "page"}
-        class="music-tab"
+        class={@link_class}
       >{gettext("Artistas")}</.link>
       <.link
         id="music-albums-link"
         patch={~p"/music?#{Map.put(@library_params, :view, :albums)}"}
         aria-current={@browse_kind == :albums && !@artist_id && "page"}
-        class="music-tab"
+        class={@link_class}
       >{gettext("Álbumes")}</.link>
       <.link
         id="music-songs-link"
         patch={~p"/music?#{Map.put(@library_params, :view, :tracks)}"}
         aria-current={@browse_kind == :tracks && "page"}
-        class="music-tab"
+        class={@link_class}
       >{gettext("Canciones")}</.link>
     </nav>
     """
@@ -59,7 +77,13 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
         label={gettext("Buscar canciones, artistas o álbumes")}
         placeholder={gettext("Buscar música")}
       />
-      <button type="submit" class="music-search-submit">{gettext("Buscar")}</button>
+      <Button.button
+        type="submit"
+        variant="ghost"
+        class="music-search-submit text-accent-soft"
+      >
+        {gettext("Buscar")}
+      </Button.button>
     </.form>
     """
   end
@@ -75,18 +99,9 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
     <p :if={@loading?} id="music-loading" role="status" class="music-feedback">
       {gettext("Cargando música…")}
     </p>
-    <div
-      :if={@error}
-      id="music-read-error"
-      role="alert"
-      class="music-feedback music-feedback-error"
-    >
-      <p>{@error}</p><button
-        type="button"
-        phx-click="refresh"
-        class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
-      >{gettext("Reintentar")}</button>
-    </div>
+    <MediaComponents.retry_alert :if={@error} id="music-read-error" retry="refresh">
+      <p>{@error}</p>
+    </MediaComponents.retry_alert>
     <p
       :if={@browse_kind != :home && !@loading? && !@error && @total == 0}
       id="music-empty"

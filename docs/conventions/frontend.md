@@ -113,7 +113,9 @@ fallbacks when introducing syntax or APIs.
 
 ## Visual design
 
-Use the styling and accessibility rules in [Phoenix and UI](phoenix.md#heex-forms-and-accessibility). The current design uses a dark charcoal base, warm white text, and coral accents. Missing poster art must have a useful fallback. Keep actions and data tied to existing behavior; presentation changes do not imply new product capabilities.
+Use the styling and accessibility rules in [Phoenix and UI](phoenix.md#heex-forms-and-accessibility). The current design uses a dark charcoal base, warm white text, and coral accents. Missing poster art must have a useful fallback.
+
+Use the copied UI components from [decision 0031](../decisions/0031-copied-ui-components.md), which every HTML module aliases. Actions use `<Button.button>` (`default` for the primary action, `outline` for secondary ones, `play` for music playback, `round` for icon-only controls). Links that look like buttons use `button_variant/2`, and section switchers stay links with `aria-current` and the `nav` variant. Error states use `<Alert.alert variant="destructive">`, or `MediaComponents.retry_alert` when the screen can retry, and content items use `<Card.card>`, with `tag="article"` for list items. Screen CSS keeps only placement (grid areas, responsive positions) and state hooks; buttons that browser code creates take their base style from `@layer base` rules. Keep actions and data tied to existing behavior; presentation changes do not imply new product capabilities.
 
 ## Interface language
 

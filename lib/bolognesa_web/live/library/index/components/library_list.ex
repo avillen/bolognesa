@@ -29,9 +29,9 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryList do
           class="hidden rounded-xl border border-dashed border-border p-6 text-sm text-muted only:block"
         >
           <p>{gettext("Todavía no hay bibliotecas.")}</p>
-          <button type="button" phx-click="open_library_form" class="library-secondary mt-4">{gettext(
-            "Añadir biblioteca"
-          )}</button>
+          <Button.button type="button" phx-click="open_library_form" variant="outline" class="mt-4">
+            {gettext("Añadir biblioteca")}
+          </Button.button>
         </div>
         <LibraryRow.render :for={{id, library} <- @libraries} id={id} library={library} />
       </div>

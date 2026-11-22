@@ -62,6 +62,9 @@ defmodule Bolognesa.MixProject do
        app: false,
        compile: false,
        depth: 1},
+      # Installer only: components are copied into lib/bolognesa_web/components/ui.
+      {:salad_ui, "~> 1.0", only: :dev, runtime: false},
+      {:tw_merge, "~> 0.1"},
       {:req, "~> 0.5"},
       {:prom_ex, "~> 1.12"},
       {:telemetry_metrics, "~> 1.0"},

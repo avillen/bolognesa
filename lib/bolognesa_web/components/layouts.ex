@@ -48,17 +48,19 @@ defmodule BolognesaWeb.Layouts do
           <img src={~p"/images/bolognesa-cat.svg"} width="36" height="36" alt="" />
           <span>boloñesa</span>
         </.link>
-        <button
+        <Button.button
           id="app-menu-toggle"
           type="button"
-          class="app-menu-toggle"
+          variant="outline"
+          size="icon"
+          class="app-menu-toggle border-border"
           aria-label={gettext("Abrir navegación")}
           aria-controls="app-navigation"
           aria-haspopup="dialog"
           phx-click={JS.dispatch("bolognesa:open-navigation", to: "#app-navigation")}
         >
           <.icon name="hero-bars-3" class="size-5" />
-        </button>
+        </Button.button>
         <dialog
           id="app-navigation"
           class="app-navigation-panel"
@@ -68,21 +70,23 @@ defmodule BolognesaWeb.Layouts do
         >
           <div class="app-menu-heading">
             <span>{gettext("Tu biblioteca")}</span>
-            <button
+            <Button.button
               id="app-menu-close"
               type="button"
-              class="app-menu-toggle"
+              variant="outline"
+              size="icon"
+              class="app-menu-toggle border-border"
               aria-label={gettext("Cerrar navegación")}
               phx-click={JS.dispatch("bolognesa:close-navigation", to: "#app-navigation")}
             >
               <.icon name="hero-x-mark" class="size-5" />
-            </button>
+            </Button.button>
           </div>
           <nav aria-label={gettext("Navegación principal")} class="app-navigation">
             <div class="app-nav-primary">
               <.link
                 navigate={~p"/"}
-                class={["app-nav-link", @active_section == :home && "is-active"]}
+                class={nav_link_class()}
                 aria-current={@active_section == :home && "page"}
               >
                 <.icon name="hero-home" class="size-5" /> <span>{gettext("Inicio")}</span>
@@ -91,7 +95,7 @@ defmodule BolognesaWeb.Layouts do
                 :for={library <- @navigation_libraries}
                 id={"nav-library-#{library.id}"}
                 navigate={library_path(library)}
-                class={["app-nav-link", @active_library_id == library.id && "is-active"]}
+                class={nav_link_class()}
                 aria-current={@active_library_id == library.id && "page"}
               >
                 <.icon
@@ -113,7 +117,7 @@ defmodule BolognesaWeb.Layouts do
               <p class="app-nav-caption">{gettext("Mi cuenta")}</p>
               <.link
                 navigate={~p"/libraries"}
-                class={["app-nav-link", @active_section == :libraries && "is-active"]}
+                class={nav_link_class()}
                 aria-current={@active_section == :libraries && "page"}
               >
                 <.icon name="hero-folder" class="size-5" /> <span>{gettext("Bibliotecas")}</span>
@@ -121,14 +125,14 @@ defmodule BolognesaWeb.Layouts do
               <.link
                 navigate={~p"/settings"}
                 id="nav-settings"
-                class={["app-nav-link", @active_section == :settings && "is-active"]}
+                class={nav_link_class()}
                 aria-current={@active_section == :settings && "page"}
               >
                 <.icon name="hero-cog-6-tooth" class="size-5" /> <span>{gettext("Ajustes")}</span>
               </.link>
               <.link
                 navigate={~p"/about"}
-                class={["app-nav-link", @active_section == :about && "is-active"]}
+                class={nav_link_class()}
                 aria-current={@active_section == :about && "page"}
               >
                 <.icon name="hero-information-circle" class="size-5" />
@@ -146,6 +150,14 @@ defmodule BolognesaWeb.Layouts do
 
     <.flash_group flash={@flash} />
     """
+  end
+
+  # Ghost-button links; aria-current (not a class) drives the active style.
+  defp nav_link_class do
+    button_variant(
+      %{variant: "nav"},
+      "app-nav-link w-full justify-start gap-2.5 whitespace-normal px-3 text-[13px] font-normal"
+    )
   end
 
   defp library_icon(:movie), do: "hero-film"

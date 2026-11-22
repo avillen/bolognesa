@@ -7,9 +7,9 @@ defmodule BolognesaWeb.Movie.Show.Components.VersionCard do
 
   def card(assigns) do
     ~H"""
-    <div
+    <Card.card
       id={"movie-version-#{@version.id}"}
-      class="movie-version-card"
+      class="movie-version-card bg-background"
     >
       <div class="movie-version-summary">
         <span class="movie-version-icon" aria-hidden="true"><.icon
@@ -40,23 +40,22 @@ defmodule BolognesaWeb.Movie.Show.Components.VersionCard do
              do: gettext("Disponible"),
              else: gettext("No disponible")}</span>
       <div class="movie-version-actions">
-        <button
+        <Button.button
           :if={@version.availability == :available}
           id={"movie-play-#{@version.id}"}
           type="button"
           phx-click="play"
           phx-value-file_id={@version.id}
-          class="media-primary-action"
         >
           {gettext("Reproducir")}
-        </button>
+        </Button.button>
         <.link
           navigate={~p"/movies/review?#{%{file_id: @version.id}}"}
           id={"movie-correct-#{@version.id}"}
-          class="media-secondary-action"
+          class={button_variant(%{variant: "outline"})}
         >{gettext("Corregir")}</.link>
       </div>
-    </div>
+    </Card.card>
     """
   end
 end
