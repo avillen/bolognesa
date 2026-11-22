@@ -169,12 +169,12 @@ defmodule BolognesaWeb.CoreComponents do
     ~H"""
     <div class="mb-2">
       <label for={@id}>
-        <span :if={@label} class="mb-1 block text-sm font-medium text-ink">{@label}</span>
+        <span :if={@label} class="mb-1 block text-sm font-medium text-foreground">{@label}</span>
         <select
           id={@id}
           name={@name}
           class={[
-            @class || "w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink",
+            @class || input_class(),
             @errors != [] && (@error_class || "border-red-400")
           ]}
           multiple={@multiple}
@@ -194,14 +194,14 @@ defmodule BolognesaWeb.CoreComponents do
     ~H"""
     <div class="mb-2">
       <label for={@id}>
-        <span :if={@label} class="mb-1 block text-sm font-medium text-ink">{@label}</span>
+        <span :if={@label} class="mb-1 block text-sm font-medium text-foreground">{@label}</span>
         <input
           type={@type}
           name={@name}
           id={@id}
           value={Form.normalize_value(@type, @value)}
           class={[
-            @class || "w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink",
+            @class || input_class(),
             @errors != [] && (@error_class || "border-red-400")
           ]}
           {@rest}
@@ -211,6 +211,12 @@ defmodule BolognesaWeb.CoreComponents do
     </div>
     """
   end
+
+  # SaladUI's Input look on Bolognesa's semantic tokens, with a 44px target. A `class`
+  # replaces it, so search fields can stay borderless inside their own wrapper.
+  defp input_class,
+    do:
+      "w-full min-h-11 rounded-xl border border-input bg-secondary px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
 
   # Helper used by inputs to generate form errors
   defp error(assigns) do

@@ -56,8 +56,6 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryForm do
             type="text"
             label={gettext("Nombre")}
             required
-            class="library-form-control"
-            error_class="library-form-control-error"
           />
           <.input
             field={@form[:content_type]}
@@ -82,8 +80,6 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryForm do
               placeholder="/media/movies"
               aria-describedby="library-deployment-help"
               required
-              class="library-form-control"
-              error_class="library-form-control-error"
             />
             <a
               id="library-deployment-help"

@@ -21,11 +21,12 @@ defmodule BolognesaWeb.Series.Episode.Components.VersionCard do
             1
           )} MB
         </h3>
-        <span
+        <Badge.badge
           :if={@version.id == @selected_file_id}
           id={"episode-selected-#{@version.id}"}
-          class="episode-selected"
-        >{gettext("Seleccionada")}</span>
+        >
+          {gettext("Seleccionada")}
+        </Badge.badge>
         <span :if={@version.availability != :available} class="text-xs text-muted">{gettext(
           "No disponible"
         )}</span>

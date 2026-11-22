@@ -23,7 +23,7 @@ invalid, because the token values are OKLCH. `salad_ui` also brings `igniter` an
 - Use SaladUI as a source to copy from, not as a framework. Keep only the
   components a screen uses under `lib/bolognesa_web/components/ui/`
   (`BolognesaWeb.Components.UI.*`) and add more only when a screen needs them.
-  Every HTML module aliases `Alert`, `Button` and `Card` and imports
+  Every HTML module aliases `Alert`, `Badge`, `Button` and `Card` and imports
   `button_variant/2`. Calls go through the aliases, such as `<Button.button>`,
   because the component names overlap with CoreComponents.
 - Adapt the copies to the house: every button size keeps 44px targets
@@ -35,6 +35,11 @@ invalid, because the token values are OKLCH. `salad_ui` also brings `igniter` an
   components replace the `media-*-action` and `library-*` button classes, the
   per-screen error styles and the visual rules of player, track, album and
   sidebar controls. Screen CSS keeps placement and state hooks only.
+- Badge keeps only the coral-tinted look of the selected-version labels and renders
+  a `<span>`. Phoenix's `<.input>` keeps its label, error and form-field handling and
+  takes SaladUI's Input look on semantic tokens as its default class, so Input and
+  Label are not copied. Skeleton is not copied: loading states stay short
+  `role="status"` text, which needs no per-screen placeholder shapes.
 - Put `.app-content button` in `@layer base`, so component utilities override
   it. Queue menu buttons that JS creates take their look from a rule scoped to
   their menu (`.music-menu-items button`), not from a rule on every player button.
