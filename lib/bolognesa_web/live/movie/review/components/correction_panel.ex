@@ -10,7 +10,7 @@ defmodule BolognesaWeb.Movie.Review.Components.CorrectionPanel do
 
   def panel(assigns) do
     ~H"""
-    <div class="rounded-2xl border border-border bg-surface p-5 sm:p-7">
+    <Card.card class="p-5 sm:p-7">
       <h2 class="text-xl font-semibold text-ink">{gettext("Corrección manual")}</h2>
       <p class="mt-2 text-sm text-muted">
         {if @selected_file_id,
@@ -76,7 +76,7 @@ defmodule BolognesaWeb.Movie.Review.Components.CorrectionPanel do
         variant="outline"
         class="mt-3 w-full"
       >{gettext("Dejar sin identificar")}</Button.button>
-    </div>
+    </Card.card>
     """
   end
 end

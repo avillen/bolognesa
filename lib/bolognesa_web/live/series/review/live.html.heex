@@ -38,11 +38,7 @@
         "Siguiente"
       )}</.link>
     </nav>
-    <section
-      :if={@selected_item}
-      id="series-file-correction"
-      class="space-y-4 rounded-2xl border border-border bg-surface p-5"
-    >
+    <Card.card :if={@selected_item} id="series-file-correction" class="space-y-4 p-5">
       <h2 class="text-xl font-semibold break-all">
         {gettext("Corregir")} {@selected_item.filename}
       </h2>
@@ -136,7 +132,7 @@
       <Button.button phx-click="unidentified" disabled={@saving?} variant="outline">
         {gettext("Marcar sin identificar")}
       </Button.button>
-    </section>
+    </Card.card>
     <p
       :if={@feedback}
       id="series-review-feedback"

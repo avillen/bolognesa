@@ -94,7 +94,7 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryRow do
         :if={@library.error}
         id={"library-scan-error-#{@library.id}"}
         variant="destructive"
-        class="mt-4 text-sm"
+        class="mt-4"
       >
         <p class="flex items-center gap-2 font-semibold">
           <.icon name="hero-exclamation-triangle" class="size-5 shrink-0" />
