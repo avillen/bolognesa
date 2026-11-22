@@ -56,12 +56,12 @@ defmodule BolognesaWeb.Music.Index.Components.TrackRow do
     <Button.button
       :if={@track.state == :ready}
       type="button"
-      variant="ghost"
+      variant="subtle"
       size="round"
       data-music-action="append-track"
       data-track-id={@track.track_id}
       data-file-id={@track.id}
-      class="music-track-queue text-muted-foreground"
+      class="music-track-queue"
       aria-label={gettext("Añadir %{title} a la cola", title: @track.title)}
       title={gettext("Añadir a la cola")}
     ><.icon name="hero-plus" class="size-5" /></Button.button>

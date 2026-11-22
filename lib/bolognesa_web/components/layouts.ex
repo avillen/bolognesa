@@ -51,9 +51,9 @@ defmodule BolognesaWeb.Layouts do
         <Button.button
           id="app-menu-toggle"
           type="button"
-          variant="outline"
+          variant="subtle"
           size="icon"
-          class="app-menu-toggle border-border"
+          class="app-menu-toggle"
           aria-label={gettext("Abrir navegación")}
           aria-controls="app-navigation"
           aria-haspopup="dialog"
@@ -73,9 +73,9 @@ defmodule BolognesaWeb.Layouts do
             <Button.button
               id="app-menu-close"
               type="button"
-              variant="outline"
+              variant="subtle"
               size="icon"
-              class="app-menu-toggle border-border"
+              class="app-menu-toggle"
               aria-label={gettext("Cerrar navegación")}
               phx-click={JS.dispatch("bolognesa:close-navigation", to: "#app-navigation")}
             >
@@ -152,13 +152,8 @@ defmodule BolognesaWeb.Layouts do
     """
   end
 
-  # Ghost-button links; aria-current (not a class) drives the active style.
-  defp nav_link_class do
-    button_variant(
-      %{variant: "nav"},
-      "app-nav-link w-full justify-start gap-2.5 whitespace-normal px-3 text-[13px] font-normal"
-    )
-  end
+  # Nav-variant links; aria-current (not a class) drives the active style.
+  defp nav_link_class, do: button_variant(%{variant: "nav"}, "app-nav-link w-full")
 
   defp library_icon(:movie), do: "hero-film"
   defp library_icon(:series), do: "hero-tv"

@@ -68,7 +68,7 @@ defmodule BolognesaWeb.Music.Index.Components.DetailHeading do
         type="button"
         variant="play"
         size="lg"
-        class="rounded-full"
+        shape="pill"
         data-music-action="album"
         data-album-id={@album_id}
         data-library-id={@active_library_id}
@@ -78,7 +78,7 @@ defmodule BolognesaWeb.Music.Index.Components.DetailHeading do
         type="button"
         variant="outline"
         size="lg"
-        class="rounded-full"
+        shape="pill"
         data-music-action="append-album"
         data-album-id={@album_id}
         data-library-id={@active_library_id}

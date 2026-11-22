@@ -17,8 +17,11 @@ defmodule BolognesaWeb.Components.UI.Helpers do
         "border border-input bg-transparent text-foreground hover:bg-secondary hover:text-secondary-foreground",
       "secondary" => "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
       "ghost" => "hover:bg-secondary hover:text-secondary-foreground",
+      "subtle" =>
+        "border border-border text-muted-foreground hover:bg-secondary hover:text-secondary-foreground",
+      # The global focus outline is unlayered, so its offset needs `!` to win.
       "nav" =>
-        "text-muted-foreground hover:bg-secondary hover:text-foreground aria-[current=page]:bg-primary/15 aria-[current=page]:text-foreground motion-reduce:transition-none",
+        "justify-start gap-2.5 whitespace-normal px-3 text-[13px] font-normal text-muted-foreground hover:bg-secondary hover:text-foreground aria-[current=page]:bg-primary/15 aria-[current=page]:text-foreground aria-[current=page]:ring-1 aria-[current=page]:ring-inset aria-[current=page]:ring-primary/30 focus-visible:outline-offset-2! motion-reduce:transition-none",
       "link" => "text-primary underline-offset-4 hover:underline"
     },
     size: %{
@@ -26,19 +29,26 @@ defmodule BolognesaWeb.Components.UI.Helpers do
       "sm" => "min-h-11 px-3 text-xs",
       "lg" => "min-h-12 px-6 text-base",
       "icon" => "size-11",
+      # Shorthand for the most common round control: `icon` size with the `pill` shape.
       "round" => "size-11 rounded-full"
+    },
+    shape: %{
+      "default" => "",
+      "pill" => "rounded-full"
     }
   }
 
   @default_variants %{
     variant: "default",
-    size: "default"
+    size: "default",
+    shape: "default"
   }
 
   @doc """
-  Classes for a button look, also usable on links. Supports two variant kinds:
+  Classes for a button look, also usable on links. Supports three variant kinds:
   - size: `default|sm|lg|icon|round`
-  - variant: `default|play|destructive|outline|secondary|ghost|nav|link`
+  - variant: `default|play|destructive|outline|secondary|ghost|subtle|nav|link`
+  - shape: `default|pill`
 
   `extra` classes are merged with TwMerge, so a conflicting utility (such as
   `px-3` or `whitespace-normal`) replaces the variant's own instead of losing to
@@ -46,7 +56,7 @@ defmodule BolognesaWeb.Components.UI.Helpers do
   """
   @spec button_variant(map(), String.t() | [String.t() | nil] | nil) :: String.t()
   def button_variant(props \\ %{}, extra \\ nil) do
-    variants = Map.take(props, ~w(variant size)a)
+    variants = Map.take(props, ~w(variant size shape)a)
     variants = Map.merge(@default_variants, variants)
 
     variation_classes = Enum.map_join(variants, " ", fn {key, value} -> @variants[key][value] end)

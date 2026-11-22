@@ -29,8 +29,9 @@ invalid, because the token values are OKLCH. `salad_ui` also brings `igniter` an
 - Adapt the copies to the house: every button size keeps 44px targets
   (`min-h-11`, icon `size-11`), and Card takes a `tag` so list items stay
   `<article>`. Repeated house looks become variants instead of call-site
-  classes: `play` (coral glow), `nav` (`aria-current` highlight) and the
-  `round` icon size. These
+  classes: `play` (coral glow), `subtle` (bordered, muted secondary icon
+  control), `nav` (its own geometry and `aria-current` highlight), the `pill`
+  shape and the `round` icon size (shorthand for `icon` with `pill`). These
   components replace the `media-*-action` and `library-*` button classes, the
   per-screen error styles and the visual rules of player, track, album and
   sidebar controls. Screen CSS keeps placement and state hooks only.

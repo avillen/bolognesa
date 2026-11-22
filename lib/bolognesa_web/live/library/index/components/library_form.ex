@@ -32,9 +32,9 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryForm do
             type="button"
             phx-click="close_library_form"
             aria-label={gettext("Cerrar")}
-            variant="ghost"
+            variant="subtle"
             size="icon"
-            class="shrink-0 border border-border text-muted-foreground"
+            class="shrink-0"
           ><.icon name="hero-x-mark" class="size-5" /></Button.button>
         </div>
         <p class="mt-2 text-sm leading-6 text-muted">
