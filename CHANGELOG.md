@@ -6,19 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Changed
+## [0.3.0] - 2026-11-22
 
-- Convert untagged 8-bit 4:2:0 video, such as Xvid/DivX AVI files, instead of reporting missing technical data.
-- Copy browser-supported HE-AAC and MP3 audio into HLS instead of always converting it to AAC-LC.
-- Keep video playing on iPhone instead of reloading the page after about seven minutes.
-- Encode 50 and 60 fps sources at 25 and 29.97 fps so motion stays even.
-- Prefer deliveries the browser predicts will play smoothly over cheaper ones predicted to stutter.
-- Report unsupported color formats and files without video instead of missing technical data.
-- Allow up to sixty seconds to prepare compatible video playback, while starting as soon as output is ready.
+Series now remember what you have watched.
 
 ### Added
 
-- Numeric FFmpeg preparation diagnostics and a Grafana row for startup timings and progress.
+- See which episodes you have watched, and mark episodes or whole seasons as watched or unwatched.
+- Continue a series from the next episode, or replay it once finished, from its page or from the top of the Series library.
+- Control the video player with keyboard shortcuts from anywhere on the page: `n` plays the next episode, `p` restarts or goes back.
+
+### Changed
+
+- Redesign the music library and player, with a floating mini player on phones.
+- Show player status and errors inside the video.
+- Play more videos without conversion, convert more old formats, and keep motion smooth on 50/60 fps sources.
+
+### Fixed
+
+- Video no longer reloads on iPhone after about seven minutes.
+
+### Limitations
+
+The position within an episode is still not saved across tabs or devices. Movies have no watched state. Video compatibility remains experimental.
+
+### Upgrading
+
+Includes a database migration. Before updating, keep a validated database backup and its matching application image; an older image does not undo migrations. Existing video files may need a fresh inspection to benefit from the playback changes; see the [playback guide](docs/playback.md).
 
 ## [0.2.0] - 2026-11-08
 
@@ -68,6 +82,7 @@ Playback depends on the browser, container, codecs, and hardware. Video recovery
 
 Database compatibility is not guaranteed during 0.x development. Before updating, keep a validated backup and its matching application image. Follow the [backup and recovery guide](deploy/compose/README.md#backup-update-and-recovery).
 
-[Unreleased]: https://github.com/avillen/bolognesa/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/avillen/bolognesa/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/avillen/bolognesa/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/avillen/bolognesa/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/avillen/bolognesa/releases/tag/v0.1.0
