@@ -26,8 +26,11 @@ invalid, because the token values are OKLCH. `salad_ui` also brings `igniter` an
   Every HTML module aliases `Alert`, `Button` and `Card` and imports
   `button_variant/2`. Calls go through the aliases, such as `<Button.button>`,
   because the component names overlap with CoreComponents.
-- Adapt the copies to the house: buttons keep 44px targets (`min-h-11`, icon
-  `size-11`), and Card takes a `tag` so list items stay `<article>`. These
+- Adapt the copies to the house: every button size keeps 44px targets
+  (`min-h-11`, icon `size-11`), and Card takes a `tag` so list items stay
+  `<article>`. Repeated house looks become variants instead of call-site
+  classes: `play` (coral glow), `nav` (`aria-current` highlight) and the
+  `round` icon size. These
   components replace the `media-*-action` and `library-*` button classes, the
   per-screen error styles and the visual rules of player, track, album and
   sidebar controls. Screen CSS keeps placement and state hooks only.
@@ -36,7 +39,8 @@ invalid, because the token values are OKLCH. `salad_ui` also brings `igniter` an
   creates still get the base style. The global focus outline stays unlayered, because some inputs use
   `outline-none` and depend on it.
 - Keep `salad_ui` as a dev-only dependency for future copies and upstream diffs.
-  Depend directly on `tw_merge`, which the copied components use at runtime.
+  Depend directly on `tw_merge`, which the copied components use at runtime,
+  and start its `TwMerge.Cache` first in the application supervision tree.
 - Map shadcn's semantic tokens onto the existing dark palette in one
   `@theme inline` block in `app.css`. Where the names clash, Bolognesa's meaning
   wins: `accent` is the coral brand colour and `muted` is secondary text. The

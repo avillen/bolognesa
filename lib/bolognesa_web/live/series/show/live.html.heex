@@ -20,17 +20,9 @@
     <p :if={@loading?} id="series-loading" role="status" class="text-muted">
       {gettext("Cargando serie…")}
     </p>
-    <Alert.alert
-      :if={@error}
-      id="series-error"
-      variant="destructive"
-      class="flex flex-wrap items-center justify-between gap-3"
-    >
+    <MediaComponents.retry_alert :if={@error} id="series-error" retry="retry">
       {@error}
-      <Button.button type="button" phx-click="retry" variant="outline" class="text-foreground">
-        {gettext("Reintentar")}
-      </Button.button>
-    </Alert.alert>
+    </MediaComponents.retry_alert>
     <div :if={@detail} class="media-detail-panel series-detail-panel">
       <SeriesHero.series_hero
         series={@detail.series}

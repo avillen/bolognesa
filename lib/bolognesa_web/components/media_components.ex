@@ -1,5 +1,5 @@
 defmodule BolognesaWeb.MediaComponents do
-  @moduledoc "Presentation shared by movie, series, and episode details."
+  @moduledoc "Presentation shared by movie, series, episode and music screens."
   use BolognesaWeb, :html
 
   attr :id, :string, required: true
@@ -20,6 +20,26 @@ defmodule BolognesaWeb.MediaComponents do
         <span class="media-read-less">{gettext("Leer menos")}</span>
       </summary>
     </details>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :retry, :string, required: true, doc: "the event the retry button pushes"
+  slot :inner_block, required: true
+
+  @spec retry_alert(map()) :: Phoenix.LiveView.Rendered.t()
+  def retry_alert(assigns) do
+    ~H"""
+    <Alert.alert
+      id={@id}
+      variant="destructive"
+      class="flex flex-wrap items-center justify-between gap-3"
+    >
+      <Alert.alert_description>{render_slot(@inner_block)}</Alert.alert_description>
+      <Button.button type="button" phx-click={@retry} variant="outline">
+        {gettext("Reintentar")}
+      </Button.button>
+    </Alert.alert>
     """
   end
 end

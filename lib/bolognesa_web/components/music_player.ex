@@ -42,8 +42,7 @@ defmodule BolognesaWeb.MusicPlayer do
         <Button.button
           type="button"
           variant="ghost"
-          size="icon"
-          class="rounded-full"
+          size="round"
           data-player-action="close"
           aria-label={gettext("Cerrar")}
           title={gettext("Cerrar")}
@@ -53,8 +52,7 @@ defmodule BolognesaWeb.MusicPlayer do
         <Button.button
           type="button"
           variant="ghost"
-          size="icon"
-          class="rounded-full"
+          size="round"
           data-player-action="collapse"
           aria-label={gettext("Cerrar")}
           title={gettext("Cerrar")}
@@ -83,8 +81,7 @@ defmodule BolognesaWeb.MusicPlayer do
     <Button.button
       type="button"
       variant="ghost"
-      size="icon"
-      class="rounded-full"
+      size="round"
       data-player-action="previous"
       data-label={gettext("Anterior")}
       aria-label={gettext("Anterior")}
@@ -94,8 +91,8 @@ defmodule BolognesaWeb.MusicPlayer do
     </Button.button>
     <Button.button
       type="button"
-      size="icon"
-      class="rounded-full"
+      variant="play"
+      size="round"
       data-player-action="toggle"
       data-label-play={gettext("Reproducir")}
       data-label-pause={gettext("Pausar")}
@@ -107,8 +104,7 @@ defmodule BolognesaWeb.MusicPlayer do
     <Button.button
       type="button"
       variant="ghost"
-      size="icon"
-      class="rounded-full"
+      size="round"
       data-player-action="next"
       data-label={gettext("Siguiente")}
       aria-label={gettext("Siguiente")}

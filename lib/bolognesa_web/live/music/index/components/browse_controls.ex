@@ -2,6 +2,8 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
   @moduledoc "Navigation, search, feedback and pagination for music browsing."
   use BolognesaWeb, :html
 
+  alias BolognesaWeb.MediaComponents
+
   attr :browse_kind, :atom, required: true
   attr :library_params, :map, required: true
   attr :artist_id, :integer, default: nil
@@ -14,11 +16,10 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
         assigns,
         :link_class,
         button_variant(
-          %{variant: "ghost"},
-          "h-10 min-h-10 flex-none px-3 text-muted-foreground hover:text-foreground sm:px-4" <>
-            " aria-[current=page]:bg-primary/15 aria-[current=page]:text-foreground" <>
+          %{variant: "nav"},
+          "flex-none px-3 sm:px-4" <>
             " aria-[current=page]:ring-1 aria-[current=page]:ring-inset aria-[current=page]:ring-primary/30" <>
-            " focus-visible:outline-offset-2! motion-reduce:transition-none"
+            " focus-visible:outline-offset-2!"
         )
       )
 
@@ -79,7 +80,7 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
       <Button.button
         type="submit"
         variant="ghost"
-        class="music-search-submit h-10 min-h-10 text-accent-soft"
+        class="music-search-submit text-accent-soft"
       >
         {gettext("Buscar")}
       </Button.button>
@@ -98,19 +99,9 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
     <p :if={@loading?} id="music-loading" role="status" class="music-feedback">
       {gettext("Cargando música…")}
     </p>
-    <Alert.alert
-      :if={@error}
-      id="music-read-error"
-      variant="destructive"
-      class="flex flex-wrap items-center justify-between gap-3"
-    >
-      <Alert.alert_description>
-        <p>{@error}</p>
-      </Alert.alert_description>
-      <Button.button type="button" phx-click="refresh" variant="outline" class="text-foreground">
-        {gettext("Reintentar")}
-      </Button.button>
-    </Alert.alert>
+    <MediaComponents.retry_alert :if={@error} id="music-read-error" retry="refresh">
+      <p>{@error}</p>
+    </MediaComponents.retry_alert>
     <p
       :if={@browse_kind != :home && !@loading? && !@error && @total == 0}
       id="music-empty"

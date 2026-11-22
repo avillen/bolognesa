@@ -30,17 +30,9 @@
     <p :if={@loading?} id="episodes-loading" role="status" class="text-muted">
       {gettext("Cargando episodios…")}
     </p>
-    <Alert.alert
-      :if={@error}
-      id="episodes-error"
-      variant="destructive"
-      class="flex flex-wrap items-center justify-between gap-3"
-    >
+    <MediaComponents.retry_alert :if={@error} id="episodes-error" retry="retry">
       {@error}
-      <Button.button type="button" phx-click="retry" variant="outline" class="text-foreground">
-        {gettext("Reintentar")}
-      </Button.button>
-    </Alert.alert>
+    </MediaComponents.retry_alert>
     <header :if={@detail} class="series-season-heading">
       <h1 id="season-title" class="text-3xl font-semibold text-ink">
         {if @detail.season.number == 0,

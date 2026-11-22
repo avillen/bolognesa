@@ -66,8 +66,9 @@ defmodule BolognesaWeb.Music.Index.Components.DetailHeading do
       <Button.button
         id="play-album"
         type="button"
+        variant="play"
         size="lg"
-        class="rounded-full shadow-lg shadow-primary/30 hover:bg-accent-hover"
+        class="rounded-full"
         data-music-action="album"
         data-album-id={@album_id}
         data-library-id={@active_library_id}

@@ -19,6 +19,7 @@ defmodule BolognesaWeb.Components.UI.Card do
   slot :inner_block, required: true
   attr :rest, :global
 
+  @spec card(map()) :: Phoenix.LiveView.Rendered.t()
   def card(assigns) do
     ~H"""
     <.dynamic_tag

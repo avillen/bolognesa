@@ -79,8 +79,7 @@
 .music-recent-section-heading h2 { font-size: 20px; font-weight: 650; }
 .music-recent-section-heading p { color: var(--color-muted); font-size: 14px; }
 .music-recent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; }
-.music-recent-card { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); grid-template-rows: auto auto; gap: 16px 18px; min-width: 0; padding: 16px; transition: border-color .15s, background-color .15s; }
-.music-recent-card:hover { border-color: var(--color-border-strong); background: color-mix(in srgb, var(--color-raised) 60%, var(--color-surface)); }
+.music-recent-card { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); grid-template-rows: auto auto; gap: 16px 18px; min-width: 0; padding: 16px; }
 .music-recent-heading { grid-column: 1 / -1; grid-row: 1; display: grid; grid-template-columns: subgrid; align-items: center; border-radius: 8px; }
 .music-recent-heading .music-art { grid-column: 1; }
 .music-recent-copy { grid-column: 2; }
@@ -208,7 +207,7 @@
   .music-track-meta span { white-space: nowrap; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .music-group-card .music-art, .music-group-copy h2, .music-recent-card, .music-recent-copy h3, .music-track-row, .music-track-copy h2 { transition: none; }
+  .music-group-card .music-art, .music-group-copy h2, .music-recent-copy h3, .music-track-row, .music-track-copy h2 { transition: none; }
   .music-group-card:hover .music-art { transform: none; }
   [data-playback="playing"] .music-equalizer i { animation: none; transform: none; }
 }

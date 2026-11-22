@@ -1,9 +1,7 @@
 defmodule BolognesaWeb.Components.UI.Button do
   @moduledoc """
-  Button component for user interactions.
-
-  Provides a versatile button component with various styles, sizes, and states
-  to handle user interactions throughout the application.
+  Button copied from SaladUI. Its looks come from `button_variant/2`, which links
+  that look like buttons also use.
   """
   use BolognesaWeb.Components.UI, :component
 
@@ -16,42 +14,46 @@ defmodule BolognesaWeb.Components.UI.Button do
   * `:class` - Additional CSS classes
   * `:variant` - Visual style variant of the button:
       * `"default"` - Primary action button
+      * `"play"` - Coral play button with a glow (music)
       * `"secondary"` - Secondary action button
       * `"destructive"` - Buttons for destructive actions
       * `"outline"` - Button with outline style
       * `"ghost"` - Button with minimal styling
+      * `"nav"` - Navigation link, highlighted by `aria-current="page"`
       * `"link"` - Button that appears as a link
-  * `:size` - Size of the button:
+  * `:size` - Size of the button, all with 44px targets:
       * `"default"` - Standard size
-      * `"sm"` - Small size
+      * `"sm"` - Compact text
       * `"lg"` - Large size
       * `"icon"` - Square button optimized for icons
+      * `"round"` - Round icon button
   * `:rest` - Additional HTML attributes including `disabled`, `form`, `name`, `value`
 
   ## Examples
 
-      <.button>Send</.button>
-      <.button variant="destructive" phx-click="delete">Delete</.button>
-      <.button variant="outline" size="sm">Cancel</.button>
-      <.button variant="ghost" size="icon">
+      <Button.button>Send</Button.button>
+      <Button.button variant="destructive" phx-click="delete">Delete</Button.button>
+      <Button.button variant="outline" size="sm">Cancel</Button.button>
+      <Button.button variant="ghost" size="round">
         <.icon name="hero-x-mark" />
-      </.button>
-      <.button type="submit" phx-disable-with="Saving...">Save Changes</.button>
+      </Button.button>
+      <Button.button type="submit" phx-disable-with="Saving...">Save Changes</Button.button>
   """
   attr :type, :string, default: nil
   attr :class, :any, default: nil
 
   attr :variant, :string,
-    values: ~w(default secondary destructive outline ghost link),
+    values: ~w(default play secondary destructive outline ghost nav link),
     default: "default",
     doc: "the button variant style"
 
-  attr :size, :string, values: ~w(default sm lg icon), default: "default"
+  attr :size, :string, values: ~w(default sm lg icon round), default: "default"
   attr :rest, :global, include: ~w(disabled form name value)
 
   slot :inner_block, required: true
 
-  def(button(assigns)) do
+  @spec button(map()) :: Phoenix.LiveView.Rendered.t()
+  def button(assigns) do
     assigns = assign(assigns, :variant_class, button_variant(assigns))
 
     ~H"""

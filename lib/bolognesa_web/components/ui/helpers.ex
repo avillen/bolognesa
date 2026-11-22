@@ -7,19 +7,24 @@ defmodule BolognesaWeb.Components.UI.Helpers do
   @variants %{
     variant: %{
       "default" => "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+      "play" =>
+        "bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:bg-accent-hover disabled:shadow-none transition motion-safe:hover:scale-105 motion-reduce:transition-none",
       "destructive" =>
         "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90",
       "outline" =>
-        "border border-input bg-transparent hover:bg-secondary hover:text-secondary-foreground",
+        "border border-input bg-transparent text-foreground hover:bg-secondary hover:text-secondary-foreground",
       "secondary" => "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
       "ghost" => "hover:bg-secondary hover:text-secondary-foreground",
+      "nav" =>
+        "text-muted-foreground hover:bg-secondary hover:text-foreground aria-[current=page]:bg-primary/15 aria-[current=page]:text-foreground motion-reduce:transition-none",
       "link" => "text-primary underline-offset-4 hover:underline"
     },
     size: %{
       "default" => "min-h-11 px-4 py-2",
-      "sm" => "min-h-9 px-3 text-xs",
+      "sm" => "min-h-11 px-3 text-xs",
       "lg" => "min-h-12 px-6 text-base",
-      "icon" => "size-11"
+      "icon" => "size-11",
+      "round" => "size-11 rounded-full"
     }
   }
 
@@ -30,8 +35,8 @@ defmodule BolognesaWeb.Components.UI.Helpers do
 
   @doc """
   Classes for a button look, also usable on links. Supports two variant kinds:
-  - size: `default|sm|lg|icon`
-  - variant: `default|destructive|outline|secondary|ghost|link`
+  - size: `default|sm|lg|icon|round`
+  - variant: `default|play|destructive|outline|secondary|ghost|nav|link`
 
   `extra` classes are merged with TwMerge, so a conflicting utility (such as
   `px-3` or `whitespace-normal`) replaces the variant's own instead of losing to

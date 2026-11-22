@@ -27,6 +27,7 @@ defmodule BolognesaWeb.Components.UI.Alert do
   slot :inner_block, required: true
   attr :rest, :global, default: %{}
 
+  @spec alert(map()) :: Phoenix.LiveView.Rendered.t()
   def alert(assigns) do
     assigns = assign(assigns, :variant_class, @variant_classes[assigns.variant])
 
@@ -52,9 +53,10 @@ defmodule BolognesaWeb.Components.UI.Alert do
   Renders an alert description.
   """
   attr :class, :string, default: nil
-  attr :rest, :global, include: ~w(disabled form name value)
+  attr :rest, :global
   slot :inner_block, required: true
 
+  @spec alert_description(map()) :: Phoenix.LiveView.Rendered.t()
   def alert_description(assigns) do
     ~H"""
     <div

@@ -7,8 +7,8 @@ defmodule BolognesaWeb.Components.UI do
   `<Button.button>`, because their names overlap with CoreComponents.
   """
 
-  @spec component() :: Macro.t()
-  def component do
+  @spec __using__(:component) :: Macro.t()
+  defmacro __using__(:component) do
     quote do
       use Phoenix.Component
 
@@ -18,9 +18,5 @@ defmodule BolognesaWeb.Components.UI do
         TwMerge.merge(List.flatten(input))
       end
     end
-  end
-
-  defmacro __using__(which) when is_atom(which) do
-    apply(__MODULE__, which, [])
   end
 end

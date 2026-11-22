@@ -17,4 +17,13 @@ defmodule BolognesaWeb.Components.UI.HelpersTest do
     refute "font-semibold" in classes
     refute "text-sm" in classes
   end
+
+  test "every button size keeps a 44px target" do
+    for size <- ~w(default sm lg icon round) do
+      classes = %{size: size} |> button_variant() |> String.split()
+
+      assert Enum.any?(classes, &(&1 in ~w(min-h-11 min-h-12 size-11))),
+             "size #{size} is under 44px: #{inspect(classes)}"
+    end
+  end
 end
