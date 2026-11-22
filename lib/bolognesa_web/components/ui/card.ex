@@ -1,11 +1,11 @@
-defmodule BolognesaUi.Card do
+defmodule BolognesaWeb.Components.UI.Card do
   @moduledoc """
   Card components for containing content and actions.
 
   Cards provide a flexible container for displaying content with support for headers,
   footers, and various content layouts. They organize information and actions consistently.
   """
-  use BolognesaUi, :component
+  use BolognesaWeb.Components.UI, :component
 
   @doc """
   Renders a card container.
@@ -28,19 +28,22 @@ defmodule BolognesaUi.Card do
   """
 
   attr :class, :string, default: nil
+  # Bolognesa addition: keep list semantics, e.g. `tag="article"` for content items.
+  attr :tag, :string, default: "div", values: ~w(div article section li)
   slot :inner_block, required: true
   attr :rest, :global
 
   def card(assigns) do
     ~H"""
-    <div
+    <.dynamic_tag
+      tag_name={@tag}
       class={
         classes(["rounded-xl border border-border bg-card text-card-foreground shadow-sm", @class])
       }
       {@rest}
     >
       {render_slot(@inner_block)}
-    </div>
+    </.dynamic_tag>
     """
   end
 

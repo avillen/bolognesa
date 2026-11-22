@@ -1,11 +1,11 @@
-defmodule BolognesaUi.Button do
+defmodule BolognesaWeb.Components.UI.Button do
   @moduledoc """
   Button component for user interactions.
 
   Provides a versatile button component with various styles, sizes, and states
   to handle user interactions throughout the application.
   """
-  use BolognesaUi, :component
+  use BolognesaWeb.Components.UI, :component
 
   @doc """
   Renders a button with configurable styles and behaviors.

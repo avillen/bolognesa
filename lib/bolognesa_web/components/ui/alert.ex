@@ -1,4 +1,4 @@
-defmodule BolognesaUi.Alert do
+defmodule BolognesaWeb.Components.UI.Alert do
   @moduledoc """
   Implementation of alert component for displaying important messages to users.
 
@@ -30,7 +30,7 @@ defmodule BolognesaUi.Alert do
         <.alert_description>Your changes have been saved successfully.</.alert_description>
       </.alert>
   """
-  use BolognesaUi, :component
+  use BolognesaWeb.Components.UI, :component
 
   @doc """
   Renders an alert container.
@@ -157,7 +157,7 @@ defmodule BolognesaUi.Alert do
     variant: %{
       "default" => "bg-background text-foreground",
       "destructive" =>
-        "bg-background border-destructive/50 text-destructive dark:border-destructive [&>span]:text-destructive"
+        "bg-background border-destructive/50 text-destructive [&>span]:text-destructive"
     }
   }
 

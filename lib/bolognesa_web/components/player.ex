@@ -100,37 +100,43 @@ defmodule BolognesaWeb.Player do
             {@playback_error}
           </p>
           <div class="bolognesa-video-error-actions">
-            <button
+            <Button.button
               :if={@retry_file_id}
               id={"#{@prefix}-retry-playback"}
               type="button"
               phx-click="play"
               phx-value-file_id={@attempt.file_id || @retry_file_id}
-              class="bolognesa-video-error-primary"
-            >{gettext("Reintentar reproducción")}</button>
-            <button
+            >{gettext("Reintentar reproducción")}</Button.button>
+            <Button.button
               :if={@attempt.compatible_available?}
               id={"#{@prefix}-playback-compatible"}
               type="button"
               phx-click="playback_compatible"
-            >{gettext("Probar reproducción compatible")}</button>
-            <button :if={@attempt.file_id} type="button" phx-click="playback_original">
+              variant="outline"
+            >{gettext("Probar reproducción compatible")}</Button.button>
+            <Button.button
+              :if={@attempt.file_id}
+              type="button"
+              phx-click="playback_original"
+              variant="outline"
+            >
               {gettext("Probar archivo original")}
-            </button>
-            <button
+            </Button.button>
+            <Button.button
               :if={@attempt.file_id && !@attempt.refresh_used?}
               type="button"
               phx-click="playback_refresh"
+              variant="outline"
             >
               {gettext("Actualizar análisis")}
-            </button>
+            </Button.button>
           </div>
           <p :if={@attempt.refresh_requested?} role="status" class="text-xs text-muted">
             {gettext("Análisis solicitado. Reintenta cuando termine.")}
           </p>
         </div>
       </div>
-      <button
+      <Button.button
         :if={
           !@playback_error && @attempt.compatible_available? &&
             @attempt.phase in [:ready, :error]
@@ -138,8 +144,9 @@ defmodule BolognesaWeb.Player do
         id={"#{@prefix}-playback-compatible"}
         type="button"
         phx-click="playback_compatible"
-        class="bolognesa-video-hint"
-      >{gettext("Probar reproducción compatible")}</button>
+        variant="link"
+        size="sm"
+      >{gettext("Probar reproducción compatible")}</Button.button>
     </section>
     """
   end

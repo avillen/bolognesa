@@ -32,22 +32,24 @@ defmodule BolognesaWeb.Movie.Review.Components.CorrectionPanel do
           label={gettext("Buscar en TMDb")}
           class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none focus:border-accent"
         />
-        <button
+        <Button.button
           id="correction-search"
           type="submit"
           disabled={is_nil(@selected_file_id) || @searching?}
-          class="min-h-11 w-full rounded-xl border border-accent/50 px-4 font-semibold text-accent-soft transition hover:bg-accent/10 disabled:opacity-50"
-        >{if @searching?, do: gettext("Buscando…"), else: gettext("Buscar")}</button>
+          variant="outline"
+          class="w-full"
+        >{if @searching?, do: gettext("Buscando…"), else: gettext("Buscar")}</Button.button>
       </.form>
       <div id="correction-candidates" class="mt-5 space-y-2">
-        <button
+        <Button.button
           :for={candidate <- @candidates}
           id={"candidate-#{candidate.provider_id}"}
           type="button"
           phx-click="choose_candidate"
           phx-value-tmdb_id={candidate.provider_id}
-          class="min-h-11 w-full rounded-xl border border-border-strong p-3 text-left text-sm text-ink transition hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >{candidate.title} {candidate.year}</button>
+          variant="outline"
+          class="w-full justify-start whitespace-normal p-3 text-left font-normal"
+        >{candidate.title} {candidate.year}</Button.button>
       </div>
       <.form for={@form} id="correction-choice-form" phx-submit="correct" class="mt-5 space-y-3">
         <.input
@@ -58,21 +60,22 @@ defmodule BolognesaWeb.Movie.Review.Components.CorrectionPanel do
           min="1"
           class="w-full rounded-xl border border-border-strong bg-raised px-4 py-3 text-ink outline-none focus:border-accent"
         />
-        <button
+        <Button.button
           id="correction-submit"
           type="submit"
           disabled={is_nil(@selected_file_id) || @saving?}
           phx-disable-with={gettext("Guardando…")}
-          class="min-h-11 w-full rounded-xl bg-accent px-4 font-semibold text-canvas transition hover:bg-accent-hover disabled:opacity-50"
-        >{gettext("Confirmar película")}</button>
+          class="w-full"
+        >{gettext("Confirmar película")}</Button.button>
       </.form>
-      <button
+      <Button.button
         id="correction-unidentified"
         type="button"
         phx-click="unidentified"
         disabled={is_nil(@selected_file_id) || @saving?}
-        class="mt-3 min-h-11 w-full rounded-xl border border-border-strong px-4 text-sm text-ink transition hover:border-border-strong disabled:opacity-50"
-      >{gettext("Dejar sin identificar")}</button>
+        variant="outline"
+        class="mt-3 w-full"
+      >{gettext("Dejar sin identificar")}</Button.button>
     </div>
     """
   end

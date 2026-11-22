@@ -1,4 +1,3 @@
-@import "tailwindcss";
 @import "tailwindcss" source(none);
 @import "./media.css";
 @import "./series.css";
@@ -6,7 +5,6 @@
 @import "./music.css";
 @import "./music-player.css";
 @import "phoenix-colocated/bolognesa/colocated.css";
-@import "./salad_ui.css";
 @source "../css";
 @source "../js";
 @source "../../lib/bolognesa_web";
@@ -34,6 +32,29 @@
   --color-accent-soft: #f29a7d;
 }
 
+/*
+ * shadcn/SaladUI semantic tokens, mapped onto the palette above (dark only).
+ * `border` already shares shadcn's meaning. shadcn's `accent` and `muted` are
+ * surfaces, but here they are the coral brand and secondary text, so copied
+ * components use `secondary` and `muted-foreground` for those roles instead.
+ */
+@theme inline {
+  --color-background: var(--color-canvas);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-ink);
+  --color-primary: var(--color-accent);
+  /* canvas on coral is 6.4:1; ink on coral is only 2.6:1 */
+  --color-primary-foreground: var(--color-canvas);
+  --color-secondary: var(--color-raised);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted-foreground: var(--color-muted);
+  --color-destructive: #fca5a5;
+  --color-destructive-foreground: var(--color-canvas);
+  --color-input: var(--color-border-strong);
+  --color-ring: var(--color-accent-soft);
+}
+
 body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
@@ -56,13 +77,9 @@ input, select, video, audio {
 .app-nav-primary, .app-nav-secondary { display: flex; flex-wrap: wrap; gap: 4px; }
 .app-nav-secondary { padding-top: 8px; border-top: 1px solid var(--color-border); }
 .app-nav-caption { display: none; }
-.app-nav-link { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 12px; border-radius: 7px; color: var(--color-muted); font-size: 13px; transition: color .15s, background-color .15s; }
-.app-nav-link:hover { background: var(--color-surface); color: var(--color-ink); }
-.app-nav-link.is-active { background: #e16b4829; color: var(--color-ink); }
-.app-nav-link.is-active .size-5 { color: var(--color-accent-soft); }
+.app-nav-link[aria-current="page"] .size-5 { color: var(--color-accent-soft); }
 .app-sidebar-note { display: none; }
 .app-sidebar { display: flex; align-items: center; justify-content: space-between; min-height: 64px; padding: 10px 20px; }
-.app-menu-toggle { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0; border: 1px solid var(--color-border); border-radius: 7px; color: var(--color-ink); background: transparent; cursor: pointer; }
 .app-navigation-panel { position: fixed; inset: 0; width: min(360px, calc(100% - 24px)); max-width: none; height: 100dvh; max-height: none; margin: 0 0 0 auto; padding: 20px; border: 0; border-left: 1px solid var(--color-border); background: var(--color-canvas); color: var(--color-ink); }
 .app-navigation-panel[open] { display: flex; flex-direction: column; }
 .app-navigation-panel::backdrop { background: #0009; }
@@ -74,8 +91,11 @@ input, select, video, audio {
 .app-content { min-width: 0; padding: 28px 20px 64px; }
 .app-content h1 { letter-spacing: -.035em; }
 .app-content h2 { letter-spacing: -.02em; }
-.app-content button, .app-content input, .app-content select { border-radius: 7px; }
-.app-content button { cursor: pointer; }
+.app-content input, .app-content select { border-radius: 7px; }
+/* Base layer, so component utilities (Button's radius) override it. Focus stays unlayered. */
+@layer base {
+  .app-content button { border-radius: 7px; cursor: pointer; }
+}
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, audio:focus-visible { outline: 2px solid var(--color-accent-soft); outline-offset: 4px; }
 .poster-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
 .poster-card { min-width: 0; }
@@ -186,13 +206,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .bolognesa-video-error { position: static; padding: 24px 16px; }
   .bolognesa-video-error-actions { flex-direction: column; align-self: stretch; }
 }
-.bolognesa-video-error-actions button { min-height: 40px; padding: 8px 12px; border: 1px solid #fff4; border-radius: 8px; background: #fff1; font-size: 13px; font-weight: 600; cursor: pointer; }
-.bolognesa-video-error-actions button:hover { background: #fff2; }
-.bolognesa-video-error-actions .bolognesa-video-error-primary { border-color: transparent; background: var(--color-accent); color: var(--color-canvas); }
-.bolognesa-video-error-actions .bolognesa-video-error-primary:hover { background: var(--color-accent-hover); }
-.bolognesa-video-error-actions button:focus-visible, .bolognesa-video-hint:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
-.bolognesa-video-hint { min-height: 24px; color: var(--color-muted); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.bolognesa-video-hint:hover { color: var(--color-ink); }
 
 /* Library management uses one stream for compact rows and mobile cards. */
 .library-section { min-width: 0; }
@@ -209,17 +222,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .library-scan-details { display: flex; flex-direction: column; gap: 16px; margin: 4px 0 16px; padding: 16px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-raised); }
 .library-scan-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 .library-scan-details > button { align-self: flex-start; flex-shrink: 0; }
-.library-primary, .library-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
-.library-primary { background: var(--color-accent); color: var(--color-canvas); }
-.library-primary:hover { background: var(--color-accent-hover); }
-.library-secondary { border: 1px solid var(--color-border-strong); color: var(--color-ink); }
-.library-secondary:hover { border-color: var(--color-accent); background: var(--color-raised); }
-.library-primary:focus-visible, .library-secondary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
-.library-secondary:disabled { opacity: .5; cursor: wait; }
 .library-create-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: #000b; padding: 12px; overflow-y: auto; overscroll-behavior: contain; }
 .library-create-panel { width: 100%; max-width: 32rem; max-height: calc(100dvh - 24px); overflow-y: auto; border: 1px solid var(--color-border-strong); border-radius: 16px; padding: 24px; background: var(--color-surface); }
-.library-create-close { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0; border: 1px solid var(--color-border); color: var(--color-muted); }
-.library-create-close:hover { background: var(--color-raised); color: var(--color-ink); }
 .library-create-form { display: grid; gap: 20px; }
 .library-create-form > div, .library-source-field > div { margin: 0; }
 .library-form-control { width: 100%; min-height: 48px; border: 1px solid var(--color-border-strong); background-color: var(--color-raised); padding: 12px 16px; color: var(--color-ink); }
@@ -249,127 +253,3 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 #app-content { padding-bottom: calc(var(--music-player-height, 0px) + env(safe-area-inset-bottom, 0px)); }
-
-
-@layer base {
-  :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.129 0.027 261.671);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.129 0.027 261.671);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.129 0.027 261.671);
-    --primary: oklch(0.21 0.032 264.652);
-    --primary-foreground: oklch(0.984 0.002 247.839);
-    --secondary: oklch(0.967 0.003 264.542);
-    --secondary-foreground: oklch(0.21 0.032 264.652);
-    --muted: oklch(0.967 0.003 264.542);
-    --muted-foreground: oklch(0.551 0.023 264.365);
-    --accent: oklch(0.967 0.003 264.542);
-    --accent-foreground: oklch(0.21 0.032 264.652);
-    --destructive: oklch(0.637 0.208 25.326);
-    --destructive-foreground: oklch(0.984 0.002 247.839);
-    --border: oklch(0.928 0.006 264.531);
-    --input: oklch(0.928 0.006 264.531);
-    --ring: oklch(0.129 0.027 261.671);
-    --radius: 1rem;
-    --chart-1: oklch(0.677 0.157 35.19);
-    --chart-2: oklch(0.631 0.101 183.491);
-    --chart-3: oklch(0.379 0.044 225.539);
-    --chart-4: oklch(0.834 0.119 88.146);
-    --chart-5: oklch(0.783 0.126 58.749);
-    --sidebar-background: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.37 0.012 285.801);
-    --sidebar-primary: oklch(0.21 0.006 285.884);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.968 0.001 286.375);
-    --sidebar-accent-foreground: oklch(0.21 0.006 285.884);
-    --sidebar-border: oklch(0.928 0.006 264.531);
-    --sidebar-ring: oklch(0.623 0.188 259.796);
-}
-
-.dark {
-    --background: oklch(0.129 0.027 261.671);
-    --foreground: oklch(0.984 0.002 247.839);
-    --card: oklch(0.129 0.027 261.671);
-    --card-foreground: oklch(0.984 0.002 247.839);
-    --popover: oklch(0.129 0.027 261.671);
-    --popover-foreground: oklch(0.984 0.002 247.839);
-    --primary: oklch(0.984 0.002 247.839);
-    --primary-foreground: oklch(0.21 0.032 264.652);
-    --secondary: oklch(0.278 0.03 256.848);
-    --secondary-foreground: oklch(0.984 0.002 247.839);
-    --muted: oklch(0.278 0.03 256.848);
-    --muted-foreground: oklch(0.714 0.019 261.333);
-    --accent: oklch(0.278 0.03 256.848);
-    --accent-foreground: oklch(0.984 0.002 247.839);
-    --destructive: oklch(0.396 0.133 25.721);
-    --destructive-foreground: oklch(0.984 0.002 247.839);
-    --border: oklch(0.278 0.03 256.848);
-    --input: oklch(0.278 0.03 256.848);
-    --ring: oklch(0.872 0.009 258.338);
-    --chart-1: oklch(0.529 0.193 262.129);
-    --chart-2: oklch(0.698 0.134 165.463);
-    --chart-3: oklch(0.723 0.15 60.631);
-    --chart-4: oklch(0.619 0.204 312.728);
-    --chart-5: oklch(0.612 0.209 6.386);
-    --sidebar-background: oklch(0.21 0.006 285.884);
-    --sidebar-foreground: oklch(0.968 0.001 286.375);
-    --sidebar-primary: oklch(0.488 0.217 264.388);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.274 0.005 286.033);
-    --sidebar-accent-foreground: oklch(0.968 0.001 286.375);
-    --sidebar-border: oklch(0.274 0.005 286.033);
-    --sidebar-ring: oklch(0.623 0.188 259.796);
-}
-
-  *, ::after, ::before, ::backdrop, ::file-selector-button {
-    border-color: hsl(var(--border));
-  }
-}
-
-@theme inline {
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-background: var(--background);
-  --color-border: var(--border);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-foreground: var(--foreground);
-  --color-input: var(--input);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-ring: var(--ring);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-sidebar: var(--sidebar-background);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
-
-@custom-variant dark (&:where(.dark, .dark *));
-
-@source "../../lib";
-
-@source "../../deps/salad_ui/lib";
-
-@source "../../deps/salad_ui/assets/salad_ui";
-
-@plugin "@tailwindcss/typography";
-
-@import "../vendor/tw-animate.css";

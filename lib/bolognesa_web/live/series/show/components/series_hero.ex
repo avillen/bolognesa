@@ -56,7 +56,7 @@ defmodule BolognesaWeb.Series.Show.Components.SeriesHero do
             id="series-continue"
             target={@continue_target}
             series_params={@series_params}
-            class="media-primary-action mt-5"
+            class={button_variant(%{}) <> " mt-5"}
           />
         </div>
       </div>

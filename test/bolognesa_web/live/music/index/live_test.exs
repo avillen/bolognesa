@@ -77,9 +77,11 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
 
     assert has_element?(
              view,
-             "#recent-play-#{fixture.track.album_id}[data-music-action=album].music-recent-play",
+             "#recent-play-#{fixture.track.album_id}[data-music-action=album]",
              "Reproducir de nuevo"
            )
+
+    assert has_element?(view, "#recent-play-#{fixture.track.album_id} .hero-play-solid")
 
     view
     |> element("#recent-album-#{fixture.track.album_id} .recent-album-open")

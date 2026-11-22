@@ -27,25 +27,22 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryForm do
           <h2 id="library-create-title" class="text-xl font-semibold text-ink">
             {gettext("Añadir biblioteca")}
           </h2>
-          <button
+          <Button.button
             id="library-create-close"
             type="button"
             phx-click="close_library_form"
             aria-label={gettext("Cerrar")}
-            class="library-create-close"
-          ><.icon name="hero-x-mark" class="size-5" /></button>
+            variant="ghost"
+            size="icon"
+            class="shrink-0 border border-border text-muted-foreground"
+          ><.icon name="hero-x-mark" class="size-5" /></Button.button>
         </div>
         <p class="mt-2 text-sm leading-6 text-muted">
           {gettext("Usa la ruta visible para Bolognesa dentro del servidor.")}
         </p>
-        <p
-          :if={@error}
-          id="library-error"
-          role="alert"
-          class="mt-5 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200"
-        >
+        <Alert.alert :if={@error} id="library-error" variant="destructive" class="mt-5">
           {@error}
-        </p>
+        </Alert.alert>
         <.form
           for={@form}
           id="library-form"
@@ -97,18 +94,17 @@ defmodule BolognesaWeb.Library.Index.Components.LibraryForm do
             >{gettext("Ayuda con las carpetas del servidor (abre en otra pestaña)")}</a>
           </div>
           <div class="library-form-actions">
-            <button
+            <Button.button
               id="library-create-cancel"
               type="button"
               phx-click="close_library_form"
-              class="library-secondary"
-            >{gettext("Cancelar")}</button>
-            <button
+              variant="outline"
+            >{gettext("Cancelar")}</Button.button>
+            <Button.button
               id="library-submit"
               type="submit"
               phx-disable-with={gettext("Guardando…")}
-              class="library-primary"
-            >{gettext("Guardar biblioteca")}</button>
+            >{gettext("Guardar biblioteca")}</Button.button>
           </div>
         </.form>
       </.focus_wrap>

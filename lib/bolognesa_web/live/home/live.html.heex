@@ -25,30 +25,28 @@
       <.link
         navigate={~p"/libraries"}
         id="home-libraries-link"
-        class="mt-7 inline-flex min-h-12 items-center rounded-xl bg-accent px-6 py-3 font-semibold text-canvas transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class={button_variant(%{size: "lg"}) <> " mt-7"}
       >
-        {gettext("Configurar bibliotecas")} <.icon name="hero-arrow-right" class="ml-2 size-4" />
+        {gettext("Configurar bibliotecas")} <.icon name="hero-arrow-right" class="size-4" />
       </.link>
       <.link
         navigate={~p"/movies"}
         id="home-movies-link"
-        class="ml-0 mt-3 inline-flex min-h-12 items-center rounded-xl border border-accent/40 px-6 py-3 font-semibold text-accent-soft transition hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:ml-3 sm:mt-0"
+        class={button_variant(%{variant: "outline", size: "lg"}) <> " mt-3 sm:ml-3 sm:mt-0"}
       >{gettext("Ver películas")}</.link>
       <.link
         navigate={~p"/series"}
         id="home-series-link"
-        class="ml-3 mt-3 inline-flex min-h-12 items-center rounded-xl border border-accent/40 px-6 py-3 font-semibold text-accent-soft"
+        class={button_variant(%{variant: "outline", size: "lg"}) <> " ml-3 mt-3"}
       >{gettext("Ver series")}</.link>
       <div class="mt-10 flex flex-col gap-4 border-t border-border/70 pt-6 sm:flex-row sm:items-center sm:justify-between">
         <p class="text-sm text-muted">
           {gettext("Sesión iniciada como %{email}", email: @admin_email)}
         </p>
         <.form for={@logout_form} action={~p"/logout"} method="delete" id="logout-form">
-          <button
-            id="logout-button"
-            type="submit"
-            class="min-h-11 rounded-xl border border-border-strong px-5 py-2 text-sm font-medium text-ink transition hover:border-accent hover:text-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >{gettext("Cerrar sesión")}</button>
+          <Button.button id="logout-button" type="submit" variant="outline">
+            {gettext("Cerrar sesión")}
+          </Button.button>
         </.form>
       </div>
     </div>

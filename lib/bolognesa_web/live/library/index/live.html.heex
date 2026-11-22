@@ -19,16 +19,16 @@
           {gettext("Gestiona tus fuentes multimedia y sus escaneos.")}
         </p>
       </div>
-      <button
+      <Button.button
         id="library-add"
         type="button"
         phx-click="open_library_form"
         aria-haspopup="dialog"
         aria-controls="library-create-panel"
-        class="library-primary shrink-0"
+        class="shrink-0"
       >
         <.icon name="hero-plus" class="size-4" />{gettext("Añadir biblioteca")}
-      </button>
+      </Button.button>
     </header>
     <p
       :if={@success}
@@ -39,14 +39,9 @@
       {@success}
     </p>
 
-    <p
-      :if={@load_error}
-      id="library-load-error"
-      role="alert"
-      class="rounded-xl border border-red-300/30 p-4 text-sm text-red-200"
-    >
+    <Alert.alert :if={@load_error} id="library-load-error" variant="destructive">
       {@load_error}
-    </p>
+    </Alert.alert>
     <p
       :if={@scan_feedback}
       id="library-scan-feedback"
@@ -55,14 +50,9 @@
     >
       {@scan_feedback}
     </p>
-    <p
-      :if={@scan_refresh_error == :unavailable}
-      id="library-scan-refresh-error"
-      role="alert"
-      class="rounded-xl border border-border p-4 text-sm text-ink"
-    >
+    <Alert.alert :if={@scan_refresh_error == :unavailable} id="library-scan-refresh-error">
       {gettext("No se pudo actualizar el escaneo. Vuelve a intentarlo.")}
-    </p>
+    </Alert.alert>
     <LibraryList.render libraries={@streams.libraries} load_error={@load_error} />
     <aside class="flex gap-3 rounded-xl border border-border p-5 text-sm leading-6 text-muted">
       <.icon name="hero-information-circle" class="mt-1 size-5 shrink-0" />

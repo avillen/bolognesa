@@ -31,14 +31,9 @@
             language: if(@locale == "en", do: "English", else: "Español")
           )}
         </p>
-        <button
-          id="save-locale"
-          type="submit"
-          phx-disable-with={gettext("Guardando…")}
-          class="min-h-11 rounded-xl bg-accent px-5 py-3 font-semibold text-canvas hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
+        <Button.button id="save-locale" type="submit" phx-disable-with={gettext("Guardando…")}>
           {gettext("Guardar")}
-        </button>
+        </Button.button>
       </.form>
     </section>
   </section>

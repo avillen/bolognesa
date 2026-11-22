@@ -25,17 +25,24 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
       <p :if={@status == :empty} id="music-last-listened-empty" class="music-feedback">
         {gettext("Todavía no has escuchado ningún álbum.")}
       </p>
-      <div
+      <Alert.alert
         :if={@status == :error}
         id="music-last-listened-error"
-        role="alert"
-        class="music-feedback music-feedback-error"
+        variant="destructive"
+        class="flex flex-wrap items-center justify-between gap-3"
       >
-        <p>{gettext("No se pudieron cargar las últimas escuchas.")}</p>
-        <button type="button" phx-click="retry-last-listened" class="min-h-11 text-accent">
+        <Alert.alert_description>
+          <p>{gettext("No se pudieron cargar las últimas escuchas.")}</p>
+        </Alert.alert_description>
+        <Button.button
+          type="button"
+          variant="outline"
+          phx-click="retry-last-listened"
+          class="text-foreground"
+        >
           {gettext("Reintentar")}
-        </button>
-      </div>
+        </Button.button>
+      </Alert.alert>
       <div :if={@status == :ready} class="music-recent-grid">
         <.recent_album_card
           :for={album <- @albums}
@@ -53,8 +60,15 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
   attr :library_id, :integer, default: nil
 
   defp recent_album_card(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :play_class,
+        "rounded-full shadow-lg shadow-primary/30 hover:bg-accent-hover motion-safe:hover:scale-105 motion-reduce:transition-none disabled:shadow-none"
+      )
+
     ~H"""
-    <article id={"recent-album-#{@album.id}"} class="music-recent-card">
+    <Card.card tag="article" id={"recent-album-#{@album.id}"} class="music-recent-card">
       <.link
         class="music-recent-heading recent-album-open"
         patch={~p"/music?#{Map.merge(@library_params, %{view: :album, album_id: @album.id})}"}
@@ -82,7 +96,7 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
           </p>
         </div>
         <div class="music-recent-actions">
-          <button
+          <Button.button
             :if={!@album.restart?}
             id={"recent-continue-#{@album.id}"}
             type="button"
@@ -93,23 +107,26 @@ defmodule BolognesaWeb.Music.Index.Components.Home do
             data-file-id={@album.file_id}
             disabled={!@album.track_available?}
             aria-label={gettext("Continuar %{title}", title: @album.title)}
-            class="music-recent-play"
-          ><.icon name="hero-play-solid" class="size-5" /><span class="sr-only">{gettext("Continuar")}</span></button>
-          <button
+            size="icon"
+            class={@play_class}
+          ><.icon name="hero-play-solid" class="size-5" /><span class="sr-only">{gettext("Continuar")}</span></Button.button>
+          <Button.button
             id={"recent-play-#{@album.id}"}
             type="button"
             data-music-action="album"
             data-album-id={@album.id}
             data-library-id={@library_id}
             aria-label={gettext("Reproducir %{title} de nuevo", title: @album.title)}
-            class={if @album.restart?, do: "music-recent-play", else: "music-recent-replay"}
+            variant={if @album.restart?, do: "default", else: "outline"}
+            size="icon"
+            class={if @album.restart?, do: @play_class, else: "rounded-full"}
           ><.icon
             name={if @album.restart?, do: "hero-play-solid", else: "hero-arrow-uturn-left"}
             class="size-5"
-          /><span class="sr-only">{gettext("Reproducir de nuevo")}</span></button>
+          /><span class="sr-only">{gettext("Reproducir de nuevo")}</span></Button.button>
         </div>
       </div>
-    </article>
+    </Card.card>
     """
   end
 end

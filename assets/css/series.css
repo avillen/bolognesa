@@ -15,7 +15,7 @@
 .series-episode-copy { min-width: 0; overflow-wrap: anywhere; }
 .series-episode-copy h2 { font-size: 14px; }
 .series-episode-overview { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; margin-top: 5px; color: var(--color-muted); font-size: 13px; line-height: 1.5; }
-.series-episode-play { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; width: fit-content; max-width: 100%; padding: 9px 12px; border: 1px solid #e4775540; border-radius: 7px; background: #e4775519; color: var(--color-accent-soft); font-size: 12px; font-weight: 600; }
+.series-episode-play { width: fit-content; max-width: 100%; }
 .series-episode-card > .series-episode-play { grid-column: 2; margin-top: 10px; }
 .series-breadcrumbs { display: none; }
 .series-library-options { position: relative; flex-shrink: 0; }
@@ -26,8 +26,6 @@
 .series-catalog .media-search-field { border: 0; background: transparent; }
 .series-catalog .media-search-field:focus-within { outline: none; }
 .series-catalog .media-search-form:focus-within { outline: 2px solid var(--color-accent-soft); outline-offset: 3px; }
-.series-search-submit { background: transparent; color: var(--color-muted); padding-inline: 12px; }
-.series-search-submit:hover { background: var(--color-raised); }
 .series-detail-panel .media-hero-content { min-height: 180px; padding: 60px 20px 24px; }
 .series-detail-panel .media-hero-copy h1 { font-size: 34px; }
 .series-detail-panel .media-hero-copy > p { margin-top: 12px; }
@@ -77,7 +75,6 @@
 /* Size catalog columns from the available content width, including the sidebar. */
 .series-catalog { container-type: inline-size; }
 .series-catalog .media-poster-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, clamp(130px, 25cqi, 180px)), 1fr)); }
-.series-episode-play:hover { border-color: var(--color-accent-soft); background: var(--color-raised); color: var(--color-ink); }
 .series-options-toggle:hover, .series-library-options[open] > .series-options-toggle { border-color: var(--color-border-strong); background: var(--color-raised); color: var(--color-accent-soft); }
 .series-breadcrumbs a:hover { color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; }
 
@@ -96,7 +93,6 @@
 .is-lead .series-continue-copy { gap: 0; padding: 24px; }
 .is-lead .series-continue-copy h3 { max-width: 16ch; font-size: clamp(30px, 5cqi, 48px); font-weight: 650; line-height: 1.04; letter-spacing: -.03em; white-space: normal; overflow-wrap: anywhere; }
 .series-continue-overview { display: -webkit-box; max-width: 52ch; margin-top: 12px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--color-muted); font-size: 14px; line-height: 1.6; }
-.is-lead .media-primary-action { margin-top: 20px; }
 .series-continue-action { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-left: -2px; color: var(--color-accent-soft); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .series-continue-action:hover { color: var(--color-ink); }
 @container (min-width: 720px) {

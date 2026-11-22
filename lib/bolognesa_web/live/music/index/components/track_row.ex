@@ -53,27 +53,31 @@ defmodule BolognesaWeb.Music.Index.Components.TrackRow do
 
   defp track_actions(assigns) do
     ~H"""
-    <button
+    <Button.button
       :if={@track.state == :ready}
       type="button"
+      variant="ghost"
+      size="icon"
       data-music-action="append-track"
       data-track-id={@track.track_id}
       data-file-id={@track.id}
-      class="music-track-queue"
+      class="music-track-queue rounded-full text-muted-foreground"
       aria-label={gettext("Añadir %{title} a la cola", title: @track.title)}
       title={gettext("Añadir a la cola")}
-    ><.icon name="hero-plus" class="size-5" /></button>
+    ><.icon name="hero-plus" class="size-5" /></Button.button>
     <.track_menu track={@track} browse_kind={@browse_kind} />
-    <button
+    <Button.button
       :if={@track.state == :ready}
       id={"play-track-#{@track.track_id}"}
       type="button"
+      variant="ghost"
+      size="icon"
       data-music-action="track"
       data-track-id={@track.track_id}
       data-file-id={@track.id}
       data-album-id={@browse_kind == :album && @album_id}
       data-library-id={@browse_kind == :album && @active_library_id}
-      class="music-track-play"
+      class="music-track-play rounded-full"
       aria-label={gettext("Reproducir %{title}", title: @track.title)}
       title={gettext("Reproducir %{title}", title: @track.title)}
       data-play-label={gettext("Reproducir %{title}", title: @track.title)}
@@ -81,18 +85,18 @@ defmodule BolognesaWeb.Music.Index.Components.TrackRow do
     >
       <.icon name="hero-play-solid" class="music-play-icon size-5" />
       <.icon name="hero-pause-solid" class="music-pause-icon size-5" />
-    </button>
-    <button
+    </Button.button>
+    <Button.button
       :if={@track.state == :import_failed}
       type="button"
       phx-click="retry-import"
       phx-value-file_id={@track.id}
-      class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
-    >{gettext("Reintentar importación")}</button>
+      variant="outline"
+    >{gettext("Reintentar importación")}</Button.button>
     <.link
       :if={@track.state == :inspection_failed}
       navigate={~p"/libraries"}
-      class="min-h-11 rounded-lg border border-border-strong px-4 py-2 text-ink hover:bg-raised disabled:opacity-50"
+      class={button_variant(%{variant: "outline"})}
     >{gettext("Reanalizar en bibliotecas")}</.link>
     """
   end
@@ -111,26 +115,28 @@ defmodule BolognesaWeb.Music.Index.Components.TrackRow do
         <.icon name="hero-ellipsis-horizontal" class="size-5" />
       </summary>
       <div class="music-menu-items">
-        <button
+        <Button.button
           :if={@track.state == :ready}
           type="button"
+          variant="ghost"
           data-music-action="play-next"
           data-track-id={@track.track_id}
           data-file-id={@track.id}
-          class="music-track-queue"
+          class="w-full justify-start"
           aria-label={gettext("Reproducir %{title} a continuación", title: @track.title)}
           title={gettext("Reproducir a continuación")}
-        ><.icon name="hero-forward-solid" class="size-5" />{gettext("Reproducir a continuación")}</button>
-        <button
+        ><.icon name="hero-forward-solid" class="size-5" />{gettext("Reproducir a continuación")}</Button.button>
+        <Button.button
           :if={@browse_kind == :album && @track.state == :ready}
           type="button"
+          variant="ghost"
           data-music-action="track-only"
           data-track-id={@track.track_id}
           data-file-id={@track.id}
-          class="music-track-queue"
+          class="w-full justify-start"
           aria-label={gettext("Reproducir solo %{title}", title: @track.title)}
           title={gettext("Reproducir solo esta canción")}
-        ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir solo esta canción")}</button>
+        ><.icon name="hero-play-solid" class="size-5" />{gettext("Reproducir solo esta canción")}</Button.button>
       </div>
     </details>
     """

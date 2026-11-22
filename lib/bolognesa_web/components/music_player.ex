@@ -32,34 +32,45 @@ defmodule BolognesaWeb.MusicPlayer do
           <p data-player-album class="music-player-album"></p>
         </div>
         <.transport_controls />
-        <button type="button" data-player-action="retry" data-label={gettext("Reintentar")} hidden>{gettext(
-          "Reintentar"
-        )}</button>
-        <button
+        <Button.button
           type="button"
+          variant="secondary"
+          data-player-action="retry"
+          data-label={gettext("Reintentar")}
+          hidden
+        >{gettext("Reintentar")}</Button.button>
+        <Button.button
+          type="button"
+          variant="ghost"
+          size="icon"
+          class="rounded-full"
           data-player-action="close"
           aria-label={gettext("Cerrar")}
           title={gettext("Cerrar")}
         >
           <.icon name="hero-x-mark" class="size-5" />
-        </button>
-        <button
+        </Button.button>
+        <Button.button
           type="button"
+          variant="ghost"
+          size="icon"
+          class="rounded-full"
           data-player-action="collapse"
           aria-label={gettext("Cerrar")}
           title={gettext("Cerrar")}
           hidden
-        ><.icon name="hero-chevron-down" class="size-5" /></button>
-        <button
+        ><.icon name="hero-chevron-down" class="size-5" /></Button.button>
+        <Button.button
           type="button"
-          class="music-queue-toggle"
+          variant="outline"
+          class="music-queue-toggle rounded-full"
           data-player-action="queue"
           data-show-label={gettext("A continuación")}
           data-hide-label={gettext("Volver al reproductor")}
           data-count-label={gettext("A continuación (%{count})", count: "__COUNT__")}
           aria-controls="music-up-next"
           aria-expanded="false"
-        >{gettext("A continuación")}</button>
+        >{gettext("A continuación")}</Button.button>
         <.queue_panel />
         <.player_feedback />
       </section>
@@ -69,17 +80,22 @@ defmodule BolognesaWeb.MusicPlayer do
 
   defp transport_controls(assigns) do
     ~H"""
-    <button
+    <Button.button
       type="button"
+      variant="ghost"
+      size="icon"
+      class="rounded-full"
       data-player-action="previous"
       data-label={gettext("Anterior")}
       aria-label={gettext("Anterior")}
       disabled
     >
       <.icon name="hero-backward-solid" class="size-5" />
-    </button>
-    <button
+    </Button.button>
+    <Button.button
       type="button"
+      size="icon"
+      class="rounded-full"
       data-player-action="toggle"
       data-label-play={gettext("Reproducir")}
       data-label-pause={gettext("Pausar")}
@@ -87,16 +103,19 @@ defmodule BolognesaWeb.MusicPlayer do
     >
       <span data-player-play-icon><.icon name="hero-play-solid" class="size-5" /></span>
       <span data-player-pause-icon hidden><.icon name="hero-pause-solid" class="size-5" /></span>
-    </button>
-    <button
+    </Button.button>
+    <Button.button
       type="button"
+      variant="ghost"
+      size="icon"
+      class="rounded-full"
       data-player-action="next"
       data-label={gettext("Siguiente")}
       aria-label={gettext("Siguiente")}
       disabled
     >
       <.icon name="hero-forward-solid" class="size-5" />
-    </button>
+    </Button.button>
     <span id="queue-position" aria-live="polite"></span>
     <span data-player-time><span data-player-elapsed></span><span class="music-time-separator"> / </span><span data-player-duration></span></span>
     <span id="queue-finished" hidden>{gettext("Sesión terminada")}</span>
@@ -140,7 +159,9 @@ defmodule BolognesaWeb.MusicPlayer do
           <h3 data-queue-heading data-label={gettext("Siguientes (%{count})", count: "__COUNT__")}>
             {gettext("A continuación")}
           </h3>
-          <button type="button" data-player-action="clear-upcoming">{gettext("Vaciar cola")}</button>
+          <Button.button type="button" variant="link" data-player-action="clear-upcoming">
+            {gettext("Vaciar cola")}
+          </Button.button>
         </div>
       </div>
       <div class="music-queue-scroll">

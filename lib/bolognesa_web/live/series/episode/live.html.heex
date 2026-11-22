@@ -44,18 +44,13 @@
       <p :if={@loading?} id="episode-loading" role="status" class="text-muted">
         {gettext("Cargando ficha…")}
       </p>
-      <p
-        :if={@error}
-        id="episode-error"
-        role="alert"
-        class="rounded-xl border border-red-300/30 p-5 text-red-100"
-      >
+      <Alert.alert :if={@error} id="episode-error" variant="destructive">
         {@error}
         <.link
           navigate={~p"/series?#{@catalog_params}"}
           class="block min-h-11 py-3 text-accent-soft"
         >{gettext("← Todas las series")}</.link>
-      </p>
+      </Alert.alert>
     </div>
     <div :if={@detail && !@error}>
       <header class="episode-heading">
