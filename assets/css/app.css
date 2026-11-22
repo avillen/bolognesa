@@ -226,7 +226,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .library-create-panel { width: 100%; max-width: 32rem; max-height: calc(100dvh - 24px); overflow-y: auto; border: 1px solid var(--color-border-strong); border-radius: 16px; padding: 24px; background: var(--color-surface); }
 .library-create-form { display: grid; gap: 20px; }
 .library-create-form > div, .library-source-field > div { margin: 0; }
-.library-form-control { width: 100%; min-height: 48px; border: 1px solid var(--color-border-strong); background-color: var(--color-raised); padding: 12px 16px; color: var(--color-ink); }
+.library-form-control { width: 100%; min-height: 48px; border-radius: 12px; border: 1px solid var(--color-border-strong); background-color: var(--color-raised); padding: 12px 16px; color: var(--color-ink); }
 .library-form-control.library-form-control-error { border-color: var(--color-red-400); }
 .library-create-panel :is(a, button, input, select):focus-visible { outline: 2px solid var(--color-accent-soft); outline-offset: 2px; }
 .library-form-select { appearance: none; padding-right: 44px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23a3a5a8' stroke-width='1.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m5 7.5 5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; background-size: 20px; }

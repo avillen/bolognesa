@@ -18,11 +18,13 @@ defmodule BolognesaWeb.Movie.Show.Components.VersionCard do
         /></span>
         <div class="min-w-0">
           <p class="font-semibold text-ink">{gettext("Versión")} {@version.id}</p>
-          <span
+          <Badge.badge
             :if={@version.id == @selected_file_id}
             id={"movie-selected-#{@version.id}"}
-            class="movie-selected"
-          >{gettext("Seleccionada")}</span>
+            class="mt-1"
+          >
+            {gettext("Seleccionada")}
+          </Badge.badge>
           <p class="mt-1 text-xs text-muted">
             {if @version.origin == :manual,
               do: gettext("Identificación manual"),

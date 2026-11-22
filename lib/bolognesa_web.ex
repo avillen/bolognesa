@@ -96,6 +96,7 @@ defmodule BolognesaWeb do
       # Copied SaladUI components; aliased because their names overlap CoreComponents
       import BolognesaWeb.Components.UI.Helpers, only: [button_variant: 1, button_variant: 2]
       alias BolognesaWeb.Components.UI.Alert
+      alias BolognesaWeb.Components.UI.Badge
       alias BolognesaWeb.Components.UI.Button
       alias BolognesaWeb.Components.UI.Card
 
