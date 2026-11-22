@@ -25,19 +25,19 @@
       <.link
         navigate={~p"/libraries"}
         id="home-libraries-link"
-        class={button_variant(%{size: "lg"}) <> " mt-7"}
+        class={button_variant(%{size: "lg"}, "mt-7")}
       >
         {gettext("Configurar bibliotecas")} <.icon name="hero-arrow-right" class="size-4" />
       </.link>
       <.link
         navigate={~p"/movies"}
         id="home-movies-link"
-        class={button_variant(%{variant: "outline", size: "lg"}) <> " mt-3 sm:ml-3 sm:mt-0"}
+        class={button_variant(%{variant: "outline", size: "lg"}, "mt-3 sm:ml-3 sm:mt-0")}
       >{gettext("Ver películas")}</.link>
       <.link
         navigate={~p"/series"}
         id="home-series-link"
-        class={button_variant(%{variant: "outline", size: "lg"}) <> " ml-3 mt-3"}
+        class={button_variant(%{variant: "outline", size: "lg"}, "ml-3 mt-3")}
       >{gettext("Ver series")}</.link>
       <div class="mt-10 flex flex-col gap-4 border-t border-border/70 pt-6 sm:flex-row sm:items-center sm:justify-between">
         <p class="text-sm text-muted">

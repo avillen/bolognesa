@@ -73,7 +73,7 @@ defmodule BolognesaWeb.Series.Season.Components.EpisodeCard do
         navigate={
           ~p"/episodes/#{@episode.id}?#{Navigation.episode_target_params(@series_params, @page, @episode)}"
         }
-        class={button_variant(%{variant: "outline"}) <> " series-episode-play"}
+        class={button_variant(%{variant: "outline"}, "series-episode-play")}
         aria-label={
           gettext("Reproducir %{title}",
             title:

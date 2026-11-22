@@ -22,7 +22,7 @@
     >
       {@error}<.link
         patch={~p"/series/review?page=#{@page}&file_id=#{@selected_file_id}"}
-        class={button_variant(%{variant: "outline"}) <> " text-foreground"}
+        class={button_variant(%{variant: "outline"}, "text-foreground")}
       >{gettext("Reintentar")}</.link>
     </Alert.alert>
     <p :if={!@loading? && @total == 0}>{gettext("No hay archivos pendientes de revisión.")}</p>

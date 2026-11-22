@@ -32,9 +32,13 @@ defmodule BolognesaWeb.Components.UI.Helpers do
   Classes for a button look, also usable on links. Supports two variant kinds:
   - size: `default|sm|lg|icon`
   - variant: `default|destructive|outline|secondary|ghost|link`
+
+  `extra` classes are merged with TwMerge, so a conflicting utility (such as
+  `px-3` or `whitespace-normal`) replaces the variant's own instead of losing to
+  Tailwind's stylesheet order.
   """
-  @spec button_variant(map()) :: String.t()
-  def button_variant(props \\ %{}) do
+  @spec button_variant(map(), String.t() | nil) :: String.t()
+  def button_variant(props \\ %{}, extra \\ nil) do
     variants = Map.take(props, ~w(variant size)a)
     variants = Map.merge(@default_variants, variants)
 
@@ -43,6 +47,6 @@ defmodule BolognesaWeb.Components.UI.Helpers do
     shared_classes =
       "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50"
 
-    "#{shared_classes} #{variation_classes}"
+    TwMerge.merge([shared_classes, variation_classes, extra])
   end
 end

@@ -13,11 +13,13 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
       assign(
         assigns,
         :link_class,
-        button_variant(%{variant: "ghost"}) <>
-          " h-10 flex-none px-3 text-muted-foreground hover:text-foreground sm:px-4" <>
-          " aria-[current=page]:bg-primary/15 aria-[current=page]:text-foreground" <>
-          " aria-[current=page]:ring-1 aria-[current=page]:ring-inset aria-[current=page]:ring-primary/30" <>
-          " focus-visible:outline-offset-2! motion-reduce:transition-none"
+        button_variant(
+          %{variant: "ghost"},
+          "h-10 min-h-10 flex-none px-3 text-muted-foreground hover:text-foreground sm:px-4" <>
+            " aria-[current=page]:bg-primary/15 aria-[current=page]:text-foreground" <>
+            " aria-[current=page]:ring-1 aria-[current=page]:ring-inset aria-[current=page]:ring-primary/30" <>
+            " focus-visible:outline-offset-2! motion-reduce:transition-none"
+        )
       )
 
     ~H"""

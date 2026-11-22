@@ -24,7 +24,7 @@ invalid, because the token values are OKLCH. `salad_ui` also brings `igniter` an
   components a screen uses under `lib/bolognesa_web/components/ui/`
   (`BolognesaWeb.Components.UI.*`) and add more only when a screen needs them.
   Every HTML module aliases `Alert`, `Button` and `Card` and imports
-  `button_variant/1`. Calls go through the aliases, such as `<Button.button>`,
+  `button_variant/2`. Calls go through the aliases, such as `<Button.button>`,
   because the component names overlap with CoreComponents.
 - Adapt the copies to the house: buttons keep 44px targets (`min-h-11`, icon
   `size-11`), and Card takes a `tag` so list items stay `<article>`. These
@@ -44,7 +44,7 @@ invalid, because the token values are OKLCH. `salad_ui` also brings `igniter` an
   `muted-foreground` for secondary text. `primary-foreground` is `canvas`, because
   `ink` on coral has a contrast of 2.6:1.
 - Keep accessibility semantics in the markup that renders a component. Section
-  navigation stays links with `aria-current`, styled through `button_variant/1`,
+  navigation stays links with `aria-current`, styled through `button_variant/2`,
   rather than ARIA tabs.
 - Adopt interactive SaladUI components (dialog, select, tabs, toast and others)
   only after a separate review of their JavaScript against the native dialog and

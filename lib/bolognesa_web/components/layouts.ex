@@ -154,10 +154,12 @@ defmodule BolognesaWeb.Layouts do
 
   # Ghost-button links; aria-current (not a class) drives the active style.
   defp nav_link_class do
-    button_variant(%{variant: "ghost"}) <>
-      " app-nav-link w-full justify-start gap-2.5 whitespace-normal px-3 text-[13px] font-normal" <>
-      " text-muted-foreground hover:text-foreground aria-[current=page]:bg-primary/15" <>
-      " aria-[current=page]:text-foreground motion-reduce:transition-none"
+    button_variant(
+      %{variant: "ghost"},
+      "app-nav-link w-full justify-start gap-2.5 whitespace-normal px-3 text-[13px] font-normal" <>
+        " text-muted-foreground hover:text-foreground aria-[current=page]:bg-primary/15" <>
+        " aria-[current=page]:text-foreground motion-reduce:transition-none"
+    )
   end
 
   defp library_icon(:movie), do: "hero-film"

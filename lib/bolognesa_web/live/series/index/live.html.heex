@@ -84,7 +84,7 @@
       {@error}
       <.link
         patch={~p"/series?#{Map.merge(@library_params, %{query: @query, page: @page})}"}
-        class={button_variant(%{variant: "outline"}) <> " text-foreground"}
+        class={button_variant(%{variant: "outline"}, "text-foreground")}
       >{gettext("Reintentar")}</.link>
     </Alert.alert>
     <p
