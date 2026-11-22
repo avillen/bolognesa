@@ -57,6 +57,7 @@ export async function verifySeriesUI(page, {baseUrl, ids, waitForStablePage}) {
     await page.mouse.move(0, 0);
     const optionsBackground = await options.evaluate(el => getComputedStyle(el).backgroundColor);
     await options.hover();
+    await options.evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
     assert.notEqual(await options.evaluate(el => getComputedStyle(el).backgroundColor), optionsBackground, "Library options lack hover feedback");
     await options.focus();
     await page.keyboard.press("Tab");
