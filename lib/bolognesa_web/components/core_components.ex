@@ -1,4 +1,5 @@
 defmodule BolognesaWeb.CoreComponents do
+  alias BolognesaWeb.Components.UI.Button
   alias Phoenix.Component
 
   @moduledoc """
@@ -79,13 +80,15 @@ defmodule BolognesaWeb.CoreComponents do
           <p>{msg}</p>
         </div>
         <div class="flex-1" />
-        <button
+        <Button.button
           type="button"
-          class="group self-start cursor-pointer rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          variant="ghost"
+          size="icon"
+          class="group -m-3 self-start"
           aria-label={gettext("close")}
         >
           <.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
-        </button>
+        </Button.button>
       </div>
     </div>
     """
