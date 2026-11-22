@@ -216,7 +216,6 @@
  .music-player[data-expanded="true"][data-queue-open="true"] .music-queue-toggle { grid-area: auto; }
 }
 
-.music-player button.music-player-art { padding: 0; }
 .music-player[data-expanded="true"] [data-player-action="close"] { display: none; }
 .music-queue-scroll:has(.music-action-menu[open]) { padding-bottom: min(280px, 42dvh); }
 .music-up-next { overscroll-behavior: contain; }
