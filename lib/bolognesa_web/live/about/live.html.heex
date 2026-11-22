@@ -30,7 +30,7 @@
         href="https://www.themoviedb.org"
         target="_blank"
         rel="noopener noreferrer"
-        class="mt-6 inline-flex min-h-11 items-center rounded-xl border border-border-strong bg-raised px-4 py-3 transition hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class={button_variant(%{variant: "outline"}, "mt-6 gap-4 py-3")}
       >
         <img
           src={~p"/images/tmdb-logo.svg"}
@@ -39,7 +39,7 @@
           height="67"
           class="h-auto w-20"
         />
-        <span class="ml-4 text-sm font-medium text-ink">{gettext("Visitar TMDB")}</span>
+        <span class="font-medium">{gettext("Visitar TMDB")}</span>
       </a>
       <p class="mt-6 text-sm leading-6 text-muted">
         {gettext("This product uses the TMDB API but is not endorsed or certified by TMDB.")}

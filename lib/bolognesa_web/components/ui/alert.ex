@@ -1,14 +1,12 @@
 defmodule BolognesaWeb.Components.UI.Alert do
   @moduledoc """
-  Alert for status and error messages, copied from SaladUI. Its title part is left
-  out until a screen needs it.
+  Alert for status and error messages, copied from SaladUI. Its title and
+  description parts are left out: the description's text style lives on the root.
 
   ## Examples:
 
       <Alert.alert variant="destructive">
-        <Alert.alert_description>
-          <p>There was a problem with your request. Please try again.</p>
-        </Alert.alert_description>
+        <p>There was a problem with your request. Please try again.</p>
       </Alert.alert>
   """
   use BolognesaWeb.Components.UI, :component
@@ -35,32 +33,8 @@ defmodule BolognesaWeb.Components.UI.Alert do
       role="alert"
       class={
         classes([
-          "relative w-full rounded-lg border border-border bg-background p-4",
+          "relative w-full rounded-lg border border-border bg-background p-4 text-sm [&_p]:leading-relaxed",
           @variant_class,
-          @class
-        ])
-      }
-      {@rest}
-    >
-      {render_slot(@inner_block)}
-    </div>
-    """
-  end
-
-  @doc """
-  Renders an alert description.
-  """
-  attr :class, :string, default: nil
-  attr :rest, :global
-  slot :inner_block, required: true
-
-  @spec alert_description(map()) :: Phoenix.LiveView.Rendered.t()
-  def alert_description(assigns) do
-    ~H"""
-    <div
-      class={
-        classes([
-          "text-sm [&_p]:leading-relaxed",
           @class
         ])
       }

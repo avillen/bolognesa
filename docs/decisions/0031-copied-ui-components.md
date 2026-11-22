@@ -35,9 +35,10 @@ invalid, because the token values are OKLCH. `salad_ui` also brings `igniter` an
   components replace the `media-*-action` and `library-*` button classes, the
   per-screen error styles and the visual rules of player, track, album and
   sidebar controls. Screen CSS keeps placement and state hooks only.
-- Put `.app-content button` and the music player's base button rule in
-  `@layer base`, so component utilities override them. Queue buttons that JS
-  creates still get the base style. The global focus outline stays unlayered, because some inputs use
+- Put `.app-content button` in `@layer base`, so component utilities override
+  it. Queue menu buttons that JS creates take their look from a rule scoped to
+  their menu (`.music-menu-items button`), not from a rule on every player button.
+  The global focus outline stays unlayered, because some inputs use
   `outline-none` and depend on it.
 - Keep `salad_ui` as a dev-only dependency for future copies and upstream diffs.
   Depend directly on `tw_merge`, which the copied components use at runtime,

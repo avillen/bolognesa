@@ -36,7 +36,7 @@ defmodule BolognesaWeb.MediaComponents do
       variant="destructive"
       class="flex flex-wrap items-center justify-between gap-3"
     >
-      <Alert.alert_description>{render_slot(@inner_block)}</Alert.alert_description>
+      {render_slot(@inner_block)}
       <.link :if={@patch} patch={@patch} class={button_variant(%{variant: "outline"})}>
         {gettext("Reintentar")}
       </.link>
