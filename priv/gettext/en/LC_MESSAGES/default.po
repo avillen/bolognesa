@@ -126,11 +126,6 @@ msgstr "Missing"
 msgid "Año desconocido"
 msgstr "Unknown year"
 
-#: lib/bolognesa_web/live/movie/index/live.html.heex:111
-#, elixir-autogen, elixir-format
-msgid "Aún no hay películas con ese nombre. Escanea una biblioteca o revisa las identificaciones."
-msgstr "No movies with that name yet. Scan a library or review identifications."
-
 #: lib/bolognesa_web/live/library/index/live.html.heex:13
 #: lib/bolognesa_web/live/library/index/live.html.heex:74
 #, elixir-autogen, elixir-format
@@ -2239,3 +2234,13 @@ msgstr "Could not mark the season as watched."
 #, elixir-autogen, elixir-format
 msgid "Seguir viendo"
 msgstr "Continue watching"
+
+#: lib/bolognesa_web/live/movie/index/live.html.heex:41
+#, elixir-autogen, elixir-format
+msgid "No hay películas en esta biblioteca. Escanea una biblioteca de películas o revisa las identificaciones."
+msgstr "No movies in this library yet. Scan a movie library or review identifications."
+
+#: lib/bolognesa_web/live/movie/index/live.html.heex:44
+#, elixir-autogen, elixir-format
+msgid "No hay películas que coincidan con tu búsqueda."
+msgstr "No movies match your search."

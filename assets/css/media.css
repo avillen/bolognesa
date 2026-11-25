@@ -1,7 +1,6 @@
 /* Shared movie and series browsing, using the application palette. */
 .media-catalog-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
 .media-eyebrow { color: var(--color-accent-soft); font-size: 11px; font-weight: 650; letter-spacing: .16em; text-transform: uppercase; }
-.media-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
 .media-search-form { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 540px; }
 .media-search-field { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding-left: 14px; border: 1px solid var(--color-border-strong); border-radius: 7px; background: var(--color-surface); }
 .media-search-field > .size-5 { flex-shrink: 0; }

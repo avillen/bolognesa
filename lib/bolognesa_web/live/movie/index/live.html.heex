@@ -6,56 +6,56 @@
   current_scope={@current_scope}
   active_section={:movies}
 >
-  <section id="movies-screen" class="mx-auto max-w-6xl space-y-8">
-    <header class="media-catalog-heading">
-      <div>
-        <p class="media-eyebrow">{gettext("Tu biblioteca")}</p>
-        <h1 class="mt-3 text-4xl font-semibold text-ink">
-          {@library_name || gettext("Películas")}
-        </h1>
-      </div>
-      <.link
-        navigate={~p"/movies/review"}
-        id="movies-review-link"
-        class={button_variant(%{variant: "outline"})}
-      >
-        <.icon name="hero-adjustments-horizontal" class="size-4" />
+  <section
+    id="movies-screen"
+    phx-hook="BrowsePosition"
+    data-loading={to_string(@loading?)}
+    class="media-catalog mx-auto max-w-6xl space-y-8"
+  >
+    <MediaComponents.catalog_header
+      title={@library_name || gettext("Películas")}
+      form={@form}
+      search_id="movie-search-form"
+      search_label={gettext("Buscar película")}
+      options_id="movies-library-options"
+    >
+      <.link id="movies-review-link" navigate={~p"/movies/review"} class="app-nav-link">
         {gettext("Revisar identificaciones")}
       </.link>
-    </header>
-    <div class="media-toolbar">
-      <.form
-        for={@form}
-        id="movie-search-form"
-        phx-change="search"
-        phx-submit="search"
-        class="media-search-form"
-      >
-        <div class="media-search-field">
-          <.icon name="hero-magnifying-glass" class="size-5 text-muted" />
-          <.input
-            field={@form[:query]}
-            phx-debounce="300"
-            id="movie-search-query"
-            type="search"
-            label={gettext("Buscar película")}
-            placeholder={gettext("Buscar por título…")}
-            class="media-search-input"
-          />
-        </div>
-        <Button.button id="movie-search-button" type="submit">{gettext("Buscar")}</Button.button>
-      </.form>
-      <p :if={!@loading? && !@error} id="movies-count" class="media-result-count">
-        {ngettext("%{count} película", "%{count} películas", @total)}
-      </p>
-    </div>
-
-    <p :if={@loading?} id="movies-loading" role="status" class="text-sm text-muted">
+    </MediaComponents.catalog_header>
+    <p :if={@loading?} id="movies-loading" role="status" class="text-muted">
       {gettext("Cargando películas…")}
     </p>
-    <Alert.alert :if={@error} id="movies-error" variant="destructive">
+    <MediaComponents.retry_alert
+      :if={@error}
+      id="movies-error"
+      patch={~p"/movies?#{Map.merge(@library_params, %{query: @query, page: @page})}"}
+    >
       {@error}
-    </Alert.alert>
+    </MediaComponents.retry_alert>
+    <p
+      :if={!@loading? && !@error && @total == 0}
+      id="movies-empty"
+      class="rounded-xl border border-dashed border-border p-6 text-muted"
+    >
+      <span :if={@query == ""}>{gettext(
+        "No hay películas en esta biblioteca. Escanea una biblioteca de películas o revisa las identificaciones."
+      )}</span>
+      <span :if={@query != ""}>{gettext("No hay películas que coincidan con tu búsqueda.")}</span>
+      <.link
+        :if={@query != ""}
+        id="movies-clear-search"
+        patch={~p"/movies?#{@library_params}"}
+        class="mt-3 block min-h-11 py-3 text-accent-soft"
+      >{gettext("Limpiar búsqueda")}</.link>
+    </p>
+    <p
+      :if={!@loading? && !@error && @total > 0}
+      id="movies-count"
+      class="media-result-count media-catalog-count"
+    >
+      {ngettext("%{count} película", "%{count} películas", @total)}
+    </p>
     <div id="movies-list" phx-update="stream" class="media-poster-grid">
       <MovieCard.card
         :for={{dom_id, movie} <- @streams.movies}
@@ -64,15 +64,6 @@
         library_params={@library_params}
       />
     </div>
-    <p
-      :if={!@loading? && !@error && @total == 0}
-      id="movies-empty"
-      class="rounded-2xl border border-dashed border-border p-8 text-center text-muted"
-    >
-      {gettext(
-        "Aún no hay películas con ese nombre. Escanea una biblioteca o revisa las identificaciones."
-      )}
-    </p>
     <nav
       :if={@total > 24}
       id="movies-pagination"
