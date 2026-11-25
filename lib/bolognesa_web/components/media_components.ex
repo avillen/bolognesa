@@ -120,6 +120,47 @@ defmodule BolognesaWeb.MediaComponents do
     """
   end
 
+  attr :id, :string, required: true
+  attr :title, :string, required: true
+  attr :navigate, :string, required: true, doc: "path of the title's page"
+  attr :art, :string, default: nil, doc: "TMDB backdrop or poster path"
+  attr :icon, :string, required: true, doc: "placeholder shown without art"
+  attr :overview, :string, default: nil, doc: "synopsis shown only on the lead tile"
+  attr :lead?, :boolean, default: false
+
+  slot :action,
+    required: true,
+    doc: "the tile action; receives the class that fits the tile size"
+
+  @doc "Landscape tile of the recently watched marquee; the first one leads with its synopsis."
+  @spec shelf_tile(map()) :: Phoenix.LiveView.Rendered.t()
+  def shelf_tile(assigns) do
+    ~H"""
+    <article id={@id} class={["media-shelf-tile", @lead? && "is-lead"]}>
+      <div class="media-shelf-art" aria-hidden="true">
+        <.icon name={@icon} class="size-8" />
+        <img
+          :if={@art}
+          id={"#{@id}-art"}
+          phx-hook="ImageFallback"
+          phx-update="ignore"
+          src={"https://image.tmdb.org/t/p/#{if @lead?, do: "w1280", else: "w780"}#{@art}"}
+          alt=""
+          loading="lazy"
+        />
+      </div>
+      <div class="media-shelf-copy">
+        <h3><.link navigate={@navigate}>{@title}</.link></h3>
+        <p :if={@lead? && @overview} class="media-shelf-overview">{@overview}</p>
+        {render_slot(
+          @action,
+          if(@lead?, do: button_variant(%{}, "mt-5"), else: "media-shelf-action")
+        )}
+      </div>
+    </article>
+    """
+  end
+
   attr :id, :string, default: nil
   attr :retry, :string, default: nil, doc: "the event the retry button pushes"
   attr :patch, :string, default: nil, doc: "path to patch to instead of `retry`"

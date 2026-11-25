@@ -9,6 +9,10 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Infrastructure.Persistence.MovieWatchedSchema
   alias Bolognesa.Infrastructure.Persistence.UserSchema
+
+  alias Bolognesa.Movies.Infrastructure.Repositories.EctoWatchedMoviesRepository,
+    as: WatchedRepository
+
   alias Bolognesa.Repo
 
   setup do
@@ -157,6 +161,50 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
       assert {:error, {:live_redirect, %{to: "/libraries"}}} =
                live(init_test_session(conn, user_token: token), "/movies?library_id=#{id}")
     end
+  end
+
+  test "leads with recently watched movies, hidden while searching", %{conn: conn, token: token} do
+    conn = init_test_session(conn, user_token: token)
+    {:ok, view, _} = live(conn, ~p"/movies")
+    render_async(view)
+    refute has_element?(view, "#movies-recent-shelf")
+
+    user = Repo.get_by!(UserSchema, email: "movies@example.com")
+
+    [older, newer] =
+      for {id, days_ago} <- [{300, 1}, {301, 0}] do
+        movie =
+          Repo.insert!(
+            movie_changeset(%{provider_id: id, title: "Vista #{id}", overview: "Sinopsis #{id}"})
+          )
+
+        :ok =
+          WatchedRepository.upsert(
+            user.id,
+            movie.id,
+            DateTime.add(DateTime.utc_now(), -days_ago, :day)
+          )
+
+        movie
+      end
+
+    {:ok, view, _} = live(conn, ~p"/movies")
+    render_async(view)
+    assert has_element?(view, "#recent-movie-#{newer.id}.is-lead", "Sinopsis 301")
+    refute has_element?(view, "#recent-movie-#{older.id}.is-lead")
+    refute has_element?(view, "#recent-movie-#{older.id}", "Sinopsis 300")
+
+    assert has_element?(
+             view,
+             "#recent-movie-open-#{older.id}[href='/movies/#{older.id}']",
+             "Ver ficha"
+           )
+
+    assert has_element?(view, "#movies-list #movie-link-#{newer.id}")
+
+    {:ok, view, _} = live(conn, ~p"/movies?query=Vista")
+    render_async(view)
+    refute has_element?(view, "#movies-recent-shelf")
   end
 
   defp movie_changeset(attrs),

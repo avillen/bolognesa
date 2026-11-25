@@ -11,6 +11,7 @@ defmodule BolognesaWeb.Movie.Index.Reducer.Initialize do
     |> assign(:total, 0)
     |> assign(:loading?, true)
     |> assign(:error, nil)
+    |> assign(:recent_movies, [])
     |> assign(:request_id, nil)
     |> assign(:form, to_form(%{"query" => ""}, as: :search))
     |> stream(:movies, [])
