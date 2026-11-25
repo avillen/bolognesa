@@ -127,6 +127,24 @@ defmodule Bolognesa.Movies.WatchedMoviesTest do
     assert Repo.all(MovieWatchedSchema) == []
   end
 
+  test "the catalog listing reads only the account's watched dates", ctx do
+    other = actor("other@example.com")
+    unwatched = movie(2)
+    assert :ok = Movies.record_watched(ctx.actor, ctx.movie.id, ctx.media_file.id)
+
+    Repo.insert!(%MovieWatchedSchema{
+      user_id: other.id,
+      movie_id: unwatched.id,
+      last_watched_at: DateTime.utc_now()
+    })
+
+    assert {:ok, %{last_watched_at: watched_at}} = Movies.get_movie(ctx.actor, ctx.movie.id)
+    assert {:ok, %{items: items, total: 2}} = Movies.list_movies(ctx.actor, "", 1)
+
+    assert Map.new(items, &{&1.id, &1.last_watched_at}) ==
+             %{ctx.movie.id => watched_at, unwatched.id => nil}
+  end
+
   defp actor(email, role \\ "member") do
     user =
       Repo.insert!(%UserSchema{name: "Viewer", email: email, hashed_password: "hash", role: role})

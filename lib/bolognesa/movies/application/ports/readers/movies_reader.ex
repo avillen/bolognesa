@@ -9,10 +9,16 @@ defmodule Bolognesa.Movies.Application.Ports.Readers.MoviesReader do
   @typedoc "One-based page number for a catalog listing."
   @type page_number :: pos_integer()
 
-  @typedoc "Movie, total associated versions, and available associated versions, in that order."
-  @type listed_movie :: {Movie.t(), MovieVersion.count(), MovieVersion.available_count()}
+  @typedoc "Movie, total and available associated versions, and the account's latest watched date, in that order."
+  @type listed_movie ::
+          {Movie.t(), MovieVersion.count(), MovieVersion.available_count(), DateTime.t() | nil}
 
-  @callback list_movies(query :: String.t(), page :: page_number(), library_id :: library_id()) ::
+  @callback list_movies(
+              user_id :: pos_integer(),
+              query :: String.t(),
+              page :: page_number(),
+              library_id :: library_id()
+            ) ::
               {:ok, {[listed_movie()], Movie.count()}} | {:error, :unavailable}
 
   @doc "Returns at most 100 versions ordered by file ID; rejects larger collections without truncation."
