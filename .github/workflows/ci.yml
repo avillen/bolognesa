@@ -88,4 +88,4 @@ jobs:
           path: _build/plts
           key: ${{ steps.plt-cache.outputs.cache-primary-key }}
 
-      - run: mix dialyzer --format github
+      - run: mix dialyzer
