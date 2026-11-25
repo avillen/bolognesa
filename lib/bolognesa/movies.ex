@@ -8,8 +8,8 @@ defmodule Bolognesa.Movies do
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems.Response, as: MovieReviewPage
   alias Bolognesa.Movies.Application.UseCases.ListMovies
-  alias Bolognesa.Movies.Application.UseCases.ListRecentMovies
   alias Bolognesa.Movies.Application.UseCases.ListMovies.Response, as: MoviePage
+  alias Bolognesa.Movies.Application.UseCases.ListRecentMovies
   alias Bolognesa.Movies.Application.UseCases.MarkWatchedMovie
   alias Bolognesa.Movies.Application.UseCases.RecordWatchedMovie
   alias Bolognesa.Movies.Application.UseCases.RetryIdentification
