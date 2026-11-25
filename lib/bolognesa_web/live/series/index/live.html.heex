@@ -10,59 +10,19 @@
     id="series-screen"
     phx-hook="BrowsePosition"
     data-loading={to_string(@loading?)}
-    class="series-screen series-catalog mx-auto max-w-6xl space-y-8"
+    class="series-screen media-catalog mx-auto max-w-6xl space-y-8"
   >
-    <header class="series-index-heading">
-      <h1 class="series-catalog-title series-index-title">
-        {@library_name || gettext("Series")}
-      </h1>
-      <.form
-        for={@form}
-        id="series-search"
-        phx-change="search"
-        phx-submit="search"
-        class="media-search-form"
-      >
-        <div class="media-search-field">
-          <.icon name="hero-magnifying-glass" class="size-5 text-muted" />
-          <.input
-            field={@form[:query]}
-            phx-debounce="300"
-            type="search"
-            label={gettext("Buscar series")}
-            placeholder={gettext("Buscar por título…")}
-            class="media-search-input"
-          />
-        </div>
-        <Button.button
-          type="submit"
-          variant="ghost"
-          class="px-3 text-muted-foreground"
-          aria-label={gettext("Buscar series")}
-        >
-          <.icon name="hero-arrow-turn-down-left" class="size-5 sm:hidden" />
-          <span class="hidden sm:inline">{gettext("Buscar")}</span>
-        </Button.button>
-      </.form>
-      <details id="series-library-options" class="series-library-options">
-        <summary
-          aria-label={gettext("Opciones de biblioteca")}
-          class={
-            button_variant(
-              %{variant: "subtle", size: "icon"},
-              "list-none in-open:bg-secondary in-open:text-secondary-foreground [&::-webkit-details-marker]:hidden"
-            )
-          }
-        >
-          <.icon name="hero-ellipsis-horizontal" class="size-5" />
-        </summary>
-        <div class="series-options-menu">
-          <.link id="series-review-link" navigate={~p"/series/review"} class="app-nav-link">
-            {gettext("Revisar identificaciones")}
-          </.link>
-        </div>
-      </details>
-    </header>
+    <MediaComponents.catalog_header
+      title={@library_name || gettext("Series")}
+      form={@form}
+      search_id="series-search"
+      search_label={gettext("Buscar series")}
+      options_id="series-library-options"
+    >
+      <.link id="series-review-link" navigate={~p"/series/review"} class="app-nav-link">
+        {gettext("Revisar identificaciones")}
+      </.link>
+    </MediaComponents.catalog_header>
     <section
       :if={@recent_series != [] && @query == ""}
       id="series-continue-shelf"
@@ -109,7 +69,7 @@
     <p
       :if={!@loading? && !@error && @total > 0}
       id="series-count"
-      class="media-result-count series-catalog-count"
+      class="media-result-count media-catalog-count"
     >
       {ngettext("%{count} serie", "%{count} series", @total)}
     </p>
