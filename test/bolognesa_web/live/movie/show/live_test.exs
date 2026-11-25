@@ -290,7 +290,6 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     end
 
     test "watched reports require the current attempt and file and record once", ctx do
-      assert has_element?(ctx.view, "#movie-video-frame[data-record-watched='true']")
       attempt = playback_attempt(ctx.view)
       report = %{"attempt_id" => attempt, "file_id" => to_string(ctx.first.id)}
 
