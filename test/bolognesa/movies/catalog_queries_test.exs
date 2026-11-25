@@ -9,6 +9,7 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieWatchedSchema
   alias Bolognesa.Movies
   alias Bolognesa.Movies.Application.UseCases.GetMovie.Response, as: MovieDetail
   alias Bolognesa.Movies.Application.UseCases.GetMovie.Version, as: MovieVersion
@@ -71,7 +72,8 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
 
     assert id == movie.id
 
-    assert {:ok, {[{%Movie{id: ^id}, 2, 1}], 1}} = EctoMoviesReader.list_movies("Mi", 1, nil)
+    assert {:ok, {[{%Movie{id: ^id}, 2, 1, nil}], 1}} =
+             EctoMoviesReader.list_movies(actor.id, "Mi", 1, nil)
 
     assert {:ok, {%Movie{id: ^id}, [version | _]}} =
              EctoMoviesReader.get_movie(id)
@@ -87,6 +89,23 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
     assert length(versions) == 2
     assert Enum.all?(versions, &match?(%MovieVersion{}, &1))
     assert {:ok, %MoviePage{items: [], total: 0}} = Movies.list_movies(actor, "No existe", 1)
+  end
+
+  test "listing reads only the account's watched date" do
+    actor = %AuthenticatedUser{id: 1, role: :admin}
+    watched = Repo.insert!(movie_changeset(%{provider_id: 911, title: "Vista"}))
+    unwatched = Repo.insert!(movie_changeset(%{provider_id: 912, title: "Pendiente"}))
+    watched_at = ~U[2026-11-01 20:00:00.000000Z]
+
+    Repo.insert_all(MovieWatchedSchema, [
+      %{user_id: actor.id, movie_id: watched.id, last_watched_at: watched_at},
+      %{user_id: 2, movie_id: unwatched.id, last_watched_at: watched_at}
+    ])
+
+    assert {:ok, %MoviePage{items: items, total: 2}} = Movies.list_movies(actor, "", 1)
+
+    assert Map.new(items, &{&1.id, &1.last_watched_at}) ==
+             %{watched.id => watched_at, unwatched.id => nil}
   end
 
   test "library catalogs isolate titles, counts and pagination while retaining missing files" do

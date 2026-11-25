@@ -7,6 +7,8 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
 
   alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieWatchedSchema
+  alias Bolognesa.Infrastructure.Persistence.UserSchema
   alias Bolognesa.Repo
 
   setup do
@@ -94,6 +96,24 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     view |> form("#movie-search-form", search: %{query: ""}) |> render_change()
     render_async(view)
     assert has_element?(view, "#movie-link-#{movie.id}")
+  end
+
+  test "watched movies show a marker over the poster", %{conn: conn, token: token} do
+    watched = Repo.insert!(movie_changeset(%{provider: :tmdb, provider_id: 201, title: "Vista"}))
+    unwatched = Repo.insert!(movie_changeset(%{provider: :tmdb, provider_id: 202, title: "Otra"}))
+    [user] = Repo.all(UserSchema)
+
+    Repo.insert!(%MovieWatchedSchema{
+      user_id: user.id,
+      movie_id: watched.id,
+      last_watched_at: DateTime.utc_now()
+    })
+
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies")
+    render_async(view)
+    assert has_element?(view, "#movie-link-#{watched.id} #movie-watched-#{watched.id}", "Visto")
+    assert has_element?(view, "#movie-link-#{unwatched.id}")
+    refute has_element?(view, "#movie-watched-#{unwatched.id}")
   end
 
   test "sidebar uses library names and types, including empty libraries", %{

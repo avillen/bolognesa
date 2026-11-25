@@ -41,6 +41,7 @@ defmodule Bolognesa.Movies do
           required(:requested?) => boolean()
         }
 
+  @doc "List a catalog page with the account's latest watched date for each movie."
   @spec list_movies(AuthenticatedUser.t(), String.t(), pos_integer(), pos_integer() | nil) ::
           {:ok, MoviePage.t()} | {:error, reason()}
   def list_movies(actor, query, page, library_id \\ nil),

@@ -1,5 +1,5 @@
 defmodule Bolognesa.Movies.Application.UseCases.ListMovies do
-  @moduledoc "Authorize and bound a movie catalog search."
+  @moduledoc "Authorize and bound a movie catalog search with the account's watched dates."
   alias Bolognesa.Accounts
   alias Bolognesa.Movies.Application.Ports.Readers.MoviesReader
   alias Bolognesa.Movies.Application.UseCases.ListMovies.Response, as: MoviePage
@@ -16,7 +16,7 @@ defmodule Bolognesa.Movies.Application.UseCases.ListMovies do
   def call(actor, query, page, reader, library_id \\ nil) do
     with :ok <- Accounts.authorize(actor, :admin),
          :ok <- ReadQuery.validate(query, page, library_id),
-         {:ok, result} <- reader.list_movies(String.trim(query), page, library_id) do
+         {:ok, result} <- reader.list_movies(actor.id, String.trim(query), page, library_id) do
       {:ok, MoviePage.from_domain(result)}
     end
   end

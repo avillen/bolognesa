@@ -32,6 +32,13 @@ defmodule BolognesaWeb.Movie.Index.Components.MovieCard do
             loading="lazy"
             class="absolute inset-0 size-full object-cover"
           />
+          <span
+            :if={@movie.last_watched_at}
+            id={"movie-watched-#{@movie.id}"}
+            class="media-watched"
+          >
+            {gettext("Visto")}
+          </span>
           <span class="media-year">{@movie.year || gettext("Año desconocido")}</span>
         </div>
         <div class="pt-4">

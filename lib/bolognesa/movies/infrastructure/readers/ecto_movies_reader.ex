@@ -7,6 +7,7 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader do
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieWatchedSchema
   alias Bolognesa.Movies.Domain.ReadModels.MovieVersion
   alias Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader.MovieMapper
   alias Bolognesa.Repo
@@ -15,7 +16,7 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader do
   @max_versions 100
 
   @impl true
-  def list_movies(query, page, library_id) do
+  def list_movies(user_id, query, page, library_id) do
     filtered =
       from movie in MovieSchema,
         where: fragment("strpos(lower(?), lower(?)) > 0", movie.title, ^query)
@@ -35,19 +36,23 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader do
           left_join: file in MediaFileSchema,
           as: :file,
           on: file.id == identification.media_file_id,
-          group_by: movie.id,
+          left_join: watched in MovieWatchedSchema,
+          on: watched.movie_id == movie.id and watched.user_id == ^user_id,
+          group_by: [movie.id, watched.last_watched_at],
           order_by: [asc: movie.title, asc: movie.id],
           limit: @page_size,
           offset: ^offset,
-          select: {movie, count(file.id), filter(count(file.id), file.availability == :available)}
+          select:
+            {movie, count(file.id), filter(count(file.id), file.availability == :available),
+             watched.last_watched_at}
         )
         |> restrict_files(library_id),
         log: false
       )
 
     entries =
-      Enum.map(rows, fn {movie, version_count, available_count} ->
-        {MovieMapper.to_movie(movie), version_count, available_count}
+      Enum.map(rows, fn {movie, version_count, available_count, last_watched_at} ->
+        {MovieMapper.to_movie(movie), version_count, available_count, last_watched_at}
       end)
 
     {:ok, {entries, total}}
