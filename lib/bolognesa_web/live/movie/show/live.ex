@@ -9,6 +9,8 @@ defmodule BolognesaWeb.Movie.Show.Live do
   alias BolognesaWeb.Movie.Show.Components.VersionCard
   alias BolognesaWeb.Movie.Show.Reducer.ApplyResult
   alias BolognesaWeb.Movie.Show.Reducer.Initialize
+  alias BolognesaWeb.Movie.Show.Reducer.MarkWatched
+  alias BolognesaWeb.Movie.Show.Reducer.UnmarkWatched
   alias BolognesaWeb.Params
   alias BolognesaWeb.Player
   @impl true
@@ -20,8 +22,20 @@ defmodule BolognesaWeb.Movie.Show.Live do
     do: {:noreply, ApplyResult.call(socket, request_id, result)}
 
   @impl true
-  def handle_event("record_watched_entries", params, socket),
-    do: WatchedRecording.handle_event(params, socket, &Movies.record_watched/3)
+  def handle_event("record_watched_entries", params, socket) do
+    {:reply, reply, updated} =
+      WatchedRecording.handle_event(params, socket, &Movies.record_watched/3)
+
+    # A newly saved attempt means the threshold was crossed now; show it without a reload.
+    if updated.assigns.watched_attempt_id != socket.assigns.watched_attempt_id,
+      do: {:reply, reply, assign(updated, :watched_at, DateTime.utc_now())},
+      else: {:reply, reply, updated}
+  end
+
+  def handle_event("mark_watched", _params, socket), do: {:noreply, MarkWatched.call(socket)}
+
+  def handle_event("unmark_watched", _params, socket),
+    do: {:noreply, UnmarkWatched.call(socket)}
 
   def handle_event(event, params, socket), do: PlaybackEvents.handle_event(event, params, socket)
   @impl true

@@ -9,9 +9,11 @@ defmodule Bolognesa.Movies do
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems.Response, as: MovieReviewPage
   alias Bolognesa.Movies.Application.UseCases.ListMovies
   alias Bolognesa.Movies.Application.UseCases.ListMovies.Response, as: MoviePage
+  alias Bolognesa.Movies.Application.UseCases.MarkWatchedMovie
   alias Bolognesa.Movies.Application.UseCases.RecordWatchedMovie
   alias Bolognesa.Movies.Application.UseCases.RetryIdentification
   alias Bolognesa.Movies.Application.UseCases.SearchMovieCandidates
+  alias Bolognesa.Movies.Application.UseCases.UnmarkWatchedMovie
   alias Bolognesa.Movies.Domain.Entities.Identification
   alias Bolognesa.Movies.Domain.ReadModels.Movie
   alias Bolognesa.Movies.Infrastructure.Providers.TmdbMovieProvider
@@ -64,6 +66,18 @@ defmodule Bolognesa.Movies do
         EctoWatchedMoviesReader,
         EctoWatchedMoviesRepository
       )
+
+  @doc "Mark a catalog movie as watched now."
+  @spec mark_watched(AuthenticatedUser.t() | nil, Movie.id()) :: MarkWatchedMovie.result()
+  def mark_watched(actor, movie_id),
+    do:
+      MarkWatchedMovie.call(actor, movie_id, EctoWatchedMoviesReader, EctoWatchedMoviesRepository)
+
+  @doc "Remove a movie from this account's watched movies."
+  @spec unmark_watched(AuthenticatedUser.t() | nil, Movie.id()) ::
+          :ok | {:error, :forbidden | :unavailable}
+  def unmark_watched(actor, movie_id),
+    do: UnmarkWatchedMovie.call(actor, movie_id, EctoWatchedMoviesRepository)
 
   @spec list_review_items(AuthenticatedUser.t(), pos_integer()) ::
           {:ok, MovieReviewPage.t()} | {:error, reason()}

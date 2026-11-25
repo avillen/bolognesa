@@ -19,6 +19,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
     |> assign(:content_ref, {:movie, id})
     |> assign(:watched_attempt_id, nil)
     |> assign(:detail, nil)
+    |> assign(:watched_at, nil)
     |> assign(:loading?, true)
     |> assign(:error, nil)
     |> assign(:playback, PlaybackAttempt.new())

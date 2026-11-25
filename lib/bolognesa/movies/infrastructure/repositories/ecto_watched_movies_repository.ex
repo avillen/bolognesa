@@ -29,4 +29,17 @@ defmodule Bolognesa.Movies.Infrastructure.Repositories.EctoWatchedMoviesReposito
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
+
+  @impl true
+  def delete(user_id, movie_id) do
+    from(watched in MovieWatchedSchema,
+      where: watched.user_id == ^user_id and watched.movie_id == ^movie_id
+    )
+    |> Repo.delete_all(log: false)
+
+    :ok
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
 end

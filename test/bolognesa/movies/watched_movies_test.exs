@@ -17,6 +17,8 @@ defmodule Bolognesa.Movies.WatchedMoviesTest do
     @behaviour Bolognesa.Movies.Application.Ports.Repositories.WatchedMoviesRepository
     @impl true
     def upsert(_, _, _), do: {:error, :unavailable}
+    @impl true
+    def delete(_, _), do: {:error, :unavailable}
   end
 
   setup do
@@ -42,6 +44,22 @@ defmodule Bolognesa.Movies.WatchedMoviesTest do
 
     other = actor("other@example.com")
     assert {:ok, %{last_watched_at: nil}} = Movies.get_movie(other, ctx.movie.id)
+  end
+
+  test "marks a known movie now and unmarks it per account", ctx do
+    assert {:error, :forbidden} = Movies.mark_watched(nil, ctx.movie.id)
+    assert {:error, :forbidden} = Movies.unmark_watched(nil, ctx.movie.id)
+    assert {:error, :not_found} = Movies.mark_watched(ctx.actor, 99_999_999)
+
+    other = actor("other@example.com")
+    assert :ok = Movies.mark_watched(ctx.actor, ctx.movie.id)
+    assert :ok = Movies.mark_watched(other, ctx.movie.id)
+    assert {:ok, %{last_watched_at: %DateTime{}}} = Movies.get_movie(ctx.actor, ctx.movie.id)
+
+    assert :ok = Movies.unmark_watched(ctx.actor, ctx.movie.id)
+    assert :ok = Movies.unmark_watched(ctx.actor, ctx.movie.id)
+    assert {:ok, %{last_watched_at: nil}} = Movies.get_movie(ctx.actor, ctx.movie.id)
+    assert {:ok, %{last_watched_at: %DateTime{}}} = Movies.get_movie(other, ctx.movie.id)
   end
 
   test "the upsert retains the greatest timestamp", ctx do

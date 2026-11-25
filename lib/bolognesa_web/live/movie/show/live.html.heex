@@ -23,6 +23,7 @@
           {@detail.movie.title}
         </h1>
         <p class="mt-1 text-xs text-muted">{@detail.movie.year || gettext("Año desconocido")}</p>
+        <MediaComponents.watched_state id="movie-watched" watched_at={@watched_at} class="mt-1" />
       </header>
       <Player.player
         prefix="movie"
@@ -39,6 +40,7 @@
         attempt={@playback}
         entry_id={elem(@content_ref, 1)}
       />
+      <MediaComponents.watched_action id="movie-watched-action" watched?={!!@watched_at} />
       <section id="movie-synopsis" class="movie-synopsis">
         <h2 class="mb-3 text-base font-semibold text-ink">{gettext("Sinopsis")}</h2>
         <MediaComponents.synopsis
