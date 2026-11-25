@@ -17,6 +17,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.Initialize do
 
     socket
     |> assign(:content_ref, {:movie, id})
+    |> assign(:watched_attempt_id, nil)
     |> assign(:detail, nil)
     |> assign(:loading?, true)
     |> assign(:error, nil)

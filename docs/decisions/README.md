@@ -35,3 +35,4 @@
 | [0029](0029-series-watched-entries.md) | Implemented locally | Account-owned watched season entries, file-independent identity and playback observation |
 | [0030](0030-shared-identification-jobs.md) | Implemented locally | Shared Movies and Series job mechanics without shared business rules |
 | [0031](0031-copied-ui-components.md) | Implemented | SaladUI Button, Card and Alert copied in, adapted to the house and mapped onto the dark palette tokens |
+| [0032](0032-movies-watched-state.md) | Implemented locally | Account-owned watched movies, file-independent and recorded with the shared 0029 threshold |

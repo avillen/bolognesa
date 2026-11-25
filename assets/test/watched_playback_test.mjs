@@ -6,11 +6,11 @@ class Video extends EventTarget {
   constructor() { super(); this.currentTime = 0; this.duration = 500; this.paused = false; this.seeking = false; this.ended = false; this.dataset = {} }
 }
 
-test("uses whole-file HLS time and ignores preparation, stale sources and movies", () => {
+test("uses whole-file HLS time and ignores preparation and stale sources", () => {
   let now = 0
   const reports = [], video = new Video()
   const watched = createWatchedPlayback({video, clock: () => now, report: report => reports.push(report)})
-  const config = {recordWatched: "true", attemptId: "a", fileId: "7", playbackPhase: "ready"}
+  const config = {attemptId: "a", fileId: "7", playbackPhase: "ready"}
   Object.assign(video.dataset, config)
   watched.update(config)
   video.fileTimeline = {offset: 330, duration: 500}
@@ -24,9 +24,6 @@ test("uses whole-file HLS time and ignores preparation, stale sources and movies
   watched.update({...config, attemptId: "c"}) // old video dataset must not qualify
   for (let i = 0; i <= 150; i++) { now++; video.currentTime = i; video.dispatchEvent(new Event("timeupdate")) }
   assert.equal(reports.length, 1)
-  watched.update({...config, recordWatched: undefined})
-  for (let i = 0; i <= 150; i++) { now++; video.currentTime = i; video.dispatchEvent(new Event("timeupdate")) }
-  assert.equal(reports.length, 1)
   watched.destroy()
   assert.equal(reports.length, 1)
 })
@@ -38,7 +35,7 @@ test("records before the source controller advances on ended and detaches on tea
   video.pause = () => { video.paused = true }
   video.load = () => {}
   video.removeAttribute = () => {}
-  const el = {dataset: {recordWatched: "true", attemptId: "a", fileId: "7", playbackPhase: "ready",
+  const el = {dataset: {attemptId: "a", fileId: "7", playbackPhase: "ready",
     videoId: "video-7", recoveryScope: "scope", src: "/episode"}}
   const watched = createWatchedPlayback({video, clock: () => now, report: () => events.push("watched")})
   const recovery = {suspend() {}, beforeSourceChange() {}, source: () => true, ready() {}}
@@ -62,7 +59,7 @@ test("pending HLS seeks and replaced sources exclude gaps while retaining observ
   let now = 0
   const reports = [], video = new Video()
   const watched = createWatchedPlayback({video, clock: () => now, report: report => reports.push(report)})
-  const config = {recordWatched: "true", attemptId: "a", fileId: "7", playbackPhase: "ready"}
+  const config = {attemptId: "a", fileId: "7", playbackPhase: "ready"}
   Object.assign(video.dataset, config)
   watched.update(config)
   video.fileTimeline = {offset: 0, duration: 500}

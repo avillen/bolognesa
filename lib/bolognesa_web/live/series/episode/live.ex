@@ -2,7 +2,9 @@ defmodule BolognesaWeb.Series.Episode.Live do
   @moduledoc false
   # Capability reports are untrusted; only sanitized playback diagnostics may be logged.
   use BolognesaWeb, {:live_view, log: false}
+  alias Bolognesa.Series
   alias BolognesaWeb.LiveSupport.PlaybackEvents
+  alias BolognesaWeb.LiveSupport.WatchedRecording
   alias BolognesaWeb.MediaComponents
   alias BolognesaWeb.Params
   alias BolognesaWeb.Player
@@ -17,7 +19,6 @@ defmodule BolognesaWeb.Series.Episode.Live do
   alias BolognesaWeb.Series.Episode.Reducer.Initialize
   alias BolognesaWeb.Series.Episode.Reducer.Load
   alias BolognesaWeb.Series.Episode.Reducer.MarkWatched
-  alias BolognesaWeb.Series.Episode.Reducer.RecordWatchedEntries
   alias BolognesaWeb.Series.Episode.Reducer.SelectPart
   alias BolognesaWeb.Series.Episode.Reducer.UnmarkWatched
   alias BolognesaWeb.Series.Navigation
@@ -57,10 +58,8 @@ defmodule BolognesaWeb.Series.Episode.Live do
     do: {:noreply, ApplyResultCoordinator.call(socket, request_id, result)}
 
   @impl true
-  def handle_event("record_watched_entries", params, socket) do
-    socket = RecordWatchedEntries.call(socket, params)
-    {:reply, %{ok: socket.assigns.watched_attempt_id == params["attempt_id"]}, socket}
-  end
+  def handle_event("record_watched_entries", params, socket),
+    do: WatchedRecording.handle_event(params, socket, &Series.record_watched_entries/3)
 
   def handle_event("mark_watched", _params, socket), do: {:noreply, MarkWatched.call(socket)}
 

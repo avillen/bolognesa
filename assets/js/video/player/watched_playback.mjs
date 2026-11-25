@@ -1,11 +1,11 @@
 import {createWatchedActivity} from "./watched_activity.mjs"
 
-/** Adapts the stable video element and whole-file HLS timeline to Series observations. */
+/** Adapts the stable video element and whole-file HLS timeline to watched observations. */
 export function createWatchedPlayback({video, report, clock = () => performance.now() / 1000}) {
   const activity = createWatchedActivity({clock, report})
   let config = {}
   const sample = () => {
-    if (config.recordWatched !== "true" || config.playbackPhase !== "ready" || config.playbackError ||
+    if (config.playbackPhase !== "ready" || config.playbackError ||
         video.dataset.attemptId !== config.attemptId || video.dataset.fileId !== config.fileId ||
         video.fileTimeline?.pending) { activity.suspend(); return }
     activity.update({
@@ -21,7 +21,7 @@ export function createWatchedPlayback({video, report, clock = () => performance.
   return {
     update(next) {
       config = next
-      activity.select(config.recordWatched === "true" ? config.attemptId : null, config.fileId)
+      activity.select(config.attemptId, config.fileId)
       if (config.playbackPhase !== "ready" || config.playbackError) activity.suspend()
     },
     suspend: () => activity.suspend(),
