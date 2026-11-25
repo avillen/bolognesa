@@ -2,7 +2,7 @@ defmodule BolognesaWeb.Series.Season.Components.EpisodeCard do
   @moduledoc false
   use BolognesaWeb, :html
 
-  alias BolognesaWeb.Series.Components.WatchedState
+  alias BolognesaWeb.MediaComponents
   alias BolognesaWeb.Series.Navigation
 
   attr :id, :string, required: true
@@ -53,7 +53,7 @@ defmodule BolognesaWeb.Series.Season.Components.EpisodeCard do
               else: @episode.title}
           </h2>
           <p :if={@episode.overview} class="series-episode-overview">{@episode.overview}</p>
-          <WatchedState.watched_state
+          <MediaComponents.watched_state
             id={"episode-watched-#{@episode.key}"}
             watched_at={@episode.watched_at}
             class="mt-2"
