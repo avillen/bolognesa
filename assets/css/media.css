@@ -1,7 +1,6 @@
 /* Shared movie and series browsing, using the application palette. */
 .media-catalog-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
 .media-eyebrow { color: var(--color-accent-soft); font-size: 11px; font-weight: 650; letter-spacing: .16em; text-transform: uppercase; }
-.media-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
 .media-search-form { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 540px; }
 .media-search-field { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding-left: 14px; border: 1px solid var(--color-border-strong); border-radius: 7px; background: var(--color-surface); }
 .media-search-field > .size-5 { flex-shrink: 0; }
@@ -59,3 +58,21 @@
 .media-expandable-synopsis[data-expandable="false"] .media-read-less { display: none; }
 .media-expandable-synopsis summary:hover .media-read-more,
 .media-expandable-synopsis summary:hover .media-read-less { color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Catalog index: title, search and library options share one heading; columns follow the content width, including the sidebar. */
+.media-catalog { container-type: inline-size; }
+.media-catalog .media-poster-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, clamp(130px, 25cqi, 180px)), 1fr)); }
+.media-catalog .media-search-form { gap: 0; border: 1px solid var(--color-border-strong); border-radius: 7px; background: var(--color-surface); }
+.media-catalog .media-search-field { border: 0; background: transparent; }
+.media-catalog .media-search-field:focus-within { outline: none; }
+.media-catalog .media-search-form:focus-within { outline: 2px solid var(--color-accent-soft); outline-offset: 3px; }
+.media-index-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title options" "search search"; align-items: center; gap: 20px 12px; }
+.media-index-title { grid-area: title; min-width: 0; overflow-wrap: anywhere; font-size: clamp(32px, 6cqi, 52px); font-weight: 650; line-height: 1.02; letter-spacing: -.035em; color: var(--color-ink); }
+.media-index-heading .media-search-form { grid-area: search; max-width: none; }
+.media-index-heading .media-library-options { grid-area: options; }
+@container (min-width: 720px) {
+  .media-index-heading { grid-template-columns: minmax(0, 1fr) minmax(0, 380px) auto; grid-template-areas: "title search options"; }
+}
+.media-library-options { position: relative; flex-shrink: 0; }
+.media-options-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; width: min(260px, calc(100vw - 40px)); padding: 8px; border: 1px solid var(--color-border-strong); border-radius: 8px; background: var(--color-surface); box-shadow: 0 8px 32px #0006; }
+.media-catalog-count { padding-top: 16px; border-top: 1px solid var(--color-border); margin-block-end: 14px; }

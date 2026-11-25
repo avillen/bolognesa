@@ -26,7 +26,40 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     render_async(view)
     assert has_element?(view, "#movies-list")
     assert has_element?(view, "#movie-search-form")
-    assert has_element?(view, "#movies-empty")
+    assert has_element?(view, "#movies-empty", "No hay películas en esta biblioteca")
+    refute has_element?(view, "#movies-clear-search")
+    refute has_element?(view, "#movies-count")
+    assert has_element?(view, "#movies-screen[phx-hook='BrowsePosition'][data-loading='false']")
+
+    assert has_element?(
+             view,
+             "#movies-library-options #movies-review-link[href='/movies/review']"
+           )
+  end
+
+  test "search without matches offers a reset", %{conn: conn, token: token} do
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies?query=Nada")
+    render_async(view)
+    assert has_element?(view, "#movies-empty", "No hay películas que coincidan")
+    view |> element("#movies-clear-search") |> render_click()
+    assert_patch(view, "/movies")
+    render_async(view)
+    refute has_element?(view, "#movies-clear-search")
+  end
+
+  test "a failed load offers a retry", %{conn: conn, token: token} do
+    query = String.duplicate("a", 257)
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies?query=#{query}")
+    render_async(view)
+    assert has_element?(view, "#movies-error", "No se pudo cargar el catálogo.")
+
+    assert has_element?(
+             view,
+             "#movies-error a[href='/movies?page=1&query=#{query}']",
+             "Reintentar"
+           )
+
+    refute has_element?(view, "#movies-empty")
   end
 
   test "anonymous visitor is redirected", %{conn: conn} do
@@ -56,6 +89,7 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     view |> form("#movie-search-form", search: %{query: "L"}) |> render_change()
     render_async(view)
     assert has_element?(view, "#movie-link-#{movie.id}")
+    assert has_element?(view, "#movies-count", "1 película")
 
     view |> form("#movie-search-form", search: %{query: ""}) |> render_change()
     render_async(view)
