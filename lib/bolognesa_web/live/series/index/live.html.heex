@@ -29,15 +29,26 @@
       aria-labelledby="series-continue-shelf-title"
     >
       <h2 id="series-continue-shelf-title" class="sr-only">{gettext("Seguir viendo")}</h2>
-      <div class="series-continue">
-        <ContinueTile.continue_tile
+      <div class="media-shelf">
+        <MediaComponents.shelf_tile
           :for={{{series, target}, index} <- Enum.with_index(@recent_series)}
           id={"recent-series-#{series.id}"}
-          series={series}
-          target={target}
-          series_params={@series_params}
+          title={series.title}
+          navigate={~p"/series/#{series.id}?#{@series_params}"}
+          art={series.backdrop_path || series.poster_path}
+          icon="hero-tv"
+          overview={series.overview}
           lead?={index == 0}
-        />
+        >
+          <:action :let={class}>
+            <ContinueLink.continue_link
+              id={"recent-series-continue-#{series.id}"}
+              target={target}
+              series_params={@series_params}
+              class={class}
+            />
+          </:action>
+        </MediaComponents.shelf_tile>
       </div>
     </section>
     <p :if={@loading?} id="series-loading" role="status" class="text-muted">
