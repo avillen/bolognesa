@@ -8,10 +8,8 @@ defmodule BolognesaWeb.Series.Episode.Live do
   alias BolognesaWeb.MediaComponents
   alias BolognesaWeb.Params
   alias BolognesaWeb.Player
-  alias BolognesaWeb.Series.Components.WatchedState
   alias BolognesaWeb.Series.Episode.Components.EpisodeNavigation
   alias BolognesaWeb.Series.Episode.Components.VersionCard
-  alias BolognesaWeb.Series.Episode.Components.WatchedAction
   alias BolognesaWeb.Series.Episode.Parts
   alias BolognesaWeb.Series.Episode.Reducer.Advance
   alias BolognesaWeb.Series.Episode.Reducer.ApplyAdvanceResult

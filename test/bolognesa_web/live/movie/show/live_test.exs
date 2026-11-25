@@ -301,13 +301,45 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       })
 
       assert Repo.all(MovieWatchedSchema) == []
+      refute has_element?(ctx.view, "#movie-watched")
 
       render_hook(ctx.view, "record_watched_entries", report)
       assert [%{movie_id: movie_id, last_watched_at: watched_at}] = Repo.all(MovieWatchedSchema)
       assert movie_id == ctx.movie.id
+      assert has_element?(ctx.view, "#movie-watched", "Visto")
+      assert has_element?(ctx.view, "#movie-watched-action", "Marcar como no visto")
 
       render_hook(ctx.view, "record_watched_entries", report)
       assert [%{last_watched_at: ^watched_at}] = Repo.all(MovieWatchedSchema)
+    end
+
+    test "the movie can be marked as watched and unmarked", ctx do
+      assert has_element?(ctx.view, "#movie-watched-action", "Marcar como visto")
+      refute has_element?(ctx.view, "#movie-watched")
+
+      assert ctx.view |> element("#movie-watched-action") |> render_click() =~
+               "Marcado como visto."
+
+      assert has_element?(ctx.view, "#movie-watched-action", "Marcar como no visto")
+      assert has_element?(ctx.view, "#movie-watched", "Visto")
+      assert [%{movie_id: movie_id}] = Repo.all(MovieWatchedSchema)
+      assert movie_id == ctx.movie.id
+
+      assert ctx.view |> element("#movie-watched-action") |> render_click() =~
+               "Marcado como no visto."
+
+      assert has_element?(ctx.view, "#movie-watched-action", "Marcar como visto")
+      refute has_element?(ctx.view, "#movie-watched")
+      assert Repo.all(MovieWatchedSchema) == []
+    end
+
+    test "shows the stored watched date when opening the movie", ctx do
+      ctx.view |> element("#movie-watched-action") |> render_click()
+      Repo.update_all(MovieWatchedSchema, set: [last_watched_at: ~U[2026-01-02 10:00:00.000000Z]])
+      {:ok, view, _} = live(ctx.conn, ~p"/movies/#{ctx.movie.id}")
+      render_async(view)
+
+      assert has_element?(view, "#movie-watched time[datetime='2026-01-02']", "02/01/2026")
     end
 
     test "skips unavailable versions when opening the movie", ctx do

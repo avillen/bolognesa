@@ -15,6 +15,7 @@ defmodule BolognesaWeb.Movie.Show.Reducer.ApplyResult do
     socket
     |> assign(:loading?, false)
     |> assign(:detail, detail)
+    |> assign(:watched_at, detail.last_watched_at)
     |> select_first_available(detail.versions)
   end
 

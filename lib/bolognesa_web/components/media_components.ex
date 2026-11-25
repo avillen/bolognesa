@@ -23,6 +23,43 @@ defmodule BolognesaWeb.MediaComponents do
     """
   end
 
+  attr :id, :string, required: true
+
+  attr :watched_at, :any,
+    default: nil,
+    doc: "DateTime of the latest viewing, or nil when unwatched"
+
+  attr :class, :string, default: nil
+
+  @spec watched_state(map()) :: Phoenix.LiveView.Rendered.t()
+  def watched_state(assigns) do
+    ~H"""
+    <p :if={@watched_at} id={@id} class={["text-xs text-muted", @class]}>
+      {gettext("Visto")} ·
+      <time datetime={Date.to_iso8601(@watched_at)}>{Calendar.strftime(@watched_at, "%d/%m/%Y")}</time>
+    </p>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :watched?, :boolean, required: true
+
+  @spec watched_action(map()) :: Phoenix.LiveView.Rendered.t()
+  def watched_action(assigns) do
+    ~H"""
+    <Button.button
+      id={@id}
+      type="button"
+      phx-click={if @watched?, do: "unmark_watched", else: "mark_watched"}
+      variant="outline"
+      class="mt-4"
+    >
+      <.icon name={if @watched?, do: "hero-eye-slash", else: "hero-eye"} class="size-4" />
+      {if @watched?, do: gettext("Marcar como no visto"), else: gettext("Marcar como visto")}
+    </Button.button>
+    """
+  end
+
   attr :title, :string, required: true
   attr :form, Phoenix.HTML.Form, required: true
   attr :search_id, :string, required: true

@@ -4,6 +4,7 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoWatchedMoviesReader do
   import Ecto.Query
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Infrastructure.Persistence.MovieWatchedSchema
   alias Bolognesa.Repo
 
@@ -17,6 +18,16 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoWatchedMoviesReader do
        ),
        log: false
      )}
+  rescue
+    DBConnection.ConnectionError -> {:error, :unavailable}
+    Postgrex.Error -> {:error, :unavailable}
+  end
+
+  @impl true
+  def fetch_movie(movie_id) do
+    if Repo.exists?(from(movie in MovieSchema, where: movie.id == ^movie_id), log: false),
+      do: :ok,
+      else: {:error, :not_found}
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}

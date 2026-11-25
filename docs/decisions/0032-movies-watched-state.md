@@ -26,6 +26,10 @@ per-attempt deduplication as the episode page through a shared LiveView helper.
 Recording failures emit sanitized Movies observations through the shared Events
 contract. Movie details return the account's `last_watched_at`, if any.
 
+Accounts can also mark a catalog movie as watched now, and unmark it by deleting
+its row. The movie page shows the latest watched date and updates it when a playback
+qualifies, without a reload.
+
 A movie has no parts or episode order, so there is no watch count, history, resume
 position or Continue target.
 

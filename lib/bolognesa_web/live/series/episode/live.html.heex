@@ -111,8 +111,9 @@
         series_params={@series_params}
         season_params={@season_params}
       />
-      <WatchedAction.watched_action
+      <MediaComponents.watched_action
         :if={@active_part || @parts == []}
+        id="episode-watched-action"
         watched?={Map.has_key?(@watched_at, @active_part)}
       />
       <p
@@ -155,7 +156,10 @@
               )}</time>
             </span>
           </p>
-          <WatchedState.watched_state id="episode-watched" watched_at={@watched_at[@active_part]} />
+          <MediaComponents.watched_state
+            id="episode-watched"
+            watched_at={@watched_at[@active_part]}
+          />
         </div>
       </section>
       <details
