@@ -14,7 +14,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
-  alias Bolognesa.Infrastructure.Persistence.WatchedMovieSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieWatchedSchema
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias Bolognesa.Repo
 
@@ -300,14 +300,14 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
         | "file_id" => to_string(ctx.missing.id)
       })
 
-      assert Repo.all(WatchedMovieSchema) == []
+      assert Repo.all(MovieWatchedSchema) == []
 
       render_hook(ctx.view, "record_watched_entries", report)
-      assert [%{movie_id: movie_id, last_watched_at: watched_at}] = Repo.all(WatchedMovieSchema)
+      assert [%{movie_id: movie_id, last_watched_at: watched_at}] = Repo.all(MovieWatchedSchema)
       assert movie_id == ctx.movie.id
 
       render_hook(ctx.view, "record_watched_entries", report)
-      assert [%{last_watched_at: ^watched_at}] = Repo.all(WatchedMovieSchema)
+      assert [%{last_watched_at: ^watched_at}] = Repo.all(MovieWatchedSchema)
     end
 
     test "skips unavailable versions when opening the movie", ctx do

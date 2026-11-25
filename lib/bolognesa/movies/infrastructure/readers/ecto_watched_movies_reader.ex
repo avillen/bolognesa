@@ -4,14 +4,14 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoWatchedMoviesReader do
   import Ecto.Query
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieIdentificationSchema
-  alias Bolognesa.Infrastructure.Persistence.WatchedMovieSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieWatchedSchema
   alias Bolognesa.Repo
 
   @impl true
   def fetch_last_watched_at(user_id, movie_id) do
     {:ok,
      Repo.one(
-       from(watched in WatchedMovieSchema,
+       from(watched in MovieWatchedSchema,
          where: watched.user_id == ^user_id and watched.movie_id == ^movie_id,
          select: watched.last_watched_at
        ),

@@ -2,8 +2,8 @@ defmodule Bolognesa.Movies.WatchedMoviesTest do
   use Bolognesa.DataCase, async: true
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.MovieWatchedSchema
   alias Bolognesa.Infrastructure.Persistence.UserSchema
-  alias Bolognesa.Infrastructure.Persistence.WatchedMovieSchema
   alias Bolognesa.MovieIdentificationFixtures
   alias Bolognesa.Movies
   alias Bolognesa.Movies.Application.UseCases.RecordWatchedMovie
@@ -38,7 +38,7 @@ defmodule Bolognesa.Movies.WatchedMoviesTest do
     assert {:ok, %{last_watched_at: second}} = Movies.get_movie(ctx.actor, ctx.movie.id)
 
     assert DateTime.compare(second, first) != :lt
-    assert Repo.aggregate(WatchedMovieSchema, :count) == 1
+    assert Repo.aggregate(MovieWatchedSchema, :count) == 1
 
     other = actor("other@example.com")
     assert {:ok, %{last_watched_at: nil}} = Movies.get_movie(other, ctx.movie.id)
@@ -64,13 +64,13 @@ defmodule Bolognesa.Movies.WatchedMoviesTest do
     assert {:error, :not_found} =
              Movies.record_watched(ctx.actor, ctx.movie.id, ctx.media_file.id)
 
-    assert Repo.all(WatchedMovieSchema) == []
+    assert Repo.all(MovieWatchedSchema) == []
   end
 
   test "failed persistence emits a sanitized Movies observation", ctx do
     reference = make_ref()
     owner = self()
-    event = [:bolognesa, :movies, :watched_entries, :failed]
+    event = [:bolognesa, :movies, :watched, :failed]
 
     :ok =
       :telemetry.attach(
@@ -101,12 +101,12 @@ defmodule Bolognesa.Movies.WatchedMoviesTest do
     assert {:ok, %DateTime{}} = Reader.fetch_last_watched_at(ctx.actor.id, ctx.movie.id)
 
     Repo.delete!(Repo.get!(UserSchema, ctx.actor.id))
-    assert Repo.all(WatchedMovieSchema) == []
+    assert Repo.all(MovieWatchedSchema) == []
 
     other = actor("cascade@example.com")
     assert :ok = Repository.upsert(other.id, ctx.movie.id, DateTime.utc_now())
     Repo.delete!(Repo.get!(MovieSchema, ctx.movie.id))
-    assert Repo.all(WatchedMovieSchema) == []
+    assert Repo.all(MovieWatchedSchema) == []
   end
 
   defp actor(email, role \\ "member") do

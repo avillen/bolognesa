@@ -10,7 +10,7 @@ versions, and rescans or replacements change the files without changing the movi
 
 ## Decision
 
-Movies owns one `watched_movies` row per account and catalog movie, with only
+Movies owns one `movies_watched` row per account and catalog movie, with only
 `last_watched_at`. The composite primary key makes the atomic upsert retain the
 greatest timestamp. The global persistence schema follows
 [0008](0008-global-persistence-schemas.md).
