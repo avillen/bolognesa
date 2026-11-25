@@ -2253,3 +2253,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "No hay películas que coincidan con tu búsqueda."
 msgstr ""
+
+#: lib/bolognesa_web/live/movie/index/live.html.heex
+#, elixir-autogen, elixir-format
+msgid "Vistas recientemente"
+msgstr ""
+
+#: lib/bolognesa_web/live/movie/index/live.html.heex
+#, elixir-autogen, elixir-format
+msgid "Ver ficha"
+msgstr ""

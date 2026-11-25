@@ -145,6 +145,41 @@ defmodule Bolognesa.Movies.WatchedMoviesTest do
              %{ctx.movie.id => watched_at, unwatched.id => nil}
   end
 
+  test "lists the three most recently watched movies, newest first", ctx do
+    assert {:error, :forbidden} = Movies.list_recent_movies(nil, nil)
+    assert {:ok, []} = Movies.list_recent_movies(ctx.actor, nil)
+
+    [second, third, fourth] = for id <- 2..4, do: movie(id)
+
+    for {movie, days_ago} <- [{ctx.movie, 4}, {second, 3}, {third, 1}, {fourth, 2}],
+        do: watch(ctx.actor.id, movie, days_ago)
+
+    watch(actor("other@example.com").id, ctx.movie, 0)
+
+    assert recent(ctx.actor, nil) == [third.id, fourth.id, second.id]
+  end
+
+  test "filters recent movies by the library of their identified files", ctx do
+    elsewhere = movie(2)
+    identify(SeriesFixtures.file(SeriesFixtures.library(:movie).id, "other.mkv"), elsewhere)
+    watch(ctx.actor.id, ctx.movie, 2)
+    watch(ctx.actor.id, elsewhere, 1)
+
+    assert recent(ctx.actor, ctx.library.id) == [ctx.movie.id]
+    assert recent(ctx.actor, nil) == [elsewhere.id, ctx.movie.id]
+    assert {:error, :invalid_query} = Movies.list_recent_movies(ctx.actor, 0)
+  end
+
+  defp watch(user_id, movie, days_ago),
+    do:
+      :ok =
+        Repository.upsert(user_id, movie.id, DateTime.add(DateTime.utc_now(), -days_ago, :day))
+
+  defp recent(actor, library_id) do
+    {:ok, movies} = Movies.list_recent_movies(actor, library_id)
+    Enum.map(movies, & &1.id)
+  end
+
   defp actor(email, role \\ "member") do
     user =
       Repo.insert!(%UserSchema{name: "Viewer", email: email, hashed_password: "hash", role: role})

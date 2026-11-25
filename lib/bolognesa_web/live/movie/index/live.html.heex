@@ -23,6 +23,36 @@
         {gettext("Revisar identificaciones")}
       </.link>
     </MediaComponents.catalog_header>
+    <section
+      :if={@recent_movies != [] && @query == ""}
+      id="movies-recent-shelf"
+      aria-labelledby="movies-recent-shelf-title"
+    >
+      <h2 id="movies-recent-shelf-title" class="sr-only">{gettext("Vistas recientemente")}</h2>
+      <div class="media-shelf">
+        <MediaComponents.shelf_tile
+          :for={{movie, index} <- Enum.with_index(@recent_movies)}
+          id={"recent-movie-#{movie.id}"}
+          title={movie.title}
+          navigate={~p"/movies/#{movie.id}?#{@library_params}"}
+          art={movie.backdrop_path || movie.poster_path}
+          icon="hero-film"
+          overview={movie.overview}
+          lead?={index == 0}
+        >
+          <:action :let={class}>
+            <.link
+              id={"recent-movie-open-#{movie.id}"}
+              navigate={~p"/movies/#{movie.id}?#{@library_params}"}
+              class={class}
+            >
+              <.icon name="hero-information-circle" class="size-5" />
+              {gettext("Ver ficha")}
+            </.link>
+          </:action>
+        </MediaComponents.shelf_tile>
+      </div>
+    </section>
     <p :if={@loading?} id="movies-loading" role="status" class="text-muted">
       {gettext("Cargando películas…")}
     </p>

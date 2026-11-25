@@ -8,6 +8,7 @@ defmodule Bolognesa.Movies do
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems.Response, as: MovieReviewPage
   alias Bolognesa.Movies.Application.UseCases.ListMovies
+  alias Bolognesa.Movies.Application.UseCases.ListRecentMovies
   alias Bolognesa.Movies.Application.UseCases.ListMovies.Response, as: MoviePage
   alias Bolognesa.Movies.Application.UseCases.MarkWatchedMovie
   alias Bolognesa.Movies.Application.UseCases.RecordWatchedMovie
@@ -54,6 +55,12 @@ defmodule Bolognesa.Movies do
           {:ok, MovieDetail.t()} | {:error, reason()}
   def get_movie(actor, id),
     do: GetMovie.call(actor, id, EctoMoviesReader, EctoWatchedMoviesReader)
+
+  @doc "List up to three recently watched movies within the selected library, or all libraries."
+  @spec list_recent_movies(AuthenticatedUser.t() | nil, pos_integer() | nil) ::
+          ListRecentMovies.result()
+  def list_recent_movies(actor, library_id),
+    do: ListRecentMovies.call(actor, library_id, EctoWatchedMoviesReader)
 
   @doc "Record a client-qualified playback; the caller must correlate and deduplicate the current attempt."
   @spec record_watched(AuthenticatedUser.t() | nil, Movie.id(), pos_integer()) ::

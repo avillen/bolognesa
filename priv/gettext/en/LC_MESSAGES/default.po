@@ -2244,3 +2244,13 @@ msgstr "No movies in this library yet. Scan a movie library or review identifica
 #, elixir-autogen, elixir-format
 msgid "No hay películas que coincidan con tu búsqueda."
 msgstr "No movies match your search."
+
+#: lib/bolognesa_web/live/movie/index/live.html.heex
+#, elixir-autogen, elixir-format
+msgid "Vistas recientemente"
+msgstr "Recently watched"
+
+#: lib/bolognesa_web/live/movie/index/live.html.heex
+#, elixir-autogen, elixir-format
+msgid "Ver ficha"
+msgstr "View details"
