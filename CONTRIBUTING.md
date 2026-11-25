@@ -96,6 +96,8 @@ Code lives in `lib/bolognesa/` and `lib/bolognesa_web/`, with corresponding test
 
 Explain the problem, the change, and how you checked it. Mention anything you could not verify.
 
+CI runs `mix format --check-formatted`, `mix compile --warnings-as-errors`, `mix credo --strict`, `mix test`, and Dialyzer. Dialyzer runs only in CI because it overloads developer machines: do not run `mix dialyzer` locally or add it to `mix precommit`; push and read the CI result instead.
+
 For interface changes, run `make screenshots` and include changed captures; `make check-screenshots` checks them against the pinned browser environment and tolerates only faint rasterization noise. CI captures are the source of truth: if a local capture still differs in CI, run the *README screenshots* workflow manually on your branch with `update` enabled to commit the CI-rendered images, then re-run the checks. This requires Docker and Node.js/npm. Synthetic captures verify specific interactions, not general device compatibility.
 
 Contributions are distributed under [MIT](LICENSE); preserve third-party notices.

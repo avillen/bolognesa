@@ -11,7 +11,9 @@ defmodule Bolognesa.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      # CI-only (see CONTRIBUTING); PLTs live in _build/plts so CI can cache them.
+      dialyzer: [plt_core_path: "_build/plts", plt_local_path: "_build/plts"]
     ]
   end
 
@@ -50,6 +52,7 @@ defmodule Bolognesa.MixProject do
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:phoenix_live_view, "~> 1.2.0"},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},
