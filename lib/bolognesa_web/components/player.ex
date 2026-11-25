@@ -32,7 +32,7 @@ defmodule BolognesaWeb.Player do
       <div
         id={"#{@prefix}-video-frame"}
         phx-hook="VideoPlayer"
-        data-record-watched={@kind == :episode && "true"}
+        data-record-watched="true"
         data-attempt-id={@attempt.id}
         data-playback-phase={@attempt.phase}
         data-playback-probe={@attempt.probe && Jason.encode!(@attempt.probe)}

@@ -2,7 +2,9 @@ defmodule BolognesaWeb.Movie.Show.Live do
   @moduledoc false
   # Capability reports are untrusted; only sanitized playback diagnostics may be logged.
   use BolognesaWeb, {:live_view, log: false}
+  alias Bolognesa.Movies
   alias BolognesaWeb.LiveSupport.PlaybackEvents
+  alias BolognesaWeb.LiveSupport.WatchedRecording
   alias BolognesaWeb.MediaComponents
   alias BolognesaWeb.Movie.Show.Components.VersionCard
   alias BolognesaWeb.Movie.Show.Reducer.ApplyResult
@@ -18,6 +20,9 @@ defmodule BolognesaWeb.Movie.Show.Live do
     do: {:noreply, ApplyResult.call(socket, request_id, result)}
 
   @impl true
+  def handle_event("record_watched_entries", params, socket),
+    do: WatchedRecording.handle_event(params, socket, &Movies.record_watched/3)
+
   def handle_event(event, params, socket), do: PlaybackEvents.handle_event(event, params, socket)
   @impl true
   def handle_info(message, socket), do: PlaybackEvents.handle_info(message, socket)

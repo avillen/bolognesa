@@ -1,5 +1,5 @@
 defmodule Bolognesa.Movies do
-  @moduledoc "Owns movie browsing, identification, corrections, and recovery."
+  @moduledoc "Owns movie browsing, identification, corrections, recovery, and watched state."
   alias Bolognesa.Accounts.Domain.Entities.AuthenticatedUser
   alias Bolognesa.Movies.Application.Ports.Providers.MovieProvider
   alias Bolognesa.Movies.Application.UseCases.CorrectMovieIdentification
@@ -9,6 +9,7 @@ defmodule Bolognesa.Movies do
   alias Bolognesa.Movies.Application.UseCases.ListMovieReviewItems.Response, as: MovieReviewPage
   alias Bolognesa.Movies.Application.UseCases.ListMovies
   alias Bolognesa.Movies.Application.UseCases.ListMovies.Response, as: MoviePage
+  alias Bolognesa.Movies.Application.UseCases.RecordWatchedMovie
   alias Bolognesa.Movies.Application.UseCases.RetryIdentification
   alias Bolognesa.Movies.Application.UseCases.SearchMovieCandidates
   alias Bolognesa.Movies.Domain.Entities.Identification
@@ -16,7 +17,9 @@ defmodule Bolognesa.Movies do
   alias Bolognesa.Movies.Infrastructure.Providers.TmdbMovieProvider
   alias Bolognesa.Movies.Infrastructure.Readers.EctoMovieReviewReader
   alias Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader
+  alias Bolognesa.Movies.Infrastructure.Readers.EctoWatchedMoviesReader
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoIdentificationRepository
+  alias Bolognesa.Movies.Infrastructure.Repositories.EctoWatchedMoviesRepository
 
   @type reason ::
           :forbidden
@@ -43,9 +46,24 @@ defmodule Bolognesa.Movies do
   def list_movies(actor, query, page, library_id \\ nil),
     do: ListMovies.call(actor, query, page, EctoMoviesReader, library_id)
 
+  @doc "Read a movie with its versions and the account's latest watched date, if any."
   @spec get_movie(AuthenticatedUser.t(), Movie.id()) ::
           {:ok, MovieDetail.t()} | {:error, reason()}
-  def get_movie(actor, id), do: GetMovie.call(actor, id, EctoMoviesReader)
+  def get_movie(actor, id),
+    do: GetMovie.call(actor, id, EctoMoviesReader, EctoWatchedMoviesReader)
+
+  @doc "Record a client-qualified playback; the caller must correlate and deduplicate the current attempt."
+  @spec record_watched(AuthenticatedUser.t() | nil, Movie.id(), pos_integer()) ::
+          RecordWatchedMovie.result()
+  def record_watched(actor, movie_id, file_id),
+    do:
+      RecordWatchedMovie.call(
+        actor,
+        movie_id,
+        file_id,
+        EctoWatchedMoviesReader,
+        EctoWatchedMoviesRepository
+      )
 
   @spec list_review_items(AuthenticatedUser.t(), pos_integer()) ::
           {:ok, MovieReviewPage.t()} | {:error, reason()}

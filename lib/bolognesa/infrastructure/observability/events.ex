@@ -26,6 +26,7 @@ defmodule Bolognesa.Infrastructure.Observability.Events do
       :stale,
       :rejected
     ],
+    {:movies, :watched_entries} => [:failed],
     {:movies, :correction} => [:completed, :failed, :stale],
     {:movies, :provider} => [:failed],
     {:movies, :reconciliation} => [:recovered, :failed],

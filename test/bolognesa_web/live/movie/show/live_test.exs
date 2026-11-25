@@ -14,6 +14,7 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
   alias Bolognesa.Infrastructure.Persistence.LibrarySchema
   alias Bolognesa.Infrastructure.Persistence.MediaFileSchema
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
+  alias Bolognesa.Infrastructure.Persistence.WatchedMovieSchema
   alias Bolognesa.Playback.Infrastructure.TranscodeManager
   alias Bolognesa.Repo
 
@@ -286,6 +287,28 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
       refute has_element?(view, "#movie-video-frame[data-video-id='movie-video-#{first.id}']")
       refute has_element?(view, "#movie-playback-error")
       refute has_element?(view, "#movie-playback-preparing")
+    end
+
+    test "watched reports require the current attempt and file and record once", ctx do
+      assert has_element?(ctx.view, "#movie-video-frame[data-record-watched='true']")
+      attempt = playback_attempt(ctx.view)
+      report = %{"attempt_id" => attempt, "file_id" => to_string(ctx.first.id)}
+
+      render_hook(ctx.view, "record_watched_entries", %{report | "attempt_id" => "stale"})
+
+      render_hook(ctx.view, "record_watched_entries", %{
+        report
+        | "file_id" => to_string(ctx.missing.id)
+      })
+
+      assert Repo.all(WatchedMovieSchema) == []
+
+      render_hook(ctx.view, "record_watched_entries", report)
+      assert [%{movie_id: movie_id, last_watched_at: watched_at}] = Repo.all(WatchedMovieSchema)
+      assert movie_id == ctx.movie.id
+
+      render_hook(ctx.view, "record_watched_entries", report)
+      assert [%{last_watched_at: ^watched_at}] = Repo.all(WatchedMovieSchema)
     end
 
     test "skips unavailable versions when opening the movie", ctx do
