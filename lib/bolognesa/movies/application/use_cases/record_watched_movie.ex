@@ -28,7 +28,7 @@ defmodule Bolognesa.Movies.Application.UseCases.RecordWatchedMovie do
   defp observe(:ok, _actor, _file_id), do: :ok
 
   defp observe({:error, reason} = result, actor, file_id) do
-    Events.emit(:movies, :watched_entries, :failed, %{
+    Events.emit(:movies, :watched, :failed, %{
       user_id: if(actor, do: actor.id),
       file_id: file_id,
       reason: reason
