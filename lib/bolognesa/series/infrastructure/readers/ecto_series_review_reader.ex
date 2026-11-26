@@ -15,6 +15,8 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReviewReader do
   alias Bolognesa.Series.Domain.ValueObjects.SeriesCandidate
   alias Bolognesa.Series.Infrastructure.Repositories.IdentificationMapper
 
+  @page_size 24
+
   @impl true
   def list_series_review_items(page) do
     base =
@@ -34,8 +36,8 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReviewReader do
       Repo.all(
         from([decision, file] in base,
           order_by: file.id,
-          limit: 24,
-          offset: ^((page - 1) * 24),
+          limit: @page_size,
+          offset: ^((page - 1) * @page_size),
           select: {decision, file}
         ),
         log: false
