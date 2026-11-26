@@ -7,7 +7,7 @@ Tests focus on observable behavior and protect contracts while allowing implemen
 1. Read existing tests for the behavior being changed.
 2. For functional changes, add or update a relevant scenario and verify that it fails for the expected reason.
 3. Implement the smallest change that makes it pass, then refactor while preserving verified behavior.
-4. Run focused checks, then `sh scripts/dev/local.sh test` (the worktree-aware wrapper for `mix precommit`) after significant work. See [CONTRIBUTING](../../CONTRIBUTING.md#native-development) for setup.
+4. Run focused checks, then `sh scripts/dev/local.sh test` (the worktree-aware wrapper for `mix precommit`) after significant work. See [CONTRIBUTING](../../CONTRIBUTING.md#native-development) for setup. CI also runs Dialyzer, which `mix precommit` leaves out because it is slow.
 
 Documentation-only and formatting changes do not need artificial red/green tests. Refactors rely on existing coverage; address relevant gaps when found.
 

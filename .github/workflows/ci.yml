@@ -62,4 +62,29 @@ jobs:
 
       - run: mix compile --warnings-as-errors
 
+      - run: mix credo --strict
+
       - run: mix test
+
+      - name: Restore Dialyzer PLTs
+        id: plt-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: _build/plts
+          key: ${{ runner.os }}-plts-otp-28.3.3-elixir-1.20.3-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-plts-otp-28.3.3-elixir-1.20.3-
+
+      - name: Build Dialyzer PLTs
+        if: steps.plt-cache.outputs.cache-hit != 'true'
+        run: mix dialyzer --plt
+
+      # Saved before the analysis so a Dialyzer warning does not discard the PLTs.
+      - name: Save Dialyzer PLTs
+        if: steps.plt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: _build/plts
+          key: ${{ steps.plt-cache.outputs.cache-primary-key }}
+
+      - run: mix dialyzer

@@ -1,6 +1,6 @@
 defmodule Bolognesa.Music.Domain.ValueObjects.CatalogMetadata do
   @moduledoc "Musical metadata prepared for the catalog with fallbacks and a grouping parent."
-  alias Bolognesa.Music.Domain.ValueObjects.Observation
+  alias Bolognesa.Music.Domain.ValueObjects.FileTags
 
   @type t :: %__MODULE__{
           title: String.t(),
@@ -24,7 +24,11 @@ defmodule Bolognesa.Music.Domain.ValueObjects.CatalogMetadata do
     :year
   ]
 
-  @spec from_observation(Observation.t()) :: t()
+  @spec from_observation(%{
+          :relative_path => binary(),
+          :music_tags => FileTags.t(),
+          optional(atom()) => any()
+        }) :: t()
   def from_observation(observation) do
     tags = observation.music_tags
     parts = :binary.split(observation.relative_path, "/", [:global])

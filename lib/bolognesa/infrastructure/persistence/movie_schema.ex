@@ -5,6 +5,18 @@ defmodule Bolognesa.Infrastructure.Persistence.MovieSchema do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          provider: :tmdb | nil,
+          provider_id: integer() | nil,
+          title: String.t() | nil,
+          original_title: String.t() | nil,
+          year: integer() | nil,
+          overview: String.t() | nil,
+          poster_path: String.t() | nil,
+          backdrop_path: String.t() | nil
+        }
+
   schema "movies" do
     field :provider, Ecto.Enum, values: [:tmdb], default: :tmdb
     field :provider_id, :integer

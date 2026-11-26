@@ -3,8 +3,11 @@ defmodule Bolognesa.Infrastructure.Jobs.IdentificationJob do
 
   alias Bolognesa.Infrastructure.Observability.Events
 
-  @spec insert(Ecto.Multi.t(), module(), %{media_file_id: pos_integer(), token: String.t()}) ::
-          Ecto.Multi.t()
+  @spec insert(
+          Ecto.Multi.t(),
+          module(),
+          %{:media_file_id => pos_integer(), :token => String.t(), optional(atom()) => any()}
+        ) :: Ecto.Multi.t()
   def insert(multi, worker, decision) do
     Oban.insert(
       multi,

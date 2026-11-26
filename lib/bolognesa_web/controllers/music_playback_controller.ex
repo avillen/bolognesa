@@ -1,6 +1,5 @@
 defmodule BolognesaWeb.MusicPlaybackController do
   use BolognesaWeb, :controller
-  require Logger
 
   alias Bolognesa.Music
   alias Bolognesa.Playback
@@ -28,12 +27,7 @@ defmodule BolognesaWeb.MusicPlaybackController do
         src: ~p"/music/tracks/#{track_id}/media/#{file_id}"
       })
     else
-      {:error, reason} ->
-        error(conn, reason)
-
-      _other ->
-        Logger.error("music playback selection failed", reason: :unexpected)
-        error(conn, :unavailable)
+      {:error, reason} -> error(conn, reason)
     end
   end
 
