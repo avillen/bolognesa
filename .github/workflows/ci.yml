@@ -66,7 +66,6 @@ jobs:
 
       - run: mix test
 
-      # Dialyzer is CI-only: it overloads developer machines.
       - name: Restore Dialyzer PLTs
         id: plt-cache
         uses: actions/cache/restore@v5

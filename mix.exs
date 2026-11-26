@@ -12,7 +12,7 @@ defmodule Bolognesa.MixProject do
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
-      # CI-only (see CONTRIBUTING); PLTs live in _build/plts so CI can cache them.
+      # PLTs live in _build/plts so CI can cache them.
       dialyzer: [plt_core_path: "_build/plts", plt_local_path: "_build/plts"]
     ]
   end
