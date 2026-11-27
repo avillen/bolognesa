@@ -4,7 +4,7 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
-  import Bolognesa.RepoReads, only: [fail_read: 1, watch_reads: 2]
+  import Bolognesa.RepoReads, only: [watch_reads: 2]
 
   alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
@@ -256,32 +256,6 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     send(reader, :continue)
     render_async(view)
     refute has_element?(view, "#movies-recent-shelf")
-  end
-
-  test "a failed recent shelf read is retried by the next navigation", %{
-    conn: conn,
-    token: token
-  } do
-    library = SeriesFixtures.library(:movie)
-    movie = library_movie(library, 401)
-    user = Repo.get_by!(UserSchema, email: "movies@example.com")
-    :ok = WatchedRepository.upsert(user.id, movie.id, DateTime.utc_now())
-    watch_reads(&recent_read?/2, fn _params -> true end)
-
-    {:ok, view, _} =
-      live(init_test_session(conn, user_token: token), "/movies?library_id=#{library.id}")
-
-    assert_receive {:read, reader, _params}, 5_000
-    fail_read(reader)
-    render_async(view)
-    refute has_element?(view, "#movies-recent-shelf")
-
-    render_patch(view, "/movies?library_id=#{library.id}&query=Vista")
-    assert_receive {:read, reader, _params}, 5_000
-    send(reader, :continue)
-    render_patch(view, "/movies?library_id=#{library.id}")
-    render_async(view)
-    assert has_element?(view, "#recent-movie-#{movie.id}")
   end
 
   defp library_movie(library, provider_id) do

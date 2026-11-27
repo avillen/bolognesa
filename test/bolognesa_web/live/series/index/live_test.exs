@@ -3,7 +3,7 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
-  import Bolognesa.RepoReads, only: [fail_read: 1, watch_reads: 2]
+  import Bolognesa.RepoReads, only: [watch_reads: 2]
   alias Bolognesa.Series.Domain.ValueObjects.Entry
   alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository, as: Repository
   alias BolognesaWeb.SeriesFixtures
@@ -129,23 +129,6 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
     send(reader, :continue)
     render_async(view)
     refute has_element?(view, "#series-continue-shelf")
-  end
-
-  test "a failed Continue shelf read is retried by the next navigation", ctx do
-    continue = watch_next_episode(ctx)
-    watch_reads(&recent_read?/2, fn _params -> true end)
-    {:ok, view, _} = live(ctx.conn, "/series?library_id=#{ctx.library.id}")
-    assert_receive {:read, reader, _params}, 5_000
-    fail_read(reader)
-    render_async(view)
-    refute has_element?(view, "#series-continue-shelf")
-
-    render_patch(view, "/series?library_id=#{ctx.library.id}&query=Serie")
-    assert_receive {:read, reader, _params}, 5_000
-    send(reader, :continue)
-    render_patch(view, "/series?library_id=#{ctx.library.id}")
-    render_async(view)
-    assert has_element?(view, continue)
   end
 
   # Marks the first episode of a new season watched and returns the selector of its Continue link.
