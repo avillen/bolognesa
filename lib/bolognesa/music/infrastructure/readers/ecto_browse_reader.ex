@@ -18,16 +18,18 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
   @impl true
   def list_recent_albums(library_id, user_id) do
     with :ok <- QueryFilters.library_scope(library_id) do
+      # Candidates come from the account's activity (unique user_id/track_id index), scoped
+      # before DISTINCT, instead of probing every album.
       latest =
         from(track in MusicTrackSchema,
           join: activity in MusicListeningActivitySchema,
           on: activity.track_id == track.id and activity.user_id == ^user_id,
           join: file in MediaFileSchema,
           on: file.id == track.media_file_id,
-          where: track.album_id == parent_as(:album).id,
+          distinct: track.album_id,
           order_by: [desc: activity.last_played_at, asc: track.id],
-          limit: 1,
           select: %{
+            album_id: track.album_id,
             track_id: track.id,
             file_id: file.id,
             track_title: track.title,
@@ -35,31 +37,16 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
             last_played_at: activity.last_played_at
           }
         )
-
-      final =
-        from(track in MusicTrackSchema,
-          join: file in MediaFileSchema,
-          on: file.id == track.media_file_id,
-          where: track.album_id == parent_as(:album).id and file.availability == :available,
-          order_by: [
-            desc_nulls_first: track.disc_number,
-            desc_nulls_first: track.track_number,
-            desc: file.relative_path,
-            desc: track.id
-          ],
-          limit: 1,
-          select: %{id: track.id}
-        )
+        |> scope(library_id)
 
       albums =
         collection(:albums, nil) |> scope(library_id) |> exclude(:order_by) |> exclude(:select)
 
-      query =
+      # The album collection keeps only albums with an available file before LIMIT.
+      recent =
         from([album, artist] in albums,
-          inner_lateral_join: latest in subquery(latest),
-          on: true,
-          inner_lateral_join: final in subquery(final),
-          on: true,
+          join: latest in subquery(latest),
+          on: latest.album_id == album.id,
           order_by: [desc: latest.last_played_at, asc: album.id],
           limit: 3,
           select: %{
@@ -70,7 +57,41 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
             track_id: latest.track_id,
             file_id: latest.file_id,
             track_title: latest.track_title,
-            track_available?: latest.track_available?,
+            track_available?: latest.track_available?
+          }
+        )
+
+      final =
+        from(track in MusicTrackSchema,
+          join: file in MediaFileSchema,
+          on: file.id == track.media_file_id,
+          where: track.album_id == parent_as(:recent).id and file.availability == :available,
+          order_by: [
+            desc_nulls_first: track.disc_number,
+            desc_nulls_first: track.track_number,
+            desc: file.relative_path,
+            desc: track.id
+          ],
+          limit: 1,
+          select: %{id: track.id}
+        )
+
+      # The final track is looked up only for the three selected albums.
+      query =
+        from(recent in subquery(recent),
+          as: :recent,
+          inner_lateral_join: final in subquery(final),
+          on: true,
+          order_by: [desc: recent.last_played_at, asc: recent.id],
+          select: %{
+            id: recent.id,
+            title: recent.title,
+            artist: recent.artist,
+            last_played_at: recent.last_played_at,
+            track_id: recent.track_id,
+            file_id: recent.file_id,
+            track_title: recent.track_title,
+            track_available?: recent.track_available?,
             final_track_id: final.id
           }
         )

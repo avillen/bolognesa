@@ -72,6 +72,20 @@ defmodule Bolognesa.Music.BrowseTest do
     assert queries == initial_queries
   end
 
+  test "recent album continuation breaks same-time track ties by the lowest track ID" do
+    actor = listening_actor()
+    f = refresh_fixture(tags: %{"album" => "First"})
+    {_, [second]} = add_tracks(f, 1)
+    other = listening_actor(:member)
+    record_activity(actor.id, second.id, ~U[2026-10-01 00:00:00.000000Z])
+    record_activity(actor.id, f.track.id, ~U[2026-10-01 00:00:00.000000Z])
+    record_activity(other.id, second.id, ~U[2026-10-02 00:00:00.000000Z])
+
+    assert {:ok, [album]} = Music.list_recent_albums(actor, nil)
+    assert album.track_id == min(f.track.id, second.id)
+    assert album.last_played_at == ~U[2026-10-01 00:00:00.000000Z]
+  end
+
   test "recent albums are limited to three distinct albums in latest activity order" do
     actor = listening_actor()
     fixtures = for i <- 1..5, do: refresh_fixture(tags: %{"album" => "Record #{i}"})
@@ -89,6 +103,26 @@ defmodule Bolognesa.Music.BrowseTest do
 
     assert Enum.map(albums, & &1.id) ==
              Enum.map(Enum.reverse(fixtures) |> Enum.take(3), & &1.track.album_id)
+  end
+
+  test "recent albums skip a newer album without available files before taking three" do
+    actor = listening_actor()
+    fixtures = for i <- 1..5, do: refresh_fixture(tags: %{"album" => "Eligible #{i}"})
+    [unavailable | eligible] = Enum.reverse(fixtures)
+
+    fixtures
+    |> Enum.with_index(1)
+    |> Enum.each(fn {f, day} ->
+      record_activity(actor.id, f.track.id, DateTime.add(~U[2026-10-01 00:00:00Z], day, :day))
+    end)
+
+    Repo.update!(change(unavailable.file, availability: :missing))
+
+    expected = Enum.take(eligible, 3)
+    assert {:ok, albums} = Music.list_recent_albums(actor, nil)
+    assert Enum.map(albums, & &1.id) == Enum.map(expected, & &1.track.album_id)
+    assert Enum.map(albums, & &1.track_id) == Enum.map(expected, & &1.track.id)
+    assert Enum.all?(albums, & &1.restart?)
   end
 
   test "recent album continuation uses latest heard track and replays when it is last in album order" do
