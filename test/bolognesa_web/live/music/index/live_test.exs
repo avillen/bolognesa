@@ -373,33 +373,8 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     %{rows: [[user_id]]} =
       Repo.query!("SELECT id FROM accounts_users WHERE email = $1", ["music@example.com"])
 
-    handler = {__MODULE__, make_ref()}
-    parent = self()
     library_id = fixture.library.id
-
-    :ok =
-      :telemetry.attach(
-        handler,
-        [:bolognesa, :repo, :query],
-        fn _, _, metadata, _ ->
-          query = metadata.query
-
-          if String.contains?(query, "music_listening_activity") and
-               not String.contains?(query, "count(") and library_id in metadata.params do
-            :telemetry.detach(handler)
-            send(parent, {:track_page_read, self()})
-
-            receive do
-              :continue -> :ok
-            after
-              10_000 -> :ok
-            end
-          end
-        end,
-        nil
-      )
-
-    on_exit(fn -> :telemetry.detach(handler) end)
+    block_next_track_read(library_id)
 
     {:ok, view, _} =
       live(
@@ -422,6 +397,62 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     render_async(view, 5_000)
     render_async(view, 5_000)
     assert has_element?(view, "#tracks-#{fixture.file.id}", "28/10/2026")
+  end
+
+  test "navigating away cancels the superseded track page read", %{conn: conn, token: token} do
+    fixture = refresh_fixture(tags: %{"title" => "Opening"})
+    library_id = fixture.library.id
+    block_next_track_read(library_id)
+
+    {:ok, view, _} =
+      live(
+        init_test_session(conn, user_token: token),
+        "/music?library_id=#{library_id}&view=tracks"
+      )
+
+    assert_receive {:track_page_read, reader}, 5_000
+    monitor = Process.monitor(reader)
+    render_patch(view, "/music?library_id=#{library_id}&view=tracks&query=Open")
+    assert_receive {:DOWN, ^monitor, :process, ^reader, {:shutdown, :cancel}}
+    render_async(view)
+    assert has_element?(view, "#tracks-#{fixture.file.id}", "Opening")
+
+    block_next_track_read(library_id)
+    render_patch(view, "/music?library_id=#{library_id}&view=tracks&query=Ope")
+    assert_receive {:track_page_read, reader}, 5_000
+    monitor = Process.monitor(reader)
+    render_patch(view, "/music?library_id=#{library_id}")
+    assert_receive {:DOWN, ^monitor, :process, ^reader, {:shutdown, :cancel}}
+    render_async(view)
+    assert has_element?(view, "#music-home-link[aria-current=page]")
+  end
+
+  test "a new page load cancels pending listening refreshes of the previous page", %{
+    conn: conn,
+    token: token
+  } do
+    fixture = refresh_fixture(tags: %{"title" => "Opening"})
+    library_id = fixture.library.id
+
+    {:ok, view, _} =
+      live(
+        init_test_session(conn, user_token: token),
+        "/music?library_id=#{library_id}&view=tracks"
+      )
+
+    render_async(view)
+    block_next_track_read(library_id)
+
+    view
+    |> element("#music-screen")
+    |> render_hook("listening-activity", %{"track_id" => fixture.track.id})
+
+    assert_receive {:track_page_read, reader}, 5_000
+    monitor = Process.monitor(reader)
+    render_patch(view, "/music?library_id=#{library_id}&view=tracks&query=Open")
+    assert_receive {:DOWN, ^monitor, :process, ^reader, {:shutdown, :cancel}}
+    render_async(view)
+    assert has_element?(view, "#tracks-#{fixture.file.id}", "Opening")
   end
 
   test "translates the never played state to English", %{conn: conn, token: token} do
@@ -548,5 +579,35 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
              view,
              "#tracks-#{second.file.id} .music-track-play[data-music-action=track]"
            )
+  end
+
+  # Parks the next track page read inside its task until the test sends :continue.
+  defp block_next_track_read(library_id) do
+    handler = {__MODULE__, make_ref()}
+    parent = self()
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:bolognesa, :repo, :query],
+        fn _, _, metadata, _ ->
+          query = metadata.query
+
+          if String.contains?(query, "music_listening_activity") and
+               not String.contains?(query, "count(") and library_id in metadata.params do
+            :telemetry.detach(handler)
+            send(parent, {:track_page_read, self()})
+
+            receive do
+              :continue -> :ok
+            after
+              10_000 -> :ok
+            end
+          end
+        end,
+        nil
+      )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
   end
 end
