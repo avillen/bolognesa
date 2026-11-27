@@ -6,6 +6,9 @@ defmodule Bolognesa.Music.Application.Ports.Readers.BrowseReader do
   currently associated with the album, including temporarily missing files. It is
   nil without activity and does not indicate album completion. Artist items have
   no activity date. Aggregation is independent of browsing filters and pagination.
+
+  Pages hold up to 50 items and are not counted: `BrowsePage.has_next?` comes from
+  reading one lookahead row. A page past the end is empty with `has_next?: false`.
   """
   alias Bolognesa.Music.Domain.Entities.Artist
   alias Bolognesa.Music.Domain.ReadModels.BrowsePage

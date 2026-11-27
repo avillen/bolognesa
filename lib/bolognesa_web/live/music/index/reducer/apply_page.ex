@@ -18,7 +18,8 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
     socket
     |> assign(:loading?, false)
     |> assign(:error, nil)
-    |> assign(:total, page.total)
+    |> assign(:has_next?, page.has_next?)
+    |> assign(:empty?, empty?(page))
     |> assign(:heading, page.heading)
     |> assign(:visible_track_ids, MapSet.new())
     |> stream(:groups, page.items, reset: true)
@@ -29,7 +30,10 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
     socket
     |> assign(:loading?, false)
     |> assign(:error, nil)
-    |> assign(:total, page.total)
+    # Only album pages are counted; their total feeds the detail heading.
+    |> assign(:total, page.total || 0)
+    |> assign(:has_next?, page.has_next?)
+    |> assign(:empty?, empty?(page))
     |> assign(:page_size, page.page_size)
     |> assign(:album_artist, page.album_artist)
     |> assign(:album_year, page.album_year)
@@ -44,4 +48,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.ApplyPage do
       socket
       |> assign(:loading?, false)
       |> assign(:error, gettext("No se pudo cargar la música. Puedes reintentar."))
+
+  # A page past the end is not an empty library; pagination still offers Previous.
+  defp empty?(page), do: page.items == [] and page.page == 1
 end

@@ -64,8 +64,16 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
         |> search(query)
 
       result = read_page(base, page, limit, :album)
+      total = Repo.aggregate(base, :count, :id, log: false)
 
-      {:ok, %{result | heading: album.title, album_artist: artist, album_year: album.year}}
+      {:ok,
+       %{
+         result
+         | total: total,
+           heading: album.title,
+           album_artist: artist,
+           album_year: album.year
+       }}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}
@@ -91,16 +99,8 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   end
 
   defp read_page(base, page, limit, order) do
-    total = Repo.aggregate(base, :count, :id, log: false)
-
-    rows =
-      base
-      |> ordered(order)
-      |> limit(^limit)
-      |> offset(^((page - 1) * limit))
-      |> Repo.all(log: false)
-
-    %TrackPage{items: Enum.map(rows, &row/1), total: total, page: page}
+    {rows, has_next?} = base |> ordered(order) |> QueryFilters.lookahead_page(page, limit)
+    %TrackPage{items: Enum.map(rows, &row/1), has_next?: has_next?, page: page}
   end
 
   defp ordered(query, :album),

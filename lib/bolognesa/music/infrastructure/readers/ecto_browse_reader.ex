@@ -107,19 +107,16 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
   def browse(kind, artist_id, text, page, library_id, user_id) do
     with :ok <- QueryFilters.library_scope(library_id),
          {:ok, heading} <- artist_heading(artist_id, library_id) do
-      query = collection(kind, artist_id) |> scope(library_id) |> search(text, kind)
-      total = Repo.aggregate(query, :count, :id, log: false)
-
-      items =
-        query
+      {rows, has_next?} =
+        collection(kind, artist_id)
+        |> scope(library_id)
+        |> search(text, kind)
         |> order_by([row], asc: row.id)
-        |> limit(50)
-        |> offset(^((page - 1) * 50))
         |> with_activity(kind, user_id)
-        |> Repo.all(log: false)
-        |> Enum.map(&struct!(BrowseItem, &1))
+        |> QueryFilters.lookahead_page(page, 50)
 
-      {:ok, %BrowsePage{items: items, total: total, page: page, heading: heading}}
+      items = Enum.map(rows, &struct!(BrowseItem, &1))
+      {:ok, %BrowsePage{items: items, has_next?: has_next?, page: page, heading: heading}}
     end
   rescue
     DBConnection.ConnectionError -> {:error, :unavailable}

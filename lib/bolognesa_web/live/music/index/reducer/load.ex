@@ -24,6 +24,8 @@ defmodule BolognesaWeb.Music.Index.Reducer.Load do
     |> assign(:query, "")
     |> assign(:page, 1)
     |> assign(:total, 0)
+    |> assign(:has_next?, false)
+    |> assign(:empty?, false)
     |> assign(:loading?, false)
     |> assign(:error, nil)
     |> assign(:request_id, nil)
