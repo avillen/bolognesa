@@ -19,6 +19,13 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
   alias Bolognesa.Music.Domain.ValueObjects.Observation
   alias Bolognesa.Music.Infrastructure.Readers.QueryFilters
   alias Bolognesa.Repo
+
+  # Only the columns row/1 and state/4 read; inspection JSON payloads stay unloaded.
+  @file_fields [:id, :relative_path, :revision]
+  @inspection_fields [:id, :token, :observed_revision, :state, :failure_reason, :duration_ms]
+  @track_fields [:id, :title, :observed_revision, :inspection_token, :disc_number, :track_number]
+  @import_fields [:id, :inspection_token, :state, :failure_reason]
+
   @impl true
   def fetch_track(track_id) do
     row =
@@ -136,8 +143,9 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoTracksReader do
         on: activity.track_id == track.id and activity.user_id == ^user_id,
         where: library.content_type == :music and file.availability == :available,
         select:
-          {file, inspection, track, artist.name, album.title, import_state,
-           activity.last_played_at}
+          {struct(file, @file_fields), struct(inspection, @inspection_fields),
+           struct(track, @track_fields), artist.name, album.title,
+           struct(import_state, @import_fields), activity.last_played_at}
       )
 
     if library_id, do: where(query, [file], file.library_id == ^library_id), else: query
