@@ -9,11 +9,13 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Infrastructure.Persistence.MovieWatchedSchema
   alias Bolognesa.Infrastructure.Persistence.UserSchema
+  alias Bolognesa.MovieIdentificationFixtures
 
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoWatchedMoviesRepository,
     as: WatchedRepository
 
   alias Bolognesa.Repo
+  alias Ecto.UUID
 
   setup do
     {:ok, _} =
@@ -205,6 +207,131 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     {:ok, view, _} = live(conn, ~p"/movies?query=Vista")
     render_async(view)
     refute has_element?(view, "#movies-recent-shelf")
+  end
+
+  test "a new search cancels the superseded catalog read", %{conn: conn, token: token} do
+    movie = Repo.insert!(movie_changeset(%{provider_id: 500, title: "Cancelable"}))
+    watch_reads(fn _query, params -> "Cancel" in params end, fn _params -> true end)
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies?query=Cancel")
+    assert_receive {:read, reader, _params}
+    monitor = Process.monitor(reader)
+    render_patch(view, ~p"/movies?query=Cancelable")
+    assert_receive {:DOWN, ^monitor, :process, ^reader, {:shutdown, :cancel}}
+    render_async(view)
+    assert has_element?(view, "#movie-link-#{movie.id}")
+  end
+
+  test "the recent shelf survives search and paging and clears on a library switch", %{
+    conn: conn,
+    token: token
+  } do
+    library = SeriesFixtures.library(:movie)
+    other = SeriesFixtures.library(:movie)
+    movie = library_movie(library, 400)
+    user = Repo.get_by!(UserSchema, email: "movies@example.com")
+    :ok = WatchedRepository.upsert(user.id, movie.id, DateTime.utc_now())
+    watch_reads(&recent_read?/2, &(other.id in &1))
+
+    {:ok, view, _} =
+      live(init_test_session(conn, user_token: token), "/movies?library_id=#{library.id}")
+
+    render_async(view)
+    assert_received {:read, _reader, params}
+    assert library.id in params
+    tile = "#recent-movie-#{movie.id}"
+    assert has_element?(view, tile)
+
+    render_patch(view, "/movies?library_id=#{library.id}&query=Vista")
+    render_patch(view, "/movies?library_id=#{library.id}&page=2")
+    render_patch(view, "/movies?library_id=#{library.id}")
+    assert has_element?(view, tile)
+    render_async(view)
+    refute_received {:read, _reader, _params}
+
+    render_patch(view, "/movies?library_id=#{other.id}")
+    assert_receive {:read, reader, params}
+    assert other.id in params
+    refute has_element?(view, tile)
+    send(reader, :continue)
+    render_async(view)
+    refute has_element?(view, "#movies-recent-shelf")
+  end
+
+  test "a failed recent shelf read is retried by the next navigation", %{
+    conn: conn,
+    token: token
+  } do
+    library = SeriesFixtures.library(:movie)
+    movie = library_movie(library, 401)
+    user = Repo.get_by!(UserSchema, email: "movies@example.com")
+    :ok = WatchedRepository.upsert(user.id, movie.id, DateTime.utc_now())
+    watch_reads(&recent_read?/2, fn _params -> true end)
+
+    {:ok, view, _} =
+      live(init_test_session(conn, user_token: token), "/movies?library_id=#{library.id}")
+
+    assert_receive {:read, reader, _params}
+    Process.exit(reader, :kill)
+    render_async(view)
+    refute has_element?(view, "#movies-recent-shelf")
+
+    render_patch(view, "/movies?library_id=#{library.id}&query=Vista")
+    assert_receive {:read, reader, _params}
+    send(reader, :continue)
+    render_patch(view, "/movies?library_id=#{library.id}")
+    render_async(view)
+    assert has_element?(view, "#recent-movie-#{movie.id}")
+  end
+
+  defp library_movie(library, provider_id) do
+    movie =
+      Repo.insert!(movie_changeset(%{provider_id: provider_id, title: "Vista #{provider_id}"}))
+
+    file = SeriesFixtures.file(library.id, "Vista #{provider_id}.mkv")
+
+    MovieIdentificationFixtures.insert_decision!(
+      %{
+        media_file_id: file.id,
+        observed_revision: 1,
+        token: UUID.generate(),
+        state: :automatic,
+        origin: :automatic
+      },
+      movie.id
+    )
+
+    movie
+  end
+
+  defp recent_read?(query, _params),
+    do: query =~ ~r/FROM "movies_watched" AS \w+ INNER JOIN "movies"/
+
+  # Reports each matching repo read to the test; reads accepted by `park?` wait for :continue.
+  defp watch_reads(match?, park?) do
+    handler = {__MODULE__, make_ref()}
+    parent = self()
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:bolognesa, :repo, :query],
+        fn _, _, %{query: query, params: params}, _ ->
+          if match?.(query, params) do
+            send(parent, {:read, self(), params})
+
+            if park?.(params) do
+              receive do
+                :continue -> :ok
+              after
+                10_000 -> :ok
+              end
+            end
+          end
+        end,
+        nil
+      )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
   end
 
   defp movie_changeset(attrs),

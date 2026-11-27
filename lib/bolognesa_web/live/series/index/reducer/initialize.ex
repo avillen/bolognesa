@@ -13,6 +13,7 @@ defmodule BolognesaWeb.Series.Index.Reducer.Initialize do
     |> assign(:loading?, true)
     |> assign(:error, nil)
     |> assign(:recent_series, [])
+    |> assign(:recent_scope, :unloaded)
     |> assign(:request_id, nil)
     |> assign(:form, to_form(%{"query" => ""}, as: :search))
     |> stream(:series, [])

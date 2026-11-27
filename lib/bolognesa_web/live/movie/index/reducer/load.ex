@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.Movie.Index.Reducer.Load do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3, to_form: 2]
-  import Phoenix.LiveView, only: [start_async: 3]
+  import Phoenix.LiveView, only: [cancel_async: 2, start_async: 3]
   alias Bolognesa.Movies
 
   @spec call(Phoenix.LiveView.Socket.t(), String.t(), pos_integer()) ::
@@ -11,7 +11,9 @@ defmodule BolognesaWeb.Movie.Index.Reducer.Load do
     library_id = socket.assigns.active_library_id
     request_id = make_ref()
 
+    # The new request discards the previous result, so stop its read instead of letting it run.
     socket
+    |> cancel_async({:movies, socket.assigns.request_id})
     |> assign(:query, query)
     |> assign(:page, page)
     |> assign(:loading?, true)
