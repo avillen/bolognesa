@@ -21,6 +21,46 @@ defmodule Bolognesa.Music.ListTracksTest do
     assert track.id == ready.track.id
   end
 
+  test "narrowed rows keep fallback titles, failure reasons and ready fields" do
+    ready = refresh_fixture(tags: %{"title" => "Sample", "track" => "3"})
+
+    Repo.update!(
+      change(music_fixture(inspection_state: :failed).inspection, failure_reason: :timeout)
+    )
+
+    imported = music_fixture(relative_path: "x/Broken.mp3")
+
+    Repo.insert!(%Bolognesa.Infrastructure.Persistence.MusicImportSchema{
+      media_file_id: imported.file.id,
+      observed_revision: 1,
+      inspection_token: imported.inspection.token,
+      state: :failed,
+      failure_reason: :attempts_exhausted
+    })
+
+    uninspected = music_fixture(relative_path: "y/Fallback Name.flac")
+    Repo.delete!(uninspected.inspection)
+
+    assert {:ok, %{items: items}} = Music.list_tracks(ready.actor, "", 1, nil)
+    by_file = Map.new(items, &{&1.file_id, &1})
+
+    assert %{state: :ready, title: "Sample", duration_ms: 2500, track_number: 3} =
+             by_file[ready.file.id]
+
+    assert %{state: :import_failed, failure_reason: :attempts_exhausted, title: "Broken"} =
+             by_file[imported.file.id]
+
+    assert %{state: :pending, title: "Fallback Name", duration_ms: nil, id: nil} =
+             by_file[uninspected.file.id]
+
+    assert Enum.any?(items, &(&1.state == :inspection_failed and &1.failure_reason == :timeout))
+
+    assert {:ok, %{state: :ready, file_id: file_id, title: "Sample"}} =
+             Music.fetch_track(ready.actor, ready.track.id)
+
+    assert file_id == ready.file.id
+  end
+
   test "queries are bounded and percent and underscore are literal" do
     fixture = refresh_fixture(tags: %{"title" => "100%_Song"})
     assert {:ok, %{total: 1}} = Music.list_tracks(fixture.actor, "%_", 1, nil)
