@@ -529,25 +529,61 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
              )
     end
 
-    test "tab recovery uses an authorized whole-file offset and preserves pause", ctx do
-      session = start_inspected_version(ctx)
+    test "a checkpoint hint starts one producer at the restored offset and keeps pause", ctx do
+      watch_starts()
+      session = start_with_hint(ctx, %{"position_ms" => 10_000, "paused" => true})
+
+      assert_receive {:session_started, %{offset_ms: 10_000}}
+      refute_receive {:session_started, _}, 100
+      assert session.offset_ms == 10_000
       make_ready(ctx.view, session)
-
-      render_hook(ctx.view, "playback_restore", %{
-        "session_id" => session.id,
-        "position_ms" => "10000",
-        "playing" => "false"
-      })
-
-      next = preparing_session(ctx.view)
-      assert next.id != session.id
-      assert next.offset_ms == 10_000
-      make_ready(ctx.view, next)
 
       assert has_element?(
                ctx.view,
-               "#movie-video-frame[data-video-id='movie-video-#{next.id}'][data-autoplay='false']"
+               "#movie-video-frame[data-video-id='movie-video-#{session.id}'][data-offset-ms='10000'][data-autoplay='false']"
              )
+
+      # A later seek uses the requested position, never the checkpoint again.
+      render_hook(ctx.view, "playback_seek", %{
+        "session_id" => session.id,
+        "position_ms" => "20000",
+        "playing" => "true"
+      })
+
+      assert_receive {:session_started, %{offset_ms: 20_000}}
+      refute_receive {:session_started, _}, 100
+    end
+
+    test "an invalid checkpoint hint starts at zero with default intent", ctx do
+      watch_starts()
+
+      for hint <- [
+            %{"position_ms" => -1, "paused" => true},
+            %{"position_ms" => 60_000, "paused" => true},
+            %{"position_ms" => 2_147_483_648, "paused" => true},
+            %{"position_ms" => "10000", "paused" => true},
+            %{"position_ms" => 10_000, "paused" => "true"},
+            %{"position_ms" => 10_000, "paused" => true, "file_id" => ctx.first.id},
+            [10_000]
+          ] do
+        session = start_with_hint(ctx, hint)
+        assert_receive {:session_started, %{offset_ms: 0}}
+        refute_receive {:session_started, _}, 50
+        assert session.file_id == ctx.second.id
+        make_ready(ctx.view, session)
+        assert has_element?(ctx.view, "#movie-video-frame[data-autoplay='true']")
+      end
+    end
+
+    test "an oversized or unknown envelope is still rejected as a report", ctx do
+      insert_incompatible_inspection(ctx.second)
+      render_click(element(ctx.view, "#movie-play-#{ctx.second.id}"))
+      capability = report(ctx.view)
+
+      hint = %{"position_ms" => 10_000, "paused" => false, "pad" => String.duplicate("x", 9000)}
+      render_hook(ctx.view, "playback_capabilities", Map.put(capability, "initial", hint))
+      render_hook(ctx.view, "playback_capabilities", Map.put(capability, "extra", true))
+      assert has_element?(ctx.view, "#movie-playback-checking")
     end
 
     test "failed seek retains the previous session for explicit cleanup", ctx do
@@ -852,6 +888,13 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
     preparing_session(ctx.view)
   end
 
+  defp start_with_hint(ctx, hint) do
+    insert_incompatible_inspection(ctx.second)
+    render_click(element(ctx.view, "#movie-play-#{ctx.second.id}"))
+    render_hook(ctx.view, "playback_capabilities", Map.put(report(ctx.view), "initial", hint))
+    preparing_session(ctx.view)
+  end
+
   defp insert_incompatible_inspection(file), do: inspect!(file, "matroska,webm", "ac3")
 
   defp preparing_session(view) do
@@ -923,6 +966,24 @@ defmodule BolognesaWeb.Movie.Show.LiveTest do
 
     on_exit(fn -> :telemetry.detach(handler) end)
   end
+
+  defp watch_starts do
+    handler = {__MODULE__, make_ref()}
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:bolognesa, :playback, :session, :started],
+        &__MODULE__.handle_session_started/4,
+        self()
+      )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+  end
+
+  @spec handle_session_started([atom()], map(), map(), pid()) :: any()
+  def handle_session_started(_event, _measurements, metadata, caller),
+    do: send(caller, {:session_started, metadata})
 
   @spec handle_session_closed([atom()], map(), map(), pid()) :: any()
   def handle_session_closed(_event, _measurements, metadata, caller),

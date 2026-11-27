@@ -43,8 +43,10 @@ const VideoPlayer = {
         if (this.probeGeneration !== probe.generation) {
           this.probeGeneration = probe.generation
           probePlaybackCapabilities(probe, {video: this.video, Hls}).then(report => {
-            if (!this.probeDestroyed && this.el.dataset.playbackPhase === "checking" &&
-                this.probeGeneration === report.generation) this.pushEvent("playback_capabilities", report)
+            if (this.probeDestroyed || this.el.dataset.playbackPhase !== "checking" ||
+                this.probeGeneration !== report.generation) return
+            const initial = this.recovery.initial()
+            this.pushEvent("playback_capabilities", initial ? {...report, initial} : report)
           })
         }
       } else this.probeGeneration = null

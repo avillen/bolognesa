@@ -13,6 +13,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
   alias Bolognesa.Playback.Domain.ReadModels.TranscodeSession
   alias Bolognesa.Playback.Domain.ValueObjects.DeliveryPlan
   alias Bolognesa.Playback.Domain.ValueObjects.PlaybackCandidate
+  alias BolognesaWeb.LiveSupport.PlaybackStartHint
   alias BolognesaWeb.Params
   alias Ecto.UUID
 
@@ -68,6 +69,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
           candidates: [PlaybackCandidate.t()],
           plan: DeliveryPlan.t() | nil,
           report: raw_report() | nil,
+          start: PlaybackStartHint.t() | nil,
           compatible_available?: boolean(),
           recovery_used?: boolean(),
           session: TranscodeSession.t() | nil,
@@ -88,6 +90,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
             candidates: [],
             plan: nil,
             report: nil,
+            start: nil,
             compatible_available?: false,
             recovery_used?: false,
             session: nil,
@@ -112,13 +115,19 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
     {next, stop(attempt, :version_selected) ++ [{:load_candidates, file_id}]}
   end
 
-  @doc "Accepts the browser's capability report for the current probe."
+  @doc """
+  Accepts the browser's capability report for the current probe, with its optional
+  checkpoint hint for where and whether to start playing.
+  """
   @spec report(t(), map()) :: {t(), [effect()]}
   def report(
         %{phase: :checking, probe: %{generation: generation}} = attempt,
         %{"generation" => generation} = raw
-      ),
-      do: {attempt, [select_plan(attempt, :requested, raw)]}
+      ) do
+    {raw, start} = PlaybackStartHint.split(raw, attempt.duration_ms)
+    next = %{attempt | start: start}
+    {next, [select_plan(next, :requested, raw)]}
+  end
 
   def report(attempt, _raw), do: {attempt, []}
 
@@ -208,13 +217,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
 
   def playing?(_attempt, _params), do: false
 
-  @doc "Whether restoring `session_id` replaced it with a different, healthy stream."
-  @spec restored?(t(), t(), String.t()) :: boolean()
-  def restored?(%{session: %{id: id}}, %{session: %{id: next_id}, error: nil}, id),
-    do: next_id != id
-
-  def restored?(_before, _after, _session_id), do: false
-
   @doc "Handles a scheduled preparation poll for the session still preparing."
   @spec poll_due(t(), String.t()) :: {t(), [effect()]}
   def poll_due(%{phase: :preparing, stream_ready?: false, session: %{id: id}} = attempt, id),
@@ -255,7 +257,7 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
     {next,
      [
        select_plan(next, {:compatible_check, plan}, compatible(raw)),
-       deliver(next, 0, :version_selected)
+       initial_delivery(next)
      ]}
   end
 
@@ -368,6 +370,12 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttempt do
 
   defp select_plan(attempt, purpose, raw),
     do: {:select_plan, purpose, attempt.file_id, attempt.candidates, raw}
+
+  # Preparing once at the checkpoint avoids a throwaway producer at offset zero.
+  defp initial_delivery(%{start: nil} = attempt), do: deliver(attempt, 0, :version_selected)
+
+  defp initial_delivery(%{start: start} = attempt),
+    do: deliver(attempt, start.position_ms, :version_selected, not start.paused)
 
   defp deliver(attempt, offset_ms, reason, autoplay \\ :keep),
     do: {:deliver, attempt.file_id, attempt.plan, offset_ms, reason, autoplay}

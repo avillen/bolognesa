@@ -123,46 +123,6 @@ defmodule BolognesaWeb.PlaybackDiagnosticsTest do
     refute_receive {^event, _, _}
   end
 
-  test "a stale recovery seek receives an explicit refusal" do
-    socket = %Phoenix.LiveView.Socket{
-      assigns: %{__changed__: %{}, playback: PlaybackAttempt.new()}
-    }
-
-    assert {:reply, %{accepted: false}, ^socket} =
-             PlaybackEvents.handle_event(
-               "playback_restore",
-               %{
-                 "session_id" => UUID.generate(),
-                 "position_ms" => "400000",
-                 "playing" => "true"
-               },
-               socket
-             )
-  end
-
-  test "recovery does not report success for a different active session" do
-    socket = %Phoenix.LiveView.Socket{
-      assigns: %{
-        __changed__: %{},
-        playback: %PlaybackAttempt{
-          phase: :ready,
-          session: %{id: UUID.generate(), duration_ms: nil}
-        }
-      }
-    }
-
-    assert {:reply, %{accepted: false}, ^socket} =
-             PlaybackEvents.handle_event(
-               "playback_restore",
-               %{
-                 "session_id" => UUID.generate(),
-                 "position_ms" => "400000",
-                 "playing" => "true"
-               },
-               socket
-             )
-  end
-
   @spec handle_telemetry([atom()], map(), map(), pid()) :: any()
   def handle_telemetry(event, measurements, metadata, caller),
     do: send(caller, {event, measurements, metadata})

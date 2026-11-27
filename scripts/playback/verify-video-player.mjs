@@ -19,11 +19,16 @@ await build({stdin: {contents: `import hook from './assets/js/video/hooks/video_
 window.events = [];
 window.context = {el: document.querySelector('#frame'), pushEvent: (...event) => {
   window.events.push(event);
-  if (new URLSearchParams(location.search).get('recovery') === 'hls' && event[0] === 'playback_restore') {
-    const data = event[1];
+  // Emulates the server: one prepared session at the accepted hint, or offset zero without one.
+  if (new URLSearchParams(location.search).get('recovery') === 'hls' && event[0] === 'playback_capabilities') {
+    const initial = event[1].initial;
+    window.sessions = (window.sessions || 0) + 1;
     setTimeout(() => {
-      Object.assign(window.context.el.dataset, {transport: "hls_js", sessionId: 'restored', videoId: 'restored',
-        offsetMs: data.position_ms, src: '/index.m3u8?restored', autoplay: data.playing});
+      const data = window.context.el.dataset;
+      delete data.playbackProbe;
+      Object.assign(data, {playbackPhase: "ready", transport: "hls_js", sessionId: 'restored', videoId: 'restored',
+        offsetMs: String(initial?.position_ms ?? 0), durationMs: "600000", src: '/index.m3u8?restored',
+        autoplay: String(initial ? !initial.paused : true), pausedServer: "true"});
       hook.updated.call(window.context);
     }, 0);
   }
@@ -48,8 +53,10 @@ const server = createServer(async (request, response) => {
     let document = html
     const recovery = new URL(request.url, "http://localhost").searchParams.get("recovery")
     if (recovery) document = document.replace('data-file-id="1"', 'data-file-id="1" data-recovery-scope="1:movie:1"')
-    if (recovery === "hls") document = document.replace('data-src="/sample.mp4"',
-      'data-src="/index.m3u8" data-transport="hls_js" data-session-id="initial" data-offset-ms="0" data-duration-ms="600000"')
+    if (recovery === "hls") document = document.replace('data-src="/sample.mp4" data-autoplay="true"',
+      `data-playback-phase="checking" data-autoplay="false" data-playback-probe="${JSON.stringify({generation: "restore",
+        candidates: [{id: "c0", transports: ["hls_js"], configuration: {mime: "video/mp4", video: {codec_string: "avc1.42C029"},
+          audio: null}}]}).replaceAll('"', '&quot;')}"`)
     const parts = new URL(request.url, "http://localhost").searchParams.get("parts")
     if (parts) document = document.replace('data-file-id="1"', 'data-file-id="1" data-recovery-scope="1:episode:123"')
     if (parts === "hls") document = document.replace('data-src="/sample.mp4"',
@@ -376,21 +383,47 @@ try {
   await recoveryPage.addInitScript(() => {
     if (new URLSearchParams(location.search).get("recovery") === "hls") {
       sessionStorage.setItem("bolognesa.playback.checkpoint", JSON.stringify({scope: "1:movie:1", fileId: "1",
-        positionMs: 360000, paused: true, savedAt: Date.now()}))
+        positionMs: 360000, paused: new URLSearchParams(location.search).get("playing") !== "true", savedAt: Date.now()}))
+      // Autoplay is rejected once, as browsers do without a user gesture.
+      const play = HTMLMediaElement.prototype.play
+      let rejected = false
+      HTMLMediaElement.prototype.play = function() {
+        if (new URLSearchParams(location.search).get("playing") === "true" && !rejected) {
+          rejected = true
+          return Promise.reject(new DOMException("blocked", "NotAllowedError"))
+        }
+        return play.call(this)
+      }
     }
   })
-  await recoveryPage.goto(recoveryUrl.replace("direct", "hls"))
+  const hlsRecovery = recoveryUrl.replace("direct", "hls")
+  await recoveryPage.goto(hlsRecovery)
   await recoveryPage.waitForFunction(() => document.querySelector("video").readyState >= 2 && window.context.el.dataset.sessionId === "restored")
   assert.equal(await recoveryPage.locator("video").evaluate(video => video.paused), true)
   const restored = await recoveryPage.evaluate(() => ({
     time: document.querySelector("bolognesa-video-player").store.state.currentTime,
-    seeks: window.events.filter(([name]) => name === "playback_restore"),
+    sessions: window.sessions,
+    hint: window.events.find(([name]) => name === "playback_capabilities")[1].initial,
+    other: window.events.filter(([name]) => !["playback_capabilities", "playback_diagnostic"].includes(name)).map(([name]) => name),
   }))
   assert.ok(Math.abs(restored.time - 360) < 1)
-  assert.equal(restored.seeks.length, 1)
-  assert.equal(restored.seeks[0][1].playing, "false")
+  assert.equal(restored.sessions, 1)
+  assert.deepEqual(restored.hint, {position_ms: 360000, paused: true})
+  assert.deepEqual(restored.other, [], "Paused restore issues no seek, resume or restore request")
+  // A later seek requests its own position, never the checkpoint.
+  await recoveryPage.evaluate(() => document.querySelector("video").fileTimeline.seek(400))
+  const seek = await recoveryPage.evaluate(() => window.events.find(([name]) => name === "playback_seek")[1])
+  assert.equal(seek.position_ms, "400000")
+  await recoveryPage.goto(`${hlsRecovery}&playing=true`)
+  await recoveryPage.waitForFunction(() => window.events?.some(([name, data]) => name === "playback_diagnostic" && data.diagnostic === "autoplay_blocked"))
+  assert.equal(await recoveryPage.evaluate(() => window.sessions), 1)
+  assert.equal(await recoveryPage.locator("video").evaluate(video => video.paused), true)
+  await recoveryPage.locator("video").evaluate(video => video.play())
+  await recoveryPage.waitForFunction(() => window.events.some(([name]) => name === "playback_resume"))
+  const resume = await recoveryPage.evaluate(() => window.events.find(([name]) => name === "playback_resume")[1])
+  assert.ok(Number(resume.position_ms) >= 360000)
   await recoveryPage.close()
-  console.log("Recovery: actual page reload restores direct position/play/pause; HLS restores file offset with one authorized seek.")
+  console.log("Recovery: reload restores direct position/play/pause; HLS starts one session at the checkpoint, keeps pause and survives rejected autoplay.")
   for (const delivery of ["direct", "hls"]) {
     const partsPage = await browser.newPage()
     partsPage.on("pageerror", error => errors.push(error.message))

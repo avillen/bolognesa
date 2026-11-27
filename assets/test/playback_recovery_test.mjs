@@ -52,20 +52,14 @@ test("paused reload stays paused and ended playback clears the saved point", () 
   replay.recovery.destroy()
 })
 
-test("HLS recovery requests a global authorized seek once and retains pause across replacement", () => {
+test("the checkpoint becomes the start hint and HLS attaches once at the server offset", () => {
   const first = setup()
   first.recovery.source(); first.recovery.ready()
   first.video.currentTime = 400
   first.video.pause(); first.recovery.destroy()
-  const next = setup(first.storage, {sessionId: "initial", offsetMs: "0", durationMs: "1000000"})
-  assert.equal(next.recovery.source(), false)
-  assert.deepEqual(next.events.map(event => event.slice(0, 2)), [["playback_restore", {session_id: "initial", position_ms: "400000", playing: "false"}]])
-  next.el.dataset.src = ""
-  next.recovery.beforeSourceChange()
-  next.recovery.source()
-  next.el.dataset.src = "/new-hls"
-  next.el.dataset.sessionId = "replacement"
-  next.el.dataset.offsetMs = "400000"
+  const next = setup(first.storage)
+  assert.deepEqual(next.recovery.initial(), {position_ms: 400000, paused: true})
+  Object.assign(next.el.dataset, {sessionId: "initial", offsetMs: "400000", durationMs: "1000000", autoplay: "false"})
   assert.equal(next.recovery.source(), true)
   next.video.fileTimeline = {offset: 400}
   next.recovery.ready()
@@ -74,25 +68,52 @@ test("HLS recovery requests a global authorized seek once and retains pause acro
   // Later deliberate seeks must not reinstate the restored position.
   next.recovery.beforeSourceChange()
   next.el.dataset.offsetMs = "600000"
-  next.recovery.source(); next.recovery.ready()
-  assert.equal(next.events.length, 1)
+  assert.equal(next.recovery.source(), true)
+  next.recovery.ready()
+  assert.deepEqual(next.events, [])
   next.recovery.destroy()
 })
 
-test("a rejected HLS restore releases the pending checkpoint and reattaches the source", () => {
+test("a refused hint plays the server offset with its default intent and no restore request", () => {
   const first = setup()
   first.recovery.source(); first.recovery.ready()
   first.video.currentTime = 400; first.video.pause(); first.recovery.destroy()
-  let retry = 0, reply
-  const next = setup(first.storage, {sessionId: "stale", offsetMs: "0", durationMs: "1000000"})
-  const recovery = createPlaybackRecovery({el: next.el, video: next.video,
-    pushEvent: (_name, _payload, callback) => { reply = callback }, retrySource: () => retry++},
-    {getItem: key => first.storage.get(key), setItem() {}})
-  assert.equal(recovery.source(), false)
-  reply({accepted: false})
-  assert.equal(retry, 1)
+  const reports = []
+  const next = setup(first.storage, {sessionId: "zero", offsetMs: "0", durationMs: "1000000", autoplay: "true"})
+  const recovery = createPlaybackRecovery({el: next.el, video: next.video, pushEvent: (...args) => next.events.push(args),
+    diagnostics: {report: kind => reports.push(kind)}}, {getItem: key => first.storage.get(key), setItem() {}})
   assert.equal(recovery.source(), true)
+  recovery.ready()
+  assert.deepEqual(reports, ["restore_failed"])
+  assert.deepEqual(next.events, [])
+  assert.equal(next.video.paused, false)
   recovery.destroy(); next.recovery.destroy()
+})
+
+test("rejected autoplay of a restored stream leaves controls usable", async () => {
+  const first = setup()
+  first.recovery.source(); first.recovery.ready()
+  first.video.currentTime = 400; first.recovery.destroy()
+  const reports = []
+  const next = setup(first.storage, {sessionId: "initial", offsetMs: "400000", durationMs: "1000000"})
+  next.video.play = () => Promise.reject(new Error("NotAllowedError"))
+  const recovery = createPlaybackRecovery({el: next.el, video: next.video, pushEvent() {},
+    diagnostics: {report: kind => reports.push(kind)}}, {getItem: key => first.storage.get(key), setItem() {}})
+  assert.equal(recovery.source(), true)
+  recovery.ready()
+  await new Promise(setImmediate)
+  assert.deepEqual(reports, ["restored", "autoplay_blocked"])
+  recovery.destroy(); next.recovery.destroy()
+})
+
+test("no, corrupt or foreign checkpoints send no start hint", () => {
+  const key = "bolognesa.playback.checkpoint"
+  assert.equal(setup().recovery.initial(), null)
+  const foreign = JSON.stringify({scope: "1:movie:2", fileId: "9", positionMs: 200, paused: true, savedAt: Date.now()})
+  for (const value of ["broken JSON", foreign]) assert.equal(setup(new Map([[key, value]])).recovery.initial(), null)
+  const blocked = setup()
+  const recovery = createPlaybackRecovery({el: blocked.el, video: blocked.video, pushEvent() {}}, {getItem() { throw Error("blocked") }})
+  assert.equal(recovery.initial(), null)
 })
 
 test("other files and viewers never inherit a checkpoint and unavailable storage is harmless", () => {
@@ -161,16 +182,10 @@ test("same-file retry restores the checkpoint without remounting the player", ()
     first.recovery.beforeSourceChange()
     first.video.currentTime = 0
     first.recovery.beforeSourceChange()
-    if (delivery === "hls") Object.assign(first.el.dataset, {sessionId: "retry", offsetMs: "0"})
-    const attached = first.recovery.source({retry: true})
-    if (delivery === "hls") {
-      assert.equal(attached, false)
-      assert.equal(first.events[0][1].position_ms, "400000")
-      first.el.dataset.offsetMs = "400000"
-      first.recovery.beforeSourceChange()
-      assert.equal(first.recovery.source(), true)
-      first.video.fileTimeline = {offset: 400}
-    }
+    // The retried attempt renegotiates with the checkpoint as its hint, so HLS starts there.
+    if (delivery === "hls") Object.assign(first.el.dataset, {sessionId: "retry", offsetMs: "400000"})
+    assert.equal(first.recovery.source({retry: true}), true)
+    if (delivery === "hls") first.video.fileTimeline = {offset: 400}
     first.recovery.ready()
     assert.equal((first.video.fileTimeline?.offset || 0) + first.video.currentTime, 400)
     assert.equal(first.video.paused, false)
