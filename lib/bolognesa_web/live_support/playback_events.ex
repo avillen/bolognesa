@@ -17,7 +17,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
 
   @spec handle_event(binary(), capability_payload(), Phoenix.LiveView.Socket.t()) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
-          | {:reply, map(), Phoenix.LiveView.Socket.t()}
   def handle_event("playback_diagnostic", params, socket),
     do: {:noreply, PlaybackDiagnostics.record(socket, params)}
 
@@ -29,15 +28,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackEvents do
   end
 
   def handle_event("play", _params, socket), do: {:noreply, socket}
-
-  def handle_event("playback_restore", %{"session_id" => id, "position_ms" => _} = params, socket) do
-    {:noreply, next} = handle_event("playback_seek", params, socket)
-    accepted = PlaybackAttempt.restored?(socket.assigns.playback, next.assigns.playback, id)
-    {:reply, %{accepted: accepted}, next}
-  end
-
-  def handle_event("playback_restore", _params, socket),
-    do: {:reply, %{accepted: false}, socket}
 
   def handle_event("playback_capabilities", params, socket) when is_map(params),
     do: {:noreply, unless_loading(socket, &PlaybackAttempt.report(&1, params))}

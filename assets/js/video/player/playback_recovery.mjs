@@ -5,11 +5,10 @@ function browserStorage() {
   try { return sessionStorage } catch { return null }
 }
 
-// One checkpoint per tab. Stored values are hints; HLS seeks still use server authorization.
+// One checkpoint per tab. Stored values are hints; the server validates HLS start offsets.
 export function createPlaybackRecovery(hook, storage = browserStorage()) {
   const {video, el} = hook
   let fileId, scope, pending, active = false, complete = false, lastSaved = 0
-  let restoreTimer, destroyed = false
   const remove = () => { try { storage?.removeItem(storageKey) } catch {} }
   const read = () => {
     try {
@@ -38,8 +37,13 @@ export function createPlaybackRecovery(hook, storage = browserStorage()) {
   for (const [name, handler] of Object.entries(listeners)) video.addEventListener(name, handler)
 
   return {
-    suspend() { clearTimeout(restoreTimer); active = false },
-    beforeSourceChange() { clearTimeout(restoreTimer); save(); active = false },
+    /** Optional start hint sent with the capability report; the server validates it. */
+    initial() {
+      const point = read()
+      return point && {position_ms: point.positionMs, paused: point.paused}
+    },
+    suspend() { active = false },
+    beforeSourceChange() { save(); active = false },
     source({retry = false} = {}) {
       if (retry || fileId !== el.dataset.fileId || scope !== el.dataset.recoveryScope) {
         scope = el.dataset.recoveryScope
@@ -51,27 +55,10 @@ export function createPlaybackRecovery(hook, storage = browserStorage()) {
       if (pending && el.dataset.sessionId) {
         const duration = Number(el.dataset.durationMs)
         if (duration > 0 && pending.positionMs >= duration) { pending = null; remove() }
+        // The server prepared HLS at the checkpoint sent with the capability report; another offset means it refused the hint.
         else if (Math.abs(Number(el.dataset.offsetMs) - pending.positionMs) > 1000) {
-          if (!pending.requested) {
-            pending.requested = true
-            const point = pending
-            const failed = () => {
-              if (destroyed || pending !== point) return
-              clearTimeout(restoreTimer)
-              pending = null
-              hook.diagnostics?.report("restore_failed")
-              hook.retrySource?.()
-            }
-            restoreTimer = setTimeout(failed, 10000)
-            restoreTimer.unref?.()
-            hook.pushEvent("playback_restore", {session_id: el.dataset.sessionId,
-              position_ms: String(point.positionMs), playing: String(!point.paused)}, reply => {
-              if (destroyed || pending !== point) return
-              clearTimeout(restoreTimer)
-              if (!reply.accepted) failed()
-            })
-          }
-          return false
+          pending = null
+          hook.diagnostics?.report("restore_failed")
         }
       }
       return true
@@ -97,8 +84,6 @@ export function createPlaybackRecovery(hook, storage = browserStorage()) {
     },
     save,
     destroy() {
-      destroyed = true
-      clearTimeout(restoreTimer)
       save()
       for (const [name, handler] of Object.entries(listeners)) video.removeEventListener(name, handler)
     },

@@ -127,11 +127,13 @@ For functional changes: add the lowest useful failing behavioral regression, con
 
 **Contract:** capability event remains the bounded version-one report, optionally augmented with `initial: {position_ms: integer, paused: boolean}`. The web adapter strips/validates that optional field before passing the unchanged closed report to CapabilityReport.new/3. Validate the entire envelope at <=8,192 external bytes; absent/invalid hint becomes offset 0/current default intent, never bypasses report validation. Position is 0..2,147,483,647 and below known duration. The accepted generation/file binding comes from server state, not a client ID.
 
-- [ ] Read a matching checkpoint before sending the capability event; retain current 12-hour lifetime and viewer/content/file matching. Storage failure must not delay reporting.
-- [ ] Test old clients with no hint, corrupt/expired/mismatched checkpoints, negative/noninteger/oversized positions, unknown keys and oversized envelopes. Reject unknown envelope keys; ignore invalid hint values without accepting an invalid report.
-- [ ] Prepare the selected plan once at the accepted HLS offset and retain requested pause intent. For direct playback, restore after metadata as today. Ignore hints received after the checking generation ends.
-- [ ] Stop issuing playback_restore for initial HLS restore once both sides migrate; remove that obsolete event/acknowledgement timer and its replacement-only tests, retaining restore success/failure diagnostics. Ordinary seeks must never reinstate the checkpoint.
+- [x] Read a matching checkpoint before sending the capability event; retain current 12-hour lifetime and viewer/content/file matching. Storage failure must not delay reporting.
+- [x] Test old clients with no hint, corrupt/expired/mismatched checkpoints, negative/noninteger/oversized positions, unknown keys and oversized envelopes. Reject unknown envelope keys; ignore invalid hint values without accepting an invalid report.
+- [x] Prepare the selected plan once at the accepted HLS offset and retain requested pause intent. For direct playback, restore after metadata as today. Ignore hints received after the checking generation ends.
+- [x] Stop issuing playback_restore for initial HLS restore once both sides migrate; remove that obsolete event/acknowledgement timer and its replacement-only tests, retaining restore success/failure diagnostics. Ordinary seeks must never reinstate the checkpoint.
 - [ ] Verify a nonzero reload produces one FFmpeg start, first attachment at the restored timeline, and usable controls after autoplay rejection; run Node, LiveView, real negotiated browser and native precommit checks. Update decision 0024 only to implemented behavior.
+
+**Implemented:** the hint is read by `playback_recovery.mjs#initial/0` (no separate `initial_playback.mjs`) and split/validated by `PlaybackStartHint`; LiveView movie tests cover the server envelope cases instead of a separate unit file. `playback_restore` and its acknowledgement timer are removed on both sides. Task 4's combined decision was not needed for this and remains open. The negotiated LiveView verifier (native, credentialed) was not run; the synthetic production-hook browser harness covers one HLS attachment at the checkpoint, kept pause, a later seek and rejected autoplay.
 
 **Acceptance:** no throwaway offset-zero HLS producer; untrusted hints cannot select another file or renew recovery budgets.
 

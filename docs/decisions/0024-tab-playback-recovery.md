@@ -20,13 +20,21 @@ prevent playback. This is temporary same-tab recovery, not durable account progr
 or cross-device synchronization. A different default version is not automatically
 replaced with a previously selected version.
 
-Direct playback restores after metadata loads. HLS recovery uses an explicitly
-acknowledged request through the existing authorized seek operation, preserving global
-file offset and requested pause state. Ordinary session replacements do not reinstate
-the original recovery checkpoint. Refusal or a missing acknowledgement after ten
-seconds records `restore_failed` and permits the original source to load; preparation
-failures retain the existing visible error/retry flow. Autoplay rejection is observed
-and leaves the normal play control available.
+Direct playback restores after metadata loads. For HLS, the browser sends the matching
+checkpoint as an optional `initial: {position_ms, paused}` hint beside the capability
+report; clients without a checkpoint omit it. The server validates the whole envelope
+(at most 8,192 external bytes, unknown report keys rejected), accepts the hint only for
+the current checking generation, with exactly those two keys, an integer position in
+0..2,147,483,647 below the known duration and a boolean pause flag, and otherwise starts
+at offset zero with the default intent. The hint never names a file or attempt and does
+not renew the recovery budget; preparation still reauthorizes the source and offset.
+The selected plan is then prepared once at the accepted global offset with the
+requested pause state, so no offset-zero producer is started and discarded. If the
+prepared offset differs from the checkpoint, the browser records `restore_failed` and
+plays what the server prepared. Ordinary session replacements do not reinstate the
+original recovery checkpoint; preparation failures retain the existing visible
+error/retry flow. Autoplay rejection is observed and leaves the normal play control
+available.
 
 Playback diagnostics add a per-document random UUID, navigation type, page lifecycle,
 network availability, WebSocket close code/cleanliness, media readiness and a progress

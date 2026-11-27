@@ -358,18 +358,6 @@ defmodule BolognesaWeb.LiveSupport.PlaybackAttemptTest do
       refute PlaybackAttempt.playing?(direct, %{})
     end
 
-    test "a restore succeeds only when the requested stream was replaced by a healthy one" do
-      before = streaming()
-      replaced = %{before | session: %{@session | id: "s2"}}
-
-      assert PlaybackAttempt.restored?(before, replaced, "s1")
-      refute PlaybackAttempt.restored?(before, replaced, "other")
-      refute PlaybackAttempt.restored?(before, before, "s1")
-      refute PlaybackAttempt.restored?(before, %{replaced | error: {:preparation, :busy}}, "s1")
-      refute PlaybackAttempt.restored?(before, %{replaced | session: nil}, "s1")
-      refute PlaybackAttempt.restored?(%{before | session: nil}, replaced, "s1")
-    end
-
     test "a reset starts empty and stops the displayed session" do
       assert {%PlaybackAttempt{} = empty, [{:stop_session, "s1", :version_selected}]} =
                PlaybackAttempt.reset(streaming())
