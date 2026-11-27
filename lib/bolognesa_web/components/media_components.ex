@@ -192,6 +192,7 @@ defmodule BolognesaWeb.MediaComponents do
   attr :label, :string, required: true, doc: "accessible name of the nav"
   attr :page, :integer, required: true
   attr :page_size, :integer, required: true
+
   attr :total, :integer,
     default: nil,
     doc: "exact item count of a counted listing; pass exactly one of `total` or `has_next`"
