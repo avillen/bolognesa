@@ -105,6 +105,25 @@ defmodule Bolognesa.Music.BrowseTest do
              Enum.map(Enum.reverse(fixtures) |> Enum.take(3), & &1.track.album_id)
   end
 
+  test "recent albums skip a newer album without available files before taking three" do
+    actor = listening_actor()
+    fixtures = for i <- 1..5, do: refresh_fixture(tags: %{"album" => "Eligible #{i}"})
+    [unavailable | eligible] = Enum.reverse(fixtures)
+
+    fixtures
+    |> Enum.with_index(1)
+    |> Enum.each(fn {f, day} ->
+      record_activity(actor.id, f.track.id, DateTime.add(~U[2026-10-01 00:00:00Z], day, :day))
+    end)
+
+    Repo.update!(change(unavailable.file, availability: :missing))
+
+    expected = Enum.take(eligible, 3)
+    assert {:ok, albums} = Music.list_recent_albums(actor, nil)
+    assert Enum.map(albums, & &1.id) == Enum.map(expected, & &1.track.album_id)
+    assert Enum.map(albums, & &1.final_track_id) == Enum.map(expected, & &1.track.id)
+  end
+
   test "recent album continuation uses latest heard track and replays when it is last in album order" do
     actor = listening_actor()
     f = refresh_fixture(tags: %{"album" => "First", "disc" => "1", "track" => "1"})
