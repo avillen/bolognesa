@@ -1,5 +1,5 @@
 defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
-  @moduledoc "Navigation, search, feedback and pagination for music browsing."
+  @moduledoc "Navigation, search and feedback for music browsing."
   use BolognesaWeb, :html
 
   alias BolognesaWeb.MediaComponents
@@ -104,35 +104,6 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
     >
       {gettext("No hay resultados. Prueba otra búsqueda o escanea tu biblioteca de música.")}
     </p>
-    """
-  end
-
-  attr :total, :integer, required: true
-  attr :page_size, :integer, required: true
-  attr :page, :integer, required: true
-  attr :browse_params, :map, required: true
-  attr :query, :string, required: true
-
-  @spec pagination(map()) :: Phoenix.LiveView.Rendered.t()
-  def pagination(assigns) do
-    ~H"""
-    <nav
-      :if={@total > @page_size}
-      aria-label={gettext("Paginación de música")}
-      class="music-pagination"
-    >
-      <.link
-        :if={@page > 1}
-        patch={~p"/music?#{Map.merge(@browse_params, %{query: @query, page: @page - 1})}"}
-        class="music-page-link"
-      ><.icon name="hero-chevron-left" class="size-4" />{gettext("Anterior")}</.link>
-      <span class="music-page-current">{gettext("Página %{page}", page: @page)}</span>
-      <.link
-        :if={@page * @page_size < @total}
-        patch={~p"/music?#{Map.merge(@browse_params, %{query: @query, page: @page + 1})}"}
-        class="music-page-link"
-      >{gettext("Siguiente")}<.icon name="hero-chevron-right" class="size-4" /></.link>
-    </nav>
     """
   end
 end

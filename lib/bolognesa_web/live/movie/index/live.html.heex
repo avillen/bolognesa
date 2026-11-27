@@ -94,23 +94,13 @@
         library_params={@library_params}
       />
     </div>
-    <nav
-      :if={@total > 24}
-      id="movies-pagination"
-      aria-label={gettext("Páginas del catálogo")}
-      class="media-pagination items-center"
-    >
-      <.link
-        :if={@page > 1}
-        patch={~p"/movies?#{Map.merge(@library_params, %{query: @query, page: @page - 1})}"}
-        class="rounded-xl border border-border-strong px-4 py-3 text-ink"
-      >{gettext("Anterior")}</.link>
-      <span class="text-sm text-muted">{gettext("Página %{page}", page: @page)}</span>
-      <.link
-        :if={@page * 24 < @total}
-        patch={~p"/movies?#{Map.merge(@library_params, %{query: @query, page: @page + 1})}"}
-        class="rounded-xl border border-border-strong px-4 py-3 text-ink"
-      >{gettext("Siguiente")}</.link>
-    </nav>
+    <MediaComponents.pagination
+      id="movies"
+      label={gettext("Páginas del catálogo")}
+      page={@page}
+      page_size={@page_size}
+      total={@total}
+      path={fn page -> ~p"/movies?#{Map.merge(@library_params, %{query: @query, page: page})}" end}
+    />
   </section>
 </Layouts.app>

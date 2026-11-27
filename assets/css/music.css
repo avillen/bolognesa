@@ -164,12 +164,8 @@
 .music-track-row:last-child .music-menu-items { top: auto; bottom: 48px; }
 .music-action-menu summary:focus-visible, .music-action-menu button:focus-visible { outline: 2px solid var(--color-accent-soft); outline-offset: 2px; }
 
-/* Feedback, pagination and the queue toast. */
+/* Feedback and the queue toast. */
 .music-feedback { padding: 40px 24px; border: 1px dashed var(--color-border-strong); border-radius: 14px; color: var(--color-muted); text-align: center; }
-.music-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; }
-.music-page-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border: 1px solid var(--color-border-strong); border-radius: 999px; color: var(--color-ink); font-size: 14px; font-weight: 550; }
-.music-page-link:hover { border-color: var(--color-ink); background: var(--color-raised); }
-.music-page-current { color: var(--color-muted); font-size: 14px; font-variant-numeric: tabular-nums; }
 #music-queue-feedback { position: fixed; z-index: 80; bottom: calc(var(--music-player-height, 0px) + 16px); right: 16px; visibility: hidden; }
 #music-queue-feedback[data-visible="true"] { visibility: visible; padding: 10px 16px; border: 1px solid var(--color-border-strong); border-radius: 10px; background: var(--color-raised); color: var(--color-ink); box-shadow: 0 12px 32px #0008; }
 

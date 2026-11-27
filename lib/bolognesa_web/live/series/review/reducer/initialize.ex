@@ -7,6 +7,7 @@ defmodule BolognesaWeb.Series.Review.Reducer.Initialize do
     socket
     |> assign(
       page: 1,
+      page_size: 24,
       total: 0,
       loading?: true,
       error: nil,

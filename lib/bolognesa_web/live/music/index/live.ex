@@ -2,6 +2,7 @@ defmodule BolognesaWeb.Music.Index.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
 
+  alias BolognesaWeb.MediaComponents
   alias BolognesaWeb.Music.Index.Components.BrowseCard
   alias BolognesaWeb.Music.Index.Components.BrowseControls
   alias BolognesaWeb.Music.Index.Components.DetailHeading
