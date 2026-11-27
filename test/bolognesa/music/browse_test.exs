@@ -121,7 +121,8 @@ defmodule Bolognesa.Music.BrowseTest do
     expected = Enum.take(eligible, 3)
     assert {:ok, albums} = Music.list_recent_albums(actor, nil)
     assert Enum.map(albums, & &1.id) == Enum.map(expected, & &1.track.album_id)
-    assert Enum.map(albums, & &1.final_track_id) == Enum.map(expected, & &1.track.id)
+    assert Enum.map(albums, & &1.track_id) == Enum.map(expected, & &1.track.id)
+    assert Enum.all?(albums, & &1.restart?)
   end
 
   test "recent album continuation uses latest heard track and replays when it is last in album order" do
