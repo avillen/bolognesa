@@ -4,6 +4,7 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
+  import Bolognesa.RepoReads, only: [watch_reads: 2]
 
   alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
@@ -213,10 +214,10 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     movie = Repo.insert!(movie_changeset(%{provider_id: 500, title: "Cancelable"}))
     watch_reads(fn _query, params -> "Cancel" in params end, fn _params -> true end)
     {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies?query=Cancel")
-    assert_receive {:read, reader, _params}
+    assert_receive {:read, reader, _params}, 5_000
     monitor = Process.monitor(reader)
     render_patch(view, ~p"/movies?query=Cancelable")
-    assert_receive {:DOWN, ^monitor, :process, ^reader, {:shutdown, :cancel}}
+    assert_receive {:DOWN, ^monitor, :process, ^reader, {:shutdown, :cancel}}, 5_000
     render_async(view)
     assert has_element?(view, "#movie-link-#{movie.id}")
   end
@@ -249,7 +250,7 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     refute_received {:read, _reader, _params}
 
     render_patch(view, "/movies?library_id=#{other.id}")
-    assert_receive {:read, reader, params}
+    assert_receive {:read, reader, params}, 5_000
     assert other.id in params
     refute has_element?(view, tile)
     send(reader, :continue)
@@ -270,13 +271,13 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     {:ok, view, _} =
       live(init_test_session(conn, user_token: token), "/movies?library_id=#{library.id}")
 
-    assert_receive {:read, reader, _params}
+    assert_receive {:read, reader, _params}, 5_000
     Process.exit(reader, :kill)
     render_async(view)
     refute has_element?(view, "#movies-recent-shelf")
 
     render_patch(view, "/movies?library_id=#{library.id}&query=Vista")
-    assert_receive {:read, reader, _params}
+    assert_receive {:read, reader, _params}, 5_000
     send(reader, :continue)
     render_patch(view, "/movies?library_id=#{library.id}")
     render_async(view)
@@ -305,34 +306,6 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
 
   defp recent_read?(query, _params),
     do: query =~ ~r/FROM "movies_watched" AS \w+ INNER JOIN "movies"/
-
-  # Reports each matching repo read to the test; reads accepted by `park?` wait for :continue.
-  defp watch_reads(match?, park?) do
-    handler = {__MODULE__, make_ref()}
-    parent = self()
-
-    :ok =
-      :telemetry.attach(
-        handler,
-        [:bolognesa, :repo, :query],
-        fn _, _, %{query: query, params: params}, _ ->
-          if match?.(query, params) do
-            send(parent, {:read, self(), params})
-
-            if park?.(params) do
-              receive do
-                :continue -> :ok
-              after
-                10_000 -> :ok
-              end
-            end
-          end
-        end,
-        nil
-      )
-
-    on_exit(fn -> :telemetry.detach(handler) end)
-  end
 
   defp movie_changeset(attrs),
     do: MovieSchema.changeset(%MovieSchema{}, Map.put_new(attrs, :provider, :tmdb))

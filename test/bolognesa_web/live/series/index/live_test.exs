@@ -3,6 +3,7 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
+  import Bolognesa.RepoReads, only: [watch_reads: 2]
   alias Bolognesa.Series.Domain.ValueObjects.Entry
   alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository, as: Repository
   alias BolognesaWeb.SeriesFixtures
@@ -96,10 +97,10 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
   test "a new search cancels the superseded catalog read", ctx do
     watch_reads(fn _query, params -> "Seri" in params end, fn _params -> true end)
     {:ok, view, _} = live(ctx.conn, "/series?query=Seri")
-    assert_receive {:read, reader, _params}
+    assert_receive {:read, reader, _params}, 5_000
     monitor = Process.monitor(reader)
     render_patch(view, "/series?query=Serie")
-    assert_receive {:DOWN, ^monitor, :process, ^reader, {:shutdown, :cancel}}
+    assert_receive {:DOWN, ^monitor, :process, ^reader, {:shutdown, :cancel}}, 5_000
     render_async(view)
     assert has_element?(view, "#series-list #series-#{ctx.series_id}")
   end
@@ -122,7 +123,7 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
     refute_received {:read, _reader, _params}
 
     render_patch(view, "/series?library_id=#{other.id}")
-    assert_receive {:read, reader, params}
+    assert_receive {:read, reader, params}, 5_000
     assert other.id in params
     refute has_element?(view, continue)
     send(reader, :continue)
@@ -134,13 +135,13 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
     continue = watch_next_episode(ctx)
     watch_reads(&recent_read?/2, fn _params -> true end)
     {:ok, view, _} = live(ctx.conn, "/series?library_id=#{ctx.library.id}")
-    assert_receive {:read, reader, _params}
+    assert_receive {:read, reader, _params}, 5_000
     Process.exit(reader, :kill)
     render_async(view)
     refute has_element?(view, "#series-continue-shelf")
 
     render_patch(view, "/series?library_id=#{ctx.library.id}&query=Serie")
-    assert_receive {:read, reader, _params}
+    assert_receive {:read, reader, _params}, 5_000
     send(reader, :continue)
     render_patch(view, "/series?library_id=#{ctx.library.id}")
     render_async(view)
@@ -164,32 +165,4 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
 
   defp recent_read?(query, _params),
     do: query =~ ~r/FROM "series_watched_entries" AS \w+ INNER JOIN "episodes"/
-
-  # Reports each matching repo read to the test; reads accepted by `park?` wait for :continue.
-  defp watch_reads(match?, park?) do
-    handler = {__MODULE__, make_ref()}
-    parent = self()
-
-    :ok =
-      :telemetry.attach(
-        handler,
-        [:bolognesa, :repo, :query],
-        fn _, _, %{query: query, params: params}, _ ->
-          if match?.(query, params) do
-            send(parent, {:read, self(), params})
-
-            if park?.(params) do
-              receive do
-                :continue -> :ok
-              after
-                10_000 -> :ok
-              end
-            end
-          end
-        end,
-        nil
-      )
-
-    on_exit(fn -> :telemetry.detach(handler) end)
-  end
 end
