@@ -217,6 +217,40 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     assert {:error, :invalid_query} = Series.search_series(@actor, "", 1, "bad")
   end
 
+  test "pagination selects title/id members before counting their scoped episodes" do
+    first = SeriesFixtures.library()
+    second = SeriesFixtures.library()
+
+    for index <- 1..24 do
+      SeriesFixtures.identify(SeriesFixtures.file(first.id, "f#{index}.mkv"), 1, [1], 1000 + index)
+    end
+
+    double = SeriesFixtures.file(first.id, "last S01E01E02.mkv")
+    SeriesFixtures.identify(double, 1, [1, 2], 1025)
+    double |> Changeset.change(availability: :missing) |> Repo.update!()
+    SeriesFixtures.identify(SeriesFixtures.file(first.id, "last S01E01.mp4"), 1, [1], 1025)
+    SeriesFixtures.identify(SeriesFixtures.file(second.id, "last S01E02.mkv"), 1, [2], 1025)
+
+    assert {:ok, %{total: 25, items: items}} = Series.search_series(@actor, "Serie", 1)
+    ids = Enum.map(items, & &1.id)
+    assert ids == Enum.sort(ids) and length(ids) == 24
+    assert Enum.all?(items, &(&1.episode_count == 1 and &1.available_episode_count == 1))
+
+    for {library_id, total, episodes, available} <- [
+          {nil, 25, 2, 2},
+          {first.id, 25, 2, 1}
+        ] do
+      assert {:ok, %{total: ^total, items: [item]}} =
+               Series.search_series(@actor, "Serie", 2, library_id)
+
+      assert item.id > List.last(ids)
+      assert {item.episode_count, item.available_episode_count} == {episodes, available}
+    end
+
+    assert {:ok, %{total: 1, items: [item]}} = Series.search_series(@actor, "", 1, second.id)
+    assert {item.episode_count, item.available_episode_count} == {1, 1}
+  end
+
   test "movie and series resources with the same external ID remain separate" do
     library = SeriesFixtures.library()
     file = SeriesFixtures.file(library.id, "Serie S01E01.mkv")

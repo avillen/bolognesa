@@ -128,6 +128,44 @@ defmodule Bolognesa.Movies.CatalogQueriesTest do
     assert {:error, :invalid_query} = Movies.list_movies(actor, "", 1, -1)
   end
 
+  test "pagination selects title/id members before counting their scoped versions" do
+    actor = %AuthenticatedUser{id: 1, role: :admin}
+    first = SeriesFixtures.library(:movie)
+    second = SeriesFixtures.library(:movie)
+
+    movies =
+      for index <- 1..25 do
+        movie = Repo.insert!(movie_changeset(%{provider_id: 1000 + index, title: "Paged"}))
+        insert_version(first.id, movie.id, index)
+        movie
+      end
+
+    last = List.last(movies)
+    missing = Repo.get!(MediaFileSchema, insert_version(first.id, last.id, 26).media_file_id)
+    Repo.update!(Changeset.change(missing, availability: :missing))
+    insert_version(second.id, last.id, 27)
+    ids = Enum.map(movies, & &1.id)
+
+    assert {:ok, %{total: 25, items: items}} = Movies.list_movies(actor, "Paged", 1)
+    assert Enum.map(items, & &1.id) == Enum.take(ids, 24)
+    assert Enum.all?(items, &(&1.version_count == 1 and &1.available_count == 1))
+
+    for {library_id, total, versions, available} <- [
+          {nil, 25, 3, 2},
+          {first.id, 25, 2, 1}
+        ] do
+      assert {:ok, %{total: ^total, items: [item]}} =
+               Movies.list_movies(actor, "Paged", 2, library_id)
+
+      assert {item.id, item.version_count, item.available_count} ==
+               {last.id, versions, available}
+    end
+
+    assert {:ok, %{total: 1, items: [item]}} = Movies.list_movies(actor, "Paged", 1, second.id)
+    assert {item.id, item.version_count, item.available_count} == {last.id, 1, 1}
+    assert {:ok, %{total: 1, items: []}} = Movies.list_movies(actor, "Paged", 2, second.id)
+  end
+
   test "movie details reject more than one hundred versions without returning a partial list" do
     actor = %AuthenticatedUser{id: 1, role: :admin}
     library = SeriesFixtures.library(:movie)

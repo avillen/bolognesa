@@ -24,11 +24,12 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader do
     filtered = restrict_library(filtered, library_id)
 
     total = Repo.aggregate(filtered, :count, :id, log: false)
-    offset = (page - 1) * @page_size
 
     rows =
       Repo.all(
-        from(movie in filtered,
+        from(movie in MovieSchema,
+          join: paged in subquery(page_ids(filtered, page)),
+          on: paged.id == movie.id,
           left_join: identification in MovieIdentificationSchema,
           on:
             identification.movie_id == movie.id and
@@ -40,8 +41,6 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader do
           on: watched.movie_id == movie.id and watched.user_id == ^user_id,
           group_by: [movie.id, watched.last_watched_at],
           order_by: [asc: movie.title, asc: movie.id],
-          limit: @page_size,
-          offset: ^offset,
           select:
             {movie, count(file.id), filter(count(file.id), file.availability == :available),
              watched.last_watched_at}
@@ -60,6 +59,16 @@ defmodule Bolognesa.Movies.Infrastructure.Readers.EctoMoviesReader do
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
+
+  # Pages in title/id order before aggregating, so only this page's versions are counted.
+  defp page_ids(query, page),
+    do:
+      from(movie in query,
+        order_by: [asc: movie.title, asc: movie.id],
+        limit: @page_size,
+        offset: ^((page - 1) * @page_size),
+        select: %{id: movie.id}
+      )
 
   defp restrict_library(query, nil), do: query
 
