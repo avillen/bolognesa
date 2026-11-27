@@ -151,7 +151,7 @@ defmodule Bolognesa.Music.BrowseTest do
     record_activity(actor.id, second.id, ~U[2026-10-02 10:00:00.123456Z])
     record_activity(other.id, f.track.id, ~U[2026-10-03 10:00:00.000000Z])
 
-    assert {:ok, %{items: [album], total: 1}} =
+    assert {:ok, %{items: [album], has_next?: false}} =
              Music.browse(actor, :albums, nil, "", 1, f.library.id)
 
     assert album.last_played_at == ~U[2026-10-02 10:00:00.123456Z]
@@ -205,21 +205,23 @@ defmodule Bolognesa.Music.BrowseTest do
     actor = listening_actor()
     record_activity(actor.id, f.track.id, ~U[2026-10-01 10:00:00.000000Z])
 
-    {{:ok, %{items: [_], total: 1}}, initial_queries} =
+    {{:ok, %{items: [_]}}, initial_queries} =
       count_queries(fn -> Music.browse(actor, :albums, nil, "", 1, nil) end)
 
     other = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
     record_activity(actor.id, other.track.id, ~U[2026-10-06 10:00:00.000000Z])
 
-    {{:ok, %{items: albums, total: 2}}, queries} =
+    {{:ok, %{items: [_, _] = albums}}, queries} =
       count_queries(fn -> Music.browse(actor, :albums, nil, "", 1, nil) end)
 
+    # One paged read with lookahead; no exact count query.
+    assert initial_queries == 1
     assert queries == initial_queries
     dates = Map.new(albums, &{&1.id, &1.last_played_at})
     assert dates[f.track.album_id] == ~U[2026-10-01 10:00:00.000000Z]
     assert dates[other.track.album_id] == ~U[2026-10-06 10:00:00.000000Z]
 
-    assert {:ok, %{items: [album], total: 1}} =
+    assert {:ok, %{items: [album], has_next?: false}} =
              Music.browse(actor, :albums, nil, "", 1, f.library.id)
 
     assert album.id == f.track.album_id
@@ -231,7 +233,7 @@ defmodule Bolognesa.Music.BrowseTest do
     other = refresh_fixture(tags: %{"artist" => "Elsewhere", "album" => "Other"})
     assert {:error, :forbidden} = Music.browse(nil, :artists, nil, "", 1, nil)
 
-    assert {:ok, %{items: [artist], total: 1}} =
+    assert {:ok, %{items: [artist]}} =
              Music.browse(f.actor, :artists, nil, "", 1, f.library.id)
 
     assert artist.id == f.track.artist_id
@@ -288,16 +290,16 @@ defmodule Bolognesa.Music.BrowseTest do
   test "browsing searches literally and hides orphan identities" do
     f = refresh_fixture(tags: %{"artist" => "100%_Ensemble", "album" => "First"})
 
-    assert {:ok, %{items: [_], total: 1}} =
+    assert {:ok, %{items: [_]}} =
              Music.browse(f.actor, :artists, nil, "%_", 1, f.library.id)
 
-    assert {:ok, %{items: [], total: 0}} =
+    assert {:ok, %{items: [], has_next?: false}} =
              Music.browse(f.actor, :artists, nil, "missing%", 1, f.library.id)
 
     assert {:ok, %{items: [_]}} = Music.browse(f.actor, :albums, nil, "First", 1, f.library.id)
     Repo.update!(change(f.file, availability: :missing))
-    assert {:ok, %{total: 0}} = Music.browse(f.actor, :artists, nil, "", 1, f.library.id)
-    assert {:ok, %{total: 0}} = Music.browse(f.actor, :albums, nil, "", 1, f.library.id)
+    assert {:ok, %{items: []}} = Music.browse(f.actor, :artists, nil, "", 1, f.library.id)
+    assert {:ok, %{items: []}} = Music.browse(f.actor, :albums, nil, "", 1, f.library.id)
   end
 
   test "artist browsing prefers the album credit and hides unavailable files" do
@@ -306,7 +308,7 @@ defmodule Bolognesa.Music.BrowseTest do
         tags: %{"artist" => "Solo", "album_artist" => "Ensemble", "album" => "First"}
       )
 
-    assert {:ok, %{items: artists, total: 1}} =
+    assert {:ok, %{items: [_] = artists}} =
              Music.browse(f.actor, :artists, nil, "", 1, f.library.id)
 
     assert Enum.map(artists, & &1.title) == ["Ensemble"]
@@ -323,14 +325,14 @@ defmodule Bolognesa.Music.BrowseTest do
 
     Repo.update!(change(f.file, availability: :missing))
 
-    assert {:ok, %{items: [], total: 0}} =
+    assert {:ok, %{items: [], has_next?: false}} =
              Music.browse(f.actor, :artists, nil, "", 1, f.library.id)
   end
 
   test "tracks without an album remain browsable by their artist" do
     f = refresh_fixture(tags: %{"artist" => "Solo"})
 
-    assert {:ok, %{items: [artist], total: 1}} =
+    assert {:ok, %{items: [artist]}} =
              Music.browse(f.actor, :artists, nil, "", 1, f.library.id)
 
     assert artist.title == "Solo"
@@ -340,7 +342,7 @@ defmodule Bolognesa.Music.BrowseTest do
     f = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
     add_tracks(f, 50)
 
-    assert {:ok, %{items: page, total: 51}} =
+    assert {:ok, %{items: page, total: 51, has_next?: true}} =
              Music.list_album_tracks(f.actor, f.track.album_id, "", 1, f.library.id)
 
     assert length(page) == 50

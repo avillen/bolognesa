@@ -1,5 +1,11 @@
 defmodule Bolognesa.Music.Application.Ports.Readers.TracksReader do
-  @moduledoc "Bounded, library-scoped local music reads."
+  @moduledoc """
+  Bounded, library-scoped local music reads.
+
+  Every `TrackPage` reports `has_next?` from one lookahead row. `list_tracks/4`
+  leaves `total` nil (no count); `list_album_tracks/6` keeps the exact album
+  `total` for the detail heading and the oversized-queue check.
+  """
   alias Bolognesa.Music.Domain.Entities.Album
   alias Bolognesa.Music.Domain.Entities.Track
   alias Bolognesa.Music.Domain.ReadModels.TrackPage

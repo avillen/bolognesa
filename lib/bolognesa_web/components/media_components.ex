@@ -192,14 +192,24 @@ defmodule BolognesaWeb.MediaComponents do
   attr :label, :string, required: true, doc: "accessible name of the nav"
   attr :page, :integer, required: true
   attr :page_size, :integer, required: true
-  attr :total, :integer, required: true
+  attr :total, :integer,
+    default: nil,
+    doc: "exact item count of a counted listing; pass exactly one of `total` or `has_next`"
+
+  attr :has_next, :boolean,
+    default: nil,
+    doc: "whether an uncounted listing has a next page; pass exactly one of `total` or `has_next`"
+
   attr :path, :any, required: true, doc: "function from a page number to its patch path"
 
   @spec pagination(map()) :: Phoenix.LiveView.Rendered.t()
   def pagination(assigns) do
+    {visible?, next?} = page_links(assigns)
+    assigns = assign(assigns, visible?: visible?, next?: next?)
+
     ~H"""
     <nav
-      :if={@total > @page_size}
+      :if={@visible?}
       id={"#{@id}-pagination"}
       aria-label={@label}
       class="flex flex-wrap items-center justify-center gap-3"
@@ -212,7 +222,7 @@ defmodule BolognesaWeb.MediaComponents do
       ><.icon name="hero-chevron-left" class="size-4" />{gettext("Anterior")}</.link>
       <span class="text-sm text-muted tabular-nums">{gettext("Página %{page}", page: @page)}</span>
       <.link
-        :if={@page * @page_size < @total}
+        :if={@next?}
         id={"#{@id}-next"}
         patch={@path.(@page + 1)}
         class={button_variant(%{variant: "outline", shape: "pill"})}
@@ -220,4 +230,16 @@ defmodule BolognesaWeb.MediaComponents do
     </nav>
     """
   end
+
+  # Explicit contracts: comparing an integer with a missing (nil) extent would be truthy.
+  defp page_links(%{total: total, has_next: nil, page: page, page_size: size})
+       when is_integer(total),
+       do: {total > size, page * size < total}
+
+  # Uncounted: a deep page past the end still offers Previous.
+  defp page_links(%{total: nil, has_next: has_next, page: page}) when is_boolean(has_next),
+    do: {page > 1 or has_next, has_next}
+
+  defp page_links(_assigns),
+    do: raise(ArgumentError, "pagination needs an integer total or a boolean has_next")
 end

@@ -86,7 +86,7 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
   attr :loading?, :boolean, required: true
   attr :error, :any, default: nil
   attr :browse_kind, :atom, required: true
-  attr :total, :integer, required: true
+  attr :empty?, :boolean, required: true
 
   @spec feedback(map()) :: Phoenix.LiveView.Rendered.t()
   def feedback(assigns) do
@@ -98,7 +98,7 @@ defmodule BolognesaWeb.Music.Index.Components.BrowseControls do
       <p>{@error}</p>
     </MediaComponents.retry_alert>
     <p
-      :if={@browse_kind != :home && !@loading? && !@error && @total == 0}
+      :if={@browse_kind != :home && !@loading? && !@error && @empty?}
       id="music-empty"
       class="music-feedback"
     >

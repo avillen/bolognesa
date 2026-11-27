@@ -219,6 +219,20 @@ defmodule BolognesaWeb.Music.Index.LiveTest do
     assert has_element?(view, "#music-tracks", "Sample Song")
   end
 
+  test "a page past the end offers Previous without claiming the library is empty", %{
+    conn: conn,
+    token: token
+  } do
+    fixture = refresh_fixture(tags: %{"artist" => "Ensemble", "album" => "First"})
+    route = "/music?library_id=#{fixture.library.id}&view=artists&page=9"
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), route)
+    render_async(view)
+
+    refute has_element?(view, "#music-empty")
+    assert has_element?(view, "#music-previous[href*='page=8']")
+    refute has_element?(view, "#music-next")
+  end
+
   test "typing filters songs and clearing restores them within the selected library", %{
     conn: conn,
     token: token

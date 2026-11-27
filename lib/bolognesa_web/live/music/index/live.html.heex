@@ -52,7 +52,7 @@
       loading?={@loading?}
       error={@error}
       browse_kind={@browse_kind}
-      total={@total}
+      empty?={@empty?}
     />
     <div
       id="music-browse"
@@ -89,7 +89,7 @@
       label={gettext("Paginación de música")}
       page={@page}
       page_size={@page_size}
-      total={@total}
+      has_next={@has_next?}
       path={fn page -> ~p"/music?#{Map.merge(@browse_params, %{query: @query, page: page})}" end}
     />
   </section>

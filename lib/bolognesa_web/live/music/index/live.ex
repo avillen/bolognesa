@@ -35,6 +35,8 @@ defmodule BolognesaWeb.Music.Index.Live do
      |> assign(:query, "")
      |> assign(:page, 1)
      |> assign(:total, 0)
+     |> assign(:has_next?, false)
+     |> assign(:empty?, false)
      |> assign(:page_size, 50)
      |> assign(:loading?, true)
      |> assign(:error, nil)
