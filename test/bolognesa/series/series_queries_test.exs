@@ -222,7 +222,12 @@ defmodule Bolognesa.Series.SeriesQueriesTest do
     second = SeriesFixtures.library()
 
     for index <- 1..24 do
-      SeriesFixtures.identify(SeriesFixtures.file(first.id, "f#{index}.mkv"), 1, [1], 1000 + index)
+      SeriesFixtures.identify(
+        SeriesFixtures.file(first.id, "f#{index}.mkv"),
+        1,
+        [1],
+        1000 + index
+      )
     end
 
     double = SeriesFixtures.file(first.id, "last S01E01E02.mkv")
