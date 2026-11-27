@@ -12,6 +12,7 @@ defmodule BolognesaWeb.Series.Season.Reducer.Initialize do
         error: nil,
         content_id: 0,
         page: 1,
+        page_size: 24,
         total: 0,
         request_id: nil
       )

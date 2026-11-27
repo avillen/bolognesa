@@ -7,6 +7,7 @@ defmodule BolognesaWeb.Movie.Review.Reducer.Initialize do
   def call(socket) do
     socket
     |> assign(:page, 1)
+    |> assign(:page_size, 24)
     |> assign(:total, 0)
     |> assign(:loading?, true)
     |> assign(:error, nil)

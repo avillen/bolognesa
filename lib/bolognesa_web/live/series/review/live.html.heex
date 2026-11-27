@@ -31,13 +31,14 @@
         saving?={@saving?}
       />
     </div>
-    <nav :if={@total > 24} aria-label={gettext("Paginación")} class="flex gap-4">
-      <.link :if={@page > 1} patch={~p"/series/review?page=#{@page - 1}"}>{gettext("Anterior")}</.link>
-      <span>{gettext("Página %{page}", page: @page)}</span>
-      <.link :if={@page * 24 < @total} patch={~p"/series/review?page=#{@page + 1}"}>{gettext(
-        "Siguiente"
-      )}</.link>
-    </nav>
+    <MediaComponents.pagination
+      id="series-review"
+      label={gettext("Paginación")}
+      page={@page}
+      page_size={@page_size}
+      total={@total}
+      path={fn page -> ~p"/series/review?#{%{page: page}}" end}
+    />
     <Card.card :if={@selected_item} id="series-file-correction" class="space-y-4 p-5">
       <h2 class="text-xl font-semibold break-all">
         {gettext("Corregir")} {@selected_item.filename}

@@ -56,21 +56,17 @@
         page={@page}
       />
     </div>
-    <nav aria-label={gettext("Páginas de episodios")} class="media-pagination">
-      <.link
-        :if={@page > 1}
-        patch={
-          ~p"/series/seasons/#{@content_id}?#{Map.merge(@series_params, %{page: @page - 1})}"
-        }
-        class="min-h-11 py-3"
-      >{gettext("Anterior")}</.link>
-      <.link
-        :if={@page * 24 < @total}
-        patch={
-          ~p"/series/seasons/#{@content_id}?#{Map.merge(@series_params, %{page: @page + 1})}"
-        }
-        class="min-h-11 py-3"
-      >{gettext("Siguiente")}</.link>
-    </nav>
+    <MediaComponents.pagination
+      id="episodes"
+      label={gettext("Páginas de episodios")}
+      page={@page}
+      page_size={@page_size}
+      total={@total}
+      path={
+        fn page ->
+          ~p"/series/seasons/#{@content_id}?#{Map.merge(@series_params, %{page: page})}"
+        end
+      }
+    />
   </section>
 </Layouts.app>

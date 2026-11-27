@@ -92,19 +92,15 @@
         series_params={@series_params}
       />
     </div>
-    <nav aria-label={gettext("Páginas de series")} class="media-pagination">
-      <.link
-        :if={@page > 1}
-        id="series-previous"
-        patch={~p"/series?#{Map.merge(@library_params, %{query: @query, page: @page - 1})}"}
-        class="min-h-11 py-3"
-      >{gettext("Anterior")}</.link>
-      <.link
-        :if={@page * 24 < @total}
-        id="series-next"
-        patch={~p"/series?#{Map.merge(@library_params, %{query: @query, page: @page + 1})}"}
-        class="min-h-11 py-3"
-      >{gettext("Siguiente")}</.link>
-    </nav>
+    <MediaComponents.pagination
+      id="series"
+      label={gettext("Páginas de series")}
+      page={@page}
+      page_size={@page_size}
+      total={@total}
+      path={
+        fn page -> ~p"/series?#{Map.merge(@library_params, %{query: @query, page: page})}" end
+      }
+    />
   </section>
 </Layouts.app>

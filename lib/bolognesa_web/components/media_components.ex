@@ -184,4 +184,40 @@ defmodule BolognesaWeb.MediaComponents do
     </Alert.alert>
     """
   end
+
+  attr :id, :string,
+    required: true,
+    doc: "prefix for the nav (`<id>-pagination`) and link (`<id>-previous`, `<id>-next`) ids"
+
+  attr :label, :string, required: true, doc: "accessible name of the nav"
+  attr :page, :integer, required: true
+  attr :page_size, :integer, required: true
+  attr :total, :integer, required: true
+  attr :path, :any, required: true, doc: "function from a page number to its patch path"
+
+  @spec pagination(map()) :: Phoenix.LiveView.Rendered.t()
+  def pagination(assigns) do
+    ~H"""
+    <nav
+      :if={@total > @page_size}
+      id={"#{@id}-pagination"}
+      aria-label={@label}
+      class="flex flex-wrap items-center justify-center gap-3"
+    >
+      <.link
+        :if={@page > 1}
+        id={"#{@id}-previous"}
+        patch={@path.(@page - 1)}
+        class={button_variant(%{variant: "outline", shape: "pill"})}
+      ><.icon name="hero-chevron-left" class="size-4" />{gettext("Anterior")}</.link>
+      <span class="text-sm text-muted tabular-nums">{gettext("Página %{page}", page: @page)}</span>
+      <.link
+        :if={@page * @page_size < @total}
+        id={"#{@id}-next"}
+        patch={@path.(@page + 1)}
+        class={button_variant(%{variant: "outline", shape: "pill"})}
+      >{gettext("Siguiente")}<.icon name="hero-chevron-right" class="size-4" /></.link>
+    </nav>
+    """
+  end
 end

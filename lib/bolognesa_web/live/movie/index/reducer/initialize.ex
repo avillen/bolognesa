@@ -8,6 +8,7 @@ defmodule BolognesaWeb.Movie.Index.Reducer.Initialize do
     socket
     |> assign(:query, "")
     |> assign(:page, 1)
+    |> assign(:page_size, 24)
     |> assign(:total, 0)
     |> assign(:loading?, true)
     |> assign(:error, nil)

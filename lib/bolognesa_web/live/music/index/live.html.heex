@@ -84,12 +84,13 @@
         active_library_id={@active_library_id}
       />
     </div>
-    <BrowseControls.pagination
-      total={@total}
-      page_size={@page_size}
+    <MediaComponents.pagination
+      id="music"
+      label={gettext("Paginación de música")}
       page={@page}
-      browse_params={@browse_params}
-      query={@query}
+      page_size={@page_size}
+      total={@total}
+      path={fn page -> ~p"/music?#{Map.merge(@browse_params, %{query: @query, page: page})}" end}
     />
   </section>
 </Layouts.app>

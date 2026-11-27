@@ -2,6 +2,7 @@ defmodule BolognesaWeb.Movie.Review.Live do
   @moduledoc false
   use BolognesaWeb, :live_view
   alias Bolognesa.Movies
+  alias BolognesaWeb.MediaComponents
   alias BolognesaWeb.Movie.Review.Components.CorrectionPanel
   alias BolognesaWeb.Movie.Review.Components.ReviewItem
   alias BolognesaWeb.Movie.Review.Reducer.ApplyCandidatesResult

@@ -61,23 +61,13 @@
     >
       {gettext("No hay archivos que revisar.")}
     </p>
-    <nav
-      :if={@total > 24}
-      id="review-pagination"
-      aria-label={gettext("Páginas de revisión")}
-      class="flex items-center justify-center gap-4"
-    >
-      <.link
-        :if={@page > 1}
-        patch={~p"/movies/review?#{%{page: @page - 1}}"}
-        class="rounded-xl border border-border-strong px-4 py-3 text-ink"
-      >{gettext("Anterior")}</.link>
-      <span class="text-sm text-muted">{gettext("Página %{page}", page: @page)}</span>
-      <.link
-        :if={@page * 24 < @total}
-        patch={~p"/movies/review?#{%{page: @page + 1}}"}
-        class="rounded-xl border border-border-strong px-4 py-3 text-ink"
-      >{gettext("Siguiente")}</.link>
-    </nav>
+    <MediaComponents.pagination
+      id="review"
+      label={gettext("Páginas de revisión")}
+      page={@page}
+      page_size={@page_size}
+      total={@total}
+      path={fn page -> ~p"/movies/review?#{%{page: page}}" end}
+    />
   </section>
 </Layouts.app>
