@@ -72,6 +72,20 @@ defmodule Bolognesa.Music.BrowseTest do
     assert queries == initial_queries
   end
 
+  test "recent album continuation breaks same-time track ties by the lowest track ID" do
+    actor = listening_actor()
+    f = refresh_fixture(tags: %{"album" => "First"})
+    {_, [second]} = add_tracks(f, 1)
+    other = listening_actor(:member)
+    record_activity(actor.id, second.id, ~U[2026-10-01 00:00:00.000000Z])
+    record_activity(actor.id, f.track.id, ~U[2026-10-01 00:00:00.000000Z])
+    record_activity(other.id, second.id, ~U[2026-10-02 00:00:00.000000Z])
+
+    assert {:ok, [album]} = Music.list_recent_albums(actor, nil)
+    assert album.track_id == min(f.track.id, second.id)
+    assert album.last_played_at == ~U[2026-10-01 00:00:00.000000Z]
+  end
+
   test "recent albums are limited to three distinct albums in latest activity order" do
     actor = listening_actor()
     fixtures = for i <- 1..5, do: refresh_fixture(tags: %{"album" => "Record #{i}"})

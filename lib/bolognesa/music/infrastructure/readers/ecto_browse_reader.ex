@@ -18,16 +18,18 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
   @impl true
   def list_recent_albums(library_id, user_id) do
     with :ok <- QueryFilters.library_scope(library_id) do
+      # Start from the account's activity (unique user_id/track_id index) instead of every album.
       latest =
-        from(track in MusicTrackSchema,
-          join: activity in MusicListeningActivitySchema,
-          on: activity.track_id == track.id and activity.user_id == ^user_id,
+        from(activity in MusicListeningActivitySchema,
+          join: track in MusicTrackSchema,
+          on: track.id == activity.track_id,
           join: file in MediaFileSchema,
           on: file.id == track.media_file_id,
-          where: track.album_id == parent_as(:album).id,
+          where: activity.user_id == ^user_id,
+          distinct: track.album_id,
           order_by: [desc: activity.last_played_at, asc: track.id],
-          limit: 1,
           select: %{
+            album_id: track.album_id,
             track_id: track.id,
             file_id: file.id,
             track_title: track.title,
@@ -56,8 +58,8 @@ defmodule Bolognesa.Music.Infrastructure.Readers.EctoBrowseReader do
 
       query =
         from([album, artist] in albums,
-          inner_lateral_join: latest in subquery(latest),
-          on: true,
+          join: latest in subquery(latest),
+          on: latest.album_id == album.id,
           inner_lateral_join: final in subquery(final),
           on: true,
           order_by: [desc: latest.last_played_at, asc: album.id],
