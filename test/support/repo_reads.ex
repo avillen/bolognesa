@@ -6,6 +6,8 @@ defmodule Bolognesa.RepoReads do
   `park?` wait inside their process until the test sends `:continue` to the reader.
   """
 
+  import ExUnit.Callbacks, only: [on_exit: 1]
+
   @park_timeout 10_000
 
   @spec watch_reads((String.t(), list() -> boolean()), (list() -> boolean())) :: :ok
@@ -23,7 +25,7 @@ defmodule Bolognesa.RepoReads do
         nil
       )
 
-    ExUnit.Callbacks.on_exit(fn -> :telemetry.detach(handler) end)
+    on_exit(fn -> :telemetry.detach(handler) end)
   end
 
   defp report(test, match?, park?, query, params) do
