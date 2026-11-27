@@ -30,7 +30,9 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
 
     rows =
       Repo.all(
-        from(series in base,
+        from(series in SeriesSchema,
+          join: paged in subquery(page_ids(base, page)),
+          on: paged.id == series.id,
           left_join: season in SeasonSchema,
           on: season.series_id == series.id,
           left_join: episode in EpisodeSchema,
@@ -40,8 +42,6 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
           on: file.episode_id == episode.id,
           group_by: series.id,
           order_by: [asc: series.title, asc: series.id],
-          limit: @page_size,
-          offset: ^((page - 1) * @page_size),
           select:
             {series, count(episode.id, :distinct),
              filter(count(episode.id, :distinct), file.availability == :available)}
@@ -58,6 +58,16 @@ defmodule Bolognesa.Series.Infrastructure.Readers.EctoSeriesReader do
     DBConnection.ConnectionError -> {:error, :unavailable}
     Postgrex.Error -> {:error, :unavailable}
   end
+
+  # Pages in title/id order before aggregating, so only this page's episodes are counted.
+  defp page_ids(query, page),
+    do:
+      from(series in query,
+        order_by: [asc: series.title, asc: series.id],
+        limit: @page_size,
+        offset: ^((page - 1) * @page_size),
+        select: %{id: series.id}
+      )
 
   defp restrict_library(query, nil), do: query
 
