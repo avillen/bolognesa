@@ -4,16 +4,19 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
+  import Bolognesa.RepoReads, only: [watch_reads: 2]
 
   alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
   alias Bolognesa.Infrastructure.Persistence.MovieWatchedSchema
   alias Bolognesa.Infrastructure.Persistence.UserSchema
+  alias Bolognesa.MovieIdentificationFixtures
 
   alias Bolognesa.Movies.Infrastructure.Repositories.EctoWatchedMoviesRepository,
     as: WatchedRepository
 
   alias Bolognesa.Repo
+  alias Ecto.UUID
 
   setup do
     {:ok, _} =
@@ -206,6 +209,77 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
     render_async(view)
     refute has_element?(view, "#movies-recent-shelf")
   end
+
+  test "a new search cancels the superseded catalog read", %{conn: conn, token: token} do
+    movie = Repo.insert!(movie_changeset(%{provider_id: 500, title: "Cancelable"}))
+    watch_reads(fn _query, params -> "Cancel" in params end, fn _params -> true end)
+    {:ok, view, _} = live(init_test_session(conn, user_token: token), ~p"/movies?query=Cancel")
+    assert_receive {:read, reader, _params}, 5_000
+    monitor = Process.monitor(reader)
+    render_patch(view, ~p"/movies?query=Cancelable")
+    assert_receive {:DOWN, ^monitor, :process, ^reader, {:shutdown, :cancel}}, 5_000
+    render_async(view)
+    assert has_element?(view, "#movie-link-#{movie.id}")
+  end
+
+  test "the recent shelf survives search and paging and clears on a library switch", %{
+    conn: conn,
+    token: token
+  } do
+    library = SeriesFixtures.library(:movie)
+    other = SeriesFixtures.library(:movie)
+    movie = library_movie(library, 400)
+    user = Repo.get_by!(UserSchema, email: "movies@example.com")
+    :ok = WatchedRepository.upsert(user.id, movie.id, DateTime.utc_now())
+    watch_reads(&recent_read?/2, &(other.id in &1))
+
+    {:ok, view, _} =
+      live(init_test_session(conn, user_token: token), "/movies?library_id=#{library.id}")
+
+    render_async(view)
+    assert_received {:read, _reader, params}
+    assert library.id in params
+    tile = "#recent-movie-#{movie.id}"
+    assert has_element?(view, tile)
+
+    render_patch(view, "/movies?library_id=#{library.id}&query=Vista")
+    render_patch(view, "/movies?library_id=#{library.id}&page=2")
+    render_patch(view, "/movies?library_id=#{library.id}")
+    assert has_element?(view, tile)
+    render_async(view)
+    refute_received {:read, _reader, _params}
+
+    render_patch(view, "/movies?library_id=#{other.id}")
+    assert_receive {:read, reader, params}, 5_000
+    assert other.id in params
+    refute has_element?(view, tile)
+    send(reader, :continue)
+    render_async(view)
+    refute has_element?(view, "#movies-recent-shelf")
+  end
+
+  defp library_movie(library, provider_id) do
+    movie =
+      Repo.insert!(movie_changeset(%{provider_id: provider_id, title: "Vista #{provider_id}"}))
+
+    file = SeriesFixtures.file(library.id, "Vista #{provider_id}.mkv")
+
+    MovieIdentificationFixtures.insert_decision!(
+      %{
+        media_file_id: file.id,
+        observed_revision: 1,
+        token: UUID.generate(),
+        state: :automatic,
+        origin: :automatic
+      },
+      movie.id
+    )
+
+    movie
+  end
+
+  defp recent_read?(query, _params),
+    do: query =~ ~r/FROM "movies_watched" AS \w+ INNER JOIN "movies"/
 
   defp movie_changeset(attrs),
     do: MovieSchema.changeset(%MovieSchema{}, Map.put_new(attrs, :provider, :tmdb))
