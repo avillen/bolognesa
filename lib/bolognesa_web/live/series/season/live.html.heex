@@ -62,7 +62,11 @@
       page={@page}
       page_size={@page_size}
       total={@total}
-      path={fn page -> ~p"/series/seasons/#{@content_id}?#{Map.merge(@series_params, %{page: page})}" end}
+      path={
+        fn page ->
+          ~p"/series/seasons/#{@content_id}?#{Map.merge(@series_params, %{page: page})}"
+        end
+      }
     />
   </section>
 </Layouts.app>

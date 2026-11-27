@@ -100,7 +100,9 @@
       page={@page}
       page_size={@page_size}
       total={@total}
-      path={fn page -> ~p"/movies?#{Map.merge(@library_params, %{query: @query, page: page})}" end}
+      path={
+        fn page -> ~p"/movies?#{Map.merge(@library_params, %{query: @query, page: page})}" end
+      }
     />
   </section>
 </Layouts.app>

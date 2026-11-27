@@ -98,7 +98,9 @@
       page={@page}
       page_size={@page_size}
       total={@total}
-      path={fn page -> ~p"/series?#{Map.merge(@library_params, %{query: @query, page: page})}" end}
+      path={
+        fn page -> ~p"/series?#{Map.merge(@library_params, %{query: @query, page: page})}" end
+      }
     />
   </section>
 </Layouts.app>
