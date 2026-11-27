@@ -1,12 +1,25 @@
 defmodule BolognesaWeb.Music.Index.Reducer.Load do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3, to_form: 2]
-  import Phoenix.LiveView, only: [start_async: 3, stream: 4]
+  import Phoenix.LiveView, only: [cancel_async: 2, start_async: 3, stream: 4]
   alias Bolognesa.Music
 
   @spec call(Phoenix.LiveView.Socket.t(), String.t(), pos_integer()) ::
           Phoenix.LiveView.Socket.t()
-  def call(%{assigns: %{browse_kind: :home}} = socket, _query, _page) do
+  def call(socket, query, page), do: socket |> cancel_superseded() |> load(query, page)
+
+  # A new request discards the previous results, so stop their reads instead of letting them run.
+  defp cancel_superseded(socket) do
+    request_id = socket.assigns.request_id
+
+    Enum.reduce(
+      socket.assigns.visible_track_ids,
+      cancel_async(socket, {:music_tracks, request_id}),
+      &cancel_async(&2, {:listening_activity, request_id, &1})
+    )
+  end
+
+  defp load(%{assigns: %{browse_kind: :home}} = socket, _query, _page) do
     socket
     |> assign(:query, "")
     |> assign(:page, 1)
@@ -20,7 +33,7 @@ defmodule BolognesaWeb.Music.Index.Reducer.Load do
     |> stream(:tracks, [], reset: true)
   end
 
-  def call(socket, query, page) do
+  defp load(socket, query, page) do
     actor = socket.assigns.current_scope.actor
     library_id = socket.assigns.active_library_id
     request_id = make_ref()

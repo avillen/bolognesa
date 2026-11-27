@@ -1,7 +1,7 @@
 defmodule BolognesaWeb.Music.Index.Reducer.RefreshListening do
   @moduledoc false
   import Phoenix.Component, only: [assign: 3]
-  import Phoenix.LiveView, only: [start_async: 3]
+  import Phoenix.LiveView, only: [cancel_async: 2, start_async: 3]
   alias Bolognesa.Music
 
   @spec call(Phoenix.LiveView.Socket.t(), integer()) :: Phoenix.LiveView.Socket.t()
@@ -29,11 +29,11 @@ defmodule BolognesaWeb.Music.Index.Reducer.RefreshListening do
     query = socket.assigns.query
     page = socket.assigns.page
     library = socket.assigns.active_library_id
-    request_id = socket.assigns.request_id
+    key = {:listening_activity, socket.assigns.request_id, track_id}
 
-    start_async(socket, {:listening_activity, request_id, track_id}, fn ->
-      read(actor, kind, album, query, page, library)
-    end)
+    socket
+    |> cancel_async(key)
+    |> start_async(key, fn -> read(actor, kind, album, query, page, library) end)
   end
 
   defp read(actor, :tracks, _album, query, page, library),
