@@ -4,7 +4,7 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
-  import Bolognesa.RepoReads, only: [watch_reads: 2]
+  import Bolognesa.RepoReads, only: [fail_read: 1, watch_reads: 2]
 
   alias Bolognesa.Accounts
   alias Bolognesa.Infrastructure.Persistence.MovieSchema
@@ -272,7 +272,7 @@ defmodule BolognesaWeb.Movie.Index.LiveTest do
       live(init_test_session(conn, user_token: token), "/movies?library_id=#{library.id}")
 
     assert_receive {:read, reader, _params}, 5_000
-    Process.exit(reader, :kill)
+    fail_read(reader)
     render_async(view)
     refute has_element?(view, "#movies-recent-shelf")
 

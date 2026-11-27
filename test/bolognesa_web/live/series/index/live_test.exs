@@ -3,7 +3,7 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
   alias Phoenix.LiveViewTest
   use BolognesaWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
-  import Bolognesa.RepoReads, only: [watch_reads: 2]
+  import Bolognesa.RepoReads, only: [fail_read: 1, watch_reads: 2]
   alias Bolognesa.Series.Domain.ValueObjects.Entry
   alias Bolognesa.Series.Infrastructure.Repositories.EctoWatchedEntriesRepository, as: Repository
   alias BolognesaWeb.SeriesFixtures
@@ -83,7 +83,7 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
 
     assert has_element?(
              view,
-             "#recent-series-continue-#{ctx.series_id}[href='/episodes/#{second}']",
+             "#recent-series-continue-#{ctx.series_id}[href^='/episodes/#{second}']",
              "Continuar T1·E2"
            )
 
@@ -136,7 +136,7 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
     watch_reads(&recent_read?/2, fn _params -> true end)
     {:ok, view, _} = live(ctx.conn, "/series?library_id=#{ctx.library.id}")
     assert_receive {:read, reader, _params}, 5_000
-    Process.exit(reader, :kill)
+    fail_read(reader)
     render_async(view)
     refute has_element?(view, "#series-continue-shelf")
 
@@ -160,7 +160,7 @@ defmodule BolognesaWeb.Series.Index.LiveTest do
         DateTime.utc_now()
       )
 
-    "#recent-series-continue-#{ctx.series_id}[href='/episodes/#{second}']"
+    "#recent-series-continue-#{ctx.series_id}[href^='/episodes/#{second}']"
   end
 
   defp recent_read?(query, _params),
